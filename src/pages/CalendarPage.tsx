@@ -68,9 +68,9 @@ const SessionBadge = ({ session, size = 'md', isDark }: {
 }) => {
   const colors = getActivityColors(session.type, isDark);
   const sizeClasses = {
-    sm: 'w-[18px] h-[18px] rounded-[5px]',
+    sm: 'w-4 h-4 rounded-[4px]',
     'sm-single': 'w-7 h-7 rounded-[7px]',
-    md: 'w-9 h-9 md:w-8 md:h-8 lg:w-10 lg:h-10 rounded-lg',
+    md: 'w-10 h-10 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-lg',
     lg: 'w-14 h-14 md:w-12 md:h-12 lg:w-16 lg:h-16 rounded-xl',
   };
   const iconSizes = {
@@ -261,7 +261,7 @@ const CalendarPage = () => {
     return (
       <div className="flex flex-col h-full w-full">
         <div
-          className="flex-1 flex items-center justify-end pr-2"
+          className="flex-1 flex items-end justify-end pr-1 pb-0"
           style={{ backgroundColor: getActivityColors(sessions[0].type, isDark).bg }}
         >
           <SessionBadge session={sessions[0]} size="sm" isDark={isDark} />

@@ -37,7 +37,7 @@ export const activityColorMap: Partial<Record<SessionType, ActivityColors>> = {
     dark:  { bg: 'rgb(98,100,104)',  text: '#ffffff',         badge: '#313030' },
   },
   tennis: {
-    light: { bg: 'rgb(51,222,159)', text: '#734402', badge: 'rgb(180,245,220)' },
+    light: { bg: 'rgb(254,222,141)', text: '#734402', badge: 'rgb(255,238,190)' },
     dark:  { bg: 'rgb(191,144,66)',  text: '#ffffff',         badge: '#492d12' },
   },
   yoga: {
