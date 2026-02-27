@@ -51,11 +51,8 @@ const BottomNav = ({ active, onNavigate, trainingSubTab = 'statistikk', onTraini
               <div key={tab.id} className="relative flex-1 lg:flex-initial" ref={dropdownRef}>
                 <button
                   onClick={() => {
-                    if (active === 'trening') {
-                      setDropdownOpen(prev => !prev);
-                    } else {
-                      onNavigate('trening');
-                    }
+                    if (active !== 'trening') onNavigate('trening');
+                    setDropdownOpen(prev => !prev);
                   }}
                   className={`flex flex-col items-center gap-0.5 py-2 px-3 w-full transition-colors lg:flex-row lg:gap-2 lg:py-3 lg:px-4 lg:rounded-md ${
                     isActive ? 'text-primary lg:bg-primary/10' : 'text-muted-foreground hover:text-foreground'
