@@ -1,15 +1,31 @@
-import { useSettings, AccentColor } from '@/contexts/SettingsContext';
+import { useState } from 'react';
+import { useSettings, AppColorTheme } from '@/contexts/SettingsContext';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Slider } from '@/components/ui/slider';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { SessionType } from '@/types/workout';
 import { Moon, Sun } from 'lucide-react';
-import { getActivityColors } from '@/utils/activityColors';
+import { getActivityColors, activityColorMap, ActivityColorSet } from '@/utils/activityColors';
+
+// Predefined color options for activity types
+const COLOR_PRESETS = [
+  { label: 'Grønn', light: { bg: 'rgb(212,242,184)', text: 'rgb(47,107,69)', badge: 'rgb(225,248,206)' }, dark: { bg: 'rgb(105,162,85)', text: '#ffffff', badge: '#1f3a2a' } },
+  { label: 'Blå', light: { bg: 'rgb(210,229,255)', text: 'rgb(42,93,168)', badge: 'rgb(228,240,255)' }, dark: { bg: 'rgb(77,120,179)', text: '#ffffff', badge: '#1c2f4a' } },
+  { label: 'Rød', light: { bg: 'rgb(255,212,214)', text: 'rgb(122,15,15)', badge: 'rgb(255,230,231)' }, dark: { bg: 'rgb(176,78,83)', text: '#ffffff', badge: '#7a0f0f' } },
+  { label: 'Gul', light: { bg: 'rgb(249,230,183)', text: '#734402', badge: 'rgb(255,238,190)' }, dark: { bg: 'rgb(191,144,66)', text: '#ffffff', badge: '#492d12' } },
+  { label: 'Lilla', light: { bg: 'rgb(241,217,252)', text: 'rgb(121,11,150)', badge: 'rgb(245,230,255)' }, dark: { bg: 'rgb(141,105,149)', text: '#ffffff', badge: '#3e0f50' } },
+  { label: 'Brun', light: { bg: 'rgb(232,212,195)', text: 'rgb(75,46,31)', badge: 'rgb(242,228,217)' }, dark: { bg: 'rgb(149,115,86)', text: '#ffffff', badge: '#423122' } },
+  { label: 'Cyan', light: { bg: 'rgb(229,247,255)', text: '#3f6fa8', badge: 'rgb(240,251,255)' }, dark: { bg: 'rgb(105,172,203)', text: '#ffffff', badge: '#345260' } },
+  { label: 'Grå', light: { bg: 'rgb(212,212,216)', text: '#000000', badge: 'rgb(228,228,232)' }, dark: { bg: 'rgb(98,100,104)', text: '#ffffff', badge: '#313030' } },
+];
 
 const SettingsPage = () => {
-  const { settings, updateSettings, accentColors, getTypeColor } = useSettings();
+  const { settings, updateSettings, appThemes, getTypeColor } = useSettings();
+  const [editingType, setEditingType] = useState<SessionType | null>(null);
 
   const handleClearData = () => {
     if (confirm('Er du sikker på at du vil slette all data? Dette kan ikke angres.')) {
@@ -17,15 +33,6 @@ const SettingsPage = () => {
       localStorage.removeItem('treningslogg_goals');
       window.location.reload();
     }
-  };
-
-  const handleTypeColorChange = (type: SessionType, color: string) => {
-    updateSettings({
-      sessionTypeColors: {
-        ...settings.sessionTypeColors,
-        [type]: color,
-      },
-    });
   };
 
   return (
@@ -53,23 +60,28 @@ const SettingsPage = () => {
           />
         </div>
 
-        {/* Accent color */}
+        {/* Color theme */}
         <div className="space-y-2">
-          <Label className="text-sm">Aksentfarge</Label>
+          <Label className="text-sm">Fargevalg</Label>
           <div className="flex gap-3 flex-wrap">
-            {(Object.entries(accentColors) as [AccentColor, { label: string; swatch: string }][]).map(
-              ([key, { label, swatch }]) => (
-                <button
-                  key={key}
-                  onClick={() => updateSettings({ accentColor: key })}
-                  className={`
-                    w-9 h-9 rounded-full transition-all border-2
-                    ${settings.accentColor === key ? 'border-foreground scale-110 shadow-lg' : 'border-transparent hover:scale-105'}
-                  `}
-                  style={{ backgroundColor: swatch }}
-                  title={label}
-                />
-              )
+            {(Object.entries(appThemes) as [AppColorTheme, typeof appThemes[AppColorTheme]][]).map(
+              ([key, theme]) => {
+                const previewColor = settings.darkMode
+                  ? `hsl(${theme.dark.card})`
+                  : theme.swatch;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => updateSettings({ colorTheme: key })}
+                    className={`
+                      w-9 h-9 rounded-full transition-all border-2
+                      ${settings.colorTheme === key ? 'border-foreground scale-110 shadow-lg' : 'border-transparent hover:scale-105'}
+                    `}
+                    style={{ backgroundColor: previewColor }}
+                    title={theme.label}
+                  />
+                );
+              }
             )}
           </div>
         </div>
@@ -78,23 +90,61 @@ const SettingsPage = () => {
       {/* Session type colors */}
       <div className="glass-card rounded-lg p-4 space-y-4">
         <h3 className="font-display font-semibold text-sm">Økt-farger</h3>
-        <p className="text-xs text-muted-foreground">Fargeprofil for hver aktivitetstype.</p>
+        <p className="text-xs text-muted-foreground">Trykk på et ikon for å endre fargen.</p>
         <div className="space-y-3">
           {allSessionTypes.map((type) => {
             const cfg = sessionTypeConfig[type];
             const colors = getActivityColors(type, settings.darkMode);
             return (
               <div key={type} className="flex items-center gap-3">
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: colors.bg }}
-                >
-                  <ActivityIcon
-                    type={type}
-                    className="w-5 h-5"
-                    colorOverride={!settings.darkMode ? colors.text : undefined}
-                  />
-                </div>
+                <Popover open={editingType === type} onOpenChange={(open) => setEditingType(open ? type : null)}>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 cursor-pointer hover:scale-110 transition-transform"
+                      style={{ backgroundColor: colors.bg }}
+                    >
+                      <ActivityIcon
+                        type={type}
+                        className="w-5 h-5"
+                        colorOverride={!settings.darkMode ? colors.text : undefined}
+                      />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-3" side="right" align="start">
+                    <p className="text-xs font-semibold mb-2">{cfg.label} – velg farge</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {COLOR_PRESETS.map((preset, idx) => {
+                        const previewColors = settings.darkMode ? preset.dark : preset.light;
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              // Update activityColorMap dynamically
+                              (activityColorMap as any)[type] = { light: preset.light, dark: preset.dark };
+                              // Force re-render by updating a setting
+                              updateSettings({
+                                sessionTypeColors: {
+                                  ...settings.sessionTypeColors,
+                                  [type]: preset.light.bg,
+                                },
+                              });
+                              setEditingType(null);
+                            }}
+                            className="w-12 h-12 rounded-lg flex items-center justify-center hover:scale-110 transition-transform border border-border/50"
+                            style={{ backgroundColor: previewColors.bg }}
+                            title={preset.label}
+                          >
+                            <ActivityIcon
+                              type={type}
+                              className="w-6 h-6"
+                              colorOverride={!settings.darkMode ? previewColors.text : undefined}
+                            />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 <Label className="text-sm">{cfg.label}</Label>
               </div>
             );
