@@ -1,5 +1,6 @@
 import { WorkoutSession } from '@/types/workout';
 import { sessionTypeConfig, formatDuration, formatDate } from '@/utils/workoutUtils';
+import { useSettings } from '@/contexts/SettingsContext';
 import { Clock, MapPin, MountainSnow, Pencil, Trash2 } from 'lucide-react';
 
 interface SessionCardProps {
@@ -11,11 +12,13 @@ interface SessionCardProps {
 const SessionCard = ({ session, onEdit, onDelete }: SessionCardProps) => {
   const config = sessionTypeConfig[session.type];
   const Icon = config.icon;
+  const { getTypeColor } = useSettings();
+  const typeColor = getTypeColor(session.type);
 
   return (
     <div className="glass-card rounded-lg p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start gap-3">
-        <div className={`${config.color} rounded-lg p-2.5 shrink-0`}>
+        <div className="rounded-lg p-2.5 shrink-0" style={{ backgroundColor: typeColor, color: '#fff' }}>
           <Icon className="w-5 h-5" />
         </div>
 
