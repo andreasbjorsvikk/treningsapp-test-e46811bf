@@ -36,6 +36,16 @@ function getDiffColor(diff: number): string {
   }
 }
 
+/** Map percent 0–100 to color: red → orange → yellow → light green → green */
+function getPercentColor(p: number): string {
+  if (p <= 20) return 'hsl(0, 70%, 50%)';
+  if (p <= 40) return 'hsl(10, 75%, 55%)';
+  if (p <= 55) return 'hsl(30, 85%, 55%)';
+  if (p <= 70) return 'hsl(45, 80%, 55%)';
+  if (p <= 85) return 'hsl(80, 65%, 50%)';
+  return 'hsl(120, 55%, 45%)';
+}
+
 function getPaceLabel(diff: number): string {
   if (Math.abs(diff) <= 1) return 'Du er i rute';
   if (diff > 0) return 'Du ligger foran skjema';
@@ -113,17 +123,21 @@ const ProgressWheel = ({
   }, [clampedPercent, animProgress]);
 
   const offset = isPace ? paceOffset : animatedStandardOffset;
+
+  // Month wheel: color based on animated percent; gold if >=100
+  const percentColor = !isPace ? getPercentColor(animatedPercent) : '';
+
   const strokeColor = isPace
     ? diffColor
     : isGold
       ? `url(#gold-grad-${label})`
-      : 'hsl(var(--primary))';
+      : percentColor;
 
-  // Both positive and negative pace fill counter-clockwise (left from top)
-  // Standard percent fills clockwise (right from top)
-  const rotation = isPace
-    ? `rotate(90 ${CENTER} ${CENTER})`
-    : `rotate(-90 ${CENTER} ${CENTER})`;
+  // Pace mode: always counter-clockwise from top. Use negative dashoffset for that.
+  // Standard: clockwise from top.
+  const rotation = `rotate(-90 ${CENTER} ${CENTER})`;
+  // For pace: negate the offset to draw counter-clockwise
+  const finalOffset = isPace ? -paceOffset : offset;
 
   return (
     <button
@@ -172,7 +186,7 @@ const ProgressWheel = ({
           strokeWidth={STROKE}
           strokeLinecap="round"
           strokeDasharray={CIRCUMFERENCE}
-          strokeDashoffset={offset}
+          strokeDashoffset={finalOffset}
           transform={rotation}
           filter={isGold ? `url(#gold-glow-${label})` : undefined}
         />
