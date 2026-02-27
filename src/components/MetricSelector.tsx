@@ -14,15 +14,15 @@ const metrics: { id: ChartMetric; label: string }[] = [
 
 const MetricSelector = ({ selected, onSelect }: MetricSelectorProps) => {
   return (
-    <div className="flex gap-1 flex-wrap">
+    <div className="flex gap-1 flex-wrap justify-center">
       {metrics.map((m) => (
         <button
           key={m.id}
           onClick={() => onSelect(m.id)}
-          className={`py-1.5 px-3 rounded-md text-xs font-medium transition-colors ${
+          className={`py-1.5 px-3 rounded-md text-xs font-medium transition-colors border ${
             selected === m.id
-              ? 'bg-muted text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              ? 'bg-primary/15 text-primary border-primary/40 shadow-sm'
+              : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-muted/50'
           }`}
         >
           {m.label}

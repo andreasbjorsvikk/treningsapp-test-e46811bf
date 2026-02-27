@@ -115,14 +115,13 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
   };
 
   return (
-    <div className="glass-card rounded-lg p-4 flex flex-col h-full">
-      <h4 className="text-sm font-medium text-muted-foreground mb-4">{metricTooltipLabel[metric]}</h4>
+    <div className="glass-card rounded-lg p-3 flex flex-col h-full">
       {!hasData ? (
         <p className="text-center py-8 text-sm text-muted-foreground flex-1 flex items-center justify-center">Ingen data for denne perioden.</p>
       ) : (
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-[180px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} barCategoryGap="15%">
+            <BarChart data={data} barCategoryGap="15%" margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
               <XAxis
                 dataKey="label"
@@ -140,8 +139,8 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
                 className="fill-muted-foreground"
                 tickLine={false}
                 axisLine={false}
-                width={45}
-                tickFormatter={(v) => `${v}${suffix}`}
+                width={isMobile ? 30 : 45}
+                tickFormatter={(v) => `${v}`}
               />
               <Tooltip content={<CustomTooltip />} />
               {typeOrder.map((type) => (
