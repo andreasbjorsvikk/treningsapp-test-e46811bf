@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { useMemo, useId } from 'react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { WorkoutSession, SessionType } from '@/types/workout';
 import { Period } from '@/components/PeriodSelector';
 import { ChartMetric } from '@/components/MetricSelector';
@@ -33,10 +33,28 @@ const metricSuffix: Record<ChartMetric, string> = {
   minutes: ' min',
 };
 
+// Lighten a hex color by a percentage
+function lightenColor(hex: string, percent: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.min(255, (num >> 16) + Math.round((255 - (num >> 16)) * percent));
+  const g = Math.min(255, ((num >> 8) & 0x00FF) + Math.round((255 - ((num >> 8) & 0x00FF)) * percent));
+  const b = Math.min(255, (num & 0x0000FF) + Math.round((255 - (num & 0x0000FF)) * percent));
+  return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
+}
+
+function darkenColor(hex: string, percent: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.max(0, Math.round((num >> 16) * (1 - percent)));
+  const g = Math.max(0, Math.round(((num >> 8) & 0x00FF) * (1 - percent)));
+  const b = Math.max(0, Math.round((num & 0x0000FF) * (1 - percent)));
+  return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
+}
+
 const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) => {
   const { getTypeColor } = useSettings();
   const isMobile = useIsMobile();
   const suffix = metricSuffix[metric];
+  const uniqueId = useId().replace(/:/g, '');
 
   const typeOrder = useMemo(() => {
     const totals: { type: SessionType; total: number }[] = allSessionTypes.map(type => ({
@@ -90,15 +108,24 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
     const items = payload.filter((p: any) => p.value > 0);
     if (items.length === 0) return null;
     return (
-      <div className="bg-card/95 backdrop-blur-sm border border-border/50 rounded-xl p-3 text-xs shadow-2xl">
-        <p className="font-semibold text-foreground mb-1.5">{label}</p>
-        {items.map((item: any) => (
-          <div key={item.dataKey} className="flex items-center gap-2 py-0.5">
-            <span className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: item.fill }} />
-            <span className="text-muted-foreground">{sessionTypeConfig[item.dataKey as SessionType]?.label}</span>
-            <span className="font-semibold ml-auto">{item.value}{suffix}</span>
-          </div>
-        ))}
+      <div className="bg-card/95 backdrop-blur-md border border-border/40 rounded-2xl p-3.5 text-xs shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
+        <p className="font-display font-bold text-foreground mb-2 text-sm">{label}</p>
+        {items.map((item: any) => {
+          const baseColor = getTypeColor(item.dataKey as SessionType);
+          return (
+            <div key={item.dataKey} className="flex items-center gap-2.5 py-0.5">
+              <span 
+                className="w-3 h-3 rounded-md" 
+                style={{ 
+                  background: `linear-gradient(135deg, ${lightenColor(baseColor, 0.2)}, ${baseColor})`,
+                  boxShadow: `0 2px 6px ${baseColor}50`
+                }} 
+              />
+              <span className="text-muted-foreground">{sessionTypeConfig[item.dataKey as SessionType]?.label}</span>
+              <span className="font-bold ml-auto text-foreground">{item.value}{suffix}</span>
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -109,29 +136,42 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
   }, [data]);
 
   return (
-    <div className="glass-card rounded-2xl p-4 flex flex-col h-full relative overflow-hidden">
+    <div className="rounded-2xl p-4 flex flex-col h-full relative overflow-hidden bg-gradient-to-br from-card/90 to-card/60 backdrop-blur-xl border border-border/30 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
       <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={hasData ? data : safeData}
-            barCategoryGap={isMobile ? '10%' : '15%'}
+            barCategoryGap={isMobile ? '12%' : '20%'}
             margin={{ top: 8, right: 4, left: -4, bottom: 0 }}
           >
             <defs>
-              <linearGradient id="gridGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(var(--border))" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="hsl(var(--border))" stopOpacity={0.05} />
-              </linearGradient>
+              {/* Gradient definitions for each type */}
+              {typeOrder.map(type => {
+                const baseColor = getTypeColor(type);
+                const lightColor = lightenColor(baseColor, 0.25);
+                const darkColor = darkenColor(baseColor, 0.15);
+                return (
+                  <linearGradient key={type} id={`grad-${uniqueId}-${type}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={lightColor} stopOpacity={1} />
+                    <stop offset="100%" stopColor={darkColor} stopOpacity={0.9} />
+                  </linearGradient>
+                );
+              })}
+              {/* Drop shadow filter */}
+              <filter id={`barShadow-${uniqueId}`} x="-20%" y="-10%" width="140%" height="130%">
+                <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.15" />
+              </filter>
             </defs>
             <CartesianGrid
-              strokeDasharray="none"
-              stroke="url(#gridGrad)"
+              strokeDasharray="3 3"
+              stroke="hsl(var(--border))"
+              strokeOpacity={0.25}
               horizontal={true}
               vertical={false}
             />
             <XAxis
               dataKey="label"
-              tick={{ fontSize: isMobile ? 9 : 10, fill: 'hsl(var(--muted-foreground))' }}
+              tick={{ fontSize: isMobile ? 9 : 11, fill: 'hsl(var(--muted-foreground))', fontWeight: 500 }}
               interval={isMobile && period === 'month' ? 4 : 0}
               tickLine={false}
               axisLine={false}
@@ -140,29 +180,34 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
               height={period === 'month' && !isMobile ? 35 : 25}
             />
             <YAxis
-              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontWeight: 500 }}
               tickLine={false}
               axisLine={false}
               width={isMobile ? 28 : 42}
               tickFormatter={(v) => `${v}`}
             />
-            {hasData && <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3, radius: 4 }} />}
+            {hasData && (
+              <Tooltip 
+                content={<CustomTooltip />} 
+                cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2, radius: 6 }} 
+              />
+            )}
             {hasData && typeOrder.map((type, i) => (
               <Bar
                 key={type}
                 dataKey={type}
                 stackId="stack"
-                fill={getTypeColor(type)}
-                radius={i === typeOrder.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
-                style={{ filter: 'brightness(1.05)' }}
+                fill={`url(#grad-${uniqueId}-${type})`}
+                radius={i === typeOrder.length - 1 ? [5, 5, 0, 0] : [0, 0, 0, 0]}
+                style={{ filter: `url(#barShadow-${uniqueId})` }}
               />
             ))}
           </BarChart>
         </ResponsiveContainer>
       </div>
       {!hasData && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/30 backdrop-blur-[1px] rounded-2xl">
-          <p className="text-sm text-muted-foreground">Ingen data for denne perioden.</p>
+        <div className="absolute inset-0 flex items-center justify-center bg-background/30 backdrop-blur-[2px] rounded-2xl">
+          <p className="text-sm text-muted-foreground font-medium">Ingen data for denne perioden.</p>
         </div>
       )}
     </div>
