@@ -4,7 +4,7 @@ import { workoutService } from '@/services/workoutService';
 import { goalService } from '@/services/goalService';
 import { findGoalForPeriod, getSessionsInPeriod, computeProgress, metricLabels } from '@/utils/goalUtils';
 import AppHeader from '@/components/AppHeader';
-import BottomNav, { TabId } from '@/components/BottomNav';
+import BottomNav, { TabId, TrainingSubTab } from '@/components/BottomNav';
 import StatsOverview from '@/components/StatsOverview';
 import SessionCard from '@/components/SessionCard';
 import WorkoutDialog from '@/components/WorkoutDialog';
@@ -21,8 +21,8 @@ const Index = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
   const [, setRefresh] = useState(0);
-  // For navigating to statistikk with a specific period
   const [initialStatPeriod, setInitialStatPeriod] = useState<'month' | 'year' | undefined>();
+  const [trainingSubTab, setTrainingSubTab] = useState<TrainingSubTab>('statistikk');
 
   const stats = workoutService.getWeeklyStats();
   const allSessions = workoutService.getAll();
@@ -40,21 +40,19 @@ const Index = () => {
     return { current: Math.round(current * 10) / 10, target, percent, unit: metricLabels[monthGoal.metric] };
   }, [allSessions, monthGoal]);
 
-  // Yearly wheel — pace mode
+  // Yearly wheel
   const yearGoal = useMemo(() => findGoalForPeriod(allGoals, 'year'), [allGoals]);
   const yearData = useMemo(() => {
     if (!yearGoal) return { current: 0, target: 0, diff: 0, expected: 0, unit: '' };
     const sessions = getSessionsInPeriod(allSessions, 'year', yearGoal.activityType);
     const current = computeProgress(sessions, yearGoal.metric);
     const target = yearGoal.target;
-
     const now = new Date();
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
     const yearFraction = (now.getTime() - startOfYear.getTime()) / (endOfYear.getTime() - startOfYear.getTime());
     const expected = target * yearFraction;
     const diff = current - expected;
-
     return { current: Math.round(current * 10) / 10, target, diff, expected, unit: metricLabels[yearGoal.metric] };
   }, [allSessions, yearGoal]);
 
@@ -80,6 +78,7 @@ const Index = () => {
 
   const navigateToStats = (period: 'month' | 'year') => {
     setInitialStatPeriod(period);
+    setTrainingSubTab('statistikk');
     setActiveTab('trening');
   };
 
@@ -90,7 +89,6 @@ const Index = () => {
       <main className="container py-6 space-y-6">
         {activeTab === 'hjem' && (
           <>
-            {/* Progress Wheels */}
             <section>
               <div className="grid grid-cols-2 gap-3">
                 <ProgressWheel
@@ -132,7 +130,6 @@ const Index = () => {
                   <Plus className="w-4 h-4 mr-1" /> Ny økt
                 </Button>
               </div>
-
               <div className="space-y-3">
                 {recentSessions.map(s => (
                   <SessionCard key={s.id} session={s} onEdit={handleEdit} onDelete={handleDelete} />
@@ -143,12 +140,11 @@ const Index = () => {
         )}
 
         {activeTab === 'kalender' && <CalendarPage />}
-        {activeTab === 'trening' && <TrainingPage initialStatPeriod={initialStatPeriod} />}
+        {activeTab === 'trening' && <TrainingPage initialStatPeriod={initialStatPeriod} subTab={trainingSubTab} />}
         {activeTab === 'fellesskap' && <CommunityPage />}
         {activeTab === 'settings' && <SettingsPage />}
       </main>
 
-      {/* FAB for adding workout */}
       {activeTab !== 'settings' && activeTab !== 'fellesskap' && (
         <button
           onClick={() => { setEditSession(undefined); setDialogOpen(true); }}
@@ -158,7 +154,12 @@ const Index = () => {
         </button>
       )}
 
-      <BottomNav active={activeTab} onNavigate={(tab) => { setInitialStatPeriod(undefined); setActiveTab(tab); }} />
+      <BottomNav
+        active={activeTab}
+        onNavigate={(tab) => { setInitialStatPeriod(undefined); setActiveTab(tab); }}
+        trainingSubTab={trainingSubTab}
+        onTrainingSubTabChange={setTrainingSubTab}
+      />
 
       <WorkoutDialog
         open={dialogOpen}

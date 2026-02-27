@@ -33,25 +33,16 @@ const metricSuffix: Record<ChartMetric, string> = {
   minutes: ' min',
 };
 
-const metricTooltipLabel: Record<ChartMetric, string> = {
-  sessions: 'Økter',
-  distance: 'Distanse',
-  elevation: 'Høydemeter',
-  minutes: 'Tid',
-};
-
 const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) => {
   const { getTypeColor } = useSettings();
   const isMobile = useIsMobile();
   const suffix = metricSuffix[metric];
 
-  // Compute total per type across ALL sessions to determine stacking order
   const typeOrder = useMemo(() => {
     const totals: { type: SessionType; total: number }[] = allSessionTypes.map(type => ({
       type,
       total: getMetricValueForType(sessions.filter(s => s.type === type), metric),
     }));
-    // Sort descending — largest total first (will be at bottom of stack)
     totals.sort((a, b) => b.total - a.total);
     return totals.filter(t => t.total > 0).map(t => t.type);
   }, [sessions, metric]);
@@ -82,7 +73,6 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
       });
     }
 
-    // Total: group by year
     const allYears = new Set(sessions.map(s => new Date(s.date).getFullYear()));
     if (allYears.size === 0) return [];
     const minYear = Math.min(...allYears);
@@ -95,42 +85,53 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
 
   const hasData = data.some(d => typeOrder.some(t => (d[t] as number) > 0));
 
-  // Custom tooltip
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     const items = payload.filter((p: any) => p.value > 0);
     if (items.length === 0) return null;
     return (
-      <div className="bg-card border border-border rounded-lg p-2 text-xs shadow-lg">
-        <p className="font-medium text-foreground mb-1">{label}</p>
+      <div className="bg-card/95 backdrop-blur-sm border border-border/50 rounded-xl p-3 text-xs shadow-2xl">
+        <p className="font-semibold text-foreground mb-1.5">{label}</p>
         {items.map((item: any) => (
-          <div key={item.dataKey} className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
-            <span className="text-muted-foreground">{sessionTypeConfig[item.dataKey as SessionType]?.label}:</span>
-            <span className="font-medium">{item.value}{suffix}</span>
+          <div key={item.dataKey} className="flex items-center gap-2 py-0.5">
+            <span className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: item.fill }} />
+            <span className="text-muted-foreground">{sessionTypeConfig[item.dataKey as SessionType]?.label}</span>
+            <span className="font-semibold ml-auto">{item.value}{suffix}</span>
           </div>
         ))}
       </div>
     );
   };
 
-  // Always build a safe data array with at least placeholder entries
   const safeData = useMemo(() => {
     if (data.length > 0) return data;
-    // Return minimal placeholder so ResponsiveContainer doesn't collapse
     return [{ label: '' }];
   }, [data]);
 
   return (
-    <div className="glass-card rounded-lg p-3 flex flex-col h-full relative">
-      <div className="flex-1 min-h-[180px]">
+    <div className="glass-card rounded-2xl p-4 flex flex-col h-full relative overflow-hidden">
+      <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={hasData ? data : safeData} barCategoryGap="15%" margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+          <BarChart
+            data={hasData ? data : safeData}
+            barCategoryGap={isMobile ? '10%' : '15%'}
+            margin={{ top: 8, right: 4, left: -4, bottom: 0 }}
+          >
+            <defs>
+              <linearGradient id="gridGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="hsl(var(--border))" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="hsl(var(--border))" stopOpacity={0.05} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              strokeDasharray="none"
+              stroke="url(#gridGrad)"
+              horizontal={true}
+              vertical={false}
+            />
             <XAxis
               dataKey="label"
-              tick={{ fontSize: 10 }}
-              className="fill-muted-foreground"
+              tick={{ fontSize: isMobile ? 9 : 10, fill: 'hsl(var(--muted-foreground))' }}
               interval={isMobile && period === 'month' ? 4 : 0}
               tickLine={false}
               axisLine={false}
@@ -139,28 +140,28 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
               height={period === 'month' && !isMobile ? 35 : 25}
             />
             <YAxis
-              tick={{ fontSize: 10 }}
-              className="fill-muted-foreground"
+              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
               tickLine={false}
               axisLine={false}
-              width={isMobile ? 30 : 45}
+              width={isMobile ? 28 : 42}
               tickFormatter={(v) => `${v}`}
             />
-            {hasData && <Tooltip content={<CustomTooltip />} />}
-            {hasData && typeOrder.map((type) => (
+            {hasData && <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3, radius: 4 }} />}
+            {hasData && typeOrder.map((type, i) => (
               <Bar
                 key={type}
                 dataKey={type}
                 stackId="stack"
                 fill={getTypeColor(type)}
-                radius={0}
+                radius={i === typeOrder.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                style={{ filter: 'brightness(1.05)' }}
               />
             ))}
           </BarChart>
         </ResponsiveContainer>
       </div>
       {!hasData && (
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center bg-background/30 backdrop-blur-[1px] rounded-2xl">
           <p className="text-sm text-muted-foreground">Ingen data for denne perioden.</p>
         </div>
       )}
