@@ -30,25 +30,22 @@ function getMonthGrid(year: number, month: number, sundayStart: boolean) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const prevMonthDays = new Date(year, month, 0).getDate();
 
-  const cells: { day: number; month: number; year: number; isCurrentMonth: boolean }[] = [];
+  const cells: { day: number; month: number; year: number; isCurrentMonth: boolean; isEmpty: boolean }[] = [];
 
-  for (let i = startDay - 1; i >= 0; i--) {
-    const d = prevMonthDays - i;
-    const m = month === 0 ? 11 : month - 1;
-    const y = month === 0 ? year - 1 : year;
-    cells.push({ day: d, month: m, year: y, isCurrentMonth: false });
+  // Empty cells before the first day
+  for (let i = 0; i < startDay; i++) {
+    cells.push({ day: 0, month, year, isCurrentMonth: false, isEmpty: true });
   }
 
   for (let d = 1; d <= daysInMonth; d++) {
-    cells.push({ day: d, month, year, isCurrentMonth: true });
+    cells.push({ day: d, month, year, isCurrentMonth: true, isEmpty: false });
   }
 
+  // Empty cells after the last day
   const remaining = 7 - (cells.length % 7);
   if (remaining < 7) {
-    for (let i = 1; i <= remaining; i++) {
-      const m = month === 11 ? 0 : month + 1;
-      const y = month === 11 ? year + 1 : year;
-      cells.push({ day: i, month: m, year: y, isCurrentMonth: false });
+    for (let i = 0; i < remaining; i++) {
+      cells.push({ day: 0, month, year, isCurrentMonth: false, isEmpty: true });
     }
   }
 
@@ -305,7 +302,7 @@ const CalendarPage = () => {
     return (
       <div className="flex flex-col h-full w-full">
         <div
-          className="flex-1 flex items-end justify-end pr-1 pb-0"
+          className="flex-1 flex items-center justify-end pr-1"
           style={{ backgroundColor: getActivityColors(sessions[0].type, isDark).bg }}
         >
           <SessionBadge session={sessions[0]} size="sm" isDark={isDark} />
@@ -355,6 +352,9 @@ const CalendarPage = () => {
         {/* Calendar grid */}
         <div className="grid grid-cols-7 gap-[3px] lg:gap-1">
           {grid.map((cell, i) => {
+            if (cell.isEmpty) {
+              return <div key={i} className={`${isMobile ? 'min-h-[56px]' : 'min-h-[80px] lg:min-h-[100px]'}`} />;
+            }
             const dateKey = toDateKey(cell.year, cell.month, cell.day);
             const daySessions = sessionsByDate.get(dateKey) || [];
             const isToday = dateKey === todayKey;

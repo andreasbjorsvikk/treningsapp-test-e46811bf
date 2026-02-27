@@ -2,10 +2,11 @@ import { useSettings, AccentColor } from '@/contexts/SettingsContext';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { allSessionTypes, sessionTypeConfig, typeColorOptions } from '@/utils/workoutUtils';
+import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { SessionType } from '@/types/workout';
 import { Moon, Sun } from 'lucide-react';
+import { getActivityColors } from '@/utils/activityColors';
 
 const SettingsPage = () => {
   const { settings, updateSettings, accentColors, getTypeColor } = useSettings();
@@ -77,31 +78,24 @@ const SettingsPage = () => {
       {/* Session type colors */}
       <div className="glass-card rounded-lg p-4 space-y-4">
         <h3 className="font-display font-semibold text-sm">Økt-farger</h3>
-        <p className="text-xs text-muted-foreground">Velg farge for hver aktivitetstype.</p>
+        <p className="text-xs text-muted-foreground">Fargeprofil for hver aktivitetstype.</p>
         <div className="space-y-3">
           {allSessionTypes.map((type) => {
             const cfg = sessionTypeConfig[type];
-            const currentColor = getTypeColor(type);
+            const colors = getActivityColors(type, settings.darkMode);
             return (
-              <div key={type} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: currentColor }} />
-                  <ActivityIcon type={type} className="w-4 h-4" />
-                  <Label className="text-sm">{cfg.label}</Label>
+              <div key={type} className="flex items-center gap-3">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: colors.bg }}
+                >
+                  <ActivityIcon
+                    type={type}
+                    className="w-5 h-5"
+                    colorOverride={!settings.darkMode ? colors.text : undefined}
+                  />
                 </div>
-                <div className="flex gap-1.5">
-                  {typeColorOptions.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => handleTypeColorChange(type, opt.value)}
-                      className={`w-6 h-6 rounded-full transition-all border-2 ${
-                        currentColor === opt.value ? 'border-foreground scale-110' : 'border-transparent hover:scale-105'
-                      }`}
-                      style={{ backgroundColor: opt.value }}
-                      title={opt.label}
-                    />
-                  ))}
-                </div>
+                <Label className="text-sm">{cfg.label}</Label>
               </div>
             );
           })}
