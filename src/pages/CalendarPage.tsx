@@ -68,8 +68,8 @@ const SessionBadge = ({ session, size = 'md', isDark }: {
 }) => {
   const colors = getActivityColors(session.type, isDark);
   const sizeClasses = {
-    sm: 'w-5 h-5 rounded-[4px]',
-    'sm-single': 'w-8 h-8 rounded-[6px]',
+    sm: 'w-[18px] h-[18px] rounded-[5px]',
+    'sm-single': 'w-7 h-7 rounded-[7px]',
     md: 'w-9 h-9 md:w-8 md:h-8 lg:w-10 lg:h-10 rounded-lg',
     lg: 'w-14 h-14 md:w-12 md:h-12 lg:w-16 lg:h-16 rounded-xl',
   };
@@ -247,7 +247,7 @@ const CalendarPage = () => {
             return (
               <div
                 key={s.id}
-                className="flex-1 flex items-center justify-center"
+                className="flex-1 flex items-center justify-center pt-1"
                 style={{ backgroundColor: colors.bg }}
               >
                 <SessionBadge session={s} size="sm" isDark={isDark} />
