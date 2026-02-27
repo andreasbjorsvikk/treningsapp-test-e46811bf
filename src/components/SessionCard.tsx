@@ -16,10 +16,10 @@ const SessionCard = ({ session, onEdit, onDelete }: SessionCardProps) => {
   const typeColor = getTypeColor(session.type);
 
   return (
-    <div className="glass-card rounded-lg p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-start gap-3">
-        <div className="rounded-lg p-2.5 shrink-0" style={{ backgroundColor: typeColor, color: '#fff' }}>
-          <Icon className="w-5 h-5" />
+    <div className="glass-card rounded-lg px-3 py-2.5 hover:shadow-md transition-shadow">
+      <div className="flex items-center gap-2.5">
+        <div className="rounded-md p-1.5 shrink-0" style={{ backgroundColor: typeColor, color: '#fff' }}>
+          <Icon className="w-4 h-4" />
         </div>
 
         <div className="flex-1 min-w-0">
@@ -46,7 +46,7 @@ const SessionCard = ({ session, onEdit, onDelete }: SessionCardProps) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 mt-2.5 flex-wrap">
+          <div className="flex items-center gap-3 mt-1 flex-wrap">
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Clock className="w-3.5 h-3.5" />
               <span>{formatDuration(session.durationMinutes)}</span>

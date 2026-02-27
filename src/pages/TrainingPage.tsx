@@ -154,7 +154,7 @@ const TrainingPage = ({ initialStatPeriod, subTab }: TrainingPageProps) => {
           <ActivityTypeFilter selected={selectedTypes} onToggle={handleToggleType} />
           <MetricSelector selected={chartMetric} onSelect={setChartMetric} />
           
-          <div className="min-h-[280px] lg:min-h-[360px]">
+          <div className="h-[280px] lg:h-[360px]">
             <TrendChart sessions={statSessions} period={period} month={statMonth} year={statYear} metric={chartMetric} />
           </div>
         </div>
