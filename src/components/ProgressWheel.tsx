@@ -68,8 +68,8 @@ const ProgressWheel = ({
   // --- Pace mode ---
   const paceOffset = useMemo(() => {
     if (!paceMode) return CIRCUMFERENCE;
-    // Map diff to a visual fill: 0 diff = empty ring, ±15 = half ring
-    const absFill = Math.min(Math.abs(paceMode.diff) / 15, 1) * 0.5;
+    // ±20 = full circle. Map abs(diff) to 0–100% fill
+    const absFill = Math.min(Math.abs(paceMode.diff) / 20, 1);
     return CIRCUMFERENCE * (1 - absFill);
   }, [paceMode]);
 
@@ -166,8 +166,8 @@ const ProgressWheel = ({
                 {diffSign}{Math.round(paceMode!.diff)}
               </text>
               <text x={CENTER} y={CENTER + 18} textAnchor="middle" dominantBaseline="central"
-                fontSize="10" fill="hsl(var(--muted-foreground))">
-                {current} / {Math.round(paceMode!.expected)} forventet
+                fontSize="11" fill="hsl(var(--muted-foreground))">
+                {current} / {target} {unit}
               </text>
             </>
           ) : (
