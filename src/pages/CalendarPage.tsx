@@ -6,7 +6,7 @@ import { getActivityColors } from '@/utils/activityColors';
 import ActivityIcon from '@/components/ActivityIcon';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Route, Mountain, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DayDrawer from '@/components/DayDrawer';
 
@@ -68,14 +68,14 @@ const SessionBadge = ({ session, size = 'md', isDark }: {
 }) => {
   const colors = getActivityColors(session.type, isDark);
   const sizeClasses = {
-    sm: 'w-7 h-7 rounded-[6px]',
-    md: 'w-10 h-10 rounded-lg',
-    lg: 'w-[52px] h-[52px] md:w-14 md:h-14 rounded-xl',
+    sm: 'w-8 h-8 rounded-[7px]',
+    md: 'w-11 h-11 rounded-lg',
+    lg: 'w-14 h-14 md:w-16 md:h-16 rounded-xl',
   };
   const iconSizes = {
-    sm: 'w-[18px] h-[18px]',
-    md: 'w-6 h-6',
-    lg: 'w-8 h-8 md:w-9 md:h-9',
+    sm: 'w-[22px] h-[22px]',
+    md: 'w-7 h-7',
+    lg: 'w-10 h-10 md:w-11 md:h-11',
   };
 
   const isStyrke = session.type === 'styrke';
@@ -83,7 +83,13 @@ const SessionBadge = ({ session, size = 'md', isDark }: {
   return (
     <div
       className={`${sizeClasses[size]} flex items-center justify-center shrink-0`}
-      style={{ backgroundColor: colors.badge }}
+      style={{
+        backgroundColor: colors.badge,
+        boxShadow: isDark
+          ? 'inset 0 1px 1px rgba(255,255,255,0.1), 0 2px 6px rgba(0,0,0,0.3)'
+          : 'inset 0 1px 1px rgba(255,255,255,0.5), 0 1px 4px rgba(0,0,0,0.1)',
+        backdropFilter: 'blur(4px)',
+      }}
     >
       <ActivityIcon
         type={session.type}
@@ -140,10 +146,23 @@ const CalendarPage = () => {
 
   // Render session stats for desktop
   const renderStats = (s: WorkoutSession, textColor: string) => (
-    <div className="text-[9px] lg:text-[10px] leading-tight space-y-0" style={{ color: textColor, opacity: 0.85 }}>
-      {s.distance != null && <div>{s.distance} km</div>}
-      {s.elevationGain != null && <div>{s.elevationGain} m</div>}
-      <div>{formatDuration(s.durationMinutes)}</div>
+    <div className="text-[10px] lg:text-[11px] leading-tight space-y-0.5" style={{ color: textColor, opacity: 0.85 }}>
+      {s.distance != null && (
+        <div className="flex items-center gap-0.5">
+          <Route className="w-2.5 h-2.5 opacity-60 shrink-0" />
+          <span>{s.distance} km</span>
+        </div>
+      )}
+      {s.elevationGain != null && (
+        <div className="flex items-center gap-0.5">
+          <Mountain className="w-2.5 h-2.5 opacity-60 shrink-0" />
+          <span>{s.elevationGain} m</span>
+        </div>
+      )}
+      <div className="flex items-center gap-0.5">
+        <Clock className="w-2.5 h-2.5 opacity-60 shrink-0" />
+        <span>{formatDuration(s.durationMinutes)}</span>
+      </div>
     </div>
   );
 
@@ -154,7 +173,7 @@ const CalendarPage = () => {
     const title = s.title || config.label;
     return (
       <div className="flex flex-col h-full w-full p-1.5 lg:p-2" style={{ color: colors.text }}>
-        <div className="font-bold text-[10px] lg:text-xs leading-tight truncate mb-1">
+        <div className="font-bold text-[11px] lg:text-sm leading-tight truncate mb-1">
           {title}
         </div>
         <div className="flex items-start gap-1.5 mt-auto">
@@ -180,10 +199,10 @@ const CalendarPage = () => {
             className="flex-1 flex flex-col items-center justify-center p-1 lg:p-1.5 min-w-0"
             style={{ backgroundColor: colors.bg, color: colors.text }}
           >
-            <div className="font-bold text-[8px] lg:text-[9px] truncate w-full text-center mb-0.5">
-              {title.length > 5 ? title.slice(0, 5) + '..' : title}
+            <div className="font-bold text-[8px] lg:text-[10px] truncate w-full text-center mb-0.5 px-0.5">
+              {title}
             </div>
-            <SessionBadge session={s} size="md" isDark={isDark} />
+            <SessionBadge session={s} size="lg" isDark={isDark} />
           </div>
         );
       })}
@@ -198,7 +217,7 @@ const CalendarPage = () => {
         className="flex-1 flex items-center justify-center"
         style={{ backgroundColor: getActivityColors(sessions[0].type, isDark).bg }}
       >
-        <SessionBadge session={sessions[0]} size="sm" isDark={isDark} />
+        <SessionBadge session={sessions[0]} size="md" isDark={isDark} />
       </div>
       {/* Bottom half: two sessions side by side */}
       <div className="flex flex-1">
@@ -208,7 +227,7 @@ const CalendarPage = () => {
             className="flex-1 flex items-center justify-center"
             style={{ backgroundColor: getActivityColors(s.type, isDark).bg }}
           >
-            <SessionBadge session={s} size="sm" isDark={isDark} />
+            <SessionBadge session={s} size="md" isDark={isDark} />
           </div>
         ))}
       </div>

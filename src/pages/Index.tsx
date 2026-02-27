@@ -13,10 +13,12 @@ import TrainingPage from '@/pages/TrainingPage';
 import CommunityPage from '@/pages/CommunityPage';
 import SettingsPage from '@/pages/SettingsPage';
 import ProgressWheel from '@/components/ProgressWheel';
-import { Plus } from 'lucide-react';
+import { Plus, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useSettings } from '@/contexts/SettingsContext';
 
 const Index = () => {
+  const { settings, updateSettings } = useSettings();
   const [activeTab, setActiveTab] = useState<TabId>('hjem');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
@@ -145,14 +147,15 @@ const Index = () => {
         {activeTab === 'settings' && <SettingsPage />}
       </main>
 
-      {activeTab !== 'settings' && activeTab !== 'fellesskap' && (
-        <button
-          onClick={() => { setEditSession(undefined); setDialogOpen(true); }}
-          className="fixed bottom-20 right-4 z-40 gradient-energy rounded-full p-4 shadow-lg hover:shadow-xl transition-shadow"
-        >
-          <Plus className="w-6 h-6 text-primary-foreground" />
-        </button>
-      )}
+      <button
+        onClick={() => updateSettings({ darkMode: !settings.darkMode })}
+        className="fixed bottom-20 right-4 z-40 glass-card rounded-full p-3.5 shadow-lg hover:shadow-xl transition-all border border-border/50"
+      >
+        {settings.darkMode
+          ? <Sun className="w-5 h-5 text-foreground" />
+          : <Moon className="w-5 h-5 text-foreground" />
+        }
+      </button>
 
       <BottomNav
         active={activeTab}
