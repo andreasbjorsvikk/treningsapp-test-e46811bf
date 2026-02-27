@@ -128,10 +128,11 @@ const ProgressWheel = ({
   // Month wheel: color based on animated percent; gold if >=100
   const percentColor = !isPace ? getPercentColor(animatedPercent) : '';
 
+  const safeId = label.replace(/\s+/g, '-');
   const strokeColor = isPace
     ? diffColor
     : isGold
-      ? `url(#gold-grad-${label})`
+      ? `url(#gold-grad-${safeId})`
       : percentColor;
 
   // Pace mode: always counter-clockwise from top. Use negative dashoffset for that.
@@ -158,12 +159,12 @@ const ProgressWheel = ({
         <defs>
           {isGold && (
             <>
-              <linearGradient id={`gold-grad-${label}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <linearGradient id={`gold-grad-${safeId}`} x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor={goldGlow} />
                 <stop offset="50%" stopColor={goldColor} />
                 <stop offset="100%" stopColor={goldGlow} />
               </linearGradient>
-              <filter id={`gold-glow-${label}`}>
+              <filter id={`gold-glow-${safeId}`}>
                 <feGaussianBlur stdDeviation={isOverAchieve ? 6 : 3} result="blur" />
                 <feMerge>
                   <feMergeNode in="blur" />
@@ -189,7 +190,7 @@ const ProgressWheel = ({
           strokeDasharray={CIRCUMFERENCE}
           strokeDashoffset={finalOffset}
           transform={rotation}
-          filter={isGold ? `url(#gold-glow-${label})` : undefined}
+          filter={isGold ? `url(#gold-glow-${safeId})` : undefined}
         />
 
         {/* Over-achieve shine */}
