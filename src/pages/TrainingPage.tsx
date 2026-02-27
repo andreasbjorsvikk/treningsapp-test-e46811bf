@@ -15,6 +15,8 @@ import TrendChart from '@/components/TrendChart';
 import ProgressWheel from '@/components/ProgressWheel';
 import MetricSelector, { ChartMetric } from '@/components/MetricSelector';
 import { TrainingSubTab } from '@/components/BottomNav';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface TrainingPageProps {
   initialStatPeriod?: 'month' | 'year';
@@ -38,10 +40,50 @@ const TrainingPage = ({ initialStatPeriod, subTab }: TrainingPageProps) => {
   const [statYear, setStatYear] = useState(now.getFullYear());
   const [selectedTypes, setSelectedTypes] = useState<SessionType[]>([...allSessionTypes]);
   const [chartMetric, setChartMetric] = useState<ChartMetric>('minutes');
+  const [historyYear, setHistoryYear] = useState<string>(String(now.getFullYear()));
+  const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
 
   const allSessions = workoutService.getAll();
   const allGoals = goalService.getAll();
   const filtered = filterType === 'all' ? allSessions : allSessions.filter(s => s.type === filterType);
+
+  // Available years from sessions
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    allSessions.forEach(s => years.add(new Date(s.date).getFullYear()));
+    const sorted = Array.from(years).sort((a, b) => b - a);
+    if (sorted.length === 0) sorted.push(now.getFullYear());
+    return sorted;
+  }, [allSessions]);
+
+  // Filter history by year and group by month
+  const historyByMonth = useMemo(() => {
+    const yearNum = parseInt(historyYear);
+    const yearSessions = filtered.filter(s => new Date(s.date).getFullYear() === yearNum);
+    const groups = new Map<number, WorkoutSession[]>();
+    yearSessions.forEach(s => {
+      const m = new Date(s.date).getMonth();
+      if (!groups.has(m)) groups.set(m, []);
+      groups.get(m)!.push(s);
+    });
+    // Sort months descending
+    return Array.from(groups.entries())
+      .sort(([a], [b]) => b - a)
+      .map(([month, sessions]) => ({
+        month,
+        label: monthNames[month],
+        sessions: sessions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+      }));
+  }, [filtered, historyYear]);
+
+  const toggleMonth = useCallback((monthKey: string) => {
+    setCollapsedMonths(prev => {
+      const next = new Set(prev);
+      if (next.has(monthKey)) next.delete(monthKey);
+      else next.add(monthKey);
+      return next;
+    });
+  }, []);
 
   // Progress wheel data
   const monthGoal = useMemo(() => findGoalForPeriod(allGoals, 'month'), [allGoals]);
@@ -120,7 +162,6 @@ const TrainingPage = ({ initialStatPeriod, subTab }: TrainingPageProps) => {
     <div className="space-y-4">
       {subTab === 'statistikk' && (
         <div className="space-y-4">
-          {/* Wheels on top */}
           <div className="flex gap-2">
             <ProgressWheel
               percent={monthData.percent}
@@ -162,14 +203,51 @@ const TrainingPage = ({ initialStatPeriod, subTab }: TrainingPageProps) => {
 
       {subTab === 'historikk' && (
         <div className="space-y-4">
-          <TypeFilter selected={filterType} onSelect={setFilterType} />
-          <div className="space-y-3">
-            {filtered.length === 0 ? (
-              <p className="text-center py-12 text-muted-foreground">Ingen økter funnet.</p>
+          <div className="flex items-center justify-between gap-2">
+            <TypeFilter selected={filterType} onSelect={setFilterType} />
+            <Select value={historyYear} onValueChange={setHistoryYear}>
+              <SelectTrigger className="w-24 h-8 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {availableYears.map(y => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            {historyByMonth.length === 0 ? (
+              <p className="text-center py-12 text-muted-foreground">Ingen økter funnet i {historyYear}.</p>
             ) : (
-              filtered.map(s => (
-                <SessionCard key={s.id} session={s} onEdit={handleEdit} onDelete={handleDelete} />
-              ))
+              historyByMonth.map(group => {
+                const monthKey = `${historyYear}-${group.month}`;
+                const isCollapsed = collapsedMonths.has(monthKey);
+                return (
+                  <div key={monthKey} className="rounded-xl border border-border/60 bg-card/50 overflow-hidden">
+                    <button
+                      onClick={() => toggleMonth(monthKey)}
+                      className="w-full flex items-center justify-between px-4 py-3 hover:bg-accent/5 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${!isCollapsed ? 'rotate-90' : ''}`} />
+                        <span className="font-display font-semibold text-sm">{group.label}</span>
+                        <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
+                          {group.sessions.length} {group.sessions.length === 1 ? 'økt' : 'økter'}
+                        </span>
+                      </div>
+                    </button>
+                    {!isCollapsed && (
+                      <div className="px-3 pb-3 space-y-2">
+                        {group.sessions.map(s => (
+                          <SessionCard key={s.id} session={s} onEdit={handleEdit} onDelete={handleDelete} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
