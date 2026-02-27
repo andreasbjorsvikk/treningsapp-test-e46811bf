@@ -43,12 +43,11 @@ const Index = () => {
   // Yearly wheel — pace mode
   const yearGoal = useMemo(() => findGoalForPeriod(allGoals, 'year'), [allGoals]);
   const yearData = useMemo(() => {
-    if (!yearGoal) return { current: 0, target: 0, diff: 0, expected: 0 };
+    if (!yearGoal) return { current: 0, target: 0, diff: 0, expected: 0, unit: '' };
     const sessions = getSessionsInPeriod(allSessions, 'year', yearGoal.activityType);
     const current = computeProgress(sessions, yearGoal.metric);
     const target = yearGoal.target;
 
-    // Calculate expected progress based on how far into the year we are
     const now = new Date();
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
@@ -56,7 +55,7 @@ const Index = () => {
     const expected = target * yearFraction;
     const diff = current - expected;
 
-    return { current: Math.round(current * 10) / 10, target, diff, expected };
+    return { current: Math.round(current * 10) / 10, target, diff, expected, unit: metricLabels[yearGoal.metric] };
   }, [allSessions, yearGoal]);
 
   const handleDelete = useCallback((id: string) => {
@@ -107,7 +106,7 @@ const Index = () => {
                   percent={0}
                   current={yearData.current}
                   target={yearData.target}
-                  unit=""
+                  unit={yearData.unit}
                   label="I år"
                   hasGoal={!!yearGoal}
                   paceMode={{ diff: yearData.diff, expected: yearData.expected }}
