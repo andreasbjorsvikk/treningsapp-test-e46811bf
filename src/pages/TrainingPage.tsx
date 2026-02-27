@@ -14,11 +14,11 @@ import StatsTiles from '@/components/StatsTiles';
 import TrendChart from '@/components/TrendChart';
 import ProgressWheel from '@/components/ProgressWheel';
 import MetricSelector, { ChartMetric } from '@/components/MetricSelector';
-
-type SubTab = 'statistikk' | 'historikk' | 'mål';
+import { TrainingSubTab } from '@/components/BottomNav';
 
 interface TrainingPageProps {
   initialStatPeriod?: 'month' | 'year';
+  subTab: TrainingSubTab;
 }
 
 const monthNames = [
@@ -26,8 +26,7 @@ const monthNames = [
   'Juli', 'August', 'September', 'Oktober', 'November', 'Desember',
 ];
 
-const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
-  const [subTab, setSubTab] = useState<SubTab>(initialStatPeriod ? 'statistikk' : 'historikk');
+const TrainingPage = ({ initialStatPeriod, subTab }: TrainingPageProps) => {
   const [filterType, setFilterType] = useState<SessionType | 'all'>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
@@ -44,7 +43,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
   const allGoals = goalService.getAll();
   const filtered = filterType === 'all' ? allSessions : allSessions.filter(s => s.type === filterType);
 
-  // Progress wheel data — synced with period selector month/year
+  // Progress wheel data
   const monthGoal = useMemo(() => findGoalForPeriod(allGoals, 'month'), [allGoals]);
   const monthData = useMemo(() => {
     if (!monthGoal) return { current: 0, target: 0, percent: 0, unit: '' };
@@ -78,10 +77,8 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
     return { current: Math.round(current * 10) / 10, target, diff, expected, unit: metricLabels[yearGoal.metric] };
   }, [allSessions, yearGoal, statYear]);
 
-  // Filter sessions for statistikk
   const statSessions = useMemo(() => {
     let sessions = allSessions.filter(s => selectedTypes.includes(s.type));
-
     if (period === 'month') {
       sessions = sessions.filter(s => {
         const d = new Date(s.date);
@@ -90,8 +87,6 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
     } else if (period === 'year') {
       sessions = sessions.filter(s => new Date(s.date).getFullYear() === statYear);
     }
-    // 'total' = no date filtering
-
     return sessions;
   }, [allSessions, selectedTypes, period, statMonth, statYear]);
 
@@ -121,37 +116,31 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
     setRefresh(r => r + 1);
   }, [editSession]);
 
-  const subTabs: { id: SubTab; label: string }[] = [
-    { id: 'statistikk', label: 'Statistikk' },
-    { id: 'historikk', label: 'Historikk' },
-    { id: 'mål', label: 'Mål' },
-  ];
-
   return (
     <div className="space-y-4">
-      <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-        Trening
-      </h2>
-
-      {/* Sub-tabs */}
-      <div className="flex gap-1 bg-secondary rounded-lg p-1">
-        {subTabs.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setSubTab(t.id)}
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-              subTab === t.id
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
       {subTab === 'statistikk' && (
         <div className="space-y-4">
+          {/* Wheels on top */}
+          <div className="flex gap-2">
+            <ProgressWheel
+              percent={monthData.percent}
+              current={monthData.current}
+              target={monthData.target}
+              unit={monthData.unit}
+              title={`${monthNames[statMonth]} ${statYear}`}
+              hasGoal={!!monthGoal}
+            />
+            <ProgressWheel
+              percent={0}
+              current={yearData.current}
+              target={yearData.target}
+              unit={yearData.unit}
+              title={String(statYear)}
+              hasGoal={!!yearGoal}
+              paceMode={{ diff: yearData.diff, expected: yearData.expected }}
+            />
+          </div>
+
           <PeriodSelector
             period={period}
             onPeriodChange={setPeriod}
@@ -159,40 +148,14 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
             year={statYear}
             onMonthChange={setStatMonth}
             onYearChange={setStatYear}
-           />
+          />
+
+          <StatsTiles sessions={statSessions} />
+          <ActivityTypeFilter selected={selectedTypes} onToggle={handleToggleType} />
+          <MetricSelector selected={chartMetric} onSelect={setChartMetric} />
           
-          {/* Desktop: wheels left, stats right. Mobile: wheels above */}
-          <div className="flex flex-col lg:flex-row lg:gap-6">
-            {/* Progress wheels */}
-            <div className="flex gap-2 mb-4 lg:mb-0 lg:flex-col lg:gap-4 lg:shrink-0">
-              <ProgressWheel
-                percent={monthData.percent}
-                current={monthData.current}
-                target={monthData.target}
-                unit={monthData.unit}
-                title={`${monthNames[statMonth]} ${statYear}`}
-                hasGoal={!!monthGoal}
-              />
-              <ProgressWheel
-                percent={0}
-                current={yearData.current}
-                target={yearData.target}
-                unit={yearData.unit}
-                title={String(statYear)}
-                hasGoal={!!yearGoal}
-                paceMode={{ diff: yearData.diff, expected: yearData.expected }}
-              />
-            </div>
-            
-            {/* Stats + Chart */}
-            <div className="flex-1 flex flex-col gap-4 min-w-0">
-              <StatsTiles sessions={statSessions} />
-              <ActivityTypeFilter selected={selectedTypes} onToggle={handleToggleType} />
-              <MetricSelector selected={chartMetric} onSelect={setChartMetric} />
-              <div className="flex-1 min-h-[200px]">
-                <TrendChart sessions={statSessions} period={period} month={statMonth} year={statYear} metric={chartMetric} />
-              </div>
-            </div>
+          <div className="min-h-[280px] lg:min-h-[360px]">
+            <TrendChart sessions={statSessions} period={period} month={statMonth} year={statYear} metric={chartMetric} />
           </div>
         </div>
       )}
