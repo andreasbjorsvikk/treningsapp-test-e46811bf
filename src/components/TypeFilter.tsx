@@ -1,6 +1,7 @@
 import { SessionType } from '@/types/workout';
 import { sessionTypeConfig } from '@/utils/workoutUtils';
 import { useSettings } from '@/contexts/SettingsContext';
+import ActivityIcon from '@/components/ActivityIcon';
 
 interface TypeFilterProps {
   selected: SessionType | 'all';
@@ -24,7 +25,6 @@ const TypeFilter = ({ selected, onSelect }: TypeFilterProps) => {
         Alle
       </button>
       {types.map(([type, config]) => {
-        const Icon = config.icon;
         const isActive = selected === type;
         const color = getTypeColor(type);
         return (
@@ -36,7 +36,7 @@ const TypeFilter = ({ selected, onSelect }: TypeFilterProps) => {
             }`}
             style={isActive ? { backgroundColor: color, color: '#fff' } : undefined}
           >
-            <Icon className="w-3.5 h-3.5" />
+            <ActivityIcon type={type} className="w-3.5 h-3.5" />
             {config.label}
           </button>
         );

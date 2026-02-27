@@ -33,6 +33,13 @@ const metricSuffix: Record<ChartMetric, string> = {
   minutes: ' min',
 };
 
+const metricUnitLabel: Record<ChartMetric, string> = {
+  sessions: 'Økter',
+  distance: 'Km',
+  elevation: 'Meter',
+  minutes: 'Min',
+};
+
 // Lighten a hex color by a percentage
 function lightenColor(hex: string, percent: number): string {
   const num = parseInt(hex.replace('#', ''), 16);
@@ -142,7 +149,7 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
           <BarChart
             data={hasData ? data : safeData}
             barCategoryGap={isMobile ? '12%' : '20%'}
-            margin={{ top: 8, right: 4, left: -4, bottom: 0 }}
+            margin={{ top: 20, right: 4, left: -4, bottom: 0 }}
           >
             <defs>
               {/* Gradient definitions for each type */}
@@ -175,9 +182,9 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
               interval={isMobile && period === 'month' ? 4 : 0}
               tickLine={false}
               axisLine={false}
-              angle={period === 'month' && !isMobile ? -45 : 0}
-              textAnchor={period === 'month' && !isMobile ? 'end' : 'middle'}
-              height={period === 'month' && !isMobile ? 35 : 25}
+              angle={0}
+              textAnchor="middle"
+              height={25}
             />
             <YAxis
               tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontWeight: 500 }}
@@ -185,6 +192,12 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
               axisLine={false}
               width={isMobile ? 28 : 42}
               tickFormatter={(v) => `${v}`}
+              label={{ 
+                value: metricUnitLabel[metric], 
+                position: 'top', 
+                offset: -4,
+                style: { fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontWeight: 600, textAnchor: 'start' }
+              }}
             />
             {hasData && (
               <Tooltip 
@@ -198,7 +211,7 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
                 dataKey={type}
                 stackId="stack"
                 fill={`url(#grad-${uniqueId}-${type})`}
-                radius={i === typeOrder.length - 1 ? [5, 5, 0, 0] : [0, 0, 0, 0]}
+                radius={i === typeOrder.length - 1 ? [8, 8, 0, 0] : [0, 0, 0, 0]}
                 style={{ filter: `url(#barShadow-${uniqueId})` }}
               />
             ))}
