@@ -24,19 +24,44 @@ const iconMap: Record<string, string> = {
 interface ActivityIconProps {
   type: SessionType;
   className?: string;
+  colorOverride?: string;
+  style?: React.CSSProperties;
 }
 
-const ActivityIcon = ({ type, className = 'w-4 h-4' }: ActivityIconProps) => {
+const ActivityIcon = ({ type, className = 'w-4 h-4', colorOverride, style }: ActivityIconProps) => {
   const src = iconMap[type];
   if (!src) {
-    return <CircleDot className={className} />;
+    return <CircleDot className={className} style={{ color: colorOverride || '#fff', ...style }} />;
   }
+
+  if (colorOverride) {
+    // Use mask-image to render SVG in any arbitrary color
+    return (
+      <div
+        className={className}
+        style={{
+          backgroundColor: colorOverride,
+          WebkitMaskImage: `url(${src})`,
+          maskImage: `url(${src})`,
+          WebkitMaskSize: 'contain',
+          maskSize: 'contain',
+          WebkitMaskRepeat: 'no-repeat',
+          maskRepeat: 'no-repeat',
+          WebkitMaskPosition: 'center',
+          maskPosition: 'center',
+          ...style,
+        }}
+        aria-label={type}
+      />
+    );
+  }
+
   return (
     <img
       src={src}
       alt={type}
       className={className}
-      style={{ filter: 'brightness(0) invert(1)' }}
+      style={{ filter: 'brightness(0) invert(1)', ...style }}
       draggable={false}
     />
   );

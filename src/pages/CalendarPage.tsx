@@ -68,22 +68,29 @@ const SessionBadge = ({ session, size = 'md', isDark }: {
 }) => {
   const colors = getActivityColors(session.type, isDark);
   const sizeClasses = {
-    sm: 'w-5 h-5 rounded-[5px]',
-    md: 'w-7 h-7 rounded-lg',
-    lg: 'w-9 h-9 md:w-10 md:h-10 rounded-lg',
+    sm: 'w-7 h-7 rounded-[6px]',
+    md: 'w-10 h-10 rounded-lg',
+    lg: 'w-[52px] h-[52px] md:w-14 md:h-14 rounded-xl',
   };
   const iconSizes = {
-    sm: 'w-3 h-3',
-    md: 'w-4 h-4',
-    lg: 'w-5 h-5 md:w-6 md:h-6',
+    sm: 'w-[18px] h-[18px]',
+    md: 'w-6 h-6',
+    lg: 'w-8 h-8 md:w-9 md:h-9',
   };
+
+  const isStyrke = session.type === 'styrke';
 
   return (
     <div
       className={`${sizeClasses[size]} flex items-center justify-center shrink-0`}
       style={{ backgroundColor: colors.badge }}
     >
-      <ActivityIcon type={session.type} className={iconSizes[size]} />
+      <ActivityIcon
+        type={session.type}
+        className={iconSizes[size]}
+        colorOverride={!isDark ? colors.text : undefined}
+        style={isStyrke ? { marginLeft: '1px' } : undefined}
+      />
     </div>
   );
 };
@@ -183,25 +190,22 @@ const CalendarPage = () => {
     </div>
   );
 
-  // Render three-session cell for desktop
+  // Render three-session cell for desktop: top half = session 0, bottom half = split session 1 & 2
   const renderThreeDesktop = (sessions: WorkoutSession[]) => (
     <div className="flex flex-col h-full w-full">
-      {/* Top row: first session on right */}
-      <div className="flex flex-1">
-        <div className="flex-1" style={{ backgroundColor: getActivityColors(sessions[1].type, isDark).bg }} />
-        <div
-          className="flex-1 flex items-center justify-center p-0.5"
-          style={{ backgroundColor: getActivityColors(sessions[0].type, isDark).bg }}
-        >
-          <SessionBadge session={sessions[0]} size="sm" isDark={isDark} />
-        </div>
+      {/* Top half: first session full width */}
+      <div
+        className="flex-1 flex items-center justify-center"
+        style={{ backgroundColor: getActivityColors(sessions[0].type, isDark).bg }}
+      >
+        <SessionBadge session={sessions[0]} size="sm" isDark={isDark} />
       </div>
-      {/* Bottom row: two sessions */}
+      {/* Bottom half: two sessions side by side */}
       <div className="flex flex-1">
         {sessions.slice(1, 3).map((s) => (
           <div
             key={s.id}
-            className="flex-1 flex items-center justify-center p-0.5"
+            className="flex-1 flex items-center justify-center"
             style={{ backgroundColor: getActivityColors(s.type, isDark).bg }}
           >
             <SessionBadge session={s} size="sm" isDark={isDark} />
@@ -295,12 +299,12 @@ const CalendarPage = () => {
                       sessionCount === 2 ? renderTwoDesktop(daySessions) : renderThreeDesktop(daySessions)
                     )}
                   </div>
-                  {/* Day number overlay */}
+                  {/* Day number overlay - absolute top-left like single cells */}
                   <span className={`
-                    text-[10px] lg:text-xs font-semibold z-10
+                    text-[10px] lg:text-xs font-semibold z-10 absolute top-1 left-1.5
                     ${isToday
-                      ? 'bg-success text-success-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] mt-1 ml-1'
-                      : 'mt-1 ml-1.5'
+                      ? 'bg-success text-success-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px]'
+                      : ''
                     }
                   `} style={!isToday ? { color: isDark ? '#fff' : '#333' } : undefined}>
                     {cell.day}
