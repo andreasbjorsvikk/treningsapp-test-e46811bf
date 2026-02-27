@@ -84,8 +84,8 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <AppHeader />
+    <div className="min-h-screen bg-background pb-20 lg:pb-0 lg:pt-16">
+      <AppHeader className="lg:hidden" />
 
       <main className="container py-6 space-y-6">
         {activeTab === 'hjem' && (
@@ -99,7 +99,6 @@ const Index = () => {
                   target={monthData.target}
                   unit={monthData.unit}
                   title={new Date().toLocaleString('nb-NO', { month: 'long' }).replace(/^./, c => c.toUpperCase())}
-                  label="Denne måneden"
                   hasGoal={!!monthGoal}
                   onClick={() => navigateToStats('month')}
                 />

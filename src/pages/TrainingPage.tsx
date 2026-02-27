@@ -2,7 +2,9 @@ import { useState, useCallback, useMemo } from 'react';
 import { SessionType, WorkoutSession } from '@/types/workout';
 import GoalsSection from '@/components/GoalsSection';
 import { workoutService } from '@/services/workoutService';
+import { goalService } from '@/services/goalService';
 import { allSessionTypes } from '@/utils/workoutUtils';
+import { findGoalForPeriod, getSessionsInPeriod, computeProgress, metricLabels } from '@/utils/goalUtils';
 import SessionCard from '@/components/SessionCard';
 import TypeFilter from '@/components/TypeFilter';
 import WorkoutDialog from '@/components/WorkoutDialog';
@@ -10,6 +12,7 @@ import PeriodSelector, { Period } from '@/components/PeriodSelector';
 import ActivityTypeFilter from '@/components/ActivityTypeFilter';
 import StatsTiles from '@/components/StatsTiles';
 import TrendChart from '@/components/TrendChart';
+import ProgressWheel from '@/components/ProgressWheel';
 
 type SubTab = 'statistikk' | 'historikk' | 'mål';
 
@@ -32,7 +35,33 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
   const [selectedTypes, setSelectedTypes] = useState<SessionType[]>([...allSessionTypes]);
 
   const allSessions = workoutService.getAll();
+  const allGoals = goalService.getAll();
   const filtered = filterType === 'all' ? allSessions : allSessions.filter(s => s.type === filterType);
+
+  // Progress wheel data
+  const monthGoal = useMemo(() => findGoalForPeriod(allGoals, 'month'), [allGoals]);
+  const monthData = useMemo(() => {
+    if (!monthGoal) return { current: 0, target: 0, percent: 0, unit: '' };
+    const sessions = getSessionsInPeriod(allSessions, 'month', monthGoal.activityType);
+    const current = computeProgress(sessions, monthGoal.metric);
+    const target = monthGoal.target;
+    const percent = target === 0 ? 0 : (current / target) * 100;
+    return { current: Math.round(current * 10) / 10, target, percent, unit: metricLabels[monthGoal.metric] };
+  }, [allSessions, monthGoal]);
+
+  const yearGoal = useMemo(() => findGoalForPeriod(allGoals, 'year'), [allGoals]);
+  const yearData = useMemo(() => {
+    if (!yearGoal) return { current: 0, target: 0, diff: 0, expected: 0, unit: '' };
+    const sessions = getSessionsInPeriod(allSessions, 'year', yearGoal.activityType);
+    const current = computeProgress(sessions, yearGoal.metric);
+    const target = yearGoal.target;
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
+    const yearFraction = (now.getTime() - startOfYear.getTime()) / (endOfYear.getTime() - startOfYear.getTime());
+    const expected = target * yearFraction;
+    const diff = current - expected;
+    return { current: Math.round(current * 10) / 10, target, diff, expected, unit: metricLabels[yearGoal.metric] };
+  }, [allSessions, yearGoal]);
 
   // Filter sessions for statistikk
   const statSessions = useMemo(() => {
@@ -120,8 +149,36 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
             onYearChange={setStatYear}
           />
           <ActivityTypeFilter selected={selectedTypes} onToggle={handleToggleType} />
-          <StatsTiles sessions={statSessions} />
-          <TrendChart sessions={statSessions} period={period} month={statMonth} year={statYear} />
+          
+          {/* Desktop: wheels left, stats right. Mobile: wheels above */}
+          <div className="flex flex-col lg:flex-row lg:gap-6">
+            {/* Progress wheels */}
+            <div className="flex gap-3 mb-4 lg:mb-0 lg:flex-col lg:gap-4 lg:shrink-0">
+              <ProgressWheel
+                percent={monthData.percent}
+                current={monthData.current}
+                target={monthData.target}
+                unit={monthData.unit}
+                title={new Date().toLocaleString('nb-NO', { month: 'long' }).replace(/^./, c => c.toUpperCase())}
+                hasGoal={!!monthGoal}
+              />
+              <ProgressWheel
+                percent={0}
+                current={yearData.current}
+                target={yearData.target}
+                unit={yearData.unit}
+                title={String(new Date().getFullYear())}
+                hasGoal={!!yearGoal}
+                paceMode={{ diff: yearData.diff, expected: yearData.expected }}
+              />
+            </div>
+            
+            {/* Stats + Chart */}
+            <div className="flex-1 space-y-4 min-w-0">
+              <StatsTiles sessions={statSessions} />
+              <TrendChart sessions={statSessions} period={period} month={statMonth} year={statYear} />
+            </div>
+          </div>
         </div>
       )}
 
