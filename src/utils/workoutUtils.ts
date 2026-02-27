@@ -17,6 +17,34 @@ interface SessionTypeConfig {
   color: string;
 }
 
+// Default muted colors per type (bg class + text)
+export const defaultTypeColors: Record<SessionType, string> = {
+  styrke:   '#9ca3af', // grey
+  løping:   '#60a5fa', // blue
+  fjelltur: '#4ade80', // green
+  svømming: '#67e8f9', // light blue
+  sykling:  '#f87171', // red
+  gå:       '#a3866a', // brown
+  tennis:   '#fb923c', // orange
+  yoga:     '#c084fc', // purple
+  annet:    '#a1a1aa', // zinc
+};
+
+export const typeColorOptions: { label: string; value: string }[] = [
+  { label: 'Grå',     value: '#9ca3af' },
+  { label: 'Blå',     value: '#60a5fa' },
+  { label: 'Grønn',   value: '#4ade80' },
+  { label: 'Lys blå', value: '#67e8f9' },
+  { label: 'Rød',     value: '#f87171' },
+  { label: 'Brun',    value: '#a3866a' },
+  { label: 'Oransje', value: '#fb923c' },
+  { label: 'Lilla',   value: '#c084fc' },
+  { label: 'Gul',     value: '#fbbf24' },
+  { label: 'Rosa',    value: '#f472b6' },
+  { label: 'Teal',    value: '#2dd4bf' },
+  { label: 'Sink',    value: '#a1a1aa' },
+];
+
 export const sessionTypeConfig: Record<SessionType, SessionTypeConfig> = {
   styrke: {
     label: 'Styrke',
@@ -44,7 +72,7 @@ export const sessionTypeConfig: Record<SessionType, SessionTypeConfig> = {
     color: 'bg-warning text-warning-foreground',
   },
   gå: {
-    label: 'Gange',
+    label: 'Gå',
     icon: Footprints,
     color: 'bg-success text-success-foreground',
   },
