@@ -158,7 +158,9 @@ const ProgressWheel = ({
       : percentColor;
 
   const rotation = `rotate(-90 ${CENTER} ${CENTER})`;
-  const finalOffset = isPace ? -paceOffset : offset;
+  // Pace: negative = counter-clockwise (negate offset), positive = clockwise (normal offset)
+  const isNegativePace = isPace && paceMode!.diff < 0;
+  const finalOffset = isPace ? (isNegativePace ? -paceOffset : paceOffset) : offset;
 
   return (
     <button
@@ -183,7 +185,7 @@ const ProgressWheel = ({
                 <stop offset="100%" stopColor={goldGlow} />
               </linearGradient>
               <filter id={`gold-glow-${safeId}`} x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation={3 + glowIntensity * 7} result="blur" />
+                <feGaussianBlur stdDeviation={4 + glowIntensity * 10} result="blur" />
                 <feMerge>
                   <feMergeNode in="blur" />
                   <feMergeNode in="SourceGraphic" />
@@ -233,39 +235,21 @@ const ProgressWheel = ({
           filter={isGold ? `url(#gold-glow-${safeId})` : undefined}
         />
 
-        {/* Over-achieve shimmer effects */}
+        {/* Over-achieve pulsing glow */}
         {isOverAchieve && (
-          <>
-            {/* Rotating shine highlight */}
-            <circle
-              cx={CENTER} cy={CENTER} r={RADIUS} fill="none" stroke="white" strokeWidth={2} strokeLinecap="round"
-              strokeDasharray={`${CIRCUMFERENCE * 0.08} ${CIRCUMFERENCE * 0.92}`}
-              transform={`rotate(-90 ${CENTER} ${CENTER})`}
-              opacity={0.2 + glowIntensity * 0.25}
-              className="animate-[spin_8s_linear_infinite]"
-              style={{ transformOrigin: `${CENTER}px ${CENTER}px` }}
-            />
-            {/* Second shimmer, opposite direction */}
-            <circle
-              cx={CENTER} cy={CENTER} r={RADIUS} fill="none" stroke={goldGlow} strokeWidth={1.5} strokeLinecap="round"
-              strokeDasharray={`${CIRCUMFERENCE * 0.05} ${CIRCUMFERENCE * 0.95}`}
-              transform={`rotate(90 ${CENTER} ${CENTER})`}
-              opacity={0.15 + glowIntensity * 0.2}
-              className="animate-[spin_12s_linear_infinite_reverse]"
-              style={{ transformOrigin: `${CENTER}px ${CENTER}px` }}
-            />
-            {/* Subtle pulsing glow */}
-            <circle
-              cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
-              stroke={goldGlow}
-              strokeWidth={STROKE}
-              strokeDasharray={CIRCUMFERENCE}
-              strokeDashoffset={0}
-              transform={rotation}
-              opacity={0}
-              className="animate-[gold-pulse_3s_ease-in-out_infinite]"
-            />
-          </>
+          <circle
+            cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
+            stroke={goldGlow}
+            strokeWidth={STROKE + 4}
+            strokeDasharray={CIRCUMFERENCE}
+            strokeDashoffset={0}
+            transform={rotation}
+            opacity={0}
+            className={glowIntensity > 0.5
+              ? 'animate-[gold-pulse-strong_2s_ease-in-out_infinite]'
+              : 'animate-[gold-pulse_3s_ease-in-out_infinite]'}
+            filter={`url(#gold-glow-${safeId})`}
+          />
         )}
 
         {/* Center text */}

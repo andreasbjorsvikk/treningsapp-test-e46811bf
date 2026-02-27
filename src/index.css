@@ -148,5 +148,10 @@
 
 @keyframes gold-pulse {
   0%, 100% { opacity: 0; }
-  50% { opacity: 0.15; }
+  50% { opacity: 0.2; }
+}
+
+@keyframes gold-pulse-strong {
+  0%, 100% { opacity: 0.05; }
+  50% { opacity: 0.35; }
 }
