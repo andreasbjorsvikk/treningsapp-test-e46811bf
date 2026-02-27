@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { WorkoutSession } from '@/types/workout';
 import { workoutService } from '@/services/workoutService';
 import { sessionTypeConfig } from '@/utils/workoutUtils';
+import ActivityIcon from '@/components/ActivityIcon';
 import { useSettings } from '@/contexts/SettingsContext';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -166,7 +167,6 @@ const CalendarPage = () => {
                 <div className="flex flex-wrap gap-[3px] mt-1.5 justify-center max-w-full">
                   {daySessions.slice(0, 3).map((s) => {
                     const config = sessionTypeConfig[s.type];
-                    const Icon = config.icon;
                     const typeColor = getTypeColor(s.type);
                     return (
                       <div
@@ -178,7 +178,7 @@ const CalendarPage = () => {
                         }}
                         title={config.label}
                       >
-                        <Icon className="w-2.5 h-2.5 md:w-3 md:h-3 text-primary-foreground" />
+                        <ActivityIcon type={s.type} className="w-2.5 h-2.5 md:w-3 md:h-3" />
                       </div>
                     );
                   })}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GoalMetric, GoalPeriod, SessionType, WorkoutGoal } from '@/types/workout';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
+import ActivityIcon from '@/components/ActivityIcon';
 import { Button } from '@/components/ui/button';
 
 interface GoalFormProps {
@@ -111,7 +112,6 @@ const GoalForm = ({ goal, onSave, onCancel }: GoalFormProps) => {
           </button>
           {allSessionTypes.map(type => {
             const config = sessionTypeConfig[type];
-            const Icon = config.icon;
             return (
               <button
                 key={type}
@@ -123,7 +123,7 @@ const GoalForm = ({ goal, onSave, onCancel }: GoalFormProps) => {
                     : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
+                <ActivityIcon type={type} className="w-3.5 h-3.5" />
                 {config.label}
               </button>
             );

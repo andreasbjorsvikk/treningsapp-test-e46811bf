@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { WorkoutSession, SessionType } from '@/types/workout';
 import { sessionTypeConfig, allSessionTypes } from '@/utils/workoutUtils';
 import { useSettings } from '@/contexts/SettingsContext';
+import ActivityIcon from '@/components/ActivityIcon';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -100,13 +101,12 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
               <SelectContent>
                 {allSessionTypes.map(t => {
                   const cfg = sessionTypeConfig[t];
-                  const Icon = cfg.icon;
                   const color = getTypeColor(t);
                   return (
                     <SelectItem key={t} value={t}>
                       <span className="flex items-center gap-2">
                         <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                        <Icon className="w-4 h-4" />
+                        <ActivityIcon type={t} className="w-4 h-4" />
                         {cfg.label}
                       </span>
                     </SelectItem>
