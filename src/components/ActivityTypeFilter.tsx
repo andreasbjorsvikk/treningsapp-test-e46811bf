@@ -1,0 +1,61 @@
+import { SessionType } from '@/types/workout';
+import { sessionTypeConfig, allSessionTypes } from '@/utils/workoutUtils';
+
+interface ActivityTypeFilterProps {
+  selected: SessionType[];
+  onToggle: (type: SessionType) => void;
+}
+
+const ActivityTypeFilter = ({ selected, onToggle }: ActivityTypeFilterProps) => {
+  const allSelected = selected.length === allSessionTypes.length;
+
+  const handleToggleAll = () => {
+    if (allSelected) {
+      // Deselect all — but keep at least the first
+      // Actually just select none to show "0" tiles
+      allSessionTypes.forEach((t) => {
+        if (selected.includes(t)) onToggle(t);
+      });
+    } else {
+      allSessionTypes.forEach((t) => {
+        if (!selected.includes(t)) onToggle(t);
+      });
+    }
+  };
+
+  return (
+    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+      <button
+        onClick={handleToggleAll}
+        className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+          allSelected
+            ? 'gradient-energy text-primary-foreground'
+            : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+        }`}
+      >
+        Alle
+      </button>
+      {allSessionTypes.map((type) => {
+        const config = sessionTypeConfig[type];
+        const Icon = config.icon;
+        const isActive = selected.includes(type);
+        return (
+          <button
+            key={type}
+            onClick={() => onToggle(type)}
+            className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              isActive
+                ? 'gradient-energy text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            }`}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {config.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+export default ActivityTypeFilter;
