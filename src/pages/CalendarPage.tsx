@@ -68,13 +68,13 @@ const SessionBadge = ({ session, size = 'md', isDark }: {
 }) => {
   const colors = getActivityColors(session.type, isDark);
   const sizeClasses = {
-    sm: 'w-8 h-8 md:w-7 md:h-7 lg:w-8 lg:h-8 rounded-[7px]',
-    md: 'w-11 h-11 md:w-9 md:h-9 lg:w-11 lg:h-11 rounded-lg',
+    sm: 'w-6 h-6 rounded-[5px]',
+    md: 'w-9 h-9 md:w-8 md:h-8 lg:w-10 lg:h-10 rounded-lg',
     lg: 'w-14 h-14 md:w-12 md:h-12 lg:w-16 lg:h-16 rounded-xl',
   };
   const iconSizes = {
-    sm: 'w-[22px] h-[22px] md:w-[18px] md:h-[18px] lg:w-[22px] lg:h-[22px]',
-    md: 'w-7 h-7 md:w-5 md:h-5 lg:w-7 lg:h-7',
+    sm: 'w-4 h-4',
+    md: 'w-6 h-6 md:w-5 md:h-5 lg:w-7 lg:h-7',
     lg: 'w-10 h-10 md:w-8 md:h-8 lg:w-11 lg:h-11',
   };
 
@@ -112,7 +112,7 @@ const CalendarPage = () => {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [, setRefresh] = useState(0);
 
-  const isDark = document.documentElement.classList.contains('dark');
+  const isDark = settings.darkMode;
 
   const allSessions = workoutService.getAll();
 
@@ -166,11 +166,12 @@ const CalendarPage = () => {
     </div>
   );
 
-  // Render a single-session cell content for desktop
+  // Render a single-session cell content for desktop/tablet
   const renderSingleDesktop = (s: WorkoutSession) => {
     const config = sessionTypeConfig[s.type];
     const colors = getActivityColors(s.type, isDark);
     const title = s.title || config.label;
+    const isTablet = !isMobile; // md breakpoint handled via CSS
     return (
       <div className="flex flex-col h-full w-full p-1.5 lg:p-2" style={{ color: colors.text }}>
         <div className="font-bold text-[11px] lg:text-sm leading-tight truncate mb-1">
@@ -178,7 +179,7 @@ const CalendarPage = () => {
         </div>
         <div className="flex items-start gap-1.5 mt-auto">
           <SessionBadge session={s} size="lg" isDark={isDark} />
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 hidden lg:block">
             {renderStats(s, colors.text)}
           </div>
         </div>
@@ -199,10 +200,10 @@ const CalendarPage = () => {
             className="flex-1 flex flex-col items-center justify-center p-1 lg:p-1.5 min-w-0"
             style={{ backgroundColor: colors.bg, color: colors.text }}
           >
-            <div className="font-bold text-[8px] lg:text-[10px] truncate w-full text-center mb-0.5 px-0.5">
+            <div className="font-bold text-[8px] lg:text-[11px] truncate w-full text-center mb-0.5 px-0.5">
               {title}
             </div>
-            <SessionBadge session={s} size="lg" isDark={isDark} />
+            <SessionBadge session={s} size="md" isDark={isDark} />
           </div>
         );
       })}
@@ -234,9 +235,53 @@ const CalendarPage = () => {
     </div>
   );
 
-  // Render mobile content (badges only)
-  const renderMobile = (sessions: WorkoutSession[]) => (
-    <div className="flex flex-wrap gap-[3px] justify-center mt-1">
+  // Render mobile content for multi-session cells
+  const renderMobileMulti = (sessions: WorkoutSession[]) => {
+    if (sessions.length === 2) {
+      return (
+        <div className="flex h-full w-full">
+          {sessions.slice(0, 2).map((s) => {
+            const colors = getActivityColors(s.type, isDark);
+            return (
+              <div
+                key={s.id}
+                className="flex-1 flex items-center justify-center"
+                style={{ backgroundColor: colors.bg }}
+              >
+                <SessionBadge session={s} size="sm" isDark={isDark} />
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+    // 3+ sessions: same layout as desktop triple
+    return (
+      <div className="flex flex-col h-full w-full">
+        <div
+          className="flex-1 flex items-center justify-center"
+          style={{ backgroundColor: getActivityColors(sessions[0].type, isDark).bg }}
+        >
+          <SessionBadge session={sessions[0]} size="sm" isDark={isDark} />
+        </div>
+        <div className="flex flex-1">
+          {sessions.slice(1, 3).map((s) => (
+            <div
+              key={s.id}
+              className="flex-1 flex items-center justify-center"
+              style={{ backgroundColor: getActivityColors(s.type, isDark).bg }}
+            >
+              <SessionBadge session={s} size="sm" isDark={isDark} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Render mobile single session
+  const renderMobileSingle = (sessions: WorkoutSession[]) => (
+    <div className="flex flex-wrap gap-[3px] justify-center mt-0">
       {sessions.slice(0, 4).map((s) => (
         <SessionBadge key={s.id} session={s} size="sm" isDark={isDark} />
       ))}
@@ -309,11 +354,9 @@ const CalendarPage = () => {
               {isMulti ? (
                 <>
                   {/* Full-bleed colored content */}
-                  <div className="absolute inset-0">
+                   <div className="absolute inset-0">
                     {isMobile ? (
-                      <div className="h-full w-full flex items-center justify-center" style={{ backgroundColor: getActivityColors(daySessions[0].type, isDark).bg }}>
-                        {renderMobile(daySessions)}
-                      </div>
+                      renderMobileMulti(daySessions)
                     ) : (
                       sessionCount === 2 ? renderTwoDesktop(daySessions) : renderThreeDesktop(daySessions)
                     )}
@@ -347,8 +390,8 @@ const CalendarPage = () => {
                   {sessionCount === 1 && (
                     <>
                       {isMobile ? (
-                        <div className="flex-1 flex items-center justify-center pt-4">
-                          {renderMobile(daySessions)}
+                        <div className="flex-1 flex items-center justify-center pt-2">
+                          {renderMobileSingle(daySessions)}
                         </div>
                       ) : (
                         <div className="flex-1 flex flex-col w-full pt-3">
