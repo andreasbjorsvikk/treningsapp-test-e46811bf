@@ -16,7 +16,7 @@ interface ProgressWheelProps {
 }
 
 const RADIUS = 70;
-const STROKE = 10;
+const STROKE = 14;
 const PADDING = 16; // extra space for glow
 const SIZE = (RADIUS + STROKE) * 2 + PADDING * 2;
 const CENTER = SIZE / 2;
@@ -165,7 +165,7 @@ const ProgressWheel = ({
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center gap-1 p-2 rounded-2xl glass-card hover:shadow-lg transition-all cursor-pointer overflow-visible"
+      className="flex flex-col items-center gap-1 p-2 rounded-2xl glass-card shadow-md hover:shadow-xl transition-all cursor-pointer overflow-visible"
       aria-label={label}
     >
       <span className="text-sm font-semibold text-foreground mb-1">{title}</span>
@@ -203,10 +203,14 @@ const ProgressWheel = ({
               </feMerge>
             </filter>
           )}
+          {/* Shadow under the ring for depth */}
+          <filter id={`ring-shadow-${safeId}`} x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="rgba(0,0,0,0.25)" />
+          </filter>
         </defs>
 
         {/* Background ring */}
-        <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none" stroke="hsl(var(--muted))" strokeWidth={STROKE} opacity={0.5} />
+        <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none" stroke="hsl(var(--muted))" strokeWidth={STROKE} opacity={0.3} />
 
         {/* Achievement pulse ring */}
         {showAchievement && (
@@ -232,7 +236,7 @@ const ProgressWheel = ({
           strokeDasharray={CIRCUMFERENCE}
           strokeDashoffset={finalOffset}
           transform={rotation}
-          filter={isGold ? `url(#gold-glow-${safeId})` : undefined}
+          filter={isGold ? `url(#gold-glow-${safeId})` : `url(#ring-shadow-${safeId})`}
         />
 
         {/* Over-achieve pulsing glow */}
