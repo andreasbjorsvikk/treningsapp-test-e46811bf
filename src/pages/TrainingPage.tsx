@@ -13,8 +13,12 @@ import TrendChart from '@/components/TrendChart';
 
 type SubTab = 'statistikk' | 'historikk' | 'mål';
 
-const TrainingPage = () => {
-  const [subTab, setSubTab] = useState<SubTab>('historikk');
+interface TrainingPageProps {
+  initialStatPeriod?: 'month' | 'year';
+}
+
+const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
+  const [subTab, setSubTab] = useState<SubTab>(initialStatPeriod ? 'statistikk' : 'historikk');
   const [filterType, setFilterType] = useState<SessionType | 'all'>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
@@ -22,7 +26,7 @@ const TrainingPage = () => {
 
   // Statistikk state
   const now = new Date();
-  const [period, setPeriod] = useState<Period>('7d');
+  const [period, setPeriod] = useState<Period>(initialStatPeriod || '7d');
   const [statMonth, setStatMonth] = useState(now.getMonth());
   const [statYear, setStatYear] = useState(now.getFullYear());
   const [selectedTypes, setSelectedTypes] = useState<SessionType[]>([...allSessionTypes]);

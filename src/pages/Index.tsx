@@ -1,6 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { WorkoutSession } from '@/types/workout';
 import { workoutService } from '@/services/workoutService';
+import { goalService } from '@/services/goalService';
+import { findGoalForPeriod, getSessionsInPeriod, computeProgress, metricLabels } from '@/utils/goalUtils';
 import AppHeader from '@/components/AppHeader';
 import BottomNav, { TabId } from '@/components/BottomNav';
 import StatsOverview from '@/components/StatsOverview';
@@ -10,6 +12,7 @@ import CalendarPage from '@/pages/CalendarPage';
 import TrainingPage from '@/pages/TrainingPage';
 import CommunityPage from '@/pages/CommunityPage';
 import SettingsPage from '@/pages/SettingsPage';
+import ProgressWheel from '@/components/ProgressWheel';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -18,9 +21,44 @@ const Index = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
   const [, setRefresh] = useState(0);
+  // For navigating to statistikk with a specific period
+  const [initialStatPeriod, setInitialStatPeriod] = useState<'month' | 'year' | undefined>();
 
   const stats = workoutService.getWeeklyStats();
-  const recentSessions = workoutService.getAll().slice(0, 5);
+  const allSessions = workoutService.getAll();
+  const recentSessions = allSessions.slice(0, 5);
+  const allGoals = goalService.getAll();
+
+  // Monthly wheel
+  const monthGoal = useMemo(() => findGoalForPeriod(allGoals, 'month'), [allGoals]);
+  const monthData = useMemo(() => {
+    if (!monthGoal) return { current: 0, target: 0, percent: 0, unit: '' };
+    const sessions = getSessionsInPeriod(allSessions, 'month', monthGoal.activityType);
+    const current = computeProgress(sessions, monthGoal.metric);
+    const target = monthGoal.target;
+    const percent = target === 0 ? 0 : (current / target) * 100;
+    return { current: Math.round(current * 10) / 10, target, percent, unit: metricLabels[monthGoal.metric] };
+  }, [allSessions, monthGoal]);
+
+  // Yearly wheel
+  const yearGoal = useMemo(() => findGoalForPeriod(allGoals, 'year'), [allGoals]);
+  const yearData = useMemo(() => {
+    if (!yearGoal) return { current: 0, target: 0, percent: 0, unit: '', paceStatus: 'on-track' as const };
+    const sessions = getSessionsInPeriod(allSessions, 'year', yearGoal.activityType);
+    const current = computeProgress(sessions, yearGoal.metric);
+    const target = yearGoal.target;
+    const percent = target === 0 ? 0 : (current / target) * 100;
+
+    // Pace calculation
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
+    const yearProgress = (now.getTime() - startOfYear.getTime()) / (endOfYear.getTime() - startOfYear.getTime()) * 100;
+    const diff = percent - yearProgress;
+    const paceStatus = diff > 2 ? 'ahead' as const : diff < -2 ? 'behind' as const : 'on-track' as const;
+
+    return { current: Math.round(current * 10) / 10, target, percent, unit: metricLabels[yearGoal.metric], paceStatus };
+  }, [allSessions, yearGoal]);
 
   const handleDelete = useCallback((id: string) => {
     workoutService.delete(id);
@@ -42,6 +80,11 @@ const Index = () => {
     setRefresh(r => r + 1);
   }, [editSession]);
 
+  const navigateToStats = (period: 'month' | 'year') => {
+    setInitialStatPeriod(period);
+    setActiveTab('trening');
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <AppHeader />
@@ -49,6 +92,31 @@ const Index = () => {
       <main className="container py-6 space-y-6">
         {activeTab === 'hjem' && (
           <>
+            {/* Progress Wheels */}
+            <section>
+              <div className="grid grid-cols-2 gap-3">
+                <ProgressWheel
+                  percent={monthData.percent}
+                  current={monthData.current}
+                  target={monthData.target}
+                  unit={monthData.unit}
+                  label="Denne måneden"
+                  hasGoal={!!monthGoal}
+                  onClick={() => navigateToStats('month')}
+                />
+                <ProgressWheel
+                  percent={yearData.percent}
+                  current={yearData.current}
+                  target={yearData.target}
+                  unit={yearData.unit}
+                  label="I år"
+                  hasGoal={!!yearGoal}
+                  paceStatus={yearData.paceStatus}
+                  onClick={() => navigateToStats('year')}
+                />
+              </div>
+            </section>
+
             <section>
               <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">
                 Siste 7 dager
@@ -76,7 +144,7 @@ const Index = () => {
         )}
 
         {activeTab === 'kalender' && <CalendarPage />}
-        {activeTab === 'trening' && <TrainingPage />}
+        {activeTab === 'trening' && <TrainingPage initialStatPeriod={initialStatPeriod} />}
         {activeTab === 'fellesskap' && <CommunityPage />}
         {activeTab === 'settings' && <SettingsPage />}
       </main>
@@ -91,7 +159,7 @@ const Index = () => {
         </button>
       )}
 
-      <BottomNav active={activeTab} onNavigate={setActiveTab} />
+      <BottomNav active={activeTab} onNavigate={(tab) => { setInitialStatPeriod(undefined); setActiveTab(tab); }} />
 
       <WorkoutDialog
         open={dialogOpen}
