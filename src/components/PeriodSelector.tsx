@@ -64,7 +64,7 @@ const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, on
           <button onClick={handlePrev} className="p-2 rounded-md hover:bg-secondary transition-colors">
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-sm font-medium">
+          <span className="text-xl font-display font-bold">
             {period === 'month' ? `${monthNames[month]} ${year}` : year}
           </span>
           <button onClick={handleNext} className="p-2 rounded-md hover:bg-secondary transition-colors">

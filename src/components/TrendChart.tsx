@@ -114,46 +114,54 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
     );
   };
 
+  // Always build a safe data array with at least placeholder entries
+  const safeData = useMemo(() => {
+    if (data.length > 0) return data;
+    // Return minimal placeholder so ResponsiveContainer doesn't collapse
+    return [{ label: '' }];
+  }, [data]);
+
   return (
-    <div className="glass-card rounded-lg p-3 flex flex-col h-full">
-      {!hasData ? (
-        <p className="text-center py-8 text-sm text-muted-foreground flex-1 flex items-center justify-center">Ingen data for denne perioden.</p>
-      ) : (
-        <div className="flex-1 min-h-[180px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} barCategoryGap="15%" margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 10 }}
-                className="fill-muted-foreground"
-                interval={isMobile && period === 'month' ? 4 : 0}
-                tickLine={false}
-                axisLine={false}
-                angle={period === 'month' && !isMobile ? -45 : 0}
-                textAnchor={period === 'month' && !isMobile ? 'end' : 'middle'}
-                height={period === 'month' && !isMobile ? 35 : 25}
+    <div className="glass-card rounded-lg p-3 flex flex-col h-full relative">
+      <div className="flex-1 min-h-[180px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={hasData ? data : safeData} barCategoryGap="15%" margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 10 }}
+              className="fill-muted-foreground"
+              interval={isMobile && period === 'month' ? 4 : 0}
+              tickLine={false}
+              axisLine={false}
+              angle={period === 'month' && !isMobile ? -45 : 0}
+              textAnchor={period === 'month' && !isMobile ? 'end' : 'middle'}
+              height={period === 'month' && !isMobile ? 35 : 25}
+            />
+            <YAxis
+              tick={{ fontSize: 10 }}
+              className="fill-muted-foreground"
+              tickLine={false}
+              axisLine={false}
+              width={isMobile ? 30 : 45}
+              tickFormatter={(v) => `${v}`}
+            />
+            {hasData && <Tooltip content={<CustomTooltip />} />}
+            {hasData && typeOrder.map((type) => (
+              <Bar
+                key={type}
+                dataKey={type}
+                stackId="stack"
+                fill={getTypeColor(type)}
+                radius={0}
               />
-              <YAxis
-                tick={{ fontSize: 10 }}
-                className="fill-muted-foreground"
-                tickLine={false}
-                axisLine={false}
-                width={isMobile ? 30 : 45}
-                tickFormatter={(v) => `${v}`}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              {typeOrder.map((type) => (
-                <Bar
-                  key={type}
-                  dataKey={type}
-                  stackId="stack"
-                  fill={getTypeColor(type)}
-                  radius={0}
-                />
-              ))}
-            </BarChart>
-          </ResponsiveContainer>
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      {!hasData && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <p className="text-sm text-muted-foreground">Ingen data for denne perioden.</p>
         </div>
       )}
     </div>

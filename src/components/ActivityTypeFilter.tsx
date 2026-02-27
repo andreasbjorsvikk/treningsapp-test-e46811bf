@@ -24,7 +24,7 @@ const ActivityTypeFilter = ({ selected, onToggle }: ActivityTypeFilterProps) => 
   };
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none justify-center flex-wrap">
       <button
         onClick={handleToggleAll}
         className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
