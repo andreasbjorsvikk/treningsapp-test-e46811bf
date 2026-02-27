@@ -14,7 +14,7 @@ function getMonthGrid(year: number, month: number, sundayStart: boolean) {
   const firstDay = new Date(year, month, 1);
   let startDay: number;
   if (sundayStart) {
-    startDay = firstDay.getDay(); // Sunday=0
+    startDay = firstDay.getDay();
   } else {
     startDay = firstDay.getDay() - 1;
     if (startDay < 0) startDay = 6;
@@ -25,7 +25,6 @@ function getMonthGrid(year: number, month: number, sundayStart: boolean) {
 
   const cells: { day: number; month: number; year: number; isCurrentMonth: boolean }[] = [];
 
-  // Previous month padding
   for (let i = startDay - 1; i >= 0; i--) {
     const d = prevMonthDays - i;
     const m = month === 0 ? 11 : month - 1;
@@ -33,12 +32,10 @@ function getMonthGrid(year: number, month: number, sundayStart: boolean) {
     cells.push({ day: d, month: m, year: y, isCurrentMonth: false });
   }
 
-  // Current month
   for (let d = 1; d <= daysInMonth; d++) {
     cells.push({ day: d, month, year, isCurrentMonth: true });
   }
 
-  // Next month padding to fill 6 rows (42 cells) or at least complete current row
   const remaining = 7 - (cells.length % 7);
   if (remaining < 7) {
     for (let i = 1; i <= remaining; i++) {
@@ -72,7 +69,6 @@ const CalendarPage = () => {
 
   const allSessions = workoutService.getAll();
 
-  // Group sessions by date key
   const sessionsByDate = useMemo(() => {
     const map = new Map<string, WorkoutSession[]>();
     allSessions.forEach(s => {
@@ -105,56 +101,69 @@ const CalendarPage = () => {
     <div className="space-y-4">
       {/* Month header */}
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="icon" onClick={prevMonth}>
+        <Button variant="ghost" size="icon" onClick={prevMonth} className="rounded-full hover:bg-primary/10">
           <ChevronLeft className="w-5 h-5" />
         </Button>
         <h2 className="font-display font-bold text-lg">
           {MONTH_NAMES[viewMonth]} {viewYear}
         </h2>
-        <Button variant="ghost" size="icon" onClick={nextMonth}>
+        <Button variant="ghost" size="icon" onClick={nextMonth} className="rounded-full hover:bg-primary/10">
           <ChevronRight className="w-5 h-5" />
         </Button>
       </div>
 
       {/* Weekday headers */}
-      <div className="grid grid-cols-7 gap-px">
+      <div className="grid grid-cols-7">
         {weekdays.map(d => (
-          <div key={d} className="text-center text-xs font-medium text-muted-foreground py-1.5">
+          <div key={d} className="text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-wider py-2">
             {d}
           </div>
         ))}
       </div>
 
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-px bg-border/30 rounded-lg overflow-hidden">
+      {/* Calendar grid - modern card style */}
+      <div className="grid grid-cols-7 gap-1 lg:gap-1.5">
         {grid.map((cell, i) => {
           const dateKey = toDateKey(cell.year, cell.month, cell.day);
           const daySessions = sessionsByDate.get(dateKey) || [];
           const isToday = dateKey === todayKey;
           const isSelected = dateKey === selectedDay;
+          const hasSessions = daySessions.length > 0;
 
           return (
             <button
               key={i}
               onClick={() => setSelectedDay(dateKey)}
               className={`
-                relative flex flex-col items-center p-1 min-h-[56px] md:min-h-[72px] transition-colors
-                ${cell.isCurrentMonth ? 'bg-card' : 'bg-muted/30'}
-                ${isSelected ? 'ring-2 ring-primary ring-inset' : ''}
-                hover:bg-accent/10
+                relative flex flex-col items-center rounded-xl p-1 min-h-[60px] md:min-h-[76px] transition-all duration-200
+                ${cell.isCurrentMonth
+                  ? 'bg-card shadow-sm hover:shadow-md hover:-translate-y-0.5'
+                  : 'bg-muted/20 opacity-50'
+                }
+                ${isSelected
+                  ? 'ring-2 ring-primary shadow-lg shadow-primary/20 scale-[1.02]'
+                  : ''
+                }
+                ${isToday && !isSelected
+                  ? 'ring-1 ring-primary/40'
+                  : ''
+                }
               `}
             >
               <span className={`
-                text-xs font-medium leading-none mt-1
-                ${!cell.isCurrentMonth ? 'text-muted-foreground/40' : ''}
-                ${isToday ? 'bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center' : ''}
+                text-xs font-semibold leading-none mt-1.5 transition-colors
+                ${!cell.isCurrentMonth ? 'text-muted-foreground/40' : 'text-foreground'}
+                ${isToday
+                  ? 'bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px]'
+                  : ''
+                }
               `}>
                 {cell.day}
               </span>
 
-              {/* Session type badges */}
-              {daySessions.length > 0 && (
-                <div className="flex flex-wrap gap-0.5 mt-1 justify-center max-w-full">
+              {/* Session type dots/badges */}
+              {hasSessions && (
+                <div className="flex flex-wrap gap-[3px] mt-1.5 justify-center max-w-full">
                   {daySessions.slice(0, 3).map((s) => {
                     const config = sessionTypeConfig[s.type];
                     const Icon = config.icon;
@@ -162,16 +171,19 @@ const CalendarPage = () => {
                     return (
                       <div
                         key={s.id}
-                        className="rounded-sm p-0.5"
-                        style={{ backgroundColor: typeColor }}
+                        className="rounded-md p-[3px] shadow-sm"
+                        style={{
+                          backgroundColor: typeColor,
+                          boxShadow: `0 2px 6px ${typeColor}40`,
+                        }}
                         title={config.label}
                       >
-                        <Icon className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
+                        <Icon className="w-2.5 h-2.5 md:w-3 md:h-3 text-primary-foreground" />
                       </div>
                     );
                   })}
                   {daySessions.length > 3 && (
-                    <span className="text-[9px] text-muted-foreground font-medium">
+                    <span className="text-[9px] text-muted-foreground font-bold bg-muted rounded-full w-4 h-4 flex items-center justify-center">
                       +{daySessions.length - 3}
                     </span>
                   )}
