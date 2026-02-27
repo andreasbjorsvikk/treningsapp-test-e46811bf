@@ -68,14 +68,14 @@ const SessionBadge = ({ session, size = 'md', isDark }: {
 }) => {
   const colors = getActivityColors(session.type, isDark);
   const sizeClasses = {
-    sm: 'w-8 h-8 rounded-[7px]',
-    md: 'w-11 h-11 rounded-lg',
-    lg: 'w-14 h-14 md:w-16 md:h-16 rounded-xl',
+    sm: 'w-8 h-8 md:w-7 md:h-7 lg:w-8 lg:h-8 rounded-[7px]',
+    md: 'w-11 h-11 md:w-9 md:h-9 lg:w-11 lg:h-11 rounded-lg',
+    lg: 'w-14 h-14 md:w-12 md:h-12 lg:w-16 lg:h-16 rounded-xl',
   };
   const iconSizes = {
-    sm: 'w-[22px] h-[22px]',
-    md: 'w-7 h-7',
-    lg: 'w-10 h-10 md:w-11 md:h-11',
+    sm: 'w-[22px] h-[22px] md:w-[18px] md:h-[18px] lg:w-[22px] lg:h-[22px]',
+    md: 'w-7 h-7 md:w-5 md:h-5 lg:w-7 lg:h-7',
+    lg: 'w-10 h-10 md:w-8 md:h-8 lg:w-11 lg:h-11',
   };
 
   const isStyrke = session.type === 'styrke';
@@ -146,7 +146,7 @@ const CalendarPage = () => {
 
   // Render session stats for desktop
   const renderStats = (s: WorkoutSession, textColor: string) => (
-    <div className="text-[10px] lg:text-[11px] leading-tight space-y-0.5" style={{ color: textColor, opacity: 0.85 }}>
+    <div className="text-[11px] lg:text-xs leading-snug space-y-0.5" style={{ color: textColor, opacity: 0.85 }}>
       {s.distance != null && (
         <div className="flex items-center gap-0.5">
           <Route className="w-2.5 h-2.5 opacity-60 shrink-0" />
