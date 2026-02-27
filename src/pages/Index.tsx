@@ -40,24 +40,23 @@ const Index = () => {
     return { current: Math.round(current * 10) / 10, target, percent, unit: metricLabels[monthGoal.metric] };
   }, [allSessions, monthGoal]);
 
-  // Yearly wheel
+  // Yearly wheel — pace mode
   const yearGoal = useMemo(() => findGoalForPeriod(allGoals, 'year'), [allGoals]);
   const yearData = useMemo(() => {
-    if (!yearGoal) return { current: 0, target: 0, percent: 0, unit: '', paceStatus: 'on-track' as const };
+    if (!yearGoal) return { current: 0, target: 0, diff: 0, expected: 0 };
     const sessions = getSessionsInPeriod(allSessions, 'year', yearGoal.activityType);
     const current = computeProgress(sessions, yearGoal.metric);
     const target = yearGoal.target;
-    const percent = target === 0 ? 0 : (current / target) * 100;
 
-    // Pace calculation
+    // Calculate expected progress based on how far into the year we are
     const now = new Date();
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
-    const yearProgress = (now.getTime() - startOfYear.getTime()) / (endOfYear.getTime() - startOfYear.getTime()) * 100;
-    const diff = percent - yearProgress;
-    const paceStatus = diff > 2 ? 'ahead' as const : diff < -2 ? 'behind' as const : 'on-track' as const;
+    const yearFraction = (now.getTime() - startOfYear.getTime()) / (endOfYear.getTime() - startOfYear.getTime());
+    const expected = target * yearFraction;
+    const diff = current - expected;
 
-    return { current: Math.round(current * 10) / 10, target, percent, unit: metricLabels[yearGoal.metric], paceStatus };
+    return { current: Math.round(current * 10) / 10, target, diff, expected };
   }, [allSessions, yearGoal]);
 
   const handleDelete = useCallback((id: string) => {
@@ -105,13 +104,13 @@ const Index = () => {
                   onClick={() => navigateToStats('month')}
                 />
                 <ProgressWheel
-                  percent={yearData.percent}
+                  percent={0}
                   current={yearData.current}
                   target={yearData.target}
-                  unit={yearData.unit}
+                  unit=""
                   label="I år"
                   hasGoal={!!yearGoal}
-                  paceStatus={yearData.paceStatus}
+                  paceMode={{ diff: yearData.diff, expected: yearData.expected }}
                   onClick={() => navigateToStats('year')}
                 />
               </div>
