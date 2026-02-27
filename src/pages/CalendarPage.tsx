@@ -343,8 +343,8 @@ const CalendarPage = () => {
         className="mb-4"
       >
         {/* Month header */}
-        <div className="glass-card rounded-2xl px-4 py-3 mb-2 text-center">
-          <h2 className="font-display font-bold text-lg">
+        <div className={`rounded-2xl px-4 py-3 mb-2 text-center ${isCurrentMonth ? 'bg-primary/10 border border-primary/30' : 'glass-card'}`}>
+          <h2 className={`font-display font-bold text-lg ${isCurrentMonth ? 'text-primary' : ''}`}>
             {MONTH_NAMES[monthData.month]} {monthData.year}
           </h2>
         </div>

@@ -2,41 +2,66 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { SessionType } from '@/types/workout';
 import { defaultTypeColors } from '@/utils/workoutUtils';
 
-export type AccentColor = 'orange' | 'blue' | 'green' | 'purple' | 'rose' | 'teal';
+export type AppColorTheme = 'orange' | 'blue' | 'green' | 'rose';
 export type FirstDayOfWeek = 'monday' | 'sunday';
 export type UnitSystem = 'metric' | 'imperial';
 
 export interface AppSettings {
   darkMode: boolean;
-  accentColor: AccentColor;
+  colorTheme: AppColorTheme;
   firstDayOfWeek: FirstDayOfWeek;
   unitSystem: UnitSystem;
   defaultSessionType: SessionType;
   sessionTypeColors: Record<SessionType, string>;
 }
 
+interface ThemeColors {
+  label: string;
+  swatch: string;
+  light: { background: string; card: string; border: string; muted: string };
+  dark: { background: string; card: string; border: string; muted: string };
+}
+
+export const APP_THEMES: Record<AppColorTheme, ThemeColors> = {
+  orange: {
+    label: 'Oransje',
+    swatch: 'hsl(30, 40%, 93%)',
+    light: { background: '30 30% 96%', card: '30 20% 99%', border: '30 15% 90%', muted: '30 15% 94%' },
+    dark: { background: '25 25% 9%', card: '25 20% 13%', border: '25 18% 18%', muted: '25 18% 15%' },
+  },
+  blue: {
+    label: 'Blå',
+    swatch: 'hsl(210, 40%, 93%)',
+    light: { background: '210 35% 96%', card: '210 25% 99%', border: '210 20% 90%', muted: '210 20% 94%' },
+    dark: { background: '215 30% 9%', card: '215 25% 13%', border: '215 20% 18%', muted: '215 20% 15%' },
+  },
+  green: {
+    label: 'Grønn',
+    swatch: 'hsl(150, 30%, 92%)',
+    light: { background: '150 25% 96%', card: '150 18% 99%', border: '150 15% 90%', muted: '150 15% 94%' },
+    dark: { background: '155 25% 9%', card: '155 20% 13%', border: '155 18% 18%', muted: '155 18% 15%' },
+  },
+  rose: {
+    label: 'Rosa',
+    swatch: 'hsl(340, 35%, 93%)',
+    light: { background: '340 30% 96%', card: '340 20% 99%', border: '340 15% 90%', muted: '340 15% 94%' },
+    dark: { background: '340 25% 9%', card: '340 20% 13%', border: '340 18% 18%', muted: '340 18% 15%' },
+  },
+};
+
 const defaultSettings: AppSettings = {
   darkMode: true,
-  accentColor: 'orange',
+  colorTheme: 'orange',
   firstDayOfWeek: 'monday',
   unitSystem: 'metric',
   defaultSessionType: 'styrke',
   sessionTypeColors: { ...defaultTypeColors },
 };
 
-const ACCENT_COLORS: Record<AccentColor, { label: string; hsl: string; glow: string; swatch: string }> = {
-  orange: { label: 'Oransje', hsl: '24 95% 53%', glow: '24 100% 60%', swatch: '#f97316' },
-  blue:   { label: 'Blå',     hsl: '217 91% 60%', glow: '217 100% 68%', swatch: '#3b82f6' },
-  green:  { label: 'Grønn',   hsl: '152 60% 42%', glow: '152 70% 50%', swatch: '#22c55e' },
-  purple: { label: 'Lilla',   hsl: '270 70% 55%', glow: '270 80% 65%', swatch: '#a855f7' },
-  rose:   { label: 'Rosa',    hsl: '340 75% 55%', glow: '340 85% 65%', swatch: '#f43f5e' },
-  teal:   { label: 'Teal',    hsl: '180 60% 40%', glow: '180 70% 50%', swatch: '#14b8a6' },
-};
-
 interface SettingsContextType {
   settings: AppSettings;
   updateSettings: (patch: Partial<AppSettings>) => void;
-  accentColors: typeof ACCENT_COLORS;
+  appThemes: typeof APP_THEMES;
   getTypeColor: (type: SessionType) => string;
 }
 
@@ -48,9 +73,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       const stored = localStorage.getItem('treningslogg_settings');
       if (stored) {
         const parsed = JSON.parse(stored);
+        // Migrate old accentColor to colorTheme
+        const colorTheme = parsed.colorTheme || parsed.accentColor || defaultSettings.colorTheme;
         return {
           ...defaultSettings,
           ...parsed,
+          colorTheme: ['orange', 'blue', 'green', 'rose'].includes(colorTheme) ? colorTheme : 'orange',
           sessionTypeColors: { ...defaultTypeColors, ...(parsed.sessionTypeColors || {}) },
         };
       }
@@ -63,15 +91,18 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     document.documentElement.classList.toggle('dark', settings.darkMode);
   }, [settings.darkMode]);
 
-  // Apply accent color CSS vars
+  // Apply color theme CSS vars
   useEffect(() => {
-    const accent = ACCENT_COLORS[settings.accentColor];
+    const theme = APP_THEMES[settings.colorTheme];
+    const mode = settings.darkMode ? theme.dark : theme.light;
     const root = document.documentElement;
-    root.style.setProperty('--primary', accent.hsl);
-    root.style.setProperty('--ring', accent.hsl);
-    root.style.setProperty('--energy', accent.hsl);
-    root.style.setProperty('--energy-glow', accent.glow);
-  }, [settings.accentColor]);
+    root.style.setProperty('--background', mode.background);
+    root.style.setProperty('--card', mode.card);
+    root.style.setProperty('--popover', mode.card);
+    root.style.setProperty('--border', mode.border);
+    root.style.setProperty('--input', mode.border);
+    root.style.setProperty('--muted', mode.muted);
+  }, [settings.colorTheme, settings.darkMode]);
 
   // Persist
   useEffect(() => {
@@ -87,7 +118,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings, accentColors: ACCENT_COLORS, getTypeColor }}>
+    <SettingsContext.Provider value={{ settings, updateSettings, appThemes: APP_THEMES, getTypeColor }}>
       {children}
     </SettingsContext.Provider>
   );
