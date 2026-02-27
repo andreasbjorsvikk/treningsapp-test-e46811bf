@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { WorkoutSession, SessionType } from '@/types/workout';
 import { sessionTypeConfig, allSessionTypes } from '@/utils/workoutUtils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -12,18 +12,57 @@ interface WorkoutDialogProps {
   open: boolean;
   onClose: () => void;
   onSave: (data: Omit<WorkoutSession, 'id'>) => void;
-  session?: WorkoutSession; // if editing
+  session?: WorkoutSession;
+  defaultDate?: string; // YYYY-MM-DD
 }
 
-const WorkoutDialog = ({ open, onClose, onSave, session }: WorkoutDialogProps) => {
+// Field visibility rules per type
+function getVisibleFields(type: SessionType) {
+  switch (type) {
+    case 'styrke':
+    case 'yoga':
+    case 'tennis':
+      return { distance: false, elevation: false };
+    case 'svømming':
+      return { distance: true, elevation: false };
+    case 'fjelltur':
+      return { distance: true, elevation: true };
+    case 'løping':
+    case 'sykling':
+    case 'gå':
+      return { distance: true, elevation: true }; // elevation optional
+    default:
+      return { distance: true, elevation: true };
+  }
+}
+
+const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutDialogProps) => {
   const [type, setType] = useState<SessionType>(session?.type || 'styrke');
   const [title, setTitle] = useState(session?.title || '');
-  const [date, setDate] = useState(session?.date?.slice(0, 16) || new Date().toISOString().slice(0, 16));
-  const [hours, setHours] = useState(session ? Math.floor(session.durationMinutes / 60).toString() : '0');
-  const [minutes, setMinutes] = useState(session ? (session.durationMinutes % 60).toString() : '30');
-  const [distance, setDistance] = useState(session?.distance?.toString() || '');
-  const [elevationGain, setElevationGain] = useState(session?.elevationGain?.toString() || '');
-  const [notes, setNotes] = useState(session?.notes || '');
+  const [date, setDate] = useState('');
+  const [hours, setHours] = useState('0');
+  const [minutes, setMinutes] = useState('30');
+  const [distance, setDistance] = useState('');
+  const [elevationGain, setElevationGain] = useState('');
+  const [notes, setNotes] = useState('');
+
+  // Reset form when dialog opens
+  useEffect(() => {
+    if (open) {
+      setType(session?.type || 'styrke');
+      setTitle(session?.title || '');
+      const dateVal = session?.date?.slice(0, 16)
+        || (defaultDate ? defaultDate + 'T12:00' : new Date().toISOString().slice(0, 16));
+      setDate(dateVal);
+      setHours(session ? Math.floor(session.durationMinutes / 60).toString() : '0');
+      setMinutes(session ? (session.durationMinutes % 60).toString() : '30');
+      setDistance(session?.distance?.toString() || '');
+      setElevationGain(session?.elevationGain?.toString() || '');
+      setNotes(session?.notes || '');
+    }
+  }, [open, session, defaultDate]);
+
+  const fields = getVisibleFields(type);
 
   const handleSave = () => {
     const durationMinutes = (parseInt(hours) || 0) * 60 + (parseInt(minutes) || 0);
@@ -34,8 +73,8 @@ const WorkoutDialog = ({ open, onClose, onSave, session }: WorkoutDialogProps) =
       title: title.trim() || undefined,
       date: new Date(date).toISOString(),
       durationMinutes,
-      distance: distance ? parseFloat(distance) : undefined,
-      elevationGain: elevationGain ? parseInt(elevationGain) : undefined,
+      distance: fields.distance && distance ? parseFloat(distance) : undefined,
+      elevationGain: fields.elevation && elevationGain ? parseInt(elevationGain) : undefined,
       notes: notes.trim() || undefined,
     });
     onClose();
@@ -43,13 +82,12 @@ const WorkoutDialog = ({ open, onClose, onSave, session }: WorkoutDialogProps) =
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{session ? 'Rediger økt' : 'Ny økt'}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Type */}
           <div className="space-y-1.5">
             <Label>Type</Label>
             <Select value={type} onValueChange={(v) => setType(v as SessionType)}>
@@ -57,28 +95,32 @@ const WorkoutDialog = ({ open, onClose, onSave, session }: WorkoutDialogProps) =
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {allSessionTypes.map(t => (
-                  <SelectItem key={t} value={t}>
-                    {sessionTypeConfig[t].label}
-                  </SelectItem>
-                ))}
+                {allSessionTypes.map(t => {
+                  const cfg = sessionTypeConfig[t];
+                  const Icon = cfg.icon;
+                  return (
+                    <SelectItem key={t} value={t}>
+                      <span className="flex items-center gap-2">
+                        <Icon className="w-4 h-4" />
+                        {cfg.label}
+                      </span>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Title */}
           <div className="space-y-1.5">
-            <Label>Navn på økt (valgfritt)</Label>
+            <Label>Navn på økt <span className="text-muted-foreground font-normal">(valgfritt)</span></Label>
             <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="F.eks. Morgenløp" />
           </div>
 
-          {/* Date */}
           <div className="space-y-1.5">
             <Label>Dato og tid</Label>
             <Input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} />
           </div>
 
-          {/* Duration */}
           <div className="space-y-1.5">
             <Label>Varighet</Label>
             <div className="flex gap-2 items-center">
@@ -89,21 +131,22 @@ const WorkoutDialog = ({ open, onClose, onSave, session }: WorkoutDialogProps) =
             </div>
           </div>
 
-          {/* Distance */}
-          <div className="space-y-1.5">
-            <Label>Distanse km (valgfritt)</Label>
-            <Input type="number" step="0.1" min="0" value={distance} onChange={e => setDistance(e.target.value)} placeholder="0.0" />
-          </div>
+          {fields.distance && (
+            <div className="space-y-1.5">
+              <Label>Distanse km <span className="text-muted-foreground font-normal">(valgfritt)</span></Label>
+              <Input type="number" step="0.1" min="0" value={distance} onChange={e => setDistance(e.target.value)} placeholder="0.0" />
+            </div>
+          )}
 
-          {/* Elevation */}
-          <div className="space-y-1.5">
-            <Label>Høydemeter (valgfritt)</Label>
-            <Input type="number" min="0" value={elevationGain} onChange={e => setElevationGain(e.target.value)} placeholder="0" />
-          </div>
+          {fields.elevation && (
+            <div className="space-y-1.5">
+              <Label>Høydemeter <span className="text-muted-foreground font-normal">(valgfritt)</span></Label>
+              <Input type="number" min="0" value={elevationGain} onChange={e => setElevationGain(e.target.value)} placeholder="0" />
+            </div>
+          )}
 
-          {/* Notes */}
           <div className="space-y-1.5">
-            <Label>Notater (valgfritt)</Label>
+            <Label>Notater <span className="text-muted-foreground font-normal">(valgfritt)</span></Label>
             <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Skriv notater her..." rows={3} />
           </div>
         </div>
