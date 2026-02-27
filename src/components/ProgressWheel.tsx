@@ -165,7 +165,7 @@ const ProgressWheel = ({
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center gap-1 p-2 rounded-2xl glass-card shadow-md hover:shadow-xl transition-all cursor-pointer overflow-visible"
+      className="flex flex-col items-center gap-1 p-2 rounded-2xl glass-card shadow-md hover:shadow-xl transition-all cursor-pointer overflow-visible flex-1 min-w-0"
       aria-label={label}
     >
       <span className="text-sm font-semibold text-foreground mb-1">{title}</span>
