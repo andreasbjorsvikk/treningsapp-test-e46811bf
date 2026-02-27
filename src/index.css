@@ -140,7 +140,13 @@
 }
 
 @keyframes achievement-pulse {
-  0% { opacity: 0.8; stroke-width: 10; }
-  50% { opacity: 0.5; stroke-width: 18; }
-  100% { opacity: 0; stroke-width: 26; }
+  0% { opacity: 0.9; stroke-width: 10; }
+  30% { opacity: 0.6; stroke-width: 20; }
+  60% { opacity: 0.3; stroke-width: 28; }
+  100% { opacity: 0; stroke-width: 34; }
+}
+
+@keyframes gold-pulse {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 0.15; }
 }
