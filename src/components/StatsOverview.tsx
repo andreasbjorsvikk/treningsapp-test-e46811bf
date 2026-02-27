@@ -1,4 +1,4 @@
-import { Activity, Flame, Clock, MapPin } from 'lucide-react';
+import { Activity, Clock, MapPin } from 'lucide-react';
 import { WeeklyStats } from '@/types/workout';
 import { formatDuration } from '@/utils/workoutUtils';
 
@@ -21,12 +21,6 @@ const StatsOverview = ({ stats }: StatsOverviewProps) => {
       accent: 'text-accent',
     },
     {
-      label: 'Kalorier',
-      value: stats.totalCalories.toLocaleString('nb-NO'),
-      icon: Flame,
-      accent: 'text-primary',
-    },
-    {
       label: 'Distanse',
       value: `${stats.totalDistance.toFixed(1)} km`,
       icon: MapPin,
@@ -35,12 +29,9 @@ const StatsOverview = ({ stats }: StatsOverviewProps) => {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div className="grid grid-cols-3 gap-3">
       {statCards.map((stat) => (
-        <div
-          key={stat.label}
-          className="glass-card rounded-lg p-4 animate-slide-up"
-        >
+        <div key={stat.label} className="glass-card rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
             <stat.icon className={`w-4 h-4 ${stat.accent}`} />
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">

@@ -1,8 +1,24 @@
 import { WorkoutSession, WeeklyStats, SessionType } from '@/types/workout';
 import { mockSessions } from '@/data/mockSessions';
+import { allSessionTypes } from '@/utils/workoutUtils';
 
-// In-memory store – will be replaced by DB calls later
-let sessions: WorkoutSession[] = [...mockSessions];
+const STORAGE_KEY = 'treningslogg_sessions';
+
+function loadSessions(): WorkoutSession[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch { /* ignore */ }
+  // First run: seed with mock data
+  saveSessions(mockSessions);
+  return [...mockSessions];
+}
+
+function saveSessions(sessions: WorkoutSession[]): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+}
+
+let sessions: WorkoutSession[] = loadSessions();
 
 export const workoutService = {
   getAll(): WorkoutSession[] {
@@ -17,34 +33,45 @@ export const workoutService = {
     return this.getAll().filter(s => s.type === type);
   },
 
+  getByDate(dateStr: string): WorkoutSession[] {
+    return this.getAll().filter(s => s.date.startsWith(dateStr));
+  },
+
   add(session: Omit<WorkoutSession, 'id'>): WorkoutSession {
     const newSession: WorkoutSession = {
       ...session,
       id: crypto.randomUUID(),
     };
     sessions = [newSession, ...sessions];
+    saveSessions(sessions);
     return newSession;
+  },
+
+  update(id: string, data: Partial<Omit<WorkoutSession, 'id'>>): WorkoutSession | undefined {
+    const idx = sessions.findIndex(s => s.id === id);
+    if (idx === -1) return undefined;
+    sessions[idx] = { ...sessions[idx], ...data };
+    saveSessions(sessions);
+    return sessions[idx];
   },
 
   delete(id: string): void {
     sessions = sessions.filter(s => s.id !== id);
+    saveSessions(sessions);
   },
 
   getWeeklyStats(): WeeklyStats {
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    
     const weekSessions = sessions.filter(s => new Date(s.date) >= weekAgo);
 
     const sessionsByType = {} as Record<SessionType, number>;
-    const allTypes: SessionType[] = ['strength', 'running', 'cycling', 'swimming', 'yoga', 'hiit', 'walking', 'skiing', 'other'];
-    allTypes.forEach(t => { sessionsByType[t] = 0; });
+    allSessionTypes.forEach(t => { sessionsByType[t] = 0; });
     weekSessions.forEach(s => { sessionsByType[s.type]++; });
 
     return {
       totalSessions: weekSessions.length,
       totalMinutes: weekSessions.reduce((sum, s) => sum + s.durationMinutes, 0),
-      totalCalories: weekSessions.reduce((sum, s) => sum + (s.caloriesBurned || 0), 0),
       totalDistance: weekSessions.reduce((sum, s) => sum + (s.distance || 0), 0),
       sessionsByType,
     };
