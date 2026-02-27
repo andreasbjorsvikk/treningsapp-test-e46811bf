@@ -35,3 +35,15 @@ export interface WeeklyStats {
   totalDistance: number;
   sessionsByType: Record<SessionType, number>;
 }
+
+export type GoalMetric = 'sessions' | 'minutes' | 'distance' | 'elevation';
+export type GoalPeriod = 'week' | 'month' | 'year';
+
+export interface WorkoutGoal {
+  id: string;
+  metric: GoalMetric;
+  period: GoalPeriod;
+  activityType: SessionType | 'all';
+  target: number;
+  createdAt: string;
+}

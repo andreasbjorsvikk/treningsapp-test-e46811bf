@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { SessionType, WorkoutSession } from '@/types/workout';
+import GoalsSection from '@/components/GoalsSection';
 import { workoutService } from '@/services/workoutService';
 import { allSessionTypes } from '@/utils/workoutUtils';
 import SessionCard from '@/components/SessionCard';
@@ -135,11 +136,7 @@ const TrainingPage = () => {
         </div>
       )}
 
-      {subTab === 'mål' && (
-        <div className="text-center py-12 text-muted-foreground">
-          <p className="text-sm">Mål-funksjonen kommer snart! 🎯</p>
-        </div>
-      )}
+      {subTab === 'mål' && <GoalsSection />}
 
       <WorkoutDialog
         open={dialogOpen}
