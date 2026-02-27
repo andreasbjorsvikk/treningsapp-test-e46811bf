@@ -90,8 +90,9 @@ const ProgressWheel = ({
   const clampedPercent = Math.max(0, percent);
   const animatedPercent = clampedPercent * animProgress;
   const displayPercent = Math.round(animatedPercent);
-  const isGold = !isPace && clampedPercent >= 100;
+  const isGold = !isPace && clampedPercent > 100;
   const isOverAchieve = !isPace && clampedPercent > 100;
+  const isComplete = !isPace && clampedPercent >= 100; // 100% = green, >100% = gold
 
   const standardOffset = useMemo(() => {
     const p = Math.min(clampedPercent, 100) / 100;
@@ -220,7 +221,7 @@ const ProgressWheel = ({
             <>
               <text x={CENTER} y={CENTER - 4} textAnchor="middle" dominantBaseline="central"
                 className="font-display font-bold" fontSize="22"
-                fill={isGold ? goldColor : 'hsl(var(--foreground))'}>
+                fill={isGold ? goldColor : isComplete ? 'hsl(120, 55%, 45%)' : 'hsl(var(--foreground))'}>
                 {displayPercent}%
               </text>
               <text x={CENTER} y={CENTER + 18} textAnchor="middle" dominantBaseline="central"
