@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { WorkoutSession } from '@/types/workout';
 import { workoutService } from '@/services/workoutService';
 import { sessionTypeConfig, formatDuration } from '@/utils/workoutUtils';
+import { getActivityColors } from '@/utils/activityColors';
 import ActivityIcon from '@/components/ActivityIcon';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -54,36 +55,18 @@ function toDateKey(year: number, month: number, day: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-// Generate light tint for light mode background
-function lightTint(hex: string, amount = 0.82): string {
-  const num = parseInt(hex.replace('#', ''), 16);
-  const r = Math.round((num >> 16) + (255 - (num >> 16)) * amount);
-  const g = Math.round(((num >> 8) & 0xff) + (255 - ((num >> 8) & 0xff)) * amount);
-  const b = Math.round((num & 0xff) + (255 - (num & 0xff)) * amount);
-  return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
-}
-
-// Generate muted dark tint for dark mode background
-function darkTint(hex: string, amount = 0.55): string {
-  const num = parseInt(hex.replace('#', ''), 16);
-  const r = Math.round((num >> 16) * amount);
-  const g = Math.round(((num >> 8) & 0xff) * amount);
-  const b = Math.round((num & 0xff) * amount);
-  return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
-}
-
 const MONTH_NAMES = [
   'Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni',
   'Juli', 'August', 'September', 'Oktober', 'November', 'Desember'
 ];
 
 // Badge component for a single session icon
-const SessionBadge = ({ session, size = 'md', getTypeColor }: { 
-  session: WorkoutSession; 
+const SessionBadge = ({ session, size = 'md', isDark }: {
+  session: WorkoutSession;
   size?: 'sm' | 'md' | 'lg';
-  getTypeColor: (type: string) => string;
+  isDark: boolean;
 }) => {
-  const color = getTypeColor(session.type);
+  const colors = getActivityColors(session.type, isDark);
   const sizeClasses = {
     sm: 'w-5 h-5 rounded-[5px]',
     md: 'w-7 h-7 rounded-lg',
@@ -98,7 +81,7 @@ const SessionBadge = ({ session, size = 'md', getTypeColor }: {
   return (
     <div
       className={`${sizeClasses[size]} flex items-center justify-center shrink-0`}
-      style={{ backgroundColor: color }}
+      style={{ backgroundColor: colors.badge }}
     >
       <ActivityIcon type={session.type} className={iconSizes[size]} />
     </div>
@@ -106,7 +89,7 @@ const SessionBadge = ({ session, size = 'md', getTypeColor }: {
 };
 
 const CalendarPage = () => {
-  const { settings, getTypeColor } = useSettings();
+  const { settings } = useSettings();
   const isMobile = useIsMobile();
   const sundayStart = settings.firstDayOfWeek === 'sunday';
   const weekdays = sundayStart ? WEEKDAYS_SUN : WEEKDAYS_MON;
@@ -116,7 +99,6 @@ const CalendarPage = () => {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [, setRefresh] = useState(0);
 
-  // Detect dark mode
   const isDark = document.documentElement.classList.contains('dark');
 
   const allSessions = workoutService.getAll();
@@ -149,11 +131,9 @@ const CalendarPage = () => {
 
   const selectedSessions = selectedDay ? (sessionsByDate.get(selectedDay) || []) : [];
 
-  const getBgColor = (hex: string) => isDark ? darkTint(hex) : lightTint(hex);
-
   // Render session stats for desktop
-  const renderStats = (s: WorkoutSession) => (
-    <div className="text-[9px] lg:text-[10px] leading-tight text-inherit opacity-80 space-y-0">
+  const renderStats = (s: WorkoutSession, textColor: string) => (
+    <div className="text-[9px] lg:text-[10px] leading-tight space-y-0" style={{ color: textColor, opacity: 0.85 }}>
       {s.distance != null && <div>{s.distance} km</div>}
       {s.elevationGain != null && <div>{s.elevationGain} m</div>}
       <div>{formatDuration(s.durationMinutes)}</div>
@@ -163,40 +143,40 @@ const CalendarPage = () => {
   // Render a single-session cell content for desktop
   const renderSingleDesktop = (s: WorkoutSession) => {
     const config = sessionTypeConfig[s.type];
+    const colors = getActivityColors(s.type, isDark);
     const title = s.title || config.label;
     return (
-      <div className="flex flex-col h-full w-full p-1.5 lg:p-2">
+      <div className="flex flex-col h-full w-full p-1.5 lg:p-2" style={{ color: colors.text }}>
         <div className="font-bold text-[10px] lg:text-xs leading-tight truncate mb-1">
           {title}
         </div>
         <div className="flex items-start gap-1.5 mt-auto">
-          <SessionBadge session={s} size="lg" getTypeColor={getTypeColor} />
+          <SessionBadge session={s} size="lg" isDark={isDark} />
           <div className="min-w-0 flex-1">
-            {renderStats(s)}
+            {renderStats(s, colors.text)}
           </div>
         </div>
       </div>
     );
   };
 
-  // Render two-session cell for desktop (split vertically)
+  // Render two-session cell for desktop (split vertically, full height)
   const renderTwoDesktop = (sessions: WorkoutSession[]) => (
     <div className="flex h-full w-full">
       {sessions.slice(0, 2).map((s) => {
         const config = sessionTypeConfig[s.type];
-        const color = getTypeColor(s.type);
-        const bg = getBgColor(color);
+        const colors = getActivityColors(s.type, isDark);
         const title = s.title || config.label;
         return (
           <div
             key={s.id}
-            className="flex-1 flex flex-col items-center p-1 lg:p-1.5 min-w-0"
-            style={{ backgroundColor: bg, color: isDark ? '#e5e5e5' : '#333' }}
+            className="flex-1 flex flex-col items-center justify-center p-1 lg:p-1.5 min-w-0"
+            style={{ backgroundColor: colors.bg, color: colors.text }}
           >
             <div className="font-bold text-[8px] lg:text-[9px] truncate w-full text-center mb-0.5">
-              {title.slice(0, 5)}..
+              {title.length > 5 ? title.slice(0, 5) + '..' : title}
             </div>
-            <SessionBadge session={s} size="md" getTypeColor={getTypeColor} />
+            <SessionBadge session={s} size="md" isDark={isDark} />
           </div>
         );
       })}
@@ -208,12 +188,12 @@ const CalendarPage = () => {
     <div className="flex flex-col h-full w-full">
       {/* Top row: first session on right */}
       <div className="flex flex-1">
-        <div className="flex-1" />
+        <div className="flex-1" style={{ backgroundColor: getActivityColors(sessions[1].type, isDark).bg }} />
         <div
           className="flex-1 flex items-center justify-center p-0.5"
-          style={{ backgroundColor: getBgColor(getTypeColor(sessions[0].type)) }}
+          style={{ backgroundColor: getActivityColors(sessions[0].type, isDark).bg }}
         >
-          <SessionBadge session={sessions[0]} size="sm" getTypeColor={getTypeColor} />
+          <SessionBadge session={sessions[0]} size="sm" isDark={isDark} />
         </div>
       </div>
       {/* Bottom row: two sessions */}
@@ -222,9 +202,9 @@ const CalendarPage = () => {
           <div
             key={s.id}
             className="flex-1 flex items-center justify-center p-0.5"
-            style={{ backgroundColor: getBgColor(getTypeColor(s.type)) }}
+            style={{ backgroundColor: getActivityColors(s.type, isDark).bg }}
           >
-            <SessionBadge session={s} size="sm" getTypeColor={getTypeColor} />
+            <SessionBadge session={s} size="sm" isDark={isDark} />
           </div>
         ))}
       </div>
@@ -235,7 +215,7 @@ const CalendarPage = () => {
   const renderMobile = (sessions: WorkoutSession[]) => (
     <div className="flex flex-wrap gap-[3px] justify-center mt-1">
       {sessions.slice(0, 4).map((s) => (
-        <SessionBadge key={s.id} session={s} size="sm" getTypeColor={getTypeColor} />
+        <SessionBadge key={s.id} session={s} size="sm" isDark={isDark} />
       ))}
     </div>
   );
@@ -273,14 +253,15 @@ const CalendarPage = () => {
           const isSelected = dateKey === selectedDay;
           const sessionCount = daySessions.length;
 
-          // Determine cell background
-          let cellBg: string | undefined;
-          let cellTextColor: string | undefined;
-          if (sessionCount === 1 && !isMobile) {
-            const color = getTypeColor(daySessions[0].type);
-            cellBg = getBgColor(color);
-            cellTextColor = isDark ? '#e5e5e5' : '#333';
+          // For single sessions, color the whole cell
+          let cellStyle: React.CSSProperties = {};
+          if (sessionCount === 1) {
+            const colors = getActivityColors(daySessions[0].type, isDark);
+            cellStyle = { backgroundColor: colors.bg, color: colors.text };
           }
+
+          // For multi-session cells, we let inner divs handle bg, so make cell bg transparent
+          const isMulti = sessionCount >= 2;
 
           return (
             <button
@@ -289,42 +270,69 @@ const CalendarPage = () => {
               className={`
                 relative flex flex-col rounded-lg overflow-hidden transition-all duration-150
                 ${isMobile ? 'min-h-[56px]' : 'min-h-[80px] lg:min-h-[100px]'}
-                ${cell.isCurrentMonth
-                  ? 'bg-card hover:brightness-95 dark:hover:brightness-110'
-                  : 'bg-muted/30 opacity-40'
+                ${!isMulti && sessionCount === 0
+                  ? (cell.isCurrentMonth
+                    ? 'bg-card hover:brightness-95 dark:hover:brightness-110'
+                    : 'bg-muted/30 opacity-40')
+                  : ''
                 }
+                ${!cell.isCurrentMonth && sessionCount === 0 ? 'opacity-40' : ''}
                 ${isSelected ? 'ring-2 ring-success' : ''}
                 ${isToday && !isSelected ? 'ring-1 ring-success/50' : ''}
               `}
-              style={cellBg ? { backgroundColor: cellBg, color: cellTextColor } : undefined}
+              style={!isMulti ? cellStyle : undefined}
             >
-              {/* Day number */}
-              <span className={`
-                text-[10px] lg:text-xs font-semibold absolute top-1 left-1.5 z-10
-                ${!cell.isCurrentMonth ? 'text-muted-foreground/40' : ''}
-                ${isToday
-                  ? 'bg-success text-success-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] static mt-1 ml-1'
-                  : ''
-                }
-              `}>
-                {cell.day}
-              </span>
-
-              {/* Session content */}
-              {sessionCount > 0 && (
+              {/* For multi-session cells, day number floats above colored sections */}
+              {isMulti ? (
                 <>
-                  {isMobile ? (
-                    // Mobile: badges only
-                    <div className="flex-1 flex items-center justify-center pt-4">
-                      {renderMobile(daySessions)}
-                    </div>
-                  ) : (
-                    // Desktop: full content
-                    <div className="flex-1 flex flex-col w-full pt-3">
-                      {sessionCount === 1 && renderSingleDesktop(daySessions[0])}
-                      {sessionCount === 2 && renderTwoDesktop(daySessions)}
-                      {sessionCount >= 3 && renderThreeDesktop(daySessions)}
-                    </div>
+                  {/* Full-bleed colored content */}
+                  <div className="absolute inset-0">
+                    {isMobile ? (
+                      <div className="h-full w-full flex items-center justify-center" style={{ backgroundColor: getActivityColors(daySessions[0].type, isDark).bg }}>
+                        {renderMobile(daySessions)}
+                      </div>
+                    ) : (
+                      sessionCount === 2 ? renderTwoDesktop(daySessions) : renderThreeDesktop(daySessions)
+                    )}
+                  </div>
+                  {/* Day number overlay */}
+                  <span className={`
+                    text-[10px] lg:text-xs font-semibold z-10
+                    ${isToday
+                      ? 'bg-success text-success-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] mt-1 ml-1'
+                      : 'mt-1 ml-1.5'
+                    }
+                  `} style={!isToday ? { color: isDark ? '#fff' : '#333' } : undefined}>
+                    {cell.day}
+                  </span>
+                </>
+              ) : (
+                <>
+                  {/* Day number */}
+                  <span className={`
+                    text-[10px] lg:text-xs font-semibold absolute top-1 left-1.5 z-10
+                    ${!cell.isCurrentMonth ? 'text-muted-foreground/40' : ''}
+                    ${isToday
+                      ? 'bg-success text-success-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] static mt-1 ml-1'
+                      : ''
+                    }
+                  `}>
+                    {cell.day}
+                  </span>
+
+                  {/* Session content */}
+                  {sessionCount === 1 && (
+                    <>
+                      {isMobile ? (
+                        <div className="flex-1 flex items-center justify-center pt-4">
+                          {renderMobile(daySessions)}
+                        </div>
+                      ) : (
+                        <div className="flex-1 flex flex-col w-full pt-3">
+                          {renderSingleDesktop(daySessions[0])}
+                        </div>
+                      )}
+                    </>
                   )}
                 </>
               )}
