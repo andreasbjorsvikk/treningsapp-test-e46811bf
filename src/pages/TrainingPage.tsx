@@ -159,8 +159,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
             year={statYear}
             onMonthChange={setStatMonth}
             onYearChange={setStatYear}
-          />
-          <ActivityTypeFilter selected={selectedTypes} onToggle={handleToggleType} />
+           />
           
           {/* Desktop: wheels left, stats right. Mobile: wheels above */}
           <div className="flex flex-col lg:flex-row lg:gap-6">
@@ -188,6 +187,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
             {/* Stats + Chart */}
             <div className="flex-1 flex flex-col gap-4 min-w-0">
               <StatsTiles sessions={statSessions} />
+              <ActivityTypeFilter selected={selectedTypes} onToggle={handleToggleType} />
               <MetricSelector selected={chartMetric} onSelect={setChartMetric} />
               <div className="flex-1 min-h-[200px]">
                 <TrendChart sessions={statSessions} period={period} month={statMonth} year={statYear} metric={chartMetric} />
