@@ -2,17 +2,23 @@ import { useState, useMemo, useCallback } from 'react';
 import { WorkoutSession } from '@/types/workout';
 import { workoutService } from '@/services/workoutService';
 import { sessionTypeConfig } from '@/utils/workoutUtils';
+import { useSettings } from '@/contexts/SettingsContext';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DayDrawer from '@/components/DayDrawer';
 
-const WEEKDAYS = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'];
+const WEEKDAYS_MON = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'];
+const WEEKDAYS_SUN = ['Søn', 'Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør'];
 
-function getMonthGrid(year: number, month: number) {
+function getMonthGrid(year: number, month: number, sundayStart: boolean) {
   const firstDay = new Date(year, month, 1);
-  // Monday=0 based
-  let startDay = firstDay.getDay() - 1;
-  if (startDay < 0) startDay = 6;
+  let startDay: number;
+  if (sundayStart) {
+    startDay = firstDay.getDay(); // Sunday=0
+  } else {
+    startDay = firstDay.getDay() - 1;
+    if (startDay < 0) startDay = 6;
+  }
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const prevMonthDays = new Date(year, month, 0).getDate();
@@ -55,6 +61,9 @@ const MONTH_NAMES = [
 ];
 
 const CalendarPage = () => {
+  const { settings } = useSettings();
+  const sundayStart = settings.firstDayOfWeek === 'sunday';
+  const weekdays = sundayStart ? WEEKDAYS_SUN : WEEKDAYS_MON;
   const now = new Date();
   const [viewYear, setViewYear] = useState(now.getFullYear());
   const [viewMonth, setViewMonth] = useState(now.getMonth());
@@ -74,7 +83,7 @@ const CalendarPage = () => {
     return map;
   }, [allSessions]);
 
-  const grid = useMemo(() => getMonthGrid(viewYear, viewMonth), [viewYear, viewMonth]);
+  const grid = useMemo(() => getMonthGrid(viewYear, viewMonth, sundayStart), [viewYear, viewMonth, sundayStart]);
 
   const todayKey = toDateKey(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -109,7 +118,7 @@ const CalendarPage = () => {
 
       {/* Weekday headers */}
       <div className="grid grid-cols-7 gap-px">
-        {WEEKDAYS.map(d => (
+        {weekdays.map(d => (
           <div key={d} className="text-center text-xs font-medium text-muted-foreground py-1.5">
             {d}
           </div>
