@@ -1,9 +1,10 @@
 import { useState, useMemo, useCallback } from 'react';
 import { WorkoutSession } from '@/types/workout';
 import { workoutService } from '@/services/workoutService';
-import { sessionTypeConfig } from '@/utils/workoutUtils';
+import { sessionTypeConfig, formatDuration } from '@/utils/workoutUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DayDrawer from '@/components/DayDrawer';
@@ -53,13 +54,60 @@ function toDateKey(year: number, month: number, day: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
+// Generate light tint for light mode background
+function lightTint(hex: string, amount = 0.82): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.round((num >> 16) + (255 - (num >> 16)) * amount);
+  const g = Math.round(((num >> 8) & 0xff) + (255 - ((num >> 8) & 0xff)) * amount);
+  const b = Math.round((num & 0xff) + (255 - (num & 0xff)) * amount);
+  return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
+}
+
+// Generate muted dark tint for dark mode background
+function darkTint(hex: string, amount = 0.55): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.round((num >> 16) * amount);
+  const g = Math.round(((num >> 8) & 0xff) * amount);
+  const b = Math.round((num & 0xff) * amount);
+  return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
+}
+
 const MONTH_NAMES = [
   'Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni',
   'Juli', 'August', 'September', 'Oktober', 'November', 'Desember'
 ];
 
+// Badge component for a single session icon
+const SessionBadge = ({ session, size = 'md', getTypeColor }: { 
+  session: WorkoutSession; 
+  size?: 'sm' | 'md' | 'lg';
+  getTypeColor: (type: string) => string;
+}) => {
+  const color = getTypeColor(session.type);
+  const sizeClasses = {
+    sm: 'w-5 h-5 rounded-[5px]',
+    md: 'w-7 h-7 rounded-lg',
+    lg: 'w-9 h-9 md:w-10 md:h-10 rounded-lg',
+  };
+  const iconSizes = {
+    sm: 'w-3 h-3',
+    md: 'w-4 h-4',
+    lg: 'w-5 h-5 md:w-6 md:h-6',
+  };
+
+  return (
+    <div
+      className={`${sizeClasses[size]} flex items-center justify-center shrink-0`}
+      style={{ backgroundColor: color }}
+    >
+      <ActivityIcon type={session.type} className={iconSizes[size]} />
+    </div>
+  );
+};
+
 const CalendarPage = () => {
   const { settings, getTypeColor } = useSettings();
+  const isMobile = useIsMobile();
   const sundayStart = settings.firstDayOfWeek === 'sunday';
   const weekdays = sundayStart ? WEEKDAYS_SUN : WEEKDAYS_MON;
   const now = new Date();
@@ -67,6 +115,9 @@ const CalendarPage = () => {
   const [viewMonth, setViewMonth] = useState(now.getMonth());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [, setRefresh] = useState(0);
+
+  // Detect dark mode
+  const isDark = document.documentElement.classList.contains('dark');
 
   const allSessions = workoutService.getAll();
 
@@ -98,10 +149,101 @@ const CalendarPage = () => {
 
   const selectedSessions = selectedDay ? (sessionsByDate.get(selectedDay) || []) : [];
 
+  const getBgColor = (hex: string) => isDark ? darkTint(hex) : lightTint(hex);
+
+  // Render session stats for desktop
+  const renderStats = (s: WorkoutSession) => (
+    <div className="text-[9px] lg:text-[10px] leading-tight text-inherit opacity-80 space-y-0">
+      {s.distance != null && <div>{s.distance} km</div>}
+      {s.elevationGain != null && <div>{s.elevationGain} m</div>}
+      <div>{formatDuration(s.durationMinutes)}</div>
+    </div>
+  );
+
+  // Render a single-session cell content for desktop
+  const renderSingleDesktop = (s: WorkoutSession) => {
+    const config = sessionTypeConfig[s.type];
+    const title = s.title || config.label;
+    return (
+      <div className="flex flex-col h-full w-full p-1.5 lg:p-2">
+        <div className="font-bold text-[10px] lg:text-xs leading-tight truncate mb-1">
+          {title}
+        </div>
+        <div className="flex items-start gap-1.5 mt-auto">
+          <SessionBadge session={s} size="lg" getTypeColor={getTypeColor} />
+          <div className="min-w-0 flex-1">
+            {renderStats(s)}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Render two-session cell for desktop (split vertically)
+  const renderTwoDesktop = (sessions: WorkoutSession[]) => (
+    <div className="flex h-full w-full">
+      {sessions.slice(0, 2).map((s) => {
+        const config = sessionTypeConfig[s.type];
+        const color = getTypeColor(s.type);
+        const bg = getBgColor(color);
+        const title = s.title || config.label;
+        return (
+          <div
+            key={s.id}
+            className="flex-1 flex flex-col items-center p-1 lg:p-1.5 min-w-0"
+            style={{ backgroundColor: bg, color: isDark ? '#e5e5e5' : '#333' }}
+          >
+            <div className="font-bold text-[8px] lg:text-[9px] truncate w-full text-center mb-0.5">
+              {title.slice(0, 5)}..
+            </div>
+            <SessionBadge session={s} size="md" getTypeColor={getTypeColor} />
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  // Render three-session cell for desktop
+  const renderThreeDesktop = (sessions: WorkoutSession[]) => (
+    <div className="flex flex-col h-full w-full">
+      {/* Top row: first session on right */}
+      <div className="flex flex-1">
+        <div className="flex-1" />
+        <div
+          className="flex-1 flex items-center justify-center p-0.5"
+          style={{ backgroundColor: getBgColor(getTypeColor(sessions[0].type)) }}
+        >
+          <SessionBadge session={sessions[0]} size="sm" getTypeColor={getTypeColor} />
+        </div>
+      </div>
+      {/* Bottom row: two sessions */}
+      <div className="flex flex-1">
+        {sessions.slice(1, 3).map((s) => (
+          <div
+            key={s.id}
+            className="flex-1 flex items-center justify-center p-0.5"
+            style={{ backgroundColor: getBgColor(getTypeColor(s.type)) }}
+          >
+            <SessionBadge session={s} size="sm" getTypeColor={getTypeColor} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Render mobile content (badges only)
+  const renderMobile = (sessions: WorkoutSession[]) => (
+    <div className="flex flex-wrap gap-[3px] justify-center mt-1">
+      {sessions.slice(0, 4).map((s) => (
+        <SessionBadge key={s.id} session={s} size="sm" getTypeColor={getTypeColor} />
+      ))}
+    </div>
+  );
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Month header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between glass-card rounded-2xl px-4 py-3">
         <Button variant="ghost" size="icon" onClick={prevMonth} className="rounded-full hover:bg-primary/10">
           <ChevronLeft className="w-5 h-5" />
         </Button>
@@ -116,78 +258,75 @@ const CalendarPage = () => {
       {/* Weekday headers */}
       <div className="grid grid-cols-7">
         {weekdays.map(d => (
-          <div key={d} className="text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-wider py-2">
+          <div key={d} className="text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-wider py-1.5">
             {d}
           </div>
         ))}
       </div>
 
-      {/* Calendar grid - modern card style */}
-      <div className="grid grid-cols-7 gap-1 lg:gap-1.5">
+      {/* Calendar grid */}
+      <div className="grid grid-cols-7 gap-[3px] lg:gap-1">
         {grid.map((cell, i) => {
           const dateKey = toDateKey(cell.year, cell.month, cell.day);
           const daySessions = sessionsByDate.get(dateKey) || [];
           const isToday = dateKey === todayKey;
           const isSelected = dateKey === selectedDay;
-          const hasSessions = daySessions.length > 0;
+          const sessionCount = daySessions.length;
+
+          // Determine cell background
+          let cellBg: string | undefined;
+          let cellTextColor: string | undefined;
+          if (sessionCount === 1 && !isMobile) {
+            const color = getTypeColor(daySessions[0].type);
+            cellBg = getBgColor(color);
+            cellTextColor = isDark ? '#e5e5e5' : '#333';
+          }
 
           return (
             <button
               key={i}
               onClick={() => setSelectedDay(dateKey)}
               className={`
-                relative flex flex-col items-center rounded-xl p-1 min-h-[60px] md:min-h-[76px] transition-all duration-200
+                relative flex flex-col rounded-lg overflow-hidden transition-all duration-150
+                ${isMobile ? 'min-h-[56px]' : 'min-h-[80px] lg:min-h-[100px]'}
                 ${cell.isCurrentMonth
-                  ? 'bg-card shadow-sm hover:shadow-md hover:-translate-y-0.5'
-                  : 'bg-muted/20 opacity-50'
+                  ? 'bg-card hover:brightness-95 dark:hover:brightness-110'
+                  : 'bg-muted/30 opacity-40'
                 }
-                ${isSelected
-                  ? 'ring-2 ring-primary shadow-lg shadow-primary/20 scale-[1.02]'
-                  : ''
-                }
-                ${isToday && !isSelected
-                  ? 'ring-1 ring-primary/40'
-                  : ''
-                }
+                ${isSelected ? 'ring-2 ring-success' : ''}
+                ${isToday && !isSelected ? 'ring-1 ring-success/50' : ''}
               `}
+              style={cellBg ? { backgroundColor: cellBg, color: cellTextColor } : undefined}
             >
+              {/* Day number */}
               <span className={`
-                text-xs font-semibold leading-none mt-1.5 transition-colors
-                ${!cell.isCurrentMonth ? 'text-muted-foreground/40' : 'text-foreground'}
+                text-[10px] lg:text-xs font-semibold absolute top-1 left-1.5 z-10
+                ${!cell.isCurrentMonth ? 'text-muted-foreground/40' : ''}
                 ${isToday
-                  ? 'bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px]'
+                  ? 'bg-success text-success-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] static mt-1 ml-1'
                   : ''
                 }
               `}>
                 {cell.day}
               </span>
 
-              {/* Session type dots/badges */}
-              {hasSessions && (
-                <div className="flex flex-wrap gap-[3px] mt-1.5 justify-center max-w-full">
-                  {daySessions.slice(0, 3).map((s) => {
-                    const config = sessionTypeConfig[s.type];
-                    const typeColor = getTypeColor(s.type);
-                    return (
-                      <div
-                        key={s.id}
-                        className="rounded-md p-[3px] shadow-sm"
-                        style={{
-                          backgroundColor: typeColor,
-                          boxShadow: `0 2px 6px ${typeColor}40`,
-                        }}
-                        title={config.label}
-                      >
-                        <ActivityIcon type={s.type} className="w-2.5 h-2.5 md:w-3 md:h-3" />
-                      </div>
-                    );
-                  })}
-                  {daySessions.length > 3 && (
-                    <span className="text-[9px] text-muted-foreground font-bold bg-muted rounded-full w-4 h-4 flex items-center justify-center">
-                      +{daySessions.length - 3}
-                    </span>
+              {/* Session content */}
+              {sessionCount > 0 && (
+                <>
+                  {isMobile ? (
+                    // Mobile: badges only
+                    <div className="flex-1 flex items-center justify-center pt-4">
+                      {renderMobile(daySessions)}
+                    </div>
+                  ) : (
+                    // Desktop: full content
+                    <div className="flex-1 flex flex-col w-full pt-3">
+                      {sessionCount === 1 && renderSingleDesktop(daySessions[0])}
+                      {sessionCount === 2 && renderTwoDesktop(daySessions)}
+                      {sessionCount >= 3 && renderThreeDesktop(daySessions)}
+                    </div>
                   )}
-                </div>
+                </>
               )}
             </button>
           );
