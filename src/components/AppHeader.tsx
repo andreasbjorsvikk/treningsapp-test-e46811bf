@@ -1,8 +1,12 @@
 import { Activity } from 'lucide-react';
 
-const AppHeader = () => {
+interface AppHeaderProps {
+  className?: string;
+}
+
+const AppHeader = ({ className }: AppHeaderProps) => {
   return (
-    <header className="glass-card sticky top-0 z-10 border-b border-border/50">
+    <header className={`glass-card sticky top-0 z-10 border-b border-border/50 ${className || ''}`}>
       <div className="container flex items-center justify-between h-14">
         <div className="flex items-center gap-2.5">
           <div className="gradient-energy rounded-lg p-1.5">

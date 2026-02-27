@@ -5,7 +5,7 @@ interface ProgressWheelProps {
   current: number;
   target: number;
   unit: string;
-  label: string;
+  label?: string;
   title: string;
   hasGoal: boolean;
   onClick?: () => void;
@@ -150,7 +150,7 @@ const ProgressWheel = ({
   const offset = isPace ? paceOffset : animatedStandardOffset;
   const percentColor = !isPace ? getPercentColor(isPace ? 0 : animatedValue) : '';
 
-  const safeId = label.replace(/\s+/g, '-');
+  const safeId = (label || title).replace(/\s+/g, '-');
   const strokeColor = isPace
     ? diffColor
     : isGold
@@ -290,9 +290,11 @@ const ProgressWheel = ({
         )}
       </svg>
 
-      <span className="text-xs font-medium text-muted-foreground">
-        {isPace && hasGoal ? paceLabel : label}
-      </span>
+      {label && (
+        <span className="text-xs font-medium text-muted-foreground">
+          {isPace && hasGoal ? paceLabel : label}
+        </span>
+      )}
     </button>
   );
 };
