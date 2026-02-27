@@ -1,11 +1,10 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-export type Period = '7d' | 'month' | 'year';
+export type Period = 'month' | 'year' | 'total';
 
 interface PeriodSelectorProps {
   period: Period;
   onPeriodChange: (p: Period) => void;
-  /** For month: 0-11, for year: full year */
   month: number;
   year: number;
   onMonthChange: (m: number) => void;
@@ -18,9 +17,9 @@ const monthNames = [
 ];
 
 const periods: { id: Period; label: string }[] = [
-  { id: '7d', label: '7 dager' },
   { id: 'month', label: 'Måned' },
   { id: 'year', label: 'År' },
+  { id: 'total', label: 'Total' },
 ];
 
 const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, onYearChange }: PeriodSelectorProps) => {
@@ -44,7 +43,6 @@ const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, on
 
   return (
     <div className="space-y-3">
-      {/* Period tabs */}
       <div className="flex gap-1 bg-secondary rounded-lg p-1">
         {periods.map((p) => (
           <button
@@ -61,8 +59,7 @@ const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, on
         ))}
       </div>
 
-      {/* Month/Year navigator */}
-      {period !== '7d' && (
+      {period !== 'total' && (
         <div className="flex items-center justify-between">
           <button onClick={handlePrev} className="p-2 rounded-md hover:bg-secondary transition-colors">
             <ChevronLeft className="w-4 h-4" />

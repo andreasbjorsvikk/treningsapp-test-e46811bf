@@ -4,7 +4,7 @@ import GoalsSection from '@/components/GoalsSection';
 import { workoutService } from '@/services/workoutService';
 import { goalService } from '@/services/goalService';
 import { allSessionTypes } from '@/utils/workoutUtils';
-import { findGoalForPeriod, getSessionsInPeriod, computeProgress, metricLabels } from '@/utils/goalUtils';
+import { findGoalForPeriod, computeProgress, metricLabels } from '@/utils/goalUtils';
 import SessionCard from '@/components/SessionCard';
 import TypeFilter from '@/components/TypeFilter';
 import WorkoutDialog from '@/components/WorkoutDialog';
@@ -13,12 +13,18 @@ import ActivityTypeFilter from '@/components/ActivityTypeFilter';
 import StatsTiles from '@/components/StatsTiles';
 import TrendChart from '@/components/TrendChart';
 import ProgressWheel from '@/components/ProgressWheel';
+import MetricSelector, { ChartMetric } from '@/components/MetricSelector';
 
 type SubTab = 'statistikk' | 'historikk' | 'mål';
 
 interface TrainingPageProps {
   initialStatPeriod?: 'month' | 'year';
 }
+
+const monthNames = [
+  'Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni',
+  'Juli', 'August', 'September', 'Oktober', 'November', 'Desember',
+];
 
 const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
   const [subTab, setSubTab] = useState<SubTab>(initialStatPeriod ? 'statistikk' : 'historikk');
@@ -27,58 +33,64 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
   const [, setRefresh] = useState(0);
 
-  // Statistikk state
   const now = new Date();
-  const [period, setPeriod] = useState<Period>(initialStatPeriod || '7d');
+  const [period, setPeriod] = useState<Period>(initialStatPeriod || 'month');
   const [statMonth, setStatMonth] = useState(now.getMonth());
   const [statYear, setStatYear] = useState(now.getFullYear());
   const [selectedTypes, setSelectedTypes] = useState<SessionType[]>([...allSessionTypes]);
+  const [chartMetric, setChartMetric] = useState<ChartMetric>('minutes');
 
   const allSessions = workoutService.getAll();
   const allGoals = goalService.getAll();
   const filtered = filterType === 'all' ? allSessions : allSessions.filter(s => s.type === filterType);
 
-  // Progress wheel data
+  // Progress wheel data — synced with period selector month/year
   const monthGoal = useMemo(() => findGoalForPeriod(allGoals, 'month'), [allGoals]);
   const monthData = useMemo(() => {
     if (!monthGoal) return { current: 0, target: 0, percent: 0, unit: '' };
-    const sessions = getSessionsInPeriod(allSessions, 'month', monthGoal.activityType);
+    const sessions = allSessions.filter(s => {
+      const d = new Date(s.date);
+      return d.getMonth() === statMonth && d.getFullYear() === statYear &&
+        (monthGoal.activityType === 'all' || s.type === monthGoal.activityType);
+    });
     const current = computeProgress(sessions, monthGoal.metric);
     const target = monthGoal.target;
     const percent = target === 0 ? 0 : (current / target) * 100;
     return { current: Math.round(current * 10) / 10, target, percent, unit: metricLabels[monthGoal.metric] };
-  }, [allSessions, monthGoal]);
+  }, [allSessions, monthGoal, statMonth, statYear]);
 
   const yearGoal = useMemo(() => findGoalForPeriod(allGoals, 'year'), [allGoals]);
   const yearData = useMemo(() => {
     if (!yearGoal) return { current: 0, target: 0, diff: 0, expected: 0, unit: '' };
-    const sessions = getSessionsInPeriod(allSessions, 'year', yearGoal.activityType);
+    const sessions = allSessions.filter(s => {
+      const d = new Date(s.date);
+      return d.getFullYear() === statYear &&
+        (yearGoal.activityType === 'all' || s.type === yearGoal.activityType);
+    });
     const current = computeProgress(sessions, yearGoal.metric);
     const target = yearGoal.target;
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
-    const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
-    const yearFraction = (now.getTime() - startOfYear.getTime()) / (endOfYear.getTime() - startOfYear.getTime());
+    const startOfYear = new Date(statYear, 0, 1);
+    const endOfYear = new Date(statYear + 1, 0, 1);
+    const refDate = statYear === now.getFullYear() ? now : endOfYear;
+    const yearFraction = (refDate.getTime() - startOfYear.getTime()) / (endOfYear.getTime() - startOfYear.getTime());
     const expected = target * yearFraction;
     const diff = current - expected;
     return { current: Math.round(current * 10) / 10, target, diff, expected, unit: metricLabels[yearGoal.metric] };
-  }, [allSessions, yearGoal]);
+  }, [allSessions, yearGoal, statYear]);
 
   // Filter sessions for statistikk
   const statSessions = useMemo(() => {
     let sessions = allSessions.filter(s => selectedTypes.includes(s.type));
 
-    if (period === '7d') {
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - 7);
-      sessions = sessions.filter(s => new Date(s.date) >= cutoff);
-    } else if (period === 'month') {
+    if (period === 'month') {
       sessions = sessions.filter(s => {
         const d = new Date(s.date);
         return d.getMonth() === statMonth && d.getFullYear() === statYear;
       });
-    } else {
+    } else if (period === 'year') {
       sessions = sessions.filter(s => new Date(s.date).getFullYear() === statYear);
     }
+    // 'total' = no date filtering
 
     return sessions;
   }, [allSessions, selectedTypes, period, statMonth, statYear]);
@@ -159,7 +171,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
                 current={monthData.current}
                 target={monthData.target}
                 unit={monthData.unit}
-                title={new Date().toLocaleString('nb-NO', { month: 'long' }).replace(/^./, c => c.toUpperCase())}
+                title={`${monthNames[statMonth]} ${statYear}`}
                 hasGoal={!!monthGoal}
               />
               <ProgressWheel
@@ -167,7 +179,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
                 current={yearData.current}
                 target={yearData.target}
                 unit={yearData.unit}
-                title={String(new Date().getFullYear())}
+                title={String(statYear)}
                 hasGoal={!!yearGoal}
                 paceMode={{ diff: yearData.diff, expected: yearData.expected }}
               />
@@ -176,7 +188,8 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
             {/* Stats + Chart */}
             <div className="flex-1 space-y-4 min-w-0">
               <StatsTiles sessions={statSessions} />
-              <TrendChart sessions={statSessions} period={period} month={statMonth} year={statYear} />
+              <MetricSelector selected={chartMetric} onSelect={setChartMetric} />
+              <TrendChart sessions={statSessions} period={period} month={statMonth} year={statYear} metric={chartMetric} />
             </div>
           </div>
         </div>
