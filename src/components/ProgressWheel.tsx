@@ -88,11 +88,10 @@ const ProgressWheel = ({
       ? `url(#gold-grad-${label})`
       : 'hsl(var(--primary))';
 
-  // For pace mode, rotate so that negative goes left from top, positive goes right
-  const rotation = isPace && paceMode!.diff < 0
-    ? `rotate(-90 ${CENTER} ${CENTER}) scale(-1, 1)` 
-    : `rotate(-90 ${CENTER} ${CENTER})`;
-  const transformOrigin = isPace && paceMode!.diff < 0 ? `${CENTER}px ${CENTER}px` : undefined;
+  // For negative pace: draw counter-clockwise from top by rotating +90 and reversing direction
+  const isNegativePace = isPace && paceMode!.diff < 0;
+  // Standard rotation starts at top (rotate -90). For negative, we rotate +90 and reverse dash direction
+  const rotation = `rotate(${isNegativePace ? 90 : -90} ${CENTER} ${CENTER})`;
 
   return (
     <button
@@ -140,7 +139,6 @@ const ProgressWheel = ({
           strokeDasharray={CIRCUMFERENCE}
           strokeDashoffset={offset}
           transform={rotation}
-          style={transformOrigin ? { transformOrigin } : undefined}
           filter={isGold ? `url(#gold-glow-${label})` : undefined}
           className="transition-all duration-700 ease-out"
         />
