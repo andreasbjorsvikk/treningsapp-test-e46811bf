@@ -61,7 +61,7 @@ const MONTH_NAMES = [
 ];
 
 const CalendarPage = () => {
-  const { settings } = useSettings();
+  const { settings, getTypeColor } = useSettings();
   const sundayStart = settings.firstDayOfWeek === 'sunday';
   const weekdays = sundayStart ? WEEKDAYS_SUN : WEEKDAYS_MON;
   const now = new Date();
@@ -158,13 +158,15 @@ const CalendarPage = () => {
                   {daySessions.slice(0, 3).map((s) => {
                     const config = sessionTypeConfig[s.type];
                     const Icon = config.icon;
+                    const typeColor = getTypeColor(s.type);
                     return (
                       <div
                         key={s.id}
-                        className={`${config.color} rounded-sm p-0.5`}
+                        className="rounded-sm p-0.5"
+                        style={{ backgroundColor: typeColor }}
                         title={config.label}
                       >
-                        <Icon className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                        <Icon className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
                       </div>
                     );
                   })}

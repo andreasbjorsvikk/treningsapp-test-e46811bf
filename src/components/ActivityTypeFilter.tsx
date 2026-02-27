@@ -1,5 +1,6 @@
 import { SessionType } from '@/types/workout';
 import { sessionTypeConfig, allSessionTypes } from '@/utils/workoutUtils';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface ActivityTypeFilterProps {
   selected: SessionType[];
@@ -7,12 +8,11 @@ interface ActivityTypeFilterProps {
 }
 
 const ActivityTypeFilter = ({ selected, onToggle }: ActivityTypeFilterProps) => {
+  const { getTypeColor } = useSettings();
   const allSelected = selected.length === allSessionTypes.length;
 
   const handleToggleAll = () => {
     if (allSelected) {
-      // Deselect all — but keep at least the first
-      // Actually just select none to show "0" tiles
       allSessionTypes.forEach((t) => {
         if (selected.includes(t)) onToggle(t);
       });
@@ -39,15 +39,15 @@ const ActivityTypeFilter = ({ selected, onToggle }: ActivityTypeFilterProps) => 
         const config = sessionTypeConfig[type];
         const Icon = config.icon;
         const isActive = selected.includes(type);
+        const color = getTypeColor(type);
         return (
           <button
             key={type}
             onClick={() => onToggle(type)}
             className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-              isActive
-                ? 'gradient-energy text-primary-foreground'
-                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+              !isActive ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80' : ''
             }`}
+            style={isActive ? { backgroundColor: color, color: '#fff' } : undefined}
           >
             <Icon className="w-3.5 h-3.5" />
             {config.label}

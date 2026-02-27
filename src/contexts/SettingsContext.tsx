@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { SessionType } from '@/types/workout';
+import { defaultTypeColors } from '@/utils/workoutUtils';
 
 export type AccentColor = 'orange' | 'blue' | 'green' | 'purple' | 'rose' | 'teal';
 export type FirstDayOfWeek = 'monday' | 'sunday';
@@ -11,6 +12,7 @@ export interface AppSettings {
   firstDayOfWeek: FirstDayOfWeek;
   unitSystem: UnitSystem;
   defaultSessionType: SessionType;
+  sessionTypeColors: Record<SessionType, string>;
 }
 
 const defaultSettings: AppSettings = {
@@ -19,6 +21,7 @@ const defaultSettings: AppSettings = {
   firstDayOfWeek: 'monday',
   unitSystem: 'metric',
   defaultSessionType: 'styrke',
+  sessionTypeColors: { ...defaultTypeColors },
 };
 
 const ACCENT_COLORS: Record<AccentColor, { label: string; hsl: string; glow: string; swatch: string }> = {
@@ -34,6 +37,7 @@ interface SettingsContextType {
   settings: AppSettings;
   updateSettings: (patch: Partial<AppSettings>) => void;
   accentColors: typeof ACCENT_COLORS;
+  getTypeColor: (type: SessionType) => string;
 }
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
@@ -42,7 +46,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(() => {
     try {
       const stored = localStorage.getItem('treningslogg_settings');
-      if (stored) return { ...defaultSettings, ...JSON.parse(stored) };
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return {
+          ...defaultSettings,
+          ...parsed,
+          sessionTypeColors: { ...defaultTypeColors, ...(parsed.sessionTypeColors || {}) },
+        };
+      }
     } catch {}
     return defaultSettings;
   });
@@ -71,8 +82,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSettings(prev => ({ ...prev, ...patch }));
   };
 
+  const getTypeColor = (type: SessionType) => {
+    return settings.sessionTypeColors[type] || defaultTypeColors[type];
+  };
+
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings, accentColors: ACCENT_COLORS }}>
+    <SettingsContext.Provider value={{ settings, updateSettings, accentColors: ACCENT_COLORS, getTypeColor }}>
       {children}
     </SettingsContext.Provider>
   );

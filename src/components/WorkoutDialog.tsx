@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { WorkoutSession, SessionType } from '@/types/workout';
 import { sessionTypeConfig, allSessionTypes } from '@/utils/workoutUtils';
+import { useSettings } from '@/contexts/SettingsContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,7 +38,8 @@ function getVisibleFields(type: SessionType) {
 }
 
 const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutDialogProps) => {
-  const [type, setType] = useState<SessionType>(session?.type || 'styrke');
+  const { settings, getTypeColor } = useSettings();
+  const [type, setType] = useState<SessionType>(session?.type || settings.defaultSessionType);
   const [title, setTitle] = useState(session?.title || '');
   const [date, setDate] = useState('');
   const [hours, setHours] = useState('0');
@@ -49,10 +51,11 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
   // Reset form when dialog opens
   useEffect(() => {
     if (open) {
-      setType(session?.type || 'styrke');
+      setType(session?.type || settings.defaultSessionType);
       setTitle(session?.title || '');
-      const dateVal = session?.date?.slice(0, 16)
-        || (defaultDate ? defaultDate + 'T12:00' : new Date().toISOString().slice(0, 16));
+      const dateVal = session?.date?.slice(0, 10)
+        || defaultDate
+        || new Date().toISOString().slice(0, 10);
       setDate(dateVal);
       setHours(session ? Math.floor(session.durationMinutes / 60).toString() : '0');
       setMinutes(session ? (session.durationMinutes % 60).toString() : '30');
@@ -60,7 +63,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
       setElevationGain(session?.elevationGain?.toString() || '');
       setNotes(session?.notes || '');
     }
-  }, [open, session, defaultDate]);
+  }, [open, session, defaultDate, settings.defaultSessionType]);
 
   const fields = getVisibleFields(type);
 
@@ -71,7 +74,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
     onSave({
       type,
       title: title.trim() || undefined,
-      date: new Date(date).toISOString(),
+      date: new Date(date + 'T12:00:00').toISOString(),
       durationMinutes,
       distance: fields.distance && distance ? parseFloat(distance) : undefined,
       elevationGain: fields.elevation && elevationGain ? parseInt(elevationGain) : undefined,
@@ -98,9 +101,11 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
                 {allSessionTypes.map(t => {
                   const cfg = sessionTypeConfig[t];
                   const Icon = cfg.icon;
+                  const color = getTypeColor(t);
                   return (
                     <SelectItem key={t} value={t}>
                       <span className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
                         <Icon className="w-4 h-4" />
                         {cfg.label}
                       </span>
@@ -117,8 +122,8 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
           </div>
 
           <div className="space-y-1.5">
-            <Label>Dato og tid</Label>
-            <Input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} />
+            <Label>Dato</Label>
+            <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
           </div>
 
           <div className="space-y-1.5">
