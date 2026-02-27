@@ -28,7 +28,9 @@ interface ActivityIconProps {
   style?: React.CSSProperties;
 }
 
-const ActivityIcon = ({ type, className = 'w-4 h-4', colorOverride, style }: ActivityIconProps) => {
+const ActivityIcon = ({ type, className = 'w-4 h-4', colorOverride, style: styleProp }: ActivityIconProps) => {
+  const isSykling = type === 'sykling';
+  const style = { ...styleProp, ...(isSykling ? { marginTop: '2px' } : {}) };
   const src = iconMap[type];
   if (!src) {
     return <CircleDot className={className} style={{ color: colorOverride || '#fff', ...style }} />;
