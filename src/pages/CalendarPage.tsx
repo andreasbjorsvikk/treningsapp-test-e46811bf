@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { WorkoutSession } from '@/types/workout';
 import { workoutService } from '@/services/workoutService';
 import { sessionTypeConfig, formatDuration } from '@/utils/workoutUtils';
@@ -6,12 +6,16 @@ import { getActivityColors } from '@/utils/activityColors';
 import ActivityIcon from '@/components/ActivityIcon';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { ChevronLeft, ChevronRight, Route, Mountain, Clock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Route, Mountain, Clock } from 'lucide-react';
 import DayDrawer from '@/components/DayDrawer';
 
 const WEEKDAYS_MON = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'];
 const WEEKDAYS_SUN = ['Søn', 'Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør'];
+
+const MONTH_NAMES = [
+  'Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni',
+  'Juli', 'August', 'September', 'Oktober', 'November', 'Desember'
+];
 
 function getMonthGrid(year: number, month: number, sundayStart: boolean) {
   const firstDay = new Date(year, month, 1);
@@ -55,10 +59,17 @@ function toDateKey(year: number, month: number, day: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-const MONTH_NAMES = [
-  'Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni',
-  'Juli', 'August', 'September', 'Oktober', 'November', 'Desember'
-];
+/** Returns array of {year, month} for a range of months around current */
+function getMonthRange(startYear: number, startMonth: number, endYear: number, endMonth: number) {
+  const months: { year: number; month: number }[] = [];
+  let y = startYear, m = startMonth;
+  while (y < endYear || (y === endYear && m <= endMonth)) {
+    months.push({ year: y, month: m });
+    m++;
+    if (m > 11) { m = 0; y++; }
+  }
+  return months;
+}
 
 // Badge component for a single session icon
 const SessionBadge = ({ session, size = 'md', isDark }: {
@@ -70,13 +81,13 @@ const SessionBadge = ({ session, size = 'md', isDark }: {
   const sizeClasses = {
     sm: 'w-4 h-4 rounded-[4px]',
     'sm-single': 'w-7 h-7 rounded-[7px]',
-    md: 'w-10 h-10 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-lg',
+    md: 'w-11 h-11 md:w-10 md:h-10 lg:w-11 lg:h-11 rounded-lg',
     lg: 'w-14 h-14 md:w-12 md:h-12 lg:w-16 lg:h-16 rounded-xl',
   };
   const iconSizes = {
     sm: 'w-[14px] h-[14px]',
     'sm-single': 'w-[22px] h-[22px]',
-    md: 'w-6 h-6 md:w-5 md:h-5 lg:w-7 lg:h-7',
+    md: 'w-7 h-7 md:w-6 md:h-6 lg:w-7 lg:h-7',
     lg: 'w-10 h-10 md:w-8 md:h-8 lg:w-11 lg:h-11',
   };
 
@@ -109,12 +120,18 @@ const CalendarPage = () => {
   const sundayStart = settings.firstDayOfWeek === 'sunday';
   const weekdays = sundayStart ? WEEKDAYS_SUN : WEEKDAYS_MON;
   const now = new Date();
-  const [viewYear, setViewYear] = useState(now.getFullYear());
-  const [viewMonth, setViewMonth] = useState(now.getMonth());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [, setRefresh] = useState(0);
 
   const isDark = settings.darkMode;
+
+  // Infinite scroll state: track range of months to render
+  const [rangeStart, setRangeStart] = useState({ year: now.getFullYear() - 1, month: now.getMonth() });
+  const [rangeEnd, setRangeEnd] = useState({ year: now.getFullYear() + 1, month: now.getMonth() });
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const currentMonthRef = useRef<HTMLDivElement>(null);
+  const hasScrolledToToday = useRef(false);
 
   const allSessions = workoutService.getAll();
 
@@ -128,23 +145,54 @@ const CalendarPage = () => {
     return map;
   }, [allSessions]);
 
-  const grid = useMemo(() => getMonthGrid(viewYear, viewMonth, sundayStart), [viewYear, viewMonth, sundayStart]);
+  const months = useMemo(
+    () => getMonthRange(rangeStart.year, rangeStart.month, rangeEnd.year, rangeEnd.month),
+    [rangeStart, rangeEnd]
+  );
 
   const todayKey = toDateKey(now.getFullYear(), now.getMonth(), now.getDate());
-
-  const prevMonth = () => {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
-    else setViewMonth(m => m - 1);
-  };
-
-  const nextMonth = () => {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
-    else setViewMonth(m => m + 1);
-  };
 
   const triggerRefresh = useCallback(() => setRefresh(r => r + 1), []);
 
   const selectedSessions = selectedDay ? (sessionsByDate.get(selectedDay) || []) : [];
+
+  // Scroll to current month on first render
+  useEffect(() => {
+    if (!hasScrolledToToday.current && currentMonthRef.current) {
+      currentMonthRef.current.scrollIntoView({ block: 'start' });
+      hasScrolledToToday.current = true;
+    }
+  }, [months]);
+
+  // Infinite scroll handler
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    // Near top: load 12 more months before
+    if (el.scrollTop < 300) {
+      const prevHeight = el.scrollHeight;
+      setRangeStart(prev => {
+        let y = prev.year - 1;
+        return { year: y, month: prev.month };
+      });
+      // Preserve scroll position after prepending
+      requestAnimationFrame(() => {
+        if (el) {
+          const newHeight = el.scrollHeight;
+          el.scrollTop += (newHeight - prevHeight);
+        }
+      });
+    }
+
+    // Near bottom: load 12 more months after
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 300) {
+      setRangeEnd(prev => {
+        let y = prev.year + 1;
+        return { year: y, month: prev.month };
+      });
+    }
+  }, []);
 
   // Render session stats for desktop
   const renderStats = (s: WorkoutSession, textColor: string) => (
@@ -173,7 +221,6 @@ const CalendarPage = () => {
     const config = sessionTypeConfig[s.type];
     const colors = getActivityColors(s.type, isDark);
     const title = s.title || config.label;
-    const isTablet = !isMobile; // md breakpoint handled via CSS
     return (
       <div className="flex flex-col h-full w-full p-1.5 lg:p-2" style={{ color: colors.text }}>
         <div className="font-bold text-[11px] lg:text-sm leading-tight truncate mb-1">
@@ -189,7 +236,7 @@ const CalendarPage = () => {
     );
   };
 
-  // Render two-session cell for desktop (split vertically, full height)
+  // Render two-session cell for desktop
   const renderTwoDesktop = (sessions: WorkoutSession[]) => (
     <div className="flex h-full w-full">
       {sessions.slice(0, 2).map((s) => {
@@ -212,17 +259,15 @@ const CalendarPage = () => {
     </div>
   );
 
-  // Render three-session cell for desktop: top half = session 0, bottom half = split session 1 & 2
+  // Render three-session cell for desktop
   const renderThreeDesktop = (sessions: WorkoutSession[]) => (
     <div className="flex flex-col h-full w-full">
-      {/* Top half: first session full width */}
       <div
         className="flex-1 flex items-center justify-center"
         style={{ backgroundColor: getActivityColors(sessions[0].type, isDark).bg }}
       >
         <SessionBadge session={sessions[0]} size="md" isDark={isDark} />
       </div>
-      {/* Bottom half: two sessions side by side */}
       <div className="flex flex-1">
         {sessions.slice(1, 3).map((s) => (
           <div
@@ -257,7 +302,6 @@ const CalendarPage = () => {
         </div>
       );
     }
-    // 3+ sessions: same layout as desktop triple
     return (
       <div className="flex flex-col h-full w-full">
         <div
@@ -290,123 +334,136 @@ const CalendarPage = () => {
     </div>
   );
 
-  return (
-    <div className="space-y-3">
-      {/* Month header */}
-      <div className="flex items-center justify-between glass-card rounded-2xl px-4 py-3">
-        <Button variant="ghost" size="icon" onClick={prevMonth} className="rounded-full hover:bg-primary/10">
-          <ChevronLeft className="w-5 h-5" />
-        </Button>
-        <h2 className="font-display font-bold text-lg">
-          {MONTH_NAMES[viewMonth]} {viewYear}
-        </h2>
-        <Button variant="ghost" size="icon" onClick={nextMonth} className="rounded-full hover:bg-primary/10">
-          <ChevronRight className="w-5 h-5" />
-        </Button>
-      </div>
+  // Render a single month grid
+  const renderMonth = (monthData: { year: number; month: number }) => {
+    const grid = getMonthGrid(monthData.year, monthData.month, sundayStart);
+    const isCurrentMonth = monthData.year === now.getFullYear() && monthData.month === now.getMonth();
 
-      {/* Weekday headers */}
-      <div className="grid grid-cols-7">
-        {weekdays.map(d => (
-          <div key={d} className="text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-wider py-1.5">
-            {d}
-          </div>
-        ))}
-      </div>
+    return (
+      <div
+        key={`${monthData.year}-${monthData.month}`}
+        ref={isCurrentMonth ? currentMonthRef : undefined}
+        className="mb-4"
+      >
+        {/* Month header */}
+        <div className="glass-card rounded-2xl px-4 py-3 mb-2 text-center">
+          <h2 className="font-display font-bold text-lg">
+            {MONTH_NAMES[monthData.month]} {monthData.year}
+          </h2>
+        </div>
 
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-[3px] lg:gap-1">
-        {grid.map((cell, i) => {
-          const dateKey = toDateKey(cell.year, cell.month, cell.day);
-          const daySessions = sessionsByDate.get(dateKey) || [];
-          const isToday = dateKey === todayKey;
-          const isSelected = dateKey === selectedDay;
-          const sessionCount = daySessions.length;
+        {/* Calendar grid */}
+        <div className="grid grid-cols-7 gap-[3px] lg:gap-1">
+          {grid.map((cell, i) => {
+            const dateKey = toDateKey(cell.year, cell.month, cell.day);
+            const daySessions = sessionsByDate.get(dateKey) || [];
+            const isToday = dateKey === todayKey;
+            const isSelected = dateKey === selectedDay;
+            const sessionCount = daySessions.length;
 
-          // For single sessions, color the whole cell
-          let cellStyle: React.CSSProperties = {};
-          if (sessionCount === 1) {
-            const colors = getActivityColors(daySessions[0].type, isDark);
-            cellStyle = { backgroundColor: colors.bg, color: colors.text };
-          }
+            let cellStyle: React.CSSProperties = {};
+            if (sessionCount === 1) {
+              const colors = getActivityColors(daySessions[0].type, isDark);
+              cellStyle = { backgroundColor: colors.bg, color: colors.text };
+            }
 
-          // For multi-session cells, we let inner divs handle bg, so make cell bg transparent
-          const isMulti = sessionCount >= 2;
+            const isMulti = sessionCount >= 2;
 
-          return (
-            <button
-              key={i}
-              onClick={() => setSelectedDay(dateKey)}
-              className={`
-                relative flex flex-col rounded-lg overflow-hidden transition-all duration-150
-                ${isMobile ? 'min-h-[56px]' : 'min-h-[80px] lg:min-h-[100px]'}
-                ${!isMulti && sessionCount === 0
-                  ? (cell.isCurrentMonth
-                    ? 'bg-card hover:brightness-95 dark:hover:brightness-110'
-                    : 'bg-muted/30 opacity-40')
-                  : ''
-                }
-                ${!cell.isCurrentMonth && sessionCount === 0 ? 'opacity-40' : ''}
-                ${isSelected ? 'ring-2 ring-success' : ''}
-                ${isToday && !isSelected ? 'ring-1 ring-success/50' : ''}
-              `}
-              style={!isMulti ? cellStyle : undefined}
-            >
-              {/* For multi-session cells, day number floats above colored sections */}
-              {isMulti ? (
-                <>
-                  {/* Full-bleed colored content */}
-                   <div className="absolute inset-0">
-                    {isMobile ? (
-                      renderMobileMulti(daySessions)
-                    ) : (
-                      sessionCount === 2 ? renderTwoDesktop(daySessions) : renderThreeDesktop(daySessions)
-                    )}
-                  </div>
-                  {/* Day number overlay - absolute top-left like single cells */}
-                  <span className={`
-                    text-[10px] lg:text-xs font-semibold z-10 absolute top-1 left-1.5
-                    ${isToday
-                      ? 'bg-success text-success-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px]'
-                      : ''
-                    }
-                  `} style={!isToday ? { color: isDark ? '#fff' : '#333' } : undefined}>
-                    {cell.day}
-                  </span>
-                </>
-              ) : (
-                <>
-                  {/* Day number */}
-                  <span className={`
-                    text-[10px] lg:text-xs font-semibold absolute top-1 left-1.5 z-10
-                    ${!cell.isCurrentMonth ? 'text-muted-foreground/40' : ''}
-                    ${isToday
-                      ? 'bg-success text-success-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] static mt-1 ml-1'
-                      : ''
-                    }
-                  `}>
-                    {cell.day}
-                  </span>
-
-                  {/* Session content */}
-                  {sessionCount === 1 && (
-                    <>
+            return (
+              <button
+                key={i}
+                onClick={() => setSelectedDay(dateKey)}
+                className={`
+                  relative flex flex-col rounded-lg overflow-hidden transition-all duration-150
+                  ${isMobile ? 'min-h-[56px]' : 'min-h-[80px] lg:min-h-[100px]'}
+                  ${!isMulti && sessionCount === 0
+                    ? (cell.isCurrentMonth
+                      ? 'bg-card hover:brightness-95 dark:hover:brightness-110'
+                      : 'bg-muted/30 opacity-40')
+                    : ''
+                  }
+                  ${!cell.isCurrentMonth && sessionCount === 0 ? 'opacity-40' : ''}
+                  ${isSelected ? 'ring-2 ring-success' : ''}
+                  ${isToday && !isSelected ? 'ring-1 ring-success/50' : ''}
+                `}
+                style={!isMulti ? cellStyle : undefined}
+              >
+                {isMulti ? (
+                  <>
+                    <div className="absolute inset-0">
                       {isMobile ? (
-                        <div className="flex-1 flex items-center justify-center pt-2">
-                          {renderMobileSingle(daySessions)}
-                        </div>
+                        renderMobileMulti(daySessions)
                       ) : (
-                        <div className="flex-1 flex flex-col w-full pt-3">
-                          {renderSingleDesktop(daySessions[0])}
-                        </div>
+                        sessionCount === 2 ? renderTwoDesktop(daySessions) : renderThreeDesktop(daySessions)
                       )}
-                    </>
-                  )}
-                </>
-              )}
-            </button>
-          );
-        })}
+                    </div>
+                    <span className={`
+                      text-[10px] lg:text-xs font-semibold z-10 absolute top-1 left-1.5
+                      ${isToday
+                        ? 'bg-success text-success-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px]'
+                        : ''
+                      }
+                    `} style={!isToday ? { color: isDark ? '#fff' : '#333' } : undefined}>
+                      {cell.day}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className={`
+                      text-[10px] lg:text-xs font-semibold absolute top-1 left-1.5 z-10
+                      ${!cell.isCurrentMonth ? 'text-muted-foreground/40' : ''}
+                      ${isToday
+                        ? 'bg-success text-success-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] static mt-1 ml-1'
+                        : ''
+                      }
+                    `}>
+                      {cell.day}
+                    </span>
+
+                    {sessionCount === 1 && (
+                      <>
+                        {isMobile ? (
+                          <div className="flex-1 flex items-center justify-center pt-2">
+                            {renderMobileSingle(daySessions)}
+                          </div>
+                        ) : (
+                          <div className="flex-1 flex flex-col w-full pt-3">
+                            {renderSingleDesktop(daySessions[0])}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-1">
+      {/* Sticky weekday headers */}
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm pb-1">
+        <div className="grid grid-cols-7">
+          {weekdays.map(d => (
+            <div key={d} className="text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-wider py-1.5">
+              {d}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Scrollable months container */}
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="overflow-y-auto"
+        style={{ maxHeight: 'calc(100vh - 160px)' }}
+      >
+        {months.map(m => renderMonth(m))}
       </div>
 
       {/* Day drawer */}

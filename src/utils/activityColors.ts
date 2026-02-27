@@ -37,12 +37,12 @@ export const activityColorMap: Partial<Record<SessionType, ActivityColors>> = {
     dark:  { bg: 'rgb(98,100,104)',  text: '#ffffff',         badge: '#313030' },
   },
   tennis: {
-    light: { bg: 'rgb(254,222,141)', text: '#734402', badge: 'rgb(255,238,190)' },
+    light: { bg: 'rgb(249,230,183)', text: '#734402', badge: 'rgb(255,238,190)' },
     dark:  { bg: 'rgb(191,144,66)',  text: '#ffffff',         badge: '#492d12' },
   },
   yoga: {
-    light: { bg: 'rgb(240,215,255)', text: 'rgb(121,11,150)', badge: 'rgb(245,230,255)' },
-    dark:  { bg: 'rgb(141,94,156)',  text: '#ffffff',          badge: '#3e0f50' },
+    light: { bg: 'rgb(241,217,252)', text: 'rgb(121,11,150)', badge: 'rgb(245,230,255)' },
+    dark:  { bg: 'rgb(141,105,149)',  text: '#ffffff',          badge: '#3e0f50' },
   },
   annet: {
     light: { bg: 'rgb(220,220,224)', text: '#444444',        badge: 'rgb(232,232,236)' },
