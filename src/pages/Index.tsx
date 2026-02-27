@@ -98,6 +98,7 @@ const Index = () => {
                   current={monthData.current}
                   target={monthData.target}
                   unit={monthData.unit}
+                  title={new Date().toLocaleString('nb-NO', { month: 'long' }).replace(/^./, c => c.toUpperCase())}
                   label="Denne måneden"
                   hasGoal={!!monthGoal}
                   onClick={() => navigateToStats('month')}
@@ -107,6 +108,7 @@ const Index = () => {
                   current={yearData.current}
                   target={yearData.target}
                   unit={yearData.unit}
+                  title={String(new Date().getFullYear())}
                   label="I år"
                   hasGoal={!!yearGoal}
                   paceMode={{ diff: yearData.diff, expected: yearData.expected }}

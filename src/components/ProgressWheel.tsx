@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState, useRef } from 'react';
 
 interface ProgressWheelProps {
   percent: number;
@@ -6,11 +6,11 @@ interface ProgressWheelProps {
   target: number;
   unit: string;
   label: string;
+  title: string;
   hasGoal: boolean;
   onClick?: () => void;
-  /** If set, wheel shows pace diff instead of percent */
   paceMode?: {
-    diff: number; // e.g. +5 or -5
+    diff: number;
     expected: number;
   };
 }
@@ -20,19 +20,19 @@ const STROKE = 10;
 const SIZE = (RADIUS + STROKE) * 2;
 const CENTER = SIZE / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+const ANIM_DURATION = 1200; // ms
 
-/** Map a diff value to a color. Negative: yellow→orange→red. Positive: yellow→green. */
 function getDiffColor(diff: number): string {
   const absDiff = Math.abs(diff);
-  if (absDiff <= 1) return 'hsl(45, 80%, 55%)'; // neutral yellow
+  if (absDiff <= 1) return 'hsl(45, 80%, 55%)';
   if (diff > 0) {
-    if (absDiff <= 5) return 'hsl(80, 65%, 50%)';  // light green
-    if (absDiff <= 10) return 'hsl(120, 55%, 45%)'; // green
-    return 'hsl(140, 60%, 40%)'; // deep green
+    if (absDiff <= 5) return 'hsl(80, 65%, 50%)';
+    if (absDiff <= 10) return 'hsl(120, 55%, 45%)';
+    return 'hsl(140, 60%, 40%)';
   } else {
-    if (absDiff <= 5) return 'hsl(30, 85%, 55%)';  // orange
-    if (absDiff <= 10) return 'hsl(10, 75%, 55%)'; // light red
-    return 'hsl(0, 70%, 45%)'; // dark red
+    if (absDiff <= 5) return 'hsl(30, 85%, 55%)';
+    if (absDiff <= 10) return 'hsl(10, 75%, 55%)';
+    return 'hsl(0, 70%, 45%)';
   }
 }
 
@@ -42,21 +42,44 @@ function getPaceLabel(diff: number): string {
   return 'Du ligger bak skjema';
 }
 
+function easeOutCubic(t: number): number {
+  return 1 - Math.pow(1 - t, 3);
+}
+
 const ProgressWheel = ({
   percent,
   current,
   target,
   unit,
   label,
+  title,
   hasGoal,
   onClick,
   paceMode,
 }: ProgressWheelProps) => {
   const isPace = !!paceMode;
+  const animRef = useRef<number>();
+  const [animProgress, setAnimProgress] = useState(0); // 0 to 1
+
+  // Animate on mount
+  useEffect(() => {
+    const start = performance.now();
+    const animate = (now: number) => {
+      const elapsed = now - start;
+      const t = Math.min(elapsed / ANIM_DURATION, 1);
+      setAnimProgress(easeOutCubic(t));
+      if (t < 1) {
+        animRef.current = requestAnimationFrame(animate);
+      }
+    };
+    animRef.current = requestAnimationFrame(animate);
+    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+  }, []);
 
   // --- Standard percent mode ---
   const clampedPercent = Math.max(0, percent);
-  const displayPercent = Math.round(clampedPercent);
+  const animatedPercent = clampedPercent * animProgress;
+  const displayPercent = Math.round(animatedPercent);
   const isGold = !isPace && clampedPercent >= 100;
   const isOverAchieve = !isPace && clampedPercent > 100;
 
@@ -66,39 +89,51 @@ const ProgressWheel = ({
   }, [clampedPercent]);
 
   // --- Pace mode ---
-  const paceOffset = useMemo(() => {
-    if (!paceMode) return CIRCUMFERENCE;
-    // ±20 = full circle. Map abs(diff) to 0–100% fill
-    const absFill = Math.min(Math.abs(paceMode.diff) / 20, 1);
-    return CIRCUMFERENCE * (1 - absFill);
+  const targetFill = useMemo(() => {
+    if (!paceMode) return 0;
+    return Math.min(Math.abs(paceMode.diff) / 20, 1);
   }, [paceMode]);
+
+  const paceOffset = CIRCUMFERENCE * (1 - targetFill * animProgress);
+
+  const animatedDiff = paceMode ? paceMode.diff * animProgress : 0;
+  const animatedCurrent = Math.round(current * animProgress * 10) / 10;
 
   const diffColor = paceMode ? getDiffColor(paceMode.diff) : '';
   const paceLabel = paceMode ? getPaceLabel(paceMode.diff) : '';
   const diffSign = paceMode && paceMode.diff > 0 ? '+' : '';
 
-  // Gold color for standard mode
   const goldColor = '#D4A843';
   const goldGlow = '#F0D060';
 
-  const offset = isPace ? paceOffset : standardOffset;
+  // Animated offset for standard mode
+  const animatedStandardOffset = useMemo(() => {
+    const p = Math.min(clampedPercent, 100) / 100 * animProgress;
+    return CIRCUMFERENCE * (1 - p);
+  }, [clampedPercent, animProgress]);
+
+  const offset = isPace ? paceOffset : animatedStandardOffset;
   const strokeColor = isPace
     ? diffColor
     : isGold
       ? `url(#gold-grad-${label})`
       : 'hsl(var(--primary))';
 
-  // For negative pace: draw counter-clockwise from top by rotating +90 and reversing direction
-  const isNegativePace = isPace && paceMode!.diff < 0;
-  // Standard rotation starts at top (rotate -90). For negative, we rotate +90 and reverse dash direction
-  const rotation = `rotate(${isNegativePace ? 90 : -90} ${CENTER} ${CENTER})`;
+  // Both positive and negative pace fill counter-clockwise (left from top)
+  // Standard percent fills clockwise (right from top)
+  const rotation = isPace
+    ? `rotate(90 ${CENTER} ${CENTER})`
+    : `rotate(-90 ${CENTER} ${CENTER})`;
 
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center gap-2 p-4 rounded-2xl glass-card hover:shadow-lg transition-all cursor-pointer"
+      className="flex flex-col items-center gap-1 p-4 rounded-2xl glass-card hover:shadow-lg transition-all cursor-pointer"
       aria-label={label}
     >
+      {/* Title above wheel */}
+      <span className="text-sm font-semibold text-foreground mb-1">{title}</span>
+
       <svg
         width={SIZE}
         height={SIZE}
@@ -140,11 +175,10 @@ const ProgressWheel = ({
           strokeDashoffset={offset}
           transform={rotation}
           filter={isGold ? `url(#gold-glow-${label})` : undefined}
-          className="transition-all duration-700 ease-out"
         />
 
         {/* Over-achieve shine */}
-        {isOverAchieve && (
+        {isOverAchieve && animProgress >= 1 && (
           <circle
             cx={CENTER} cy={CENTER} r={RADIUS} fill="none" stroke="white" strokeWidth={2} strokeLinecap="round"
             strokeDasharray={`${CIRCUMFERENCE * 0.08} ${CIRCUMFERENCE * 0.92}`}
@@ -161,7 +195,7 @@ const ProgressWheel = ({
             <>
               <text x={CENTER} y={CENTER - 4} textAnchor="middle" dominantBaseline="central"
                 className="font-display font-bold" fontSize="24" fill={diffColor}>
-                {diffSign}{Math.round(paceMode!.diff)}
+                {diffSign}{Math.round(animatedDiff)}
               </text>
               <text x={CENTER} y={CENTER + 18} textAnchor="middle" dominantBaseline="central"
                 fontSize="11" fill="hsl(var(--muted-foreground))">
