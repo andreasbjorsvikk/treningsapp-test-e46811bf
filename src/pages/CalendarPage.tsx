@@ -63,17 +63,19 @@ const MONTH_NAMES = [
 // Badge component for a single session icon
 const SessionBadge = ({ session, size = 'md', isDark }: {
   session: WorkoutSession;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'sm-single' | 'md' | 'lg';
   isDark: boolean;
 }) => {
   const colors = getActivityColors(session.type, isDark);
   const sizeClasses = {
-    sm: 'w-6 h-6 rounded-[5px]',
+    sm: 'w-5 h-5 rounded-[4px]',
+    'sm-single': 'w-8 h-8 rounded-[6px]',
     md: 'w-9 h-9 md:w-8 md:h-8 lg:w-10 lg:h-10 rounded-lg',
     lg: 'w-14 h-14 md:w-12 md:h-12 lg:w-16 lg:h-16 rounded-xl',
   };
   const iconSizes = {
-    sm: 'w-4 h-4',
+    sm: 'w-[14px] h-[14px]',
+    'sm-single': 'w-[22px] h-[22px]',
     md: 'w-6 h-6 md:w-5 md:h-5 lg:w-7 lg:h-7',
     lg: 'w-10 h-10 md:w-8 md:h-8 lg:w-11 lg:h-11',
   };
@@ -177,7 +179,7 @@ const CalendarPage = () => {
         <div className="font-bold text-[11px] lg:text-sm leading-tight truncate mb-1">
           {title}
         </div>
-        <div className="flex items-start gap-1.5 mt-auto">
+        <div className="flex items-center justify-center md:justify-start gap-1.5 mt-auto">
           <SessionBadge session={s} size="lg" isDark={isDark} />
           <div className="min-w-0 flex-1 hidden lg:block">
             {renderStats(s, colors.text)}
@@ -200,7 +202,7 @@ const CalendarPage = () => {
             className="flex-1 flex flex-col items-center justify-center p-1 lg:p-1.5 min-w-0"
             style={{ backgroundColor: colors.bg, color: colors.text }}
           >
-            <div className="font-bold text-[8px] lg:text-[11px] truncate w-full text-center mb-0.5 px-0.5">
+            <div className="font-bold text-[10px] md:text-[11px] lg:text-xs truncate w-full text-center mb-0.5 px-0.5">
               {title}
             </div>
             <SessionBadge session={s} size="md" isDark={isDark} />
@@ -259,7 +261,7 @@ const CalendarPage = () => {
     return (
       <div className="flex flex-col h-full w-full">
         <div
-          className="flex-1 flex items-center justify-center"
+          className="flex-1 flex items-center justify-end pr-2"
           style={{ backgroundColor: getActivityColors(sessions[0].type, isDark).bg }}
         >
           <SessionBadge session={sessions[0]} size="sm" isDark={isDark} />
@@ -283,7 +285,7 @@ const CalendarPage = () => {
   const renderMobileSingle = (sessions: WorkoutSession[]) => (
     <div className="flex flex-wrap gap-[3px] justify-center mt-0">
       {sessions.slice(0, 4).map((s) => (
-        <SessionBadge key={s.id} session={s} size="sm" isDark={isDark} />
+        <SessionBadge key={s.id} session={s} size="sm-single" isDark={isDark} />
       ))}
     </div>
   );
