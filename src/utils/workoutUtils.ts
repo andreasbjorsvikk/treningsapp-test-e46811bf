@@ -2,83 +2,79 @@ import { SessionType } from '@/types/workout';
 import { 
   Dumbbell, 
   PersonStanding, 
-  Bike, 
+  Mountain, 
   Waves, 
-  Flower2, 
-  Zap, 
+  Bike, 
   Footprints, 
-  Mountain,
-  CircleDot 
+  CircleDot,
+  Flower2,
+  Trophy
 } from 'lucide-react';
 
 interface SessionTypeConfig {
   label: string;
   icon: typeof Dumbbell;
-  color: string; // tailwind bg class using design tokens
+  color: string;
 }
 
 export const sessionTypeConfig: Record<SessionType, SessionTypeConfig> = {
-  strength: {
+  styrke: {
     label: 'Styrke',
     icon: Dumbbell,
     color: 'bg-primary text-primary-foreground',
   },
-  running: {
+  løping: {
     label: 'Løping',
     icon: PersonStanding,
     color: 'bg-success text-success-foreground',
   },
-  cycling: {
-    label: 'Sykling',
-    icon: Bike,
+  fjelltur: {
+    label: 'Fjelltur',
+    icon: Mountain,
     color: 'bg-accent text-accent-foreground',
   },
-  swimming: {
+  svømming: {
     label: 'Svømming',
     icon: Waves,
     color: 'bg-accent text-accent-foreground',
+  },
+  sykling: {
+    label: 'Sykling',
+    icon: Bike,
+    color: 'bg-warning text-warning-foreground',
+  },
+  gå: {
+    label: 'Gange',
+    icon: Footprints,
+    color: 'bg-success text-success-foreground',
+  },
+  tennis: {
+    label: 'Tennis',
+    icon: Trophy,
+    color: 'bg-primary text-primary-foreground',
   },
   yoga: {
     label: 'Yoga',
     icon: Flower2,
     color: 'bg-warning text-warning-foreground',
   },
-  hiit: {
-    label: 'HIIT',
-    icon: Zap,
-    color: 'bg-destructive text-destructive-foreground',
-  },
-  walking: {
-    label: 'Gange',
-    icon: Footprints,
-    color: 'bg-success text-success-foreground',
-  },
-  skiing: {
-    label: 'Ski',
-    icon: Mountain,
-    color: 'bg-accent text-accent-foreground',
-  },
-  other: {
+  annet: {
     label: 'Annet',
     icon: CircleDot,
     color: 'bg-muted text-muted-foreground',
   },
 };
 
-export const feelingLabels: Record<number, string> = {
-  1: '😫',
-  2: '😕',
-  3: '😐',
-  4: '😊',
-  5: '🔥',
-};
+export const allSessionTypes: SessionType[] = [
+  'styrke', 'løping', 'fjelltur', 'svømming', 'sykling', 'gå', 'tennis', 'yoga', 'annet'
+];
 
 export function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   if (h === 0) return `${m} min`;
-  if (m === 0) return `${h}t`;
-  return `${h}t ${m}m`;
+  if (m === 0) return `${h} t`;
+  return `${h} t ${m} min`;
 }
 
 export function formatDate(dateStr: string): string {
