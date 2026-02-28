@@ -5,7 +5,7 @@ import { getActivityColors } from '@/utils/activityColors';
 import { useSettings } from '@/contexts/SettingsContext';
 import ActivityIcon from '@/components/ActivityIcon';
 import { Button } from '@/components/ui/button';
-import { Hash, Clock, MapPin, Mountain } from 'lucide-react';
+import { Hash, Clock, MapPin, Mountain, Layers } from 'lucide-react';
 
 interface GoalFormProps {
   goal?: ExtraGoal;
@@ -151,12 +151,13 @@ const GoalForm = ({ goal, onSave, onCancel }: GoalFormProps) => {
           <button
             type="button"
             onClick={() => setActivityType('all')}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+            className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               activityType === 'all'
                 ? 'gradient-energy text-primary-foreground'
                 : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
             }`}
           >
+            <Layers className="w-3.5 h-3.5" />
             Alle
           </button>
           {allSessionTypes.map(type => {
