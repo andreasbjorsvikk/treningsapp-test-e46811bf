@@ -15,6 +15,7 @@ import CommunityPage from '@/pages/CommunityPage';
 import SettingsPage from '@/pages/SettingsPage';
 import ProgressWheel from '@/components/ProgressWheel';
 import WeeklySessionIcons from '@/components/WeeklySessionIcons';
+import MiniCalendar from '@/components/MiniCalendar';
 import GoalCard from '@/components/GoalCard';
 import { Plus, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -155,6 +156,7 @@ const Index = () => {
                   <StatsOverview stats={stats} />
                 </div>
               </div>
+              <MiniCalendar sessions={allSessions} />
             </section>
 
             {/* Home-pinned extra goals */}

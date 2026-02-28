@@ -3,7 +3,7 @@ import { SessionType } from '@/types/workout';
 import { defaultTypeColors } from '@/utils/workoutUtils';
 
 export type AppColorTheme = 'white' | 'orange' | 'blue' | 'green' | 'rose';
-export type AccentColor = 'black' | 'orange' | 'blue' | 'green' | 'red' | 'purple';
+export type AccentColor = 'black' | 'orange' | 'blue' | 'green' | 'red' | 'purple' | 'teal' | 'rose' | 'slate' | 'amber' | 'indigo' | 'sage';
 export type FirstDayOfWeek = 'monday' | 'sunday';
 export type UnitSystem = 'metric' | 'imperial';
 
@@ -107,6 +107,42 @@ export const ACCENT_PRESETS: Record<AccentColor, AccentPreset> = {
     light: { primary: '270 60% 50%', energy: '270 60% 50%', energyGlow: '270 65% 60%' },
     dark: { primary: '270 60% 65%', energy: '270 60% 65%', energyGlow: '270 65% 75%' },
   },
+  teal: {
+    label: 'Dus teal',
+    swatch: 'hsl(175, 35%, 48%)',
+    light: { primary: '175 35% 42%', energy: '175 35% 42%', energyGlow: '175 40% 55%' },
+    dark: { primary: '175 35% 55%', energy: '175 35% 55%', energyGlow: '175 40% 65%' },
+  },
+  rose: {
+    label: 'Dus rosa',
+    swatch: 'hsl(345, 45%, 60%)',
+    light: { primary: '345 40% 52%', energy: '345 40% 52%', energyGlow: '345 45% 62%' },
+    dark: { primary: '345 40% 62%', energy: '345 40% 62%', energyGlow: '345 45% 72%' },
+  },
+  slate: {
+    label: 'Skifer',
+    swatch: 'hsl(215, 20%, 45%)',
+    light: { primary: '215 20% 40%', energy: '215 20% 40%', energyGlow: '215 25% 52%' },
+    dark: { primary: '215 20% 65%', energy: '215 20% 65%', energyGlow: '215 25% 75%' },
+  },
+  amber: {
+    label: 'Amber',
+    swatch: 'hsl(38, 70%, 50%)',
+    light: { primary: '38 70% 45%', energy: '38 70% 45%', energyGlow: '38 75% 55%' },
+    dark: { primary: '38 70% 55%', energy: '38 70% 55%', energyGlow: '38 75% 65%' },
+  },
+  indigo: {
+    label: 'Indigo',
+    swatch: 'hsl(235, 50%, 55%)',
+    light: { primary: '235 50% 50%', energy: '235 50% 50%', energyGlow: '235 55% 62%' },
+    dark: { primary: '235 50% 65%', energy: '235 50% 65%', energyGlow: '235 55% 75%' },
+  },
+  sage: {
+    label: 'Salvie',
+    swatch: 'hsl(140, 20%, 50%)',
+    light: { primary: '140 20% 42%', energy: '140 20% 42%', energyGlow: '140 25% 55%' },
+    dark: { primary: '140 20% 58%', energy: '140 20% 58%', energyGlow: '140 25% 68%' },
+  },
 };
 
 const defaultSettings: AppSettings = {
@@ -140,7 +176,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
           ...defaultSettings,
           ...parsed,
           colorTheme: ['white', 'orange', 'blue', 'green', 'rose'].includes(colorTheme) ? colorTheme : 'orange',
-          accentColor: ['black', 'orange', 'blue', 'green', 'red', 'purple'].includes(parsed.accentColor) ? parsed.accentColor : 'black',
+          accentColor: ['black', 'orange', 'blue', 'green', 'red', 'purple', 'teal', 'rose', 'slate', 'amber', 'indigo', 'sage'].includes(parsed.accentColor) ? parsed.accentColor : 'black',
           sessionTypeColors: { ...defaultTypeColors, ...(parsed.sessionTypeColors || {}) },
         };
       }

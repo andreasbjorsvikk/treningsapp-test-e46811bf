@@ -112,7 +112,6 @@ export function formatDate(dateStr: string): string {
   
   if (diffDays === 0) return 'I dag';
   if (diffDays === 1) return 'I går';
-  if (diffDays < 7) return `${diffDays} dager siden`;
   
   return date.toLocaleDateString('nb-NO', { day: 'numeric', month: 'short' });
 }

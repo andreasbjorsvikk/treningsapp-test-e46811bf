@@ -30,25 +30,26 @@ const WeeklySessionIcons = ({ sessions }: WeeklySessionIconsProps) => {
   const overflow = recentSessions.length - MAX_VISIBLE;
 
   return (
-    <div className="flex items-center gap-1.5 flex-wrap">
+    <div className="flex items-center gap-2 flex-wrap">
       {visible.map((session) => {
         const colors = getActivityColors(session.type, isDark);
         return (
           <div
             key={session.id}
-            className="rounded-lg p-1.5 flex items-center justify-center shadow-sm border border-white/20 dark:border-white/10 backdrop-blur-sm"
+            className="rounded-xl p-2.5 flex items-center justify-center border border-white/25 dark:border-white/10"
             style={{
-              background: `linear-gradient(135deg, ${colors.bg}, ${colors.bg}dd)`,
-              boxShadow: `0 2px 8px ${colors.bg}40, inset 0 1px 1px rgba(255,255,255,0.2)`,
+              background: `linear-gradient(145deg, ${colors.bg}ee, ${colors.bg}cc)`,
+              boxShadow: `0 4px 12px ${colors.bg}35, inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 2px rgba(0,0,0,0.05)`,
+              backdropFilter: 'blur(8px)',
             }}
             title={`${session.type} – ${new Date(session.date).toLocaleDateString('nb-NO', { weekday: 'short', day: 'numeric' })}`}
           >
-            <ActivityIcon type={session.type} className="w-4 h-4 drop-shadow-sm" colorOverride={!isDark ? colors.text : undefined} />
+            <ActivityIcon type={session.type} className="w-6 h-6 drop-shadow-sm" colorOverride={!isDark ? colors.text : undefined} />
           </div>
         );
       })}
       {overflow > 0 && (
-        <div className="rounded-md px-2 py-1.5 bg-muted text-muted-foreground text-xs font-semibold">
+        <div className="rounded-xl px-3 py-2.5 bg-muted text-muted-foreground text-sm font-semibold">
           +{overflow}
         </div>
       )}
