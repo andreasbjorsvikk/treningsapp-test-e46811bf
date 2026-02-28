@@ -3,6 +3,7 @@ import { sessionTypeConfig, formatDuration, formatDate } from '@/utils/workoutUt
 import { useSettings } from '@/contexts/SettingsContext';
 import { Clock, MapPin, MountainSnow, Pencil, Trash2 } from 'lucide-react';
 import ActivityIcon from '@/components/ActivityIcon';
+import { getActivityColors } from '@/utils/activityColors';
 
 interface SessionCardProps {
   session: WorkoutSession;
@@ -12,14 +13,18 @@ interface SessionCardProps {
 
 const SessionCard = ({ session, onEdit, onDelete }: SessionCardProps) => {
   const config = sessionTypeConfig[session.type];
-  const { getTypeColor } = useSettings();
-  const typeColor = getTypeColor(session.type);
+  const { settings } = useSettings();
+  const isDark = settings.darkMode;
+  const colors = getActivityColors(session.type, isDark);
 
   return (
     <div className="glass-card rounded-lg px-3 py-2.5 hover:shadow-md transition-shadow">
       <div className="flex items-center gap-2.5">
-        <div className="rounded-md p-1.5 shrink-0" style={{ backgroundColor: typeColor, color: '#fff' }}>
-          <ActivityIcon type={session.type} className="w-4 h-4" />
+        <div
+          className="rounded-md p-1.5 shrink-0 flex items-center justify-center"
+          style={{ backgroundColor: colors.bg }}
+        >
+          <ActivityIcon type={session.type} className="w-4 h-4" colorOverride={!isDark ? colors.text : undefined} />
         </div>
 
         <div className="flex-1 min-w-0">

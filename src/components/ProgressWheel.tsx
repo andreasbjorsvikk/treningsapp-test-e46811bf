@@ -264,8 +264,8 @@ const ProgressWheel = ({
                 className="font-display font-bold" fontSize="24" fill={diffColor}>
                 {diffSign}{Math.round(animatedDiff)}
               </text>
-              <text x={CENTER} y={CENTER + 18} textAnchor="middle" dominantBaseline="central"
-                fontSize="11" fill="hsl(var(--muted-foreground))">
+              <text x={CENTER} y={CENTER + 20} textAnchor="middle" dominantBaseline="central"
+                fontSize="13" fill="hsl(var(--muted-foreground))">
                 {current} / {target} {unit}
               </text>
             </>
@@ -276,8 +276,8 @@ const ProgressWheel = ({
                 fill={isGold ? goldColor : isComplete ? 'hsl(120, 55%, 45%)' : 'hsl(var(--foreground))'}>
                 {displayPercent}%
               </text>
-              <text x={CENTER} y={CENTER + 18} textAnchor="middle" dominantBaseline="central"
-                fontSize="11" fill="hsl(var(--muted-foreground))">
+              <text x={CENTER} y={CENTER + 20} textAnchor="middle" dominantBaseline="central"
+                fontSize="13" fill="hsl(var(--muted-foreground))">
                 {current} / {target} {unit}
               </text>
             </>
