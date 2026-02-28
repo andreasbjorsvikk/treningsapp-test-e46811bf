@@ -76,16 +76,16 @@ const SessionBadge = ({ session, size = 'md', isDark }: {
 }) => {
   const colors = getActivityColors(session.type, isDark);
   const sizeClasses = {
-    sm: 'w-4 h-4 rounded-[4px]',
-    'sm-single': 'w-7 h-7 rounded-[7px]',
-    md: 'w-11 h-11 md:w-10 md:h-10 lg:w-11 lg:h-11 rounded-lg',
-    lg: 'w-14 h-14 md:w-12 md:h-12 lg:w-16 lg:h-16 rounded-xl',
+    sm: 'w-4 h-4 max-w-4 max-h-4 rounded-[4px]',
+    'sm-single': 'w-7 h-7 max-w-7 max-h-7 rounded-[7px]',
+    md: 'w-10 h-10 max-w-10 max-h-10 lg:w-11 lg:h-11 lg:max-w-11 lg:max-h-11 rounded-lg',
+    lg: 'w-12 h-12 max-w-12 max-h-12 lg:w-14 lg:h-14 lg:max-w-14 lg:max-h-14 rounded-xl',
   };
   const iconSizes = {
-    sm: 'w-[14px] h-[14px]',
-    'sm-single': 'w-[22px] h-[22px]',
-    md: 'w-7 h-7 md:w-6 md:h-6 lg:w-7 lg:h-7',
-    lg: 'w-10 h-10 md:w-8 md:h-8 lg:w-11 lg:h-11',
+    sm: 'w-[14px] h-[14px] max-w-[14px] max-h-[14px]',
+    'sm-single': 'w-[20px] h-[20px] max-w-[20px] max-h-[20px]',
+    md: 'w-6 h-6 max-w-6 max-h-6 lg:w-7 lg:h-7',
+    lg: 'w-8 h-8 max-w-8 max-h-8 lg:w-9 lg:h-9',
   };
 
   const isStyrke = session.type === 'styrke';

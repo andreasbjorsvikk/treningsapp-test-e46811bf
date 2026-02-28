@@ -76,9 +76,11 @@ const Index = () => {
     setRefresh(r => r + 1);
   }, [editSession]);
 
-  const navigateToStats = (period: 'month' | 'year') => {
-    setInitialStatPeriod(period);
+  const navigateToGoals = () => {
+    setInitialStatPeriod(undefined);
     setActiveTab('trening');
+    // Signal to TrainingPage to open goals tab
+    window.dispatchEvent(new CustomEvent('navigate-to-goals'));
   };
 
   return (
@@ -97,7 +99,7 @@ const Index = () => {
                   unit={monthData.unit}
                   title={new Date().toLocaleString('nb-NO', { month: 'long' }).replace(/^./, c => c.toUpperCase())}
                   hasGoal={!!primaryGoal}
-                  onClick={() => navigateToStats('month')}
+                  onClick={navigateToGoals}
                 />
                 <ProgressWheel
                   percent={0}
@@ -108,7 +110,7 @@ const Index = () => {
                   label="I år"
                   hasGoal={!!primaryGoal}
                   paceMode={{ diff: yearData.diff, expected: yearData.expected }}
-                  onClick={() => navigateToStats('year')}
+                  onClick={navigateToGoals}
                 />
               </div>
             </section>

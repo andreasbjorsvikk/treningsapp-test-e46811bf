@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { SessionType, WorkoutSession } from '@/types/workout';
 import GoalsSection from '@/components/GoalsSection';
 import { workoutService } from '@/services/workoutService';
@@ -32,6 +32,13 @@ const monthNames = [
 
 const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
   const [subTab, setSubTab] = useState<TrainingSubTab>(initialStatPeriod ? 'statistikk' : 'statistikk');
+
+  // Listen for navigation to goals tab from home page
+  useEffect(() => {
+    const handler = () => setSubTab('mål');
+    window.addEventListener('navigate-to-goals', handler);
+    return () => window.removeEventListener('navigate-to-goals', handler);
+  }, []);
   const [filterType, setFilterType] = useState<SessionType | 'all'>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
@@ -216,6 +223,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
               unit={monthData.unit}
               title={`${monthNames[statMonth]} ${statYear}`}
               hasGoal={!!primaryGoal}
+              onClick={() => setSubTab('mål')}
             />
             <ProgressWheel
               percent={0}
@@ -225,6 +233,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
               title={String(statYear)}
               hasGoal={!!primaryGoal}
               paceMode={{ diff: yearData.diff, expected: yearData.expected }}
+              onClick={() => setSubTab('mål')}
             />
           </div>
 

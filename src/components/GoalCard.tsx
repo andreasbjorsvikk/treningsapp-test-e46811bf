@@ -74,7 +74,7 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome }: GoalCardPr
 
   // Subtle tinted background for activity-specific goals
   const cardBg = isActivitySpecific
-    ? { backgroundColor: isDark ? `${colors.bg}15` : `${colors.bg}22` }
+    ? { backgroundColor: isDark ? `${colors.bg}30` : `${colors.bg}40` }
     : {};
 
   return (
@@ -106,12 +106,12 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome }: GoalCardPr
       {/* Activity icon */}
       <div className="flex items-center justify-center">
         {goal.activityType === 'all' ? (
-          <div className="rounded-full p-1.5 bg-secondary">
-            <Layers className="w-4 h-4 text-muted-foreground" />
+          <div className="rounded-full p-2 bg-secondary">
+            <Layers className="w-5 h-5 text-muted-foreground" />
           </div>
         ) : (
-          <div className="rounded-full p-1.5" style={{ backgroundColor: colors.bg }}>
-            <ActivityIcon type={goal.activityType} className="w-4 h-4" colorOverride={!isDark ? colors.text : undefined} />
+          <div className="rounded-full p-2" style={{ backgroundColor: colors.bg }}>
+            <ActivityIcon type={goal.activityType} className="w-5 h-5" colorOverride={!isDark ? colors.text : undefined} />
           </div>
         )}
       </div>
