@@ -92,35 +92,46 @@ function ClockShape({ fillPct, color, done }: { fillPct: number; color: string; 
   );
 }
 
-// Running track / shoe print path for distance
+// Road/track ring for distance
 function DistanceShape({ fillPct, color, done, uid }: { fillPct: number; color: string; done: boolean; uid: string }) {
-  // A winding path from bottom to top
-  const pathD = "M16 58 Q16 46 28 42 Q42 38 44 28 Q46 18 36 12 Q28 8 32 4";
-  const totalLength = 100; // approximate
-  const dashLen = (fillPct / 100) * totalLength;
-  
+  const cx = 32, cy = 32, r = 24;
+  const circumference = 2 * Math.PI * r;
+  const fillLen = (fillPct / 100) * circumference;
+  const angle = (fillPct / 100) * 360;
+  const rad = (angle - 90) * (Math.PI / 180);
+  const dotX = cx + r * Math.cos(rad);
+  const dotY = cy + r * Math.sin(rad);
+
   return (
     <>
-      {/* Background path */}
-      <path d={pathD} fill="none" stroke={color} strokeWidth={5} opacity={0.1} strokeLinecap="round" />
-      {/* Filled path */}
-      <path 
-        d={pathD} 
-        fill="none" 
-        stroke={color} 
-        strokeWidth={5} 
-        opacity={done ? 1 : 0.7} 
+      {/* Background ring */}
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={8} opacity={0.1} strokeLinecap="round" />
+      {/* Filled arc */}
+      <circle
+        cx={cx} cy={cy} r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth={8}
+        opacity={done ? 1 : 0.7}
         strokeLinecap="round"
-        strokeDasharray={`${totalLength}`}
-        strokeDashoffset={totalLength - dashLen}
+        strokeDasharray={`${circumference}`}
+        strokeDashoffset={circumference - fillLen}
+        transform={`rotate(-90 ${cx} ${cy})`}
       />
-      {/* Dots along path for style */}
-      <circle cx={16} cy={58} r={3} fill={color} opacity={0.3} />
-      {fillPct >= 100 && (
-        <circle cx={32} cy={4} r={3} fill={color} opacity={0.9} />
+      {/* Progress dot */}
+      {fillPct > 0 && fillPct < 100 && (
+        <circle cx={dotX} cy={dotY} r={4} fill={color} opacity={0.9} />
       )}
-      {/* Flag at top */}
-      <path d="M32 4 L32 0 L38 2 L32 4" fill={color} opacity={fillPct >= 100 ? 1 : 0.25} />
+      {/* Start marker */}
+      <circle cx={cx} cy={cy - r} r={3} fill={color} opacity={0.4} />
+      {/* Flag at finish */}
+      {fillPct >= 100 && (
+        <circle cx={cx} cy={cy - r} r={5} fill={color} opacity={1} />
+      )}
+      {/* Center km text */}
+      <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="central" fontSize="11" fontWeight="bold" fill={color} opacity={0.7}>
+        km
+      </text>
     </>
   );
 }
