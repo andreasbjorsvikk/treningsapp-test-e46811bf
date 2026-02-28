@@ -50,7 +50,7 @@ function MountainShape({ fillPct, color, done, uid }: { fillPct: number; color: 
         </clipPath>
       </defs>
       <path d="M32 6 L58 58 H6 Z" fill={color} opacity={0.12} strokeLinejoin="round" />
-      <path d="M32 6 L58 58 H6 Z" fill={color} opacity={done ? 1 : 0.7} clipPath={`url(#mtn-${uid})`} strokeLinejoin="round" />
+      <path d="M32 6 L58 58 H6 Z" fill={color} opacity={done ? 1 : 0.65} clipPath={`url(#mtn-${uid})`} strokeLinejoin="round" />
       <path d="M32 6 L39 19 H25 Z" fill="white" opacity={0.45} />
     </>
   );
@@ -71,7 +71,7 @@ function ClockShape({ fillPct, color, done }: { fillPct: number; color: string; 
   return (
     <>
       <circle cx={cx} cy={cy} r={r} fill={color} opacity={0.1} />
-      <path d={arcPath} fill={color} opacity={done ? 1 : 0.55} />
+      <path d={arcPath} fill={color} opacity={done ? 1 : 0.6} />
       <circle cx={cx} cy={cy} r={2.5} fill="white" opacity={0.85} />
       {[0, 90, 180, 270].map(a => {
         const tr = (a - 90) * (Math.PI / 180);
@@ -92,46 +92,35 @@ function ClockShape({ fillPct, color, done }: { fillPct: number; color: string; 
   );
 }
 
-// Road/track ring for distance
+// Horizontal road/bar for distance
 function DistanceShape({ fillPct, color, done, uid }: { fillPct: number; color: string; done: boolean; uid: string }) {
-  const cx = 32, cy = 32, r = 24;
-  const circumference = 2 * Math.PI * r;
-  const fillLen = (fillPct / 100) * circumference;
-  const angle = (fillPct / 100) * 360;
-  const rad = (angle - 90) * (Math.PI / 180);
-  const dotX = cx + r * Math.cos(rad);
-  const dotY = cy + r * Math.sin(rad);
-
+  const barY = 26;
+  const barH = 12;
+  const barW = 52;
+  const barX = 6;
+  const fillW = (fillPct / 100) * barW;
+  
   return (
     <>
-      {/* Background ring */}
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={8} opacity={0.1} strokeLinecap="round" />
-      {/* Filled arc */}
-      <circle
-        cx={cx} cy={cy} r={r}
-        fill="none"
-        stroke={color}
-        strokeWidth={8}
-        opacity={done ? 1 : 0.7}
-        strokeLinecap="round"
-        strokeDasharray={`${circumference}`}
-        strokeDashoffset={circumference - fillLen}
-        transform={`rotate(-90 ${cx} ${cy})`}
-      />
-      {/* Progress dot */}
-      {fillPct > 0 && fillPct < 100 && (
-        <circle cx={dotX} cy={dotY} r={4} fill={color} opacity={0.9} />
-      )}
-      {/* Start marker */}
-      <circle cx={cx} cy={cy - r} r={3} fill={color} opacity={0.4} />
-      {/* Flag at finish */}
-      {fillPct >= 100 && (
-        <circle cx={cx} cy={cy - r} r={5} fill={color} opacity={1} />
-      )}
-      {/* Center km text */}
-      <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="central" fontSize="11" fontWeight="bold" fill={color} opacity={0.7}>
-        km
-      </text>
+      {/* Road background */}
+      <rect x={barX} y={barY} width={barW} height={barH} rx={6} fill={color} opacity={0.12} />
+      {/* Road dashes */}
+      {[0, 1, 2, 3, 4, 5, 6, 7].map(i => (
+        <rect key={i} x={barX + 4 + i * 6.5} y={barY + 5} width={3.5} height={2} rx={1} fill={color} opacity={0.08} />
+      ))}
+      {/* Filled progress */}
+      <rect x={barX} y={barY} width={Math.max(fillW, barH)} height={barH} rx={6} fill={color} opacity={done ? 1 : 0.7}>
+        <clipPath id={`dist-clip-${uid}`}>
+          <rect x={barX} y={barY} width={fillW} height={barH} />
+        </clipPath>
+      </rect>
+      <rect x={barX} y={barY} width={fillW} height={barH} rx={6} fill={color} opacity={done ? 1 : 0.7} />
+      {/* Start pin */}
+      <circle cx={barX + 3} cy={barY + barH + 6} r={2.5} fill={color} opacity={0.3} />
+      <line x1={barX + 3} y1={barY + barH} x2={barX + 3} y2={barY + barH + 4} stroke={color} strokeWidth={1.5} opacity={0.3} />
+      {/* End flag */}
+      <line x1={barX + barW - 3} y1={barY - 2} x2={barX + barW - 3} y2={barY + barH + 6} stroke={color} strokeWidth={1.5} opacity={done ? 0.8 : 0.2} />
+      <path d={`M${barX + barW - 3} ${barY - 2} L${barX + barW + 5} ${barY + 2} L${barX + barW - 3} ${barY + 6}`} fill={color} opacity={done ? 0.9 : 0.2} />
     </>
   );
 }

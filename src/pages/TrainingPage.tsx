@@ -31,13 +31,22 @@ const monthNames = [
 ];
 
 const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
-  const [subTab, setSubTab] = useState<TrainingSubTab>(initialStatPeriod ? 'statistikk' : 'statistikk');
+  const [subTab, setSubTab] = useState<TrainingSubTab>('statistikk');
 
   // Listen for navigation to goals tab from home page
   useEffect(() => {
     const handler = () => setSubTab('mål');
     window.addEventListener('navigate-to-goals', handler);
     return () => window.removeEventListener('navigate-to-goals', handler);
+  }, []);
+
+  // Navigate to goals on initial mount if triggered
+  useEffect(() => {
+    const pending = (window as any).__navigateToGoals;
+    if (pending) {
+      setSubTab('mål');
+      delete (window as any).__navigateToGoals;
+    }
   }, []);
   const [filterType, setFilterType] = useState<SessionType | 'all'>('all');
   const [dialogOpen, setDialogOpen] = useState(false);

@@ -78,9 +78,9 @@ const Index = () => {
 
   const navigateToGoals = () => {
     setInitialStatPeriod(undefined);
+    (window as any).__navigateToGoals = true;
     setActiveTab('trening');
-    // Signal to TrainingPage to open goals tab
-    window.dispatchEvent(new CustomEvent('navigate-to-goals'));
+    setTimeout(() => window.dispatchEvent(new CustomEvent('navigate-to-goals')), 50);
   };
 
   return (
