@@ -9,47 +9,37 @@ interface ProgressWheelProps {
   title: string;
   hasGoal: boolean;
   onClick?: () => void;
-  paceMode?: {
-    diff: number;
-    expected: number;
-  };
+  /** Expected progress as fraction 0-1 (where on the ring the "today" marker sits) */
+  expectedFraction?: number;
+  /** Difference: current - expected (positive = ahead, negative = behind) */
+  paceDiff?: number;
+  /** Show pace label below wheel (only on home page) */
+  showPaceLabel?: boolean;
 }
 
 const RADIUS = 70;
 const STROKE = 14;
-const PADDING = 16; // extra space for glow
+const PADDING = 16;
 const SIZE = (RADIUS + STROKE) * 2 + PADDING * 2;
 const CENTER = SIZE / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const ANIM_DURATION = 1200;
 
-function getDiffColor(diff: number): string {
-  const absDiff = Math.abs(diff);
-  if (absDiff <= 1) return 'hsl(45, 80%, 55%)';
-  if (diff > 0) {
-    if (absDiff <= 5) return 'hsl(80, 65%, 50%)';
-    if (absDiff <= 10) return 'hsl(120, 55%, 45%)';
-    return 'hsl(140, 60%, 40%)';
-  } else {
-    if (absDiff <= 5) return 'hsl(30, 85%, 55%)';
-    if (absDiff <= 10) return 'hsl(10, 75%, 55%)';
-    return 'hsl(0, 70%, 45%)';
-  }
-}
-
-function getPercentColor(p: number): string {
-  if (p <= 20) return 'hsl(0, 70%, 50%)';
-  if (p <= 40) return 'hsl(10, 75%, 55%)';
-  if (p <= 55) return 'hsl(30, 85%, 55%)';
-  if (p <= 70) return 'hsl(45, 80%, 55%)';
-  if (p <= 85) return 'hsl(80, 65%, 50%)';
-  return 'hsl(120, 55%, 45%)';
+/** Color based on pace difference */
+function getPaceColor(diff: number): string {
+  if (diff >= 5) return 'hsl(140, 60%, 40%)';     // strong green
+  if (diff >= 1) return 'hsl(120, 45%, 55%)';      // light green
+  if (diff >= -0.5) return 'hsl(120, 45%, 55%)';   // on track = light green
+  if (diff >= -2) return 'hsl(45, 85%, 50%)';      // yellow
+  if (diff >= -5) return 'hsl(25, 90%, 50%)';      // orange
+  return 'hsl(0, 70%, 50%)';                        // red
 }
 
 function getPaceLabel(diff: number): string {
-  if (Math.abs(diff) <= 1) return 'Du er i rute';
-  if (diff > 0) return 'Du ligger foran skjema';
-  return 'Du ligger bak skjema';
+  const rounded = Math.round(Math.abs(diff));
+  if (Math.abs(diff) < 0.5) return 'Du er i rute';
+  if (diff > 0) return `${rounded} ${rounded === 1 ? 'økt' : 'økter'} foran skjema`;
+  return `${rounded} ${rounded === 1 ? 'økt' : 'økter'} bak skjema`;
 }
 
 function easeOutCubic(t: number): number {
@@ -65,41 +55,34 @@ const ProgressWheel = ({
   title,
   hasGoal,
   onClick,
-  paceMode,
+  expectedFraction,
+  paceDiff,
+  showPaceLabel,
 }: ProgressWheelProps) => {
-  const isPace = !!paceMode;
-  const prevPercentRef = useRef(0);
   const animRef = useRef<number>();
   const [animatedValue, setAnimatedValue] = useState(0);
   const [showAchievement, setShowAchievement] = useState(false);
   const hasAnimatedInitial = useRef(false);
+  const prevRef = useRef(0);
 
   const clampedPercent = Math.max(0, percent);
-  const paceDiff = paceMode?.diff ?? 0;
-
-  // The target value we animate towards
-  const targetValue = isPace ? paceDiff : clampedPercent;
 
   useEffect(() => {
-    const from = prevPercentRef.current;
-    const to = targetValue;
-    prevPercentRef.current = to;
-
-    // Check if we crossed 100% (for achievement effect)
-    if (!isPace && from < 100 && to >= 100 && hasAnimatedInitial.current) {
-      // Will trigger achievement after animation
+    const from = prevRef.current;
+    const to = clampedPercent;
+    prevRef.current = to;
+    if (from < 100 && to >= 100 && hasAnimatedInitial.current) {
       const timer = setTimeout(() => {
         setShowAchievement(true);
         setTimeout(() => setShowAchievement(false), 1500);
       }, ANIM_DURATION);
       return () => clearTimeout(timer);
     }
-  }, [targetValue, isPace]);
+  }, [clampedPercent]);
 
-  // Animate value changes
   useEffect(() => {
     const from = animatedValue;
-    const to = targetValue;
+    const to = clampedPercent;
     if (from === to && hasAnimatedInitial.current) return;
 
     const start = performance.now();
@@ -121,50 +104,32 @@ const ProgressWheel = ({
     animRef.current = requestAnimationFrame(animate);
     return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetValue]);
+  }, [clampedPercent]);
 
-  // --- Standard percent mode ---
-  const displayPercent = Math.round(isPace ? 0 : animatedValue);
-  const isGold = !isPace && clampedPercent > 100;
-  const isOverAchieve = !isPace && clampedPercent > 100;
-  // Glow intensity: scales from 100% to 150% (0→1)
+  const displayPercent = Math.round(animatedValue);
+  const fillFraction = Math.min(animatedValue, 100) / 100;
+  const fillOffset = CIRCUMFERENCE * (1 - fillFraction);
+
+  const isGold = clampedPercent > 100;
+  const isComplete = clampedPercent >= 100;
   const glowIntensity = isGold ? Math.min((clampedPercent - 100) / 50, 1) : 0;
-  const isComplete = !isPace && clampedPercent >= 100;
 
-  // --- Offsets ---
-  const standardFill = Math.min(isPace ? 0 : animatedValue, 100) / 100;
-  const animatedStandardOffset = CIRCUMFERENCE * (1 - standardFill);
-
-  const paceFill = isPace ? Math.min(Math.abs(animatedValue) / 20, 1) : 0;
-  const paceOffset = CIRCUMFERENCE * (1 - paceFill);
-
-  const animatedDiff = isPace ? animatedValue : 0;
-
-  const diffColor = paceMode ? getDiffColor(paceMode.diff) : '';
-  const paceLabel = paceMode ? getPaceLabel(paceMode.diff) : '';
-  const diffSign = paceMode && paceMode.diff > 0 ? '+' : '';
+  // Determine ring color from pace
+  const diff = paceDiff ?? 0;
+  const ringColor = hasGoal && expectedFraction != null
+    ? getPaceColor(diff)
+    : isComplete
+      ? 'hsl(120, 55%, 45%)'
+      : 'hsl(var(--primary))';
 
   const goldColor = '#D4A843';
   const goldGlow = '#F0D060';
-
-  const offset = isPace ? paceOffset : animatedStandardOffset;
-  const percentColor = !isPace ? getPercentColor(isPace ? 0 : animatedValue) : '';
-
   const safeId = (label || title).replace(/\s+/g, '-');
-  const strokeColor = isPace
-    ? diffColor
-    : isGold
-      ? `url(#gold-grad-${safeId})`
-      : percentColor;
-
+  const strokeColor = isGold ? `url(#gold-grad-${safeId})` : ringColor;
   const rotation = `rotate(-90 ${CENTER} ${CENTER})`;
-  // Pace: negative = counter-clockwise (negate offset), positive = clockwise (normal offset)
-  const isNegativePace = isPace && paceMode!.diff < 0;
-  // Negative pace: fill counter-clockwise (left), positive: fill clockwise (right)
-  const paceRotation = isNegativePace
-    ? `rotate(-90 ${CENTER} ${CENTER}) scale(1, -1) translate(0, -${SIZE})`
-    : rotation;
-  const finalOffset = isPace ? paceOffset : offset;
+
+  // Marker line for expected progress
+  const markerAngle = expectedFraction != null ? expectedFraction * 360 : null;
 
   return (
     <button
@@ -211,8 +176,10 @@ const ProgressWheel = ({
           </filter>
         </defs>
 
+        {/* Background ring */}
         <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none" stroke="hsl(var(--muted))" strokeWidth={STROKE} opacity={0.3} />
 
+        {/* Achievement pulse */}
         {showAchievement && (
           <circle
             cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
@@ -224,6 +191,7 @@ const ProgressWheel = ({
           />
         )}
 
+        {/* Fill ring */}
         <circle
           cx={CENTER}
           cy={CENTER}
@@ -233,12 +201,13 @@ const ProgressWheel = ({
           strokeWidth={STROKE}
           strokeLinecap="round"
           strokeDasharray={CIRCUMFERENCE}
-          strokeDashoffset={finalOffset}
-          transform={isPace ? paceRotation : rotation}
+          strokeDashoffset={fillOffset}
+          transform={rotation}
           filter={isGold ? `url(#gold-glow-${safeId})` : `url(#ring-shadow-${safeId})`}
         />
 
-        {isOverAchieve && (
+        {/* Gold overachieve pulse */}
+        {isGold && (
           <circle
             cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
             stroke={goldGlow}
@@ -254,20 +223,35 @@ const ProgressWheel = ({
           />
         )}
 
-        {/* Center text - only percentage/diff, not the count */}
+        {/* Expected progress marker line */}
+        {hasGoal && markerAngle != null && !isGold && (
+          (() => {
+            const rad = ((markerAngle - 90) * Math.PI) / 180;
+            const innerR = RADIUS - STROKE / 2 - 3;
+            const outerR = RADIUS + STROKE / 2 + 3;
+            const x1 = CENTER + innerR * Math.cos(rad);
+            const y1 = CENTER + innerR * Math.sin(rad);
+            const x2 = CENTER + outerR * Math.cos(rad);
+            const y2 = CENTER + outerR * Math.sin(rad);
+            return (
+              <line
+                x1={x1} y1={y1} x2={x2} y2={y2}
+                stroke="hsl(var(--foreground))"
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                opacity={0.7}
+              />
+            );
+          })()
+        )}
+
+        {/* Center text */}
         {hasGoal ? (
-          isPace ? (
-            <text x={CENTER} y={CENTER} textAnchor="middle" dominantBaseline="central"
-              className="font-display font-bold" fontSize="24" fill={diffColor}>
-              {diffSign}{Math.round(animatedDiff)}
-            </text>
-          ) : (
-            <text x={CENTER} y={CENTER} textAnchor="middle" dominantBaseline="central"
-              className="font-display font-bold" fontSize="22"
-              fill={isGold ? goldColor : isComplete ? 'hsl(120, 55%, 45%)' : 'hsl(var(--foreground))'}>
-              {displayPercent}%
-            </text>
-          )
+          <text x={CENTER} y={CENTER} textAnchor="middle" dominantBaseline="central"
+            className="font-display font-bold" fontSize="22"
+            fill={isGold ? goldColor : isComplete ? 'hsl(120, 55%, 45%)' : 'hsl(var(--foreground))'}>
+            {displayPercent}%
+          </text>
         ) : (
           <text x={CENTER} y={CENTER} textAnchor="middle" dominantBaseline="central"
             className="font-display font-medium" fontSize="13" fill="hsl(var(--muted-foreground))">
@@ -283,9 +267,17 @@ const ProgressWheel = ({
         </span>
       )}
 
-      {label && (
+      {/* Pace label - only on home */}
+      {hasGoal && showPaceLabel && expectedFraction != null && (
         <span className="text-xs font-medium text-muted-foreground">
-          {isPace && hasGoal ? paceLabel : label}
+          {getPaceLabel(diff)}
+        </span>
+      )}
+
+      {/* Fallback label */}
+      {label && !showPaceLabel && (
+        <span className="text-xs font-medium text-muted-foreground">
+          {label}
         </span>
       )}
     </button>
