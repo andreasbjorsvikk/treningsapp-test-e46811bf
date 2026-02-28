@@ -19,7 +19,6 @@ function save(goal: PrimaryGoal | null): void {
 }
 
 export function convertGoalValue(value: number, from: GoalPeriod, to: GoalPeriod): number {
-  // Convert to yearly first, then to target period
   let yearly: number;
   switch (from) {
     case 'week': yearly = value * 52; break;
@@ -31,6 +30,44 @@ export function convertGoalValue(value: number, from: GoalPeriod, to: GoalPeriod
     case 'month': return Math.round((yearly / 12) * 10) / 10;
     case 'year': return yearly;
   }
+}
+
+/**
+ * Calculate pro-rated target for a period based on startDate.
+ * If the goal starts mid-period, only a fraction of the target applies.
+ */
+export function getProratedTarget(goal: PrimaryGoal, period: GoalPeriod): number {
+  const fullTarget = convertGoalValue(goal.inputTarget, goal.inputPeriod, period);
+  const startDate = new Date(goal.startDate);
+  const now = new Date();
+
+  if (period === 'month') {
+    const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const totalDays = periodEnd.getDate();
+    
+    if (startDate > periodEnd) return 0;
+    if (startDate <= periodStart) return fullTarget;
+    
+    const effectiveDays = totalDays - startDate.getDate() + 1;
+    return Math.round((fullTarget * effectiveDays / totalDays) * 10) / 10;
+  }
+
+  if (period === 'year') {
+    const yearStart = new Date(now.getFullYear(), 0, 1);
+    const yearEnd = new Date(now.getFullYear(), 11, 31);
+    const totalDays = 365;
+    
+    if (startDate > yearEnd) return 0;
+    if (startDate <= yearStart) return fullTarget;
+    
+    const dayOfYear = Math.floor((startDate.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24));
+    const effectiveDays = totalDays - dayOfYear;
+    return Math.round((fullTarget * effectiveDays / totalDays) * 10) / 10;
+  }
+
+  // week - just return full target (week is short enough)
+  return fullTarget;
 }
 
 export const primaryGoalService = {

@@ -18,6 +18,8 @@ const periodOptions: { id: GoalPeriod; label: string }[] = [
 const PrimaryGoalForm = ({ existing, onSave, onCancel }: PrimaryGoalFormProps) => {
   const [period, setPeriod] = useState<GoalPeriod>(existing?.inputPeriod || 'month');
   const [target, setTarget] = useState(existing?.inputTarget?.toString() || '');
+  const today = new Date().toISOString().slice(0, 10);
+  const [startDate, setStartDate] = useState(existing?.startDate || today);
 
   const targetNum = parseFloat(target) || 0;
 
@@ -31,7 +33,7 @@ const PrimaryGoalForm = ({ existing, onSave, onCancel }: PrimaryGoalFormProps) =
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (targetNum <= 0) return;
-    primaryGoalService.set({ inputPeriod: period, inputTarget: targetNum });
+    primaryGoalService.set({ inputPeriod: period, inputTarget: targetNum, startDate });
     onSave();
   };
 
@@ -75,6 +77,23 @@ const PrimaryGoalForm = ({ existing, onSave, onCancel }: PrimaryGoalFormProps) =
           className="w-full bg-secondary rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           required
         />
+      </div>
+
+      {/* Start date */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Startdato for mål
+        </label>
+        <input
+          type="date"
+          value={startDate}
+          onChange={e => setStartDate(e.target.value)}
+          className="w-full bg-secondary rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          required
+        />
+        <p className="text-xs text-muted-foreground">
+          Mål beregnes fra denne datoen. Starter du midt i en periode, justeres kravet ned.
+        </p>
       </div>
 
       {/* Equivalents */}

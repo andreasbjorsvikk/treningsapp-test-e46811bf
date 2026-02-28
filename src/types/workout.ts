@@ -12,11 +12,11 @@ export type SessionType =
 export interface WorkoutSession {
   id: string;
   type: SessionType;
-  title?: string; // optional manual name
-  date: string; // ISO date
+  title?: string;
+  date: string;
   durationMinutes: number;
-  distance?: number; // km
-  elevationGain?: number; // meters
+  distance?: number;
+  elevationGain?: number;
   notes?: string;
   userId?: string;
 }
@@ -52,6 +52,7 @@ export interface PrimaryGoal {
   id: string;
   inputPeriod: GoalPeriod;
   inputTarget: number;
+  startDate: string; // ISO date - when the goal starts
   createdAt: string;
 }
 
