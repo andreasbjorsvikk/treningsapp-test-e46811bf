@@ -19,17 +19,20 @@ const GoalProgressVisual = ({ metric, activityType, percent, current, target }: 
   const fillPct = Math.min(percent, 100);
   const done = percent >= 100;
 
+  // Use unique IDs based on a combination to avoid SVG clip conflicts
+  const uid = `${metric}-${activityType}-${Math.round(fillPct)}`;
+
   return (
     <div className="flex items-center justify-center w-full h-full">
       <svg viewBox="0 0 64 64" className="w-full h-full" aria-label={`${Math.round(fillPct)}% fremgang`}>
         {metric === 'elevation' ? (
-          <MountainShape fillPct={fillPct} color={colors.text} done={done} />
+          <MountainShape fillPct={fillPct} color={colors.text} done={done} uid={uid} />
         ) : metric === 'minutes' ? (
           <ClockShape fillPct={fillPct} color={colors.text} done={done} />
         ) : metric === 'distance' ? (
-          <CircuitShape fillPct={fillPct} color={colors.text} done={done} />
+          <DistanceShape fillPct={fillPct} color={colors.text} done={done} uid={uid} />
         ) : (
-          <BoltShape fillPct={fillPct} color={colors.text} done={done} />
+          <BoltShape fillPct={fillPct} color={colors.text} done={done} uid={uid} />
         )}
       </svg>
     </div>
@@ -37,30 +40,27 @@ const GoalProgressVisual = ({ metric, activityType, percent, current, target }: 
 };
 
 // Mountain for elevation
-function MountainShape({ fillPct, color, done }: { fillPct: number; color: string; done: boolean }) {
-  const clipY = 60 - (fillPct / 100) * 52;
+function MountainShape({ fillPct, color, done, uid }: { fillPct: number; color: string; done: boolean; uid: string }) {
+  const clipY = 58 - (fillPct / 100) * 50;
   return (
     <>
       <defs>
-        <clipPath id={`mtn-clip-${fillPct}`}>
+        <clipPath id={`mtn-${uid}`}>
           <rect x="0" y={clipY} width="64" height={64 - clipY} />
         </clipPath>
       </defs>
-      {/* Background mountain */}
-      <path d="M32 8 L58 56 H6 Z" fill={color} opacity={0.15} strokeLinejoin="round" />
-      {/* Filled mountain */}
-      <path d="M32 8 L58 56 H6 Z" fill={color} opacity={done ? 1 : 0.7} clipPath={`url(#mtn-clip-${fillPct})`} strokeLinejoin="round" />
-      {/* Snow cap */}
-      <path d="M32 8 L38 20 H26 Z" fill="white" opacity={0.5} />
+      <path d="M32 6 L58 58 H6 Z" fill={color} opacity={0.12} strokeLinejoin="round" />
+      <path d="M32 6 L58 58 H6 Z" fill={color} opacity={done ? 1 : 0.7} clipPath={`url(#mtn-${uid})`} strokeLinejoin="round" />
+      <path d="M32 6 L39 19 H25 Z" fill="white" opacity={0.45} />
     </>
   );
 }
 
-// Clock for minutes
+// Clock for minutes/hours
 function ClockShape({ fillPct, color, done }: { fillPct: number; color: string; done: boolean }) {
   const angle = (fillPct / 100) * 360;
   const rad = (angle - 90) * (Math.PI / 180);
-  const cx = 32, cy = 32, r = 24;
+  const cx = 32, cy = 32, r = 26;
   const x = cx + r * Math.cos(rad);
   const y = cy + r * Math.sin(rad);
   const largeArc = angle > 180 ? 1 : 0;
@@ -70,23 +70,21 @@ function ClockShape({ fillPct, color, done }: { fillPct: number; color: string; 
 
   return (
     <>
-      <circle cx={cx} cy={cy} r={r} fill={color} opacity={0.12} />
-      <path d={arcPath} fill={color} opacity={done ? 1 : 0.6} />
-      {/* Clock center dot */}
-      <circle cx={cx} cy={cy} r={2.5} fill="white" opacity={0.8} />
-      {/* Tick marks */}
+      <circle cx={cx} cy={cy} r={r} fill={color} opacity={0.1} />
+      <path d={arcPath} fill={color} opacity={done ? 1 : 0.55} />
+      <circle cx={cx} cy={cy} r={2.5} fill="white" opacity={0.85} />
       {[0, 90, 180, 270].map(a => {
         const tr = (a - 90) * (Math.PI / 180);
         return (
           <line
             key={a}
-            x1={cx + 20 * Math.cos(tr)}
-            y1={cy + 20 * Math.sin(tr)}
-            x2={cx + 24 * Math.cos(tr)}
-            y2={cy + 24 * Math.sin(tr)}
+            x1={cx + 22 * Math.cos(tr)}
+            y1={cy + 22 * Math.sin(tr)}
+            x2={cx + 26 * Math.cos(tr)}
+            y2={cy + 26 * Math.sin(tr)}
             stroke="white"
             strokeWidth={1.5}
-            opacity={0.5}
+            opacity={0.45}
           />
         );
       })}
@@ -94,60 +92,51 @@ function ClockShape({ fillPct, color, done }: { fillPct: number; color: string; 
   );
 }
 
-// Circuit/ring for distance — a donut that fills up
-function CircuitShape({ fillPct, color, done }: { fillPct: number; color: string; done: boolean }) {
-  const cx = 32, cy = 32, r = 22;
-  const circumference = 2 * Math.PI * r;
-  const dashOffset = circumference - (fillPct / 100) * circumference;
-  const angle = (fillPct / 100) * 360;
-  const rad = ((angle - 90) * Math.PI) / 180;
-  const dotX = cx + r * Math.cos(rad);
-  const dotY = cy + r * Math.sin(rad);
-
+// Running track / shoe print path for distance
+function DistanceShape({ fillPct, color, done, uid }: { fillPct: number; color: string; done: boolean; uid: string }) {
+  // A winding path from bottom to top
+  const pathD = "M16 58 Q16 46 28 42 Q42 38 44 28 Q46 18 36 12 Q28 8 32 4";
+  const totalLength = 100; // approximate
+  const dashLen = (fillPct / 100) * totalLength;
+  
   return (
     <>
-      {/* Background ring */}
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={6} opacity={0.12} />
-      {/* Filled ring */}
-      <circle
-        cx={cx} cy={cy} r={r}
-        fill="none"
-        stroke={color}
-        strokeWidth={6}
-        opacity={done ? 1 : 0.7}
+      {/* Background path */}
+      <path d={pathD} fill="none" stroke={color} strokeWidth={5} opacity={0.1} strokeLinecap="round" />
+      {/* Filled path */}
+      <path 
+        d={pathD} 
+        fill="none" 
+        stroke={color} 
+        strokeWidth={5} 
+        opacity={done ? 1 : 0.7} 
         strokeLinecap="round"
-        strokeDasharray={circumference}
-        strokeDashoffset={dashOffset}
-        transform={`rotate(-90 ${cx} ${cy})`}
+        strokeDasharray={`${totalLength}`}
+        strokeDashoffset={totalLength - dashLen}
       />
-      {/* Moving dot */}
-      {fillPct > 0 && fillPct < 100 && (
-        <circle cx={dotX} cy={dotY} r={3.5} fill={color} opacity={0.9} />
+      {/* Dots along path for style */}
+      <circle cx={16} cy={58} r={3} fill={color} opacity={0.3} />
+      {fillPct >= 100 && (
+        <circle cx={32} cy={4} r={3} fill={color} opacity={0.9} />
       )}
-      {/* Center km label */}
-      <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="middle" fontSize="11" fontWeight="700" fill={color} opacity={0.8}>
-        km
-      </text>
-      {/* Start marker */}
-      <circle cx={cx} cy={cy - r} r={2} fill={color} opacity={0.3} />
+      {/* Flag at top */}
+      <path d="M32 4 L32 0 L38 2 L32 4" fill={color} opacity={fillPct >= 100 ? 1 : 0.25} />
     </>
   );
 }
 
 // Lightning bolt for sessions
-function BoltShape({ fillPct, color, done }: { fillPct: number; color: string; done: boolean }) {
-  const clipY = 60 - (fillPct / 100) * 54;
+function BoltShape({ fillPct, color, done, uid }: { fillPct: number; color: string; done: boolean; uid: string }) {
+  const clipY = 60 - (fillPct / 100) * 56;
   return (
     <>
       <defs>
-        <clipPath id={`bolt-clip-${fillPct}`}>
+        <clipPath id={`bolt-${uid}`}>
           <rect x="0" y={clipY} width="64" height={64 - clipY} />
         </clipPath>
       </defs>
-      {/* Background bolt */}
-      <path d="M36 6 L18 34 H28 L24 58 L46 26 H34 Z" fill={color} opacity={0.15} />
-      {/* Filled bolt */}
-      <path d="M36 6 L18 34 H28 L24 58 L46 26 H34 Z" fill={color} opacity={done ? 1 : 0.7} clipPath={`url(#bolt-clip-${fillPct})`} />
+      <path d="M36 4 L16 34 H28 L22 60 L48 26 H34 Z" fill={color} opacity={0.12} />
+      <path d="M36 4 L16 34 H28 L22 60 L48 26 H34 Z" fill={color} opacity={done ? 1 : 0.7} clipPath={`url(#bolt-${uid})`} />
     </>
   );
 }
