@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import GoalForm from '@/components/GoalForm';
 import GoalCard from '@/components/GoalCard';
 import PrimaryGoalForm from '@/components/PrimaryGoalForm';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
 
 const GoalsSection = () => {
   const [showExtraForm, setShowExtraForm] = useState(false);
@@ -283,21 +283,19 @@ const GoalsSection = () => {
         )}
       </div>
 
-      {/* Edit Goal Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={(open) => { if (!open) { setShowEditDialog(false); setEditGoal(undefined); } }}>
-        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md mx-auto overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Rediger mål</DialogTitle>
-          </DialogHeader>
-          {editGoal && (
-            <GoalForm
-              goal={editGoal}
-              onSave={handleEditSave}
-              onCancel={() => { setShowEditDialog(false); setEditGoal(undefined); }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Edit Goal - inline form, same as creating a new goal */}
+      {showEditDialog && editGoal && (
+        <div className="space-y-3">
+          <h3 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+            Rediger mål
+          </h3>
+          <GoalForm
+            goal={editGoal}
+            onSave={handleEditSave}
+            onCancel={() => { setShowEditDialog(false); setEditGoal(undefined); }}
+          />
+        </div>
+      )}
     </div>
   );
 };

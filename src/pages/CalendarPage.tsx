@@ -154,27 +154,27 @@ const CalendarPage = () => {
 
   const selectedSessions = selectedDay ? (sessionsByDate.get(selectedDay) || []) : [];
 
-  // Scroll to current month on first render - retry until element is available
+  // Scroll to current month on first render
+  // iOS Safari needs longer delays as layout happens asynchronously for large DOMs
   useEffect(() => {
-    let attempts = 0;
-    const maxAttempts = 20;
-    const tryScroll = () => {
-      if (currentMonthRef.current && scrollRef.current) {
-        const container = scrollRef.current;
-        const target = currentMonthRef.current;
-        const containerRect = container.getBoundingClientRect();
-        const targetRect = target.getBoundingClientRect();
-        const scrollOffset = targetRect.top - containerRect.top + container.scrollTop;
-        container.scrollTop = scrollOffset;
-        hasScrolledToToday.current = true;
-      } else if (attempts < maxAttempts) {
-        attempts++;
-        requestAnimationFrame(tryScroll);
-      }
-    };
-    if (!hasScrolledToToday.current) {
-      requestAnimationFrame(tryScroll);
-    }
+    const delays = [50, 150, 300, 500, 800];
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    
+    delays.forEach(delay => {
+      timers.push(setTimeout(() => {
+        if (currentMonthRef.current && scrollRef.current && !hasScrolledToToday.current) {
+          const container = scrollRef.current;
+          const target = currentMonthRef.current;
+          const containerRect = container.getBoundingClientRect();
+          const targetRect = target.getBoundingClientRect();
+          const scrollOffset = targetRect.top - containerRect.top + container.scrollTop;
+          container.scrollTop = scrollOffset;
+          hasScrolledToToday.current = true;
+        }
+      }, delay));
+    });
+    
+    return () => timers.forEach(t => clearTimeout(t));
   }, []);
 
   // Infinite scroll handler - debounced for performance
