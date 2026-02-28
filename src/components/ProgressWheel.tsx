@@ -168,7 +168,7 @@ const ProgressWheel = ({
       className="flex flex-col items-center gap-1 p-2 rounded-2xl glass-card shadow-md hover:shadow-xl transition-all cursor-pointer overflow-visible flex-1 min-w-0"
       aria-label={label}
     >
-      <span className="text-sm font-semibold text-foreground mb-1">{title}</span>
+      <span className="text-base font-bold text-foreground mb-1">{title}</span>
 
       <svg
         width={SIZE}
@@ -193,7 +193,6 @@ const ProgressWheel = ({
               </filter>
             </>
           )}
-          {/* Achievement pulse filter */}
           {showAchievement && (
             <filter id={`achieve-glow-${safeId}`} x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="8" result="blur" />
@@ -203,16 +202,13 @@ const ProgressWheel = ({
               </feMerge>
             </filter>
           )}
-          {/* Shadow under the ring for depth */}
           <filter id={`ring-shadow-${safeId}`} x="-10%" y="-10%" width="120%" height="120%">
             <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="rgba(0,0,0,0.25)" />
           </filter>
         </defs>
 
-        {/* Background ring */}
         <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none" stroke="hsl(var(--muted))" strokeWidth={STROKE} opacity={0.3} />
 
-        {/* Achievement pulse ring */}
         {showAchievement && (
           <circle
             cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
@@ -224,7 +220,6 @@ const ProgressWheel = ({
           />
         )}
 
-        {/* Progress ring */}
         <circle
           cx={CENTER}
           cy={CENTER}
@@ -239,7 +234,6 @@ const ProgressWheel = ({
           filter={isGold ? `url(#gold-glow-${safeId})` : `url(#ring-shadow-${safeId})`}
         />
 
-        {/* Over-achieve pulsing glow */}
         {isOverAchieve && (
           <circle
             cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
@@ -256,31 +250,19 @@ const ProgressWheel = ({
           />
         )}
 
-        {/* Center text */}
+        {/* Center text - only percentage/diff, not the count */}
         {hasGoal ? (
           isPace ? (
-            <>
-              <text x={CENTER} y={CENTER - 4} textAnchor="middle" dominantBaseline="central"
-                className="font-display font-bold" fontSize="24" fill={diffColor}>
-                {diffSign}{Math.round(animatedDiff)}
-              </text>
-              <text x={CENTER} y={CENTER + 20} textAnchor="middle" dominantBaseline="central"
-                fontSize="13" fill="hsl(var(--muted-foreground))">
-                {current} / {target} {unit}
-              </text>
-            </>
+            <text x={CENTER} y={CENTER} textAnchor="middle" dominantBaseline="central"
+              className="font-display font-bold" fontSize="24" fill={diffColor}>
+              {diffSign}{Math.round(animatedDiff)}
+            </text>
           ) : (
-            <>
-              <text x={CENTER} y={CENTER - 4} textAnchor="middle" dominantBaseline="central"
-                className="font-display font-bold" fontSize="22"
-                fill={isGold ? goldColor : isComplete ? 'hsl(120, 55%, 45%)' : 'hsl(var(--foreground))'}>
-                {displayPercent}%
-              </text>
-              <text x={CENTER} y={CENTER + 20} textAnchor="middle" dominantBaseline="central"
-                fontSize="13" fill="hsl(var(--muted-foreground))">
-                {current} / {target} {unit}
-              </text>
-            </>
+            <text x={CENTER} y={CENTER} textAnchor="middle" dominantBaseline="central"
+              className="font-display font-bold" fontSize="22"
+              fill={isGold ? goldColor : isComplete ? 'hsl(120, 55%, 45%)' : 'hsl(var(--foreground))'}>
+              {displayPercent}%
+            </text>
           )
         ) : (
           <text x={CENTER} y={CENTER} textAnchor="middle" dominantBaseline="central"
@@ -289,6 +271,13 @@ const ProgressWheel = ({
           </text>
         )}
       </svg>
+
+      {/* Session count below wheel */}
+      {hasGoal && (
+        <span className="text-[13px] font-medium text-muted-foreground">
+          {current} / {target} {unit}
+        </span>
+      )}
 
       {label && (
         <span className="text-xs font-medium text-muted-foreground">
