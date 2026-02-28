@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { WorkoutSession } from '@/types/workout';
 import { workoutService } from '@/services/workoutService';
-import { primaryGoalService, convertGoalValue } from '@/services/primaryGoalService';
+import { primaryGoalService, convertGoalValue, getProratedTarget } from '@/services/primaryGoalService';
 import AppHeader from '@/components/AppHeader';
 import BottomNav, { TabId } from '@/components/BottomNav';
 import StatsOverview from '@/components/StatsOverview';
@@ -29,11 +29,10 @@ const Index = () => {
   const allSessions = workoutService.getAll();
   const recentSessions = allSessions.slice(0, 5);
 
-  // Primary goal drives both wheels
   const primaryGoal = primaryGoalService.get();
 
   const monthData = useMemo(() => {
-    const target = primaryGoal ? convertGoalValue(primaryGoal.inputTarget, primaryGoal.inputPeriod, 'month') : 0;
+    const target = primaryGoal ? getProratedTarget(primaryGoal, 'month') : 0;
     const now = new Date();
     const current = allSessions.filter(s => {
       const d = new Date(s.date);
@@ -44,7 +43,7 @@ const Index = () => {
   }, [allSessions, primaryGoal]);
 
   const yearData = useMemo(() => {
-    const target = primaryGoal ? convertGoalValue(primaryGoal.inputTarget, primaryGoal.inputPeriod, 'year') : 0;
+    const target = primaryGoal ? getProratedTarget(primaryGoal, 'year') : 0;
     const now = new Date();
     const current = allSessions.filter(s => new Date(s.date).getFullYear() === now.getFullYear()).length;
     const startOfYear = new Date(now.getFullYear(), 0, 1);

@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { Plus, Target } from 'lucide-react';
 import { ExtraGoal, PrimaryGoal } from '@/types/workout';
 import { goalService } from '@/services/goalService';
-import { primaryGoalService, convertGoalValue } from '@/services/primaryGoalService';
+import { primaryGoalService, convertGoalValue, getProratedTarget } from '@/services/primaryGoalService';
 import { workoutService } from '@/services/workoutService';
 import { Button } from '@/components/ui/button';
 import GoalForm from '@/components/GoalForm';
 import GoalCard from '@/components/GoalCard';
 import PrimaryGoalForm from '@/components/PrimaryGoalForm';
 import { Progress } from '@/components/ui/progress';
-import { getSessionsInPeriod, computeProgress, getDaysRemainingInPeriod, getPeriodFractionElapsed } from '@/utils/goalUtils';
+import { getSessionsInPeriod, getDaysRemainingInPeriod, getPeriodFractionElapsed } from '@/utils/goalUtils';
 
 const GoalsSection = () => {
   const [showExtraForm, setShowExtraForm] = useState(false);
@@ -21,16 +21,22 @@ const GoalsSection = () => {
   const extraGoals = goalService.getAll();
   const sessions = workoutService.getAll();
 
-  // Primary goal progress (monthly view)
-  const primaryMonthTarget = primaryGoal ? convertGoalValue(primaryGoal.inputTarget, primaryGoal.inputPeriod, 'month') : 0;
-  const primaryMonthSessions = getSessionsInPeriod(sessions, 'month', 'all');
-  const primaryMonthCurrent = primaryMonthSessions.length;
-  const primaryMonthPct = primaryMonthTarget > 0 ? Math.min((primaryMonthCurrent / primaryMonthTarget) * 100, 100) : 0;
-  const primaryMonthRemaining = Math.max(0, Math.round(primaryMonthTarget) - primaryMonthCurrent);
+  // Primary goal - prorated targets
+  const weekTarget = primaryGoal ? getProratedTarget(primaryGoal, 'week') : 0;
+  const monthTarget = primaryGoal ? getProratedTarget(primaryGoal, 'month') : 0;
+  const yearTarget = primaryGoal ? getProratedTarget(primaryGoal, 'year') : 0;
+
+  const monthSessions = getSessionsInPeriod(sessions, 'month', 'all');
+  const monthCurrent = monthSessions.length;
+  const monthPct = monthTarget > 0 ? Math.min((monthCurrent / monthTarget) * 100, 100) : 0;
+  const monthRemaining = Math.max(0, Math.round(monthTarget) - monthCurrent);
   const monthDaysLeft = getDaysRemainingInPeriod('month');
   const monthFraction = getPeriodFractionElapsed('month');
-  const expectedMonth = primaryMonthTarget * monthFraction;
-  const aheadOfSchedule = primaryMonthCurrent >= expectedMonth;
+  const expectedMonth = monthTarget * monthFraction;
+  const aheadOfSchedule = monthCurrent >= expectedMonth;
+
+  const weekSessions = getSessionsInPeriod(sessions, 'week', 'all');
+  const yearSessions = getSessionsInPeriod(sessions, 'year', 'all');
 
   const handleSaveExtra = (data: Omit<ExtraGoal, 'id' | 'createdAt'>) => {
     if (editGoal) {
@@ -68,6 +74,10 @@ const GoalsSection = () => {
     setRefresh(r => r + 1);
   };
 
+  const periodLabel = primaryGoal
+    ? primaryGoal.inputPeriod === 'week' ? 'uke' : primaryGoal.inputPeriod === 'month' ? 'måned' : 'år'
+    : '';
+
   return (
     <div className="space-y-6">
       {/* Primary Goal */}
@@ -86,13 +96,13 @@ const GoalsSection = () => {
           <div className="glass-card rounded-lg p-4 space-y-3">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2">
-                <Target className={`w-5 h-5 ${primaryMonthCurrent >= primaryMonthTarget && primaryMonthTarget > 0 ? 'text-success' : 'text-primary'}`} />
+                <Target className={`w-5 h-5 ${monthCurrent >= monthTarget && monthTarget > 0 ? 'text-success' : 'text-primary'}`} />
                 <div>
                   <p className="text-sm font-semibold">
-                    {primaryMonthCurrent} / {Math.round(primaryMonthTarget)} økter denne måneden
+                    {monthCurrent} / {Math.round(monthTarget)} økter denne måneden
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {primaryGoal.inputTarget} økter per {primaryGoal.inputPeriod === 'week' ? 'uke' : primaryGoal.inputPeriod === 'month' ? 'måned' : 'år'}
+                    {primaryGoal.inputTarget} økter per {periodLabel}
                   </p>
                 </div>
               </div>
@@ -107,15 +117,31 @@ const GoalsSection = () => {
             </div>
 
             <div className="space-y-1">
-              <Progress value={primaryMonthPct} className="h-2" />
+              <Progress value={monthPct} className="h-2" />
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>
-                  {primaryMonthRemaining > 0 ? `${primaryMonthRemaining} igjen` : '✓ Nådd!'}{' '}
+                  {monthRemaining > 0 ? `${monthRemaining} igjen` : '✓ Nådd!'}{' '}
                   · {monthDaysLeft} dager igjen
                 </span>
                 <span className={aheadOfSchedule ? 'text-success font-medium' : 'text-warning font-medium'}>
                   {aheadOfSchedule ? 'Foran skjema' : 'Bak skjema'}
                 </span>
+              </div>
+            </div>
+
+            {/* Week/Month/Year breakdown */}
+            <div className="grid grid-cols-3 gap-2 pt-1">
+              <div className="text-center bg-secondary/50 rounded-md py-2 px-1">
+                <p className="text-xs text-muted-foreground">Uke</p>
+                <p className="text-sm font-semibold">{weekSessions.length}/{Math.round(weekTarget)}</p>
+              </div>
+              <div className="text-center bg-secondary/50 rounded-md py-2 px-1">
+                <p className="text-xs text-muted-foreground">Måned</p>
+                <p className="text-sm font-semibold">{monthCurrent}/{Math.round(monthTarget)}</p>
+              </div>
+              <div className="text-center bg-secondary/50 rounded-md py-2 px-1">
+                <p className="text-xs text-muted-foreground">År</p>
+                <p className="text-sm font-semibold">{yearSessions.length}/{Math.round(yearTarget)}</p>
               </div>
             </div>
           </div>

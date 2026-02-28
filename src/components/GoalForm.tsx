@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { GoalMetric, GoalPeriod, SessionType, ExtraGoal } from '@/types/workout';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
+import { getActivityColors } from '@/utils/activityColors';
+import { useSettings } from '@/contexts/SettingsContext';
 import ActivityIcon from '@/components/ActivityIcon';
 import { Button } from '@/components/ui/button';
+import { Hash, Clock, MapPin, Mountain } from 'lucide-react';
 
 interface GoalFormProps {
   goal?: ExtraGoal;
@@ -10,11 +13,11 @@ interface GoalFormProps {
   onCancel: () => void;
 }
 
-const metricOptions: { id: GoalMetric; label: string; unit: string }[] = [
-  { id: 'sessions', label: 'Antall økter', unit: 'økter' },
-  { id: 'minutes', label: 'Treningstid', unit: 'minutter' },
-  { id: 'distance', label: 'Distanse', unit: 'km' },
-  { id: 'elevation', label: 'Høydemeter', unit: 'm' },
+const metricOptions: { id: GoalMetric; label: string; unit: string; icon: typeof Hash }[] = [
+  { id: 'sessions', label: 'Økter', unit: 'økter', icon: Hash },
+  { id: 'minutes', label: 'Tid', unit: 'minutter', icon: Clock },
+  { id: 'distance', label: 'Distanse', unit: 'km', icon: MapPin },
+  { id: 'elevation', label: 'Høydemeter', unit: 'm', icon: Mountain },
 ];
 
 const periodOptions: { id: GoalPeriod | 'custom'; label: string }[] = [
@@ -25,6 +28,9 @@ const periodOptions: { id: GoalPeriod | 'custom'; label: string }[] = [
 ];
 
 const GoalForm = ({ goal, onSave, onCancel }: GoalFormProps) => {
+  const { settings } = useSettings();
+  const isDark = settings.darkMode;
+
   const [metric, setMetric] = useState<GoalMetric>(goal?.metric || 'sessions');
   const [period, setPeriod] = useState<GoalPeriod | 'custom'>(goal?.period || 'month');
   const [activityType, setActivityType] = useState<SessionType | 'all'>(goal?.activityType || 'all');
@@ -65,24 +71,29 @@ const GoalForm = ({ goal, onSave, onCancel }: GoalFormProps) => {
         {goal ? 'Rediger mål' : 'Nytt ekstra mål'}
       </h4>
 
-      {/* Metric */}
+      {/* Metric - icon buttons */}
       <div className="space-y-1.5">
         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Måltype</label>
-        <div className="grid grid-cols-2 gap-2">
-          {metricOptions.map(m => (
-            <button
-              key={m.id}
-              type="button"
-              onClick={() => setMetric(m.id)}
-              className={`py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-                metric === m.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-              }`}
-            >
-              {m.label}
-            </button>
-          ))}
+        <div className="grid grid-cols-4 gap-2">
+          {metricOptions.map(m => {
+            const Icon = m.icon;
+            const selected = metric === m.id;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setMetric(m.id)}
+                className={`flex flex-col items-center gap-1 py-2.5 px-2 rounded-lg text-xs font-medium transition-all ${
+                  selected
+                    ? 'bg-primary text-primary-foreground shadow-sm scale-105'
+                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span>{m.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -133,7 +144,7 @@ const GoalForm = ({ goal, onSave, onCancel }: GoalFormProps) => {
         </div>
       )}
 
-      {/* Activity type */}
+      {/* Activity type - colored buttons */}
       <div className="space-y-1.5">
         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Aktivitetstype</label>
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -150,18 +161,20 @@ const GoalForm = ({ goal, onSave, onCancel }: GoalFormProps) => {
           </button>
           {allSessionTypes.map(type => {
             const config = sessionTypeConfig[type];
+            const colors = getActivityColors(type, isDark);
+            const selected = activityType === type;
             return (
               <button
                 key={type}
                 type="button"
                 onClick={() => setActivityType(type)}
-                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                  activityType === type
-                    ? 'gradient-energy text-primary-foreground'
-                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                }`}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+                style={{
+                  backgroundColor: selected ? colors.bg : undefined,
+                  color: selected ? colors.text : undefined,
+                }}
               >
-                <ActivityIcon type={type} className="w-3.5 h-3.5" />
+                <ActivityIcon type={type} className="w-3.5 h-3.5" colorOverride={selected ? colors.text : undefined} />
                 {config.label}
               </button>
             );
