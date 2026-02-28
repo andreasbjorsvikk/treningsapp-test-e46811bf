@@ -228,7 +228,7 @@ const Index = () => {
 
       {/* Edit Goal Dialog (for home-pinned goals) */}
       <Dialog open={showGoalEditDialog} onOpenChange={(open) => { if (!open) { setShowGoalEditDialog(false); setEditGoal(undefined); } }}>
-        <DialogContent className="max-w-[min(calc(100vw-2rem),28rem)] p-4">
+        <DialogContent className="max-w-[min(calc(100vw-2rem),26rem)] p-4">
           <DialogHeader>
             <DialogTitle>Rediger mål</DialogTitle>
           </DialogHeader>

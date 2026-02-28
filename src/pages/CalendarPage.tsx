@@ -155,31 +155,42 @@ const CalendarPage = () => {
   const selectedSessions = selectedDay ? (sessionsByDate.get(selectedDay) || []) : [];
 
   // Scroll to current month on first render
-  // iOS Safari needs longer delays as layout happens asynchronously for large DOMs
+  // iOS Safari: layout of large DOM is async, so we retry multiple times.
+  // KEY FIX: We scroll on EVERY timeout (not just the first success) because
+  // early attempts may calculate wrong offsets before layout is stable.
+  // We also disable infinite scroll until initial scroll is done, because
+  // the infinite scroll handler was firing first (scrollTop=0 < 300) and
+  // adding extra months at the top, shifting the target position.
   useEffect(() => {
-    const delays = [50, 150, 300, 500, 800];
+    const delays = [100, 300, 600, 1000, 1500, 2000];
     const timers: ReturnType<typeof setTimeout>[] = [];
     
     delays.forEach(delay => {
       timers.push(setTimeout(() => {
-        if (currentMonthRef.current && scrollRef.current && !hasScrolledToToday.current) {
+        if (currentMonthRef.current && scrollRef.current) {
           const container = scrollRef.current;
           const target = currentMonthRef.current;
           const containerRect = container.getBoundingClientRect();
           const targetRect = target.getBoundingClientRect();
           const scrollOffset = targetRect.top - containerRect.top + container.scrollTop;
           container.scrollTop = scrollOffset;
-          hasScrolledToToday.current = true;
         }
       }, delay));
     });
+
+    // Mark initial scroll as done after the last timeout
+    timers.push(setTimeout(() => {
+      hasScrolledToToday.current = true;
+    }, 2100));
     
     return () => timers.forEach(t => clearTimeout(t));
   }, []);
 
   // Infinite scroll handler - debounced for performance
+  // IMPORTANT: disabled until initial scroll-to-today is complete
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleScroll = useCallback(() => {
+    if (!hasScrolledToToday.current) return; // Don't run until initial scroll is done
     if (scrollTimeoutRef.current) return; // throttle
     scrollTimeoutRef.current = setTimeout(() => {
       scrollTimeoutRef.current = null;
