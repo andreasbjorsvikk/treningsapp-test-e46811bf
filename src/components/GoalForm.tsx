@@ -11,6 +11,7 @@ interface GoalFormProps {
   goal?: ExtraGoal;
   onSave: (data: Omit<ExtraGoal, 'id' | 'createdAt'>) => void;
   onCancel: () => void;
+  embedded?: boolean;
 }
 
 const metricOptions: { id: GoalMetric; label: string; unit: string; icon: typeof Hash }[] = [
@@ -27,7 +28,7 @@ const periodOptions: { id: GoalPeriod | 'custom'; label: string }[] = [
   { id: 'custom', label: 'Egendefinert' },
 ];
 
-const GoalForm = ({ goal, onSave, onCancel }: GoalFormProps) => {
+const GoalForm = ({ goal, onSave, onCancel, embedded }: GoalFormProps) => {
   const { settings } = useSettings();
   const isDark = settings.darkMode;
 
@@ -66,10 +67,12 @@ const GoalForm = ({ goal, onSave, onCancel }: GoalFormProps) => {
   const selectedMetric = metricOptions.find(m => m.id === metric)!;
 
   return (
-    <form onSubmit={handleSubmit} className="glass-card rounded-lg p-4 space-y-4">
-      <h4 className="font-display font-semibold text-sm">
-        {goal ? 'Rediger mål' : 'Nytt ekstra mål'}
-      </h4>
+    <form onSubmit={handleSubmit} className={`space-y-4 overflow-hidden ${embedded ? '' : 'glass-card rounded-lg p-4'}`}>
+      {!embedded && (
+        <h4 className="font-display font-semibold text-sm">
+          {goal ? 'Rediger mål' : 'Nytt ekstra mål'}
+        </h4>
+      )}
 
       {/* Metric - icon buttons */}
       <div className="space-y-1.5">
@@ -147,11 +150,11 @@ const GoalForm = ({ goal, onSave, onCancel }: GoalFormProps) => {
       {/* Activity type - colored buttons */}
       <div className="space-y-1.5">
         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Aktivitetstype</label>
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <div className="flex flex-wrap gap-1.5">
           <button
             type="button"
             onClick={() => setActivityType('all')}
-            className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors ${
               activityType === 'all'
                 ? 'gradient-energy text-primary-foreground'
                 : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
@@ -169,7 +172,7 @@ const GoalForm = ({ goal, onSave, onCancel }: GoalFormProps) => {
                 key={type}
                 type="button"
                 onClick={() => setActivityType(type)}
-                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium transition-all"
                 style={{
                   backgroundColor: selected ? colors.bg : undefined,
                   color: selected ? colors.text : undefined,

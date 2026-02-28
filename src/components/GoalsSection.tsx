@@ -286,7 +286,7 @@ const GoalsSection = () => {
 
       {/* Edit Goal Dialog */}
       <Dialog open={showEditDialog} onOpenChange={(open) => { if (!open) { setShowEditDialog(false); setEditGoal(undefined); } }}>
-        <DialogContent className="max-w-[min(calc(100vw-2rem),26rem)] p-4">
+        <DialogContent className="max-w-[min(calc(100vw-2rem),26rem)] p-4 overflow-hidden">
           <DialogHeader>
             <DialogTitle>Rediger mål</DialogTitle>
           </DialogHeader>
@@ -295,6 +295,7 @@ const GoalsSection = () => {
               goal={editGoal}
               onSave={handleEditSave}
               onCancel={() => { setShowEditDialog(false); setEditGoal(undefined); }}
+              embedded
             />
           )}
         </DialogContent>
