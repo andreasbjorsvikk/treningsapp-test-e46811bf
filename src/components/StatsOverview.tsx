@@ -29,16 +29,16 @@ const StatsOverview = ({ stats }: StatsOverviewProps) => {
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-3 gap-2">
       {statCards.map((stat) => (
-        <div key={stat.label} className="glass-card rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <stat.icon className={`w-4 h-4 ${stat.accent}`} />
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+        <div key={stat.label} className="glass-card rounded-lg p-3">
+          <div className="flex items-center gap-1.5 mb-1">
+            <stat.icon className={`w-3.5 h-3.5 ${stat.accent}`} />
+            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
               {stat.label}
             </span>
           </div>
-          <p className="text-2xl font-display font-bold">{stat.value}</p>
+          <p className="text-xl font-display font-bold">{stat.value}</p>
         </div>
       ))}
     </div>

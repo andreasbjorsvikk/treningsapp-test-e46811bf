@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { GoalMetric, GoalPeriod, SessionType, WorkoutGoal } from '@/types/workout';
+import { GoalMetric, GoalPeriod, SessionType, ExtraGoal } from '@/types/workout';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { Button } from '@/components/ui/button';
 
 interface GoalFormProps {
-  goal?: WorkoutGoal;
-  onSave: (data: Omit<WorkoutGoal, 'id' | 'createdAt'>) => void;
+  goal?: ExtraGoal;
+  onSave: (data: Omit<ExtraGoal, 'id' | 'createdAt'>) => void;
   onCancel: () => void;
 }
 
@@ -17,17 +17,20 @@ const metricOptions: { id: GoalMetric; label: string; unit: string }[] = [
   { id: 'elevation', label: 'Høydemeter', unit: 'm' },
 ];
 
-const periodOptions: { id: GoalPeriod; label: string }[] = [
-  { id: 'week', label: 'Per uke' },
-  { id: 'month', label: 'Per måned' },
-  { id: 'year', label: 'Per år' },
+const periodOptions: { id: GoalPeriod | 'custom'; label: string }[] = [
+  { id: 'week', label: 'Uke' },
+  { id: 'month', label: 'Måned' },
+  { id: 'year', label: 'År' },
+  { id: 'custom', label: 'Egendefinert' },
 ];
 
 const GoalForm = ({ goal, onSave, onCancel }: GoalFormProps) => {
   const [metric, setMetric] = useState<GoalMetric>(goal?.metric || 'sessions');
-  const [period, setPeriod] = useState<GoalPeriod>(goal?.period || 'month');
+  const [period, setPeriod] = useState<GoalPeriod | 'custom'>(goal?.period || 'month');
   const [activityType, setActivityType] = useState<SessionType | 'all'>(goal?.activityType || 'all');
   const [target, setTarget] = useState(goal?.target?.toString() || '');
+  const [customStart, setCustomStart] = useState(goal?.customStart || '');
+  const [customEnd, setCustomEnd] = useState(goal?.customEnd || '');
 
   useEffect(() => {
     if (goal) {
@@ -35,6 +38,8 @@ const GoalForm = ({ goal, onSave, onCancel }: GoalFormProps) => {
       setPeriod(goal.period);
       setActivityType(goal.activityType);
       setTarget(goal.target.toString());
+      setCustomStart(goal.customStart || '');
+      setCustomEnd(goal.customEnd || '');
     }
   }, [goal]);
 
@@ -42,7 +47,14 @@ const GoalForm = ({ goal, onSave, onCancel }: GoalFormProps) => {
     e.preventDefault();
     const targetNum = parseFloat(target);
     if (!targetNum || targetNum <= 0) return;
-    onSave({ metric, period, activityType, target: targetNum });
+    if (period === 'custom' && (!customStart || !customEnd)) return;
+    onSave({
+      metric,
+      period,
+      activityType,
+      target: targetNum,
+      ...(period === 'custom' ? { customStart, customEnd } : {}),
+    });
   };
 
   const selectedMetric = metricOptions.find(m => m.id === metric)!;
@@ -50,7 +62,7 @@ const GoalForm = ({ goal, onSave, onCancel }: GoalFormProps) => {
   return (
     <form onSubmit={handleSubmit} className="glass-card rounded-lg p-4 space-y-4">
       <h4 className="font-display font-semibold text-sm">
-        {goal ? 'Rediger mål' : 'Nytt mål'}
+        {goal ? 'Rediger mål' : 'Nytt ekstra mål'}
       </h4>
 
       {/* Metric */}
@@ -83,7 +95,7 @@ const GoalForm = ({ goal, onSave, onCancel }: GoalFormProps) => {
               key={p.id}
               type="button"
               onClick={() => setPeriod(p.id)}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 py-2 px-2 rounded-md text-sm font-medium transition-colors ${
                 period === p.id
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
@@ -94,6 +106,32 @@ const GoalForm = ({ goal, onSave, onCancel }: GoalFormProps) => {
           ))}
         </div>
       </div>
+
+      {/* Custom date pickers */}
+      {period === 'custom' && (
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Fra</label>
+            <input
+              type="date"
+              value={customStart}
+              onChange={e => setCustomStart(e.target.value)}
+              className="w-full bg-secondary rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              required
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Til</label>
+            <input
+              type="date"
+              value={customEnd}
+              onChange={e => setCustomEnd(e.target.value)}
+              className="w-full bg-secondary rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              required
+            />
+          </div>
+        </div>
+      )}
 
       {/* Activity type */}
       <div className="space-y-1.5">

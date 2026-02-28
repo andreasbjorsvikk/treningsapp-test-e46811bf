@@ -1,14 +1,25 @@
-import { WorkoutSession, WorkoutGoal, GoalMetric, GoalPeriod, SessionType } from '@/types/workout';
+import { WorkoutSession, WorkoutGoal, ExtraGoal, GoalMetric, GoalPeriod, SessionType } from '@/types/workout';
 
 export function getSessionsInPeriod(
   sessions: WorkoutSession[],
-  period: GoalPeriod,
-  activityType: SessionType | 'all'
+  period: GoalPeriod | 'custom',
+  activityType: SessionType | 'all',
+  customStart?: string,
+  customEnd?: string
 ): WorkoutSession[] {
   const now = new Date();
   let filtered = activityType === 'all' ? sessions : sessions.filter(s => s.type === activityType);
 
-  if (period === 'week') {
+  if (period === 'custom' && customStart && customEnd) {
+    const start = new Date(customStart);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(customEnd);
+    end.setHours(23, 59, 59, 999);
+    filtered = filtered.filter(s => {
+      const d = new Date(s.date);
+      return d >= start && d <= end;
+    });
+  } else if (period === 'week') {
     const day = now.getDay();
     const mondayOffset = day === 0 ? 6 : day - 1;
     const monday = new Date(now);
@@ -43,14 +54,61 @@ export const metricLabels: Record<GoalMetric, string> = {
   elevation: 'm',
 };
 
-/**
- * Find the best goal for a given period (month or year).
- * Prefers 'sessions' metric with 'all' activity type, but returns first match otherwise.
- */
 export function findGoalForPeriod(goals: WorkoutGoal[], period: GoalPeriod): WorkoutGoal | null {
   const periodGoals = goals.filter(g => g.period === period);
   if (periodGoals.length === 0) return null;
-  // Prefer sessions + all
   const preferred = periodGoals.find(g => g.metric === 'sessions' && g.activityType === 'all');
   return preferred || periodGoals[0];
+}
+
+export function getDaysRemainingInPeriod(period: GoalPeriod | 'custom', customEnd?: string): number {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  if (period === 'custom' && customEnd) {
+    const end = new Date(customEnd);
+    end.setHours(0, 0, 0, 0);
+    return Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+  }
+
+  if (period === 'week') {
+    const day = now.getDay();
+    return day === 0 ? 0 : 7 - day;
+  }
+
+  if (period === 'month') {
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    return lastDay - now.getDate();
+  }
+
+  // year
+  const lastDay = new Date(now.getFullYear(), 11, 31);
+  return Math.ceil((lastDay.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+export function getPeriodFractionElapsed(period: GoalPeriod | 'custom', customStart?: string, customEnd?: string): number {
+  const now = new Date();
+
+  if (period === 'custom' && customStart && customEnd) {
+    const start = new Date(customStart).getTime();
+    const end = new Date(customEnd).getTime();
+    if (end <= start) return 1;
+    return Math.min(1, Math.max(0, (now.getTime() - start) / (end - start)));
+  }
+
+  if (period === 'week') {
+    const day = now.getDay();
+    const daysSinceMonday = day === 0 ? 6 : day - 1;
+    return (daysSinceMonday + now.getHours() / 24) / 7;
+  }
+
+  if (period === 'month') {
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    return (now.getDate() - 1 + now.getHours() / 24) / daysInMonth;
+  }
+
+  // year
+  const start = new Date(now.getFullYear(), 0, 1).getTime();
+  const end = new Date(now.getFullYear() + 1, 0, 1).getTime();
+  return (now.getTime() - start) / (end - start);
 }
