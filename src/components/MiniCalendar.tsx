@@ -1,7 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { WorkoutSession } from '@/types/workout';
 import { getActivityColors } from '@/utils/activityColors';
 import { useSettings } from '@/contexts/SettingsContext';
+import DayDrawer from '@/components/DayDrawer';
+import { workoutService } from '@/services/workoutService';
 
 interface MiniCalendarProps {
   sessions: WorkoutSession[];
@@ -11,6 +13,8 @@ const MiniCalendar = ({ sessions }: MiniCalendarProps) => {
   const { settings } = useSettings();
   const isDark = settings.darkMode;
   const sundayStart = settings.firstDayOfWeek === 'sunday';
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [, setRefresh] = useState(0);
 
   const { weeks, monthLabel, weekdays } = useMemo(() => {
     const now = new Date();
@@ -23,16 +27,6 @@ const MiniCalendar = ({ sessions }: MiniCalendarProps) => {
     if (!sundayStart) {
       startDay = startDay === 0 ? 6 : startDay - 1;
     }
-
-    const sessionsByDay = new Map<number, WorkoutSession[]>();
-    sessions.forEach(s => {
-      const d = new Date(s.date);
-      if (d.getFullYear() === year && d.getMonth() === month) {
-        const day = d.getDate();
-        if (!sessionsByDay.has(day)) sessionsByDay.set(day, []);
-        sessionsByDay.get(day)!.push(s);
-      }
-    });
 
     const cells: (number | null)[] = [];
     for (let i = 0; i < startDay; i++) cells.push(null);
@@ -50,16 +44,15 @@ const MiniCalendar = ({ sessions }: MiniCalendarProps) => {
 
     const label = now.toLocaleString('nb-NO', { month: 'long' }).replace(/^./, c => c.toUpperCase());
 
-    return { weeks: weekRows, monthLabel: label, weekdays: wds, sessionsByDay };
+    return { weeks: weekRows, monthLabel: label, weekdays: wds };
   }, [sessions, sundayStart]);
 
   const now = new Date();
   const today = now.getDate();
+  const year = now.getFullYear();
+  const month = now.getMonth();
 
-  // Re-derive sessionsByDay outside useMemo for rendering
   const sessionsByDay = useMemo(() => {
-    const year = now.getFullYear();
-    const month = now.getMonth();
     const map = new Map<number, WorkoutSession[]>();
     sessions.forEach(s => {
       const d = new Date(s.date);
@@ -70,79 +63,97 @@ const MiniCalendar = ({ sessions }: MiniCalendarProps) => {
       }
     });
     return map;
-  }, [sessions]);
+  }, [sessions, year, month]);
+
+  const toDateKey = (day: number) =>
+    `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+  const selectedSessions = selectedDay
+    ? sessions.filter(s => s.date.slice(0, 10) === selectedDay)
+    : [];
 
   return (
-    <div className="glass-card rounded-xl p-3">
-      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 text-center">
-        {monthLabel}
-      </div>
+    <>
+      <div className="glass-card rounded-xl p-2">
+        <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 text-center">
+          {monthLabel}
+        </div>
 
-      <div className="grid grid-cols-7 gap-[2px]">
-        {weekdays.map((d, i) => (
-          <div key={i} className="text-center text-[9px] font-medium text-muted-foreground/60 pb-1">
-            {d}
-          </div>
-        ))}
-
-        {weeks.flat().map((day, i) => {
-          if (day == null) {
-            return <div key={i} className="aspect-square" />;
-          }
-
-          const daySessions = sessionsByDay.get(day) || [];
-          const isToday = day === today;
-          const count = daySessions.length;
-
-          return (
-            <div
-              key={i}
-              className={`
-                aspect-square rounded-md flex items-center justify-center relative overflow-hidden
-                ${isToday ? 'ring-1 ring-primary/50' : ''}
-              `}
-            >
-              {count === 0 && (
-                <span className={`text-[10px] ${isToday ? 'font-bold text-primary' : 'text-muted-foreground/50'}`}>
-                  {day}
-                </span>
-              )}
-
-              {count === 1 && (
-                <div
-                  className="absolute inset-0 rounded-md"
-                  style={{ backgroundColor: getActivityColors(daySessions[0].type, isDark).bg }}
-                />
-              )}
-
-              {count === 2 && (
-                <div className="absolute inset-0 flex rounded-md overflow-hidden">
-                  <div className="flex-1" style={{ backgroundColor: getActivityColors(daySessions[0].type, isDark).bg }} />
-                  <div className="flex-1" style={{ backgroundColor: getActivityColors(daySessions[1].type, isDark).bg }} />
-                </div>
-              )}
-
-              {count >= 3 && (
-                <div className="absolute inset-0 flex flex-col rounded-md overflow-hidden">
-                  <div className="flex-1" style={{ backgroundColor: getActivityColors(daySessions[0].type, isDark).bg }} />
-                  <div className="flex flex-1">
-                    <div className="flex-1" style={{ backgroundColor: getActivityColors(daySessions[1].type, isDark).bg }} />
-                    <div className="flex-1" style={{ backgroundColor: getActivityColors(daySessions[2].type, isDark).bg }} />
-                  </div>
-                </div>
-              )}
-
-              {count > 0 && (
-                <span className={`relative z-10 text-[9px] font-bold ${isToday ? 'text-primary' : ''}`}
-                  style={{ color: isToday ? undefined : getActivityColors(daySessions[0].type, isDark).text }}>
-                  {day}
-                </span>
-              )}
+        <div className="grid grid-cols-7 gap-px">
+          {weekdays.map((d, i) => (
+            <div key={i} className="text-center text-[8px] font-medium text-muted-foreground/50 pb-0.5">
+              {d}
             </div>
-          );
-        })}
+          ))}
+
+          {weeks.flat().map((day, i) => {
+            if (day == null) {
+              return <div key={i} className="w-full aspect-square" />;
+            }
+
+            const daySessions = sessionsByDay.get(day) || [];
+            const isToday = day === today;
+            const count = daySessions.length;
+
+            return (
+              <button
+                key={i}
+                onClick={() => setSelectedDay(toDateKey(day))}
+                className={`
+                  w-full aspect-square rounded-[3px] flex items-center justify-center relative overflow-hidden
+                  transition-all hover:ring-1 hover:ring-primary/30
+                  ${isToday ? 'ring-1 ring-primary/50' : ''}
+                `}
+              >
+                {count === 0 && (
+                  <span className={`text-[8px] leading-none ${isToday ? 'font-bold text-primary' : 'text-muted-foreground/40'}`}>
+                    {day}
+                  </span>
+                )}
+
+                {count === 1 && (
+                  <div
+                    className="absolute inset-0 rounded-[3px]"
+                    style={{ backgroundColor: getActivityColors(daySessions[0].type, isDark).bg }}
+                  />
+                )}
+
+                {count === 2 && (
+                  <div className="absolute inset-0 flex rounded-[3px] overflow-hidden">
+                    <div className="flex-1" style={{ backgroundColor: getActivityColors(daySessions[0].type, isDark).bg }} />
+                    <div className="flex-1" style={{ backgroundColor: getActivityColors(daySessions[1].type, isDark).bg }} />
+                  </div>
+                )}
+
+                {count >= 3 && (
+                  <div className="absolute inset-0 flex flex-col rounded-[3px] overflow-hidden">
+                    <div className="flex-1" style={{ backgroundColor: getActivityColors(daySessions[0].type, isDark).bg }} />
+                    <div className="flex flex-1">
+                      <div className="flex-1" style={{ backgroundColor: getActivityColors(daySessions[1].type, isDark).bg }} />
+                      <div className="flex-1" style={{ backgroundColor: getActivityColors(daySessions[2].type, isDark).bg }} />
+                    </div>
+                  </div>
+                )}
+
+                {count > 0 && (
+                  <span className={`relative z-10 text-[7px] font-bold leading-none ${isToday ? 'text-primary' : ''}`}
+                    style={{ color: isToday ? undefined : getActivityColors(daySessions[0].type, isDark).text }}>
+                    {day}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
-    </div>
+
+      <DayDrawer
+        dateKey={selectedDay}
+        sessions={selectedSessions}
+        onClose={() => setSelectedDay(null)}
+        onRefresh={() => setRefresh(r => r + 1)}
+      />
+    </>
   );
 };
 

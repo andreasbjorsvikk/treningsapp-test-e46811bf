@@ -372,22 +372,21 @@ const CalendarPage = () => {
         className="mb-6 relative"
       >
         {/* Month header */}
-        <div className={`rounded-2xl px-4 py-3 mb-2 text-center ${isCurrentMonth ? 'glass-card border-l-4 border-primary/60 shadow-md' : 'glass-card'}`}>
-          <h2 className={`font-display font-bold text-lg ${isCurrentMonth ? 'text-primary' : ''}`}>
+        <div className={`rounded-2xl px-4 py-3 mb-2 text-center relative overflow-hidden ${isCurrentMonth ? 'shadow-md' : 'glass-card'}`}
+          style={isCurrentMonth ? {
+            background: `linear-gradient(135deg, hsl(var(--primary) / 0.12), hsl(var(--primary) / 0.04))`,
+            border: '1px solid hsl(var(--primary) / 0.2)',
+          } : undefined}
+        >
+          {isCurrentMonth && (
+            <div className="absolute inset-0 pointer-events-none" style={{
+              background: 'radial-gradient(ellipse at 30% 50%, hsl(var(--primary) / 0.08), transparent 70%)',
+            }} />
+          )}
+          <h2 className={`font-display font-bold text-lg relative z-10 ${isCurrentMonth ? 'text-primary' : ''}`}>
             {MONTH_NAMES[monthData.month]} {monthData.year}
           </h2>
         </div>
-
-        {/* Subtle background glow for current month */}
-        {isCurrentMonth && (
-          <div className="absolute inset-0 -z-10 rounded-2xl pointer-events-none"
-            style={{
-              background: 'hsl(var(--primary) / 0.03)',
-              boxShadow: 'inset 0 0 0 1px hsl(var(--primary) / 0.06)',
-              borderRadius: '1rem',
-            }}
-          />
-        )}
 
         {/* Calendar grid */}
         <div className="grid grid-cols-7 gap-[3px] lg:gap-1">
