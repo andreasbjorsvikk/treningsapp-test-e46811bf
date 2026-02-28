@@ -160,7 +160,11 @@ const ProgressWheel = ({
   const rotation = `rotate(-90 ${CENTER} ${CENTER})`;
   // Pace: negative = counter-clockwise (negate offset), positive = clockwise (normal offset)
   const isNegativePace = isPace && paceMode!.diff < 0;
-  const finalOffset = isPace ? (isNegativePace ? -paceOffset : paceOffset) : offset;
+  // Negative pace: fill counter-clockwise (left), positive: fill clockwise (right)
+  const paceRotation = isNegativePace
+    ? `rotate(-90 ${CENTER} ${CENTER}) scale(1, -1) translate(0, -${SIZE})`
+    : rotation;
+  const finalOffset = isPace ? paceOffset : offset;
 
   return (
     <button
@@ -230,7 +234,7 @@ const ProgressWheel = ({
           strokeLinecap="round"
           strokeDasharray={CIRCUMFERENCE}
           strokeDashoffset={finalOffset}
-          transform={rotation}
+          transform={isPace ? paceRotation : rotation}
           filter={isGold ? `url(#gold-glow-${safeId})` : `url(#ring-shadow-${safeId})`}
         />
 
