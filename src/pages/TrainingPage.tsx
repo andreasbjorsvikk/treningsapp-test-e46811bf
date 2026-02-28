@@ -117,7 +117,12 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
       return true;
     }).length;
     const percent = target === 0 ? 0 : (current / target) * 100;
-    return { current, target: Math.round(target * 10) / 10, percent, unit: 'økter' };
+    const daysInMonth = new Date(statYear, statMonth + 1, 0).getDate();
+    const isCurrentMonth = statMonth === now.getMonth() && statYear === now.getFullYear();
+    const expectedFraction = isCurrentMonth ? now.getDate() / daysInMonth : 1;
+    const expected = target * expectedFraction;
+    const diff = current - expected;
+    return { current, target: Math.round(target * 10) / 10, percent, unit: 'økter', expectedFraction, diff };
   }, [allSessions, primaryGoal, statMonth, statYear]);
 
   const yearData = useMemo(() => {
@@ -139,7 +144,8 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
     const fractionElapsed = totalSpan > 0 ? Math.max(0, elapsedSpan / totalSpan) : 1;
     const expected = target * fractionElapsed;
     const diff = current - expected;
-    return { current, target: Math.round(target), diff, expected, unit: 'økter' };
+    const percent = target === 0 ? 0 : (current / target) * 100;
+    return { current, target: Math.round(target), diff, expected, unit: 'økter', expectedFraction: fractionElapsed, percent };
   }, [allSessions, primaryGoal, statYear]);
 
   const statSessions = useMemo(() => {
@@ -246,16 +252,19 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
                 unit={monthData.unit}
                 title={`${monthNames[statMonth]} ${statYear}`}
                 hasGoal={!!primaryGoal}
+                expectedFraction={monthData.expectedFraction}
+                paceDiff={monthData.diff}
                 onClick={() => setSubTab('mål')}
               />
               <ProgressWheel
-                percent={0}
+                percent={yearData.percent}
                 current={yearData.current}
                 target={yearData.target}
                 unit={yearData.unit}
                 title={String(statYear)}
                 hasGoal={!!primaryGoal}
-                paceMode={{ diff: yearData.diff, expected: yearData.expected }}
+                expectedFraction={yearData.expectedFraction}
+                paceDiff={yearData.diff}
                 onClick={() => setSubTab('mål')}
               />
             </div>
