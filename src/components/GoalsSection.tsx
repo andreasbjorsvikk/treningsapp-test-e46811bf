@@ -8,10 +8,12 @@ import { Button } from '@/components/ui/button';
 import GoalForm from '@/components/GoalForm';
 import GoalCard from '@/components/GoalCard';
 import PrimaryGoalForm from '@/components/PrimaryGoalForm';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const GoalsSection = () => {
   const [showExtraForm, setShowExtraForm] = useState(false);
   const [showPrimaryForm, setShowPrimaryForm] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [editGoal, setEditGoal] = useState<ExtraGoal | undefined>();
   const [, setRefresh] = useState(0);
 
@@ -46,7 +48,7 @@ const GoalsSection = () => {
 
   const handleEditExtra = (goal: ExtraGoal) => {
     setEditGoal(goal);
-    setShowExtraForm(true);
+    setShowEditDialog(true);
   };
 
   const handleDeleteExtra = (id: string) => {
@@ -65,6 +67,16 @@ const GoalsSection = () => {
   const handleCancelExtra = () => {
     setEditGoal(undefined);
     setShowExtraForm(false);
+    setShowEditDialog(false);
+  };
+
+  const handleEditSave = (data: Omit<ExtraGoal, 'id' | 'createdAt'>) => {
+    if (editGoal) {
+      goalService.update(editGoal.id, data);
+    }
+    setEditGoal(undefined);
+    setShowEditDialog(false);
+    setRefresh(r => r + 1);
   };
 
   const handleSavePrimary = () => {
@@ -177,31 +189,26 @@ const GoalsSection = () => {
             onCancel={() => setShowPrimaryForm(false)}
           />
         ) : primaryGoal ? (
-          <div className="glass-card rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-primary" />
-                <p className="text-lg font-bold text-foreground">
-                  {primaryGoal.inputTarget} økter per {periodLabel}
-                </p>
+          <div className="glass-card rounded-lg p-6 flex flex-col items-center text-center">
+              <Target className="w-6 h-6 text-primary mb-2" />
+              <p className="text-2xl font-bold text-foreground">
+                {primaryGoal.inputTarget} økter per {periodLabel}
+              </p>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground mt-3">
+                <span><span className="font-semibold text-foreground text-base">{Math.round(weekTarget * 10) / 10}</span> /uke</span>
+                <span className="text-border">·</span>
+                <span><span className="font-semibold text-foreground text-base">{Math.round(monthTarget * 10) / 10}</span> /mnd</span>
+                <span className="text-border">·</span>
+                <span><span className="font-semibold text-foreground text-base">{Math.round(yearTarget)}</span> /år</span>
               </div>
-              <div className="flex gap-1">
-                <button onClick={() => setShowPrimaryForm(true)} className="p-1.5 rounded-md hover:bg-secondary transition-colors text-xs text-muted-foreground">
+              <div className="flex gap-2 mt-3">
+                <button onClick={() => setShowPrimaryForm(true)} className="px-3 py-1 rounded-md hover:bg-secondary transition-colors text-xs text-muted-foreground">
                   Endre
                 </button>
-                <button onClick={handleDeletePrimary} className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors text-xs text-destructive">
+                <button onClick={handleDeletePrimary} className="px-3 py-1 rounded-md hover:bg-destructive/10 transition-colors text-xs text-destructive">
                   Slett
                 </button>
               </div>
-            </div>
-
-            <div className="flex items-center gap-3 text-sm text-muted-foreground mt-2">
-              <span><span className="font-semibold text-foreground text-base">{Math.round(weekTarget * 10) / 10}</span> /uke</span>
-              <span className="text-border">·</span>
-              <span><span className="font-semibold text-foreground text-base">{Math.round(monthTarget * 10) / 10}</span> /mnd</span>
-              <span className="text-border">·</span>
-              <span><span className="font-semibold text-foreground text-base">{Math.round(yearTarget)}</span> /år</span>
-            </div>
           </div>
         ) : (
           <Button
@@ -275,6 +282,22 @@ const GoalsSection = () => {
           </div>
         )}
       </div>
+
+      {/* Edit Goal Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={(open) => { if (!open) { setShowEditDialog(false); setEditGoal(undefined); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rediger mål</DialogTitle>
+          </DialogHeader>
+          {editGoal && (
+            <GoalForm
+              goal={editGoal}
+              onSave={handleEditSave}
+              onCancel={() => { setShowEditDialog(false); setEditGoal(undefined); }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
