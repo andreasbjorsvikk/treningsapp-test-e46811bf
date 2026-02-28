@@ -220,7 +220,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
 
   return (
     <div className="space-y-4">
-      <TrainingSubTabs active={subTab} onChange={setSubTab} />
+      <TrainingSubTabs active={subTab} onChange={(tab) => { setSubTab(tab); window.scrollTo({ top: 0 }); }} />
 
       {subTab === 'statistikk' && (
         <div className="space-y-4">

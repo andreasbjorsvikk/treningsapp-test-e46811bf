@@ -80,6 +80,7 @@ const Index = () => {
     setInitialStatPeriod(undefined);
     (window as any).__navigateToGoals = true;
     setActiveTab('trening');
+    window.scrollTo({ top: 0 });
     setTimeout(() => window.dispatchEvent(new CustomEvent('navigate-to-goals')), 50);
   };
 

@@ -19,6 +19,11 @@ const GoalProgressVisual = ({ metric, activityType, percent, current, target }: 
   const fillPct = Math.min(percent, 100);
   const done = percent >= 100;
 
+  // In dark mode, colors.text is often white which is invisible on dark bg
+  // Use colors.bg (which is the vivid activity color in dark mode) for fill
+  const fillColor = isDark ? colors.bg : colors.text;
+  const ghostColor = isDark ? colors.bg : colors.text;
+
   // Use unique IDs based on a combination to avoid SVG clip conflicts
   const uid = `${metric}-${activityType}-${Math.round(fillPct)}`;
 
@@ -26,13 +31,13 @@ const GoalProgressVisual = ({ metric, activityType, percent, current, target }: 
     <div className="flex items-center justify-center w-full h-full">
       <svg viewBox="0 0 64 64" className="w-full h-full" aria-label={`${Math.round(fillPct)}% fremgang`}>
         {metric === 'elevation' ? (
-          <MountainShape fillPct={fillPct} color={colors.text} done={done} uid={uid} />
+          <MountainShape fillPct={fillPct} color={fillColor} ghostColor={ghostColor} done={done} uid={uid} />
         ) : metric === 'minutes' ? (
-          <ClockShape fillPct={fillPct} color={colors.text} done={done} />
+          <ClockShape fillPct={fillPct} color={fillColor} ghostColor={ghostColor} done={done} />
         ) : metric === 'distance' ? (
-          <DistanceShape fillPct={fillPct} color={colors.text} done={done} uid={uid} />
+          <DistanceShape fillPct={fillPct} color={fillColor} ghostColor={ghostColor} done={done} uid={uid} />
         ) : (
-          <BoltShape fillPct={fillPct} color={colors.text} done={done} uid={uid} />
+          <BoltShape fillPct={fillPct} color={fillColor} ghostColor={ghostColor} done={done} uid={uid} />
         )}
       </svg>
     </div>
@@ -40,7 +45,7 @@ const GoalProgressVisual = ({ metric, activityType, percent, current, target }: 
 };
 
 // Mountain for elevation
-function MountainShape({ fillPct, color, done, uid }: { fillPct: number; color: string; done: boolean; uid: string }) {
+function MountainShape({ fillPct, color, ghostColor, done, uid }: { fillPct: number; color: string; ghostColor: string; done: boolean; uid: string }) {
   const clipY = 58 - (fillPct / 100) * 50;
   return (
     <>
@@ -49,15 +54,15 @@ function MountainShape({ fillPct, color, done, uid }: { fillPct: number; color: 
           <rect x="0" y={clipY} width="64" height={64 - clipY} />
         </clipPath>
       </defs>
-      <path d="M32 6 L58 58 H6 Z" fill={color} opacity={0.12} strokeLinejoin="round" />
-      <path d="M32 6 L58 58 H6 Z" fill={color} opacity={done ? 1 : 0.8} clipPath={`url(#mtn-${uid})`} strokeLinejoin="round" />
-      <path d="M32 6 L39 19 H25 Z" fill="white" opacity={0.45} />
+      <path d="M32 6 L58 58 H6 Z" fill={ghostColor} opacity={0.15} strokeLinejoin="round" />
+      <path d="M32 6 L58 58 H6 Z" fill={color} opacity={done ? 1 : 0.85} clipPath={`url(#mtn-${uid})`} strokeLinejoin="round" />
+      <path d="M32 6 L39 19 H25 Z" fill="white" opacity={0.35} />
     </>
   );
 }
 
 // Clock for minutes/hours
-function ClockShape({ fillPct, color, done }: { fillPct: number; color: string; done: boolean }) {
+function ClockShape({ fillPct, color, ghostColor, done }: { fillPct: number; color: string; ghostColor: string; done: boolean }) {
   const angle = (fillPct / 100) * 360;
   const rad = (angle - 90) * (Math.PI / 180);
   const cx = 32, cy = 32, r = 26;
@@ -70,8 +75,8 @@ function ClockShape({ fillPct, color, done }: { fillPct: number; color: string; 
 
   return (
     <>
-      <circle cx={cx} cy={cy} r={r} fill={color} opacity={0.1} />
-      <path d={arcPath} fill={color} opacity={done ? 1 : 0.75} />
+      <circle cx={cx} cy={cy} r={r} fill={ghostColor} opacity={0.15} />
+      <path d={arcPath} fill={color} opacity={done ? 1 : 0.85} />
       <circle cx={cx} cy={cy} r={2.5} fill="white" opacity={0.85} />
       {[0, 90, 180, 270].map(a => {
         const tr = (a - 90) * (Math.PI / 180);
@@ -93,7 +98,7 @@ function ClockShape({ fillPct, color, done }: { fillPct: number; color: string; 
 }
 
 // Horizontal road bar for distance
-function DistanceShape({ fillPct, color, done, uid }: { fillPct: number; color: string; done: boolean; uid: string }) {
+function DistanceShape({ fillPct, color, ghostColor, done, uid }: { fillPct: number; color: string; ghostColor: string; done: boolean; uid: string }) {
   const barY = 24;
   const barH = 16;
   const barW = 56;
@@ -102,21 +107,18 @@ function DistanceShape({ fillPct, color, done, uid }: { fillPct: number; color: 
   
   return (
     <>
-      {/* Road background */}
-      <rect x={barX} y={barY} width={barW} height={barH} rx={8} fill={color} opacity={0.12} />
-      {/* Road dashes */}
+      <rect x={barX} y={barY} width={barW} height={barH} rx={8} fill={ghostColor} opacity={0.15} />
       {[0, 1, 2, 3, 4, 5, 6, 7].map(i => (
-        <rect key={i} x={barX + 4 + i * 6.5} y={barY + 7} width={3.5} height={2} rx={1} fill={color} opacity={0.08} />
+        <rect key={i} x={barX + 4 + i * 6.5} y={barY + 7} width={3.5} height={2} rx={1} fill={ghostColor} opacity={0.1} />
       ))}
-      {/* Filled progress */}
-      <rect x={barX} y={barY} width={Math.max(fillW, barH)} height={barH} rx={8} fill={color} opacity={done ? 1 : 0.75} />
-      <rect x={barX} y={barY} width={fillW} height={barH} rx={8} fill={color} opacity={done ? 1 : 0.75} />
+      <rect x={barX} y={barY} width={Math.max(fillW, barH)} height={barH} rx={8} fill={color} opacity={done ? 1 : 0.85} />
+      <rect x={barX} y={barY} width={fillW} height={barH} rx={8} fill={color} opacity={done ? 1 : 0.85} />
     </>
   );
 }
 
 // Lightning bolt for sessions
-function BoltShape({ fillPct, color, done, uid }: { fillPct: number; color: string; done: boolean; uid: string }) {
+function BoltShape({ fillPct, color, ghostColor, done, uid }: { fillPct: number; color: string; ghostColor: string; done: boolean; uid: string }) {
   const clipY = 60 - (fillPct / 100) * 56;
   return (
     <>
@@ -125,8 +127,8 @@ function BoltShape({ fillPct, color, done, uid }: { fillPct: number; color: stri
           <rect x="0" y={clipY} width="64" height={64 - clipY} />
         </clipPath>
       </defs>
-      <path d="M36 4 L16 34 H28 L22 60 L48 26 H34 Z" fill={color} opacity={0.12} />
-      <path d="M36 4 L16 34 H28 L22 60 L48 26 H34 Z" fill={color} opacity={done ? 1 : 0.8} clipPath={`url(#bolt-${uid})`} />
+      <path d="M36 4 L16 34 H28 L22 60 L48 26 H34 Z" fill={ghostColor} opacity={0.15} />
+      <path d="M36 4 L16 34 H28 L22 60 L48 26 H34 Z" fill={color} opacity={done ? 1 : 0.85} clipPath={`url(#bolt-${uid})`} />
     </>
   );
 }
