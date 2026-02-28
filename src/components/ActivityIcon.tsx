@@ -2,21 +2,21 @@ import { SessionType } from '@/types/workout';
 import { CircleDot } from 'lucide-react';
 
 import styrkeIcon from '@/assets/icons/styrke.svg';
-import løpingIcon from '@/assets/icons/løping.svg';
+import lopingIcon from '@/assets/icons/loping.svg';
 import fjellturIcon from '@/assets/icons/fjelltur.svg';
-import svømmingIcon from '@/assets/icons/svømming.svg';
+import svommingIcon from '@/assets/icons/svomming.svg';
 import syklingIcon from '@/assets/icons/sykling.svg';
-import gåIcon from '@/assets/icons/gå.svg';
+import gaIcon from '@/assets/icons/ga.svg';
 import tennisIcon from '@/assets/icons/tennis.svg';
 import yogaIcon from '@/assets/icons/yoga.svg';
 
 const iconMap: Record<string, string> = {
   styrke: styrkeIcon,
-  løping: løpingIcon,
+  løping: lopingIcon,
   fjelltur: fjellturIcon,
-  svømming: svømmingIcon,
+  svømming: svommingIcon,
   sykling: syklingIcon,
-  gå: gåIcon,
+  gå: gaIcon,
   tennis: tennisIcon,
   yoga: yogaIcon,
 };
@@ -37,7 +37,6 @@ const ActivityIcon = ({ type, className = 'w-4 h-4', colorOverride, style: style
   }
 
   if (colorOverride) {
-    // Use mask-image to render SVG in any arbitrary color
     return (
       <div
         className={className}
