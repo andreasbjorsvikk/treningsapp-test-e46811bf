@@ -125,6 +125,7 @@ const CalendarPage = () => {
   // Infinite scroll state: track range of months to render
   const [rangeStart, setRangeStart] = useState({ year: now.getFullYear() - 1, month: now.getMonth() });
   const [rangeEnd, setRangeEnd] = useState({ year: now.getFullYear() + 1, month: now.getMonth() });
+  const initialScrollDone = useRef(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const currentMonthRef = useRef<HTMLDivElement>(null);
@@ -153,11 +154,15 @@ const CalendarPage = () => {
 
   const selectedSessions = selectedDay ? (sessionsByDate.get(selectedDay) || []) : [];
 
-  // Scroll to current month on first render
+  // Scroll to current month on first render and when calendar tab is re-opened
   useEffect(() => {
-    if (!hasScrolledToToday.current && currentMonthRef.current) {
-      currentMonthRef.current.scrollIntoView({ block: 'start' });
-      hasScrolledToToday.current = true;
+    if (currentMonthRef.current) {
+      // Use a short delay to ensure DOM is laid out
+      const timer = setTimeout(() => {
+        currentMonthRef.current?.scrollIntoView({ block: 'start' });
+        hasScrolledToToday.current = true;
+      }, hasScrolledToToday.current ? 0 : 50);
+      return () => clearTimeout(timer);
     }
   }, [months]);
 
