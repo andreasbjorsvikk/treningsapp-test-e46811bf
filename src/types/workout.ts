@@ -47,3 +47,21 @@ export interface WorkoutGoal {
   target: number;
   createdAt: string;
 }
+
+export interface PrimaryGoal {
+  id: string;
+  inputPeriod: GoalPeriod;
+  inputTarget: number;
+  createdAt: string;
+}
+
+export interface ExtraGoal {
+  id: string;
+  metric: GoalMetric;
+  period: GoalPeriod | 'custom';
+  activityType: SessionType | 'all';
+  target: number;
+  customStart?: string;
+  customEnd?: string;
+  createdAt: string;
+}

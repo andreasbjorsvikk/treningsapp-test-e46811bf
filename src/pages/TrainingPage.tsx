@@ -2,9 +2,9 @@ import { useState, useCallback, useMemo, useRef } from 'react';
 import { SessionType, WorkoutSession } from '@/types/workout';
 import GoalsSection from '@/components/GoalsSection';
 import { workoutService } from '@/services/workoutService';
-import { goalService } from '@/services/goalService';
+import { primaryGoalService, convertGoalValue } from '@/services/primaryGoalService';
 import { allSessionTypes } from '@/utils/workoutUtils';
-import { findGoalForPeriod, computeProgress, metricLabels } from '@/utils/goalUtils';
+import { computeProgress, metricLabels } from '@/utils/goalUtils';
 import SessionCard from '@/components/SessionCard';
 import TypeFilter from '@/components/TypeFilter';
 import WorkoutDialog from '@/components/WorkoutDialog';
@@ -14,15 +14,15 @@ import StatsTiles from '@/components/StatsTiles';
 import TrendChart from '@/components/TrendChart';
 import ProgressWheel from '@/components/ProgressWheel';
 import MetricSelector, { ChartMetric } from '@/components/MetricSelector';
+import TrainingSubTabs from '@/components/TrainingSubTabs';
 import { TrainingSubTab } from '@/components/BottomNav';
-import { ChevronDown, ChevronRight, Download, Upload, Replace, MoreVertical } from 'lucide-react';
+import { ChevronRight, Download, Upload, Replace, MoreVertical } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 
 interface TrainingPageProps {
   initialStatPeriod?: 'month' | 'year';
-  subTab: TrainingSubTab;
 }
 
 const monthNames = [
@@ -30,7 +30,8 @@ const monthNames = [
   'Juli', 'August', 'September', 'Oktober', 'November', 'Desember',
 ];
 
-const TrainingPage = ({ initialStatPeriod, subTab }: TrainingPageProps) => {
+const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
+  const [subTab, setSubTab] = useState<TrainingSubTab>(initialStatPeriod ? 'statistikk' : 'statistikk');
   const [filterType, setFilterType] = useState<SessionType | 'all'>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
@@ -48,8 +49,9 @@ const TrainingPage = ({ initialStatPeriod, subTab }: TrainingPageProps) => {
   const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
 
   const allSessions = workoutService.getAll();
-  const allGoals = goalService.getAll();
   const filtered = filterType === 'all' ? allSessions : allSessions.filter(s => s.type === filterType);
+
+  const primaryGoal = primaryGoalService.get();
 
   // Available years from sessions
   const availableYears = useMemo(() => {
@@ -70,7 +72,6 @@ const TrainingPage = ({ initialStatPeriod, subTab }: TrainingPageProps) => {
       if (!groups.has(m)) groups.set(m, []);
       groups.get(m)!.push(s);
     });
-    // Sort months descending
     return Array.from(groups.entries())
       .sort(([a], [b]) => b - a)
       .map(([month, sessions]) => ({
@@ -89,39 +90,30 @@ const TrainingPage = ({ initialStatPeriod, subTab }: TrainingPageProps) => {
     });
   }, []);
 
-  // Progress wheel data
-  const monthGoal = useMemo(() => findGoalForPeriod(allGoals, 'month'), [allGoals]);
+  // Progress wheel data driven by primaryGoal
   const monthData = useMemo(() => {
-    if (!monthGoal) return { current: 0, target: 0, percent: 0, unit: '' };
+    const target = primaryGoal ? convertGoalValue(primaryGoal.inputTarget, primaryGoal.inputPeriod, 'month') : 0;
     const sessions = allSessions.filter(s => {
       const d = new Date(s.date);
-      return d.getMonth() === statMonth && d.getFullYear() === statYear &&
-        (monthGoal.activityType === 'all' || s.type === monthGoal.activityType);
+      return d.getMonth() === statMonth && d.getFullYear() === statYear;
     });
-    const current = computeProgress(sessions, monthGoal.metric);
-    const target = monthGoal.target;
+    const current = sessions.length;
     const percent = target === 0 ? 0 : (current / target) * 100;
-    return { current: Math.round(current * 10) / 10, target, percent, unit: metricLabels[monthGoal.metric] };
-  }, [allSessions, monthGoal, statMonth, statYear]);
+    return { current, target: Math.round(target * 10) / 10, percent, unit: 'økter' };
+  }, [allSessions, primaryGoal, statMonth, statYear]);
 
-  const yearGoal = useMemo(() => findGoalForPeriod(allGoals, 'year'), [allGoals]);
   const yearData = useMemo(() => {
-    if (!yearGoal) return { current: 0, target: 0, diff: 0, expected: 0, unit: '' };
-    const sessions = allSessions.filter(s => {
-      const d = new Date(s.date);
-      return d.getFullYear() === statYear &&
-        (yearGoal.activityType === 'all' || s.type === yearGoal.activityType);
-    });
-    const current = computeProgress(sessions, yearGoal.metric);
-    const target = yearGoal.target;
+    const target = primaryGoal ? convertGoalValue(primaryGoal.inputTarget, primaryGoal.inputPeriod, 'year') : 0;
+    const sessions = allSessions.filter(s => new Date(s.date).getFullYear() === statYear);
+    const current = sessions.length;
     const startOfYear = new Date(statYear, 0, 1);
     const endOfYear = new Date(statYear + 1, 0, 1);
     const refDate = statYear === now.getFullYear() ? now : endOfYear;
     const yearFraction = (refDate.getTime() - startOfYear.getTime()) / (endOfYear.getTime() - startOfYear.getTime());
     const expected = target * yearFraction;
     const diff = current - expected;
-    return { current: Math.round(current * 10) / 10, target, diff, expected, unit: metricLabels[yearGoal.metric] };
-  }, [allSessions, yearGoal, statYear]);
+    return { current, target: Math.round(target), diff, expected, unit: 'økter' };
+  }, [allSessions, primaryGoal, statYear]);
 
   const statSessions = useMemo(() => {
     let sessions = allSessions.filter(s => selectedTypes.includes(s.type));
@@ -212,6 +204,8 @@ const TrainingPage = ({ initialStatPeriod, subTab }: TrainingPageProps) => {
 
   return (
     <div className="space-y-4">
+      <TrainingSubTabs active={subTab} onChange={setSubTab} />
+
       {subTab === 'statistikk' && (
         <div className="space-y-4">
           <div className="flex gap-2">
@@ -221,7 +215,7 @@ const TrainingPage = ({ initialStatPeriod, subTab }: TrainingPageProps) => {
               target={monthData.target}
               unit={monthData.unit}
               title={`${monthNames[statMonth]} ${statYear}`}
-              hasGoal={!!monthGoal}
+              hasGoal={!!primaryGoal}
             />
             <ProgressWheel
               percent={0}
@@ -229,7 +223,7 @@ const TrainingPage = ({ initialStatPeriod, subTab }: TrainingPageProps) => {
               target={yearData.target}
               unit={yearData.unit}
               title={String(statYear)}
-              hasGoal={!!yearGoal}
+              hasGoal={!!primaryGoal}
               paceMode={{ diff: yearData.diff, expected: yearData.expected }}
             />
           </div>

@@ -1,14 +1,15 @@
 import { useMemo } from 'react';
 import { Pencil, Trash2, Target } from 'lucide-react';
-import { WorkoutGoal, WorkoutSession, GoalMetric, GoalPeriod } from '@/types/workout';
+import { ExtraGoal, WorkoutSession, GoalMetric, GoalPeriod } from '@/types/workout';
 import { sessionTypeConfig } from '@/utils/workoutUtils';
 import { Progress } from '@/components/ui/progress';
-import { getSessionsInPeriod, computeProgress, metricLabels } from '@/utils/goalUtils';
+import { getSessionsInPeriod, computeProgress, metricLabels, getDaysRemainingInPeriod, getPeriodFractionElapsed } from '@/utils/goalUtils';
 
-const periodLabels: Record<GoalPeriod, string> = {
+const periodLabels: Record<GoalPeriod | 'custom', string> = {
   week: 'denne uken',
   month: 'denne måneden',
   year: 'i år',
+  custom: 'egendefinert',
 };
 
 function formatValue(value: number, metric: GoalMetric): string {
@@ -17,25 +18,34 @@ function formatValue(value: number, metric: GoalMetric): string {
 }
 
 interface GoalCardProps {
-  goal: WorkoutGoal;
+  goal: ExtraGoal;
   sessions: WorkoutSession[];
-  onEdit: (goal: WorkoutGoal) => void;
+  onEdit: (goal: ExtraGoal) => void;
   onDelete: (id: string) => void;
 }
 
 const GoalCard = ({ goal, sessions, onEdit, onDelete }: GoalCardProps) => {
   const periodSessions = useMemo(
-    () => getSessionsInPeriod(sessions, goal.period, goal.activityType),
+    () => getSessionsInPeriod(sessions, goal.period, goal.activityType, goal.customStart, goal.customEnd),
     [sessions, goal]
   );
 
   const current = computeProgress(periodSessions, goal.metric);
   const pct = Math.min((current / goal.target) * 100, 100);
   const done = current >= goal.target;
+  const remaining = Math.max(0, goal.target - current);
+  const daysLeft = getDaysRemainingInPeriod(goal.period, goal.customEnd);
+  const fraction = getPeriodFractionElapsed(goal.period, goal.customStart, goal.customEnd);
+  const expected = goal.target * fraction;
+  const ahead = current >= expected;
 
   const typeLabel = goal.activityType === 'all'
     ? 'Alle aktiviteter'
     : sessionTypeConfig[goal.activityType].label;
+
+  const periodLabel = goal.period === 'custom'
+    ? `${goal.customStart?.slice(5)} – ${goal.customEnd?.slice(5)}`
+    : periodLabels[goal.period];
 
   return (
     <div className="glass-card rounded-lg p-4 space-y-3">
@@ -47,7 +57,7 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete }: GoalCardProps) => {
               {formatValue(current, goal.metric)}/{formatValue(goal.target, goal.metric)} {metricLabels[goal.metric]}
             </p>
             <p className="text-xs text-muted-foreground">
-              {typeLabel} · {periodLabels[goal.period]}
+              {typeLabel} · {periodLabel}
             </p>
           </div>
         </div>
@@ -64,7 +74,15 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete }: GoalCardProps) => {
       <div className="space-y-1">
         <Progress value={pct} className="h-2" />
         <div className="flex justify-between text-xs text-muted-foreground">
-          <span>{Math.round(pct)}%</span>
+          <span>
+            {done ? '✓ Nådd!' : `${formatValue(remaining, goal.metric)} igjen`}
+            {' · '}{daysLeft} dager igjen
+          </span>
+          {!done && (
+            <span className={ahead ? 'text-success font-medium' : 'text-warning font-medium'}>
+              {ahead ? 'Foran skjema' : 'Bak skjema'}
+            </span>
+          )}
           {done && <span className="text-success font-medium">✓ Nådd!</span>}
         </div>
       </div>

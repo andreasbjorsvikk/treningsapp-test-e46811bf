@@ -1,10 +1,9 @@
 import { useState, useCallback, useMemo } from 'react';
 import { WorkoutSession } from '@/types/workout';
 import { workoutService } from '@/services/workoutService';
-import { goalService } from '@/services/goalService';
-import { findGoalForPeriod, getSessionsInPeriod, computeProgress, metricLabels } from '@/utils/goalUtils';
+import { primaryGoalService, convertGoalValue } from '@/services/primaryGoalService';
 import AppHeader from '@/components/AppHeader';
-import BottomNav, { TabId, TrainingSubTab } from '@/components/BottomNav';
+import BottomNav, { TabId } from '@/components/BottomNav';
 import StatsOverview from '@/components/StatsOverview';
 import SessionCard from '@/components/SessionCard';
 import WorkoutDialog from '@/components/WorkoutDialog';
@@ -13,6 +12,7 @@ import TrainingPage from '@/pages/TrainingPage';
 import CommunityPage from '@/pages/CommunityPage';
 import SettingsPage from '@/pages/SettingsPage';
 import ProgressWheel from '@/components/ProgressWheel';
+import WeeklySessionIcons from '@/components/WeeklySessionIcons';
 import { Plus, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -24,39 +24,36 @@ const Index = () => {
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
   const [, setRefresh] = useState(0);
   const [initialStatPeriod, setInitialStatPeriod] = useState<'month' | 'year' | undefined>();
-  const [trainingSubTab, setTrainingSubTab] = useState<TrainingSubTab>('statistikk');
 
   const stats = workoutService.getWeeklyStats();
   const allSessions = workoutService.getAll();
   const recentSessions = allSessions.slice(0, 5);
-  const allGoals = goalService.getAll();
 
-  // Monthly wheel
-  const monthGoal = useMemo(() => findGoalForPeriod(allGoals, 'month'), [allGoals]);
+  // Primary goal drives both wheels
+  const primaryGoal = primaryGoalService.get();
+
   const monthData = useMemo(() => {
-    if (!monthGoal) return { current: 0, target: 0, percent: 0, unit: '' };
-    const sessions = getSessionsInPeriod(allSessions, 'month', monthGoal.activityType);
-    const current = computeProgress(sessions, monthGoal.metric);
-    const target = monthGoal.target;
-    const percent = target === 0 ? 0 : (current / target) * 100;
-    return { current: Math.round(current * 10) / 10, target, percent, unit: metricLabels[monthGoal.metric] };
-  }, [allSessions, monthGoal]);
-
-  // Yearly wheel
-  const yearGoal = useMemo(() => findGoalForPeriod(allGoals, 'year'), [allGoals]);
-  const yearData = useMemo(() => {
-    if (!yearGoal) return { current: 0, target: 0, diff: 0, expected: 0, unit: '' };
-    const sessions = getSessionsInPeriod(allSessions, 'year', yearGoal.activityType);
-    const current = computeProgress(sessions, yearGoal.metric);
-    const target = yearGoal.target;
+    const target = primaryGoal ? convertGoalValue(primaryGoal.inputTarget, primaryGoal.inputPeriod, 'month') : 0;
     const now = new Date();
+    const current = allSessions.filter(s => {
+      const d = new Date(s.date);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).length;
+    const percent = target === 0 ? 0 : (current / target) * 100;
+    return { current, target: Math.round(target * 10) / 10, percent, unit: 'økter' };
+  }, [allSessions, primaryGoal]);
+
+  const yearData = useMemo(() => {
+    const target = primaryGoal ? convertGoalValue(primaryGoal.inputTarget, primaryGoal.inputPeriod, 'year') : 0;
+    const now = new Date();
+    const current = allSessions.filter(s => new Date(s.date).getFullYear() === now.getFullYear()).length;
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
     const yearFraction = (now.getTime() - startOfYear.getTime()) / (endOfYear.getTime() - startOfYear.getTime());
     const expected = target * yearFraction;
     const diff = current - expected;
-    return { current: Math.round(current * 10) / 10, target, diff, expected, unit: metricLabels[yearGoal.metric] };
-  }, [allSessions, yearGoal]);
+    return { current, target: Math.round(target), diff, expected, unit: 'økter' };
+  }, [allSessions, primaryGoal]);
 
   const handleDelete = useCallback((id: string) => {
     workoutService.delete(id);
@@ -80,7 +77,6 @@ const Index = () => {
 
   const navigateToStats = (period: 'month' | 'year') => {
     setInitialStatPeriod(period);
-    setTrainingSubTab('statistikk');
     setActiveTab('trening');
   };
 
@@ -99,7 +95,7 @@ const Index = () => {
                   target={monthData.target}
                   unit={monthData.unit}
                   title={new Date().toLocaleString('nb-NO', { month: 'long' }).replace(/^./, c => c.toUpperCase())}
-                  hasGoal={!!monthGoal}
+                  hasGoal={!!primaryGoal}
                   onClick={() => navigateToStats('month')}
                 />
                 <ProgressWheel
@@ -109,7 +105,7 @@ const Index = () => {
                   unit={yearData.unit}
                   title={String(new Date().getFullYear())}
                   label="I år"
-                  hasGoal={!!yearGoal}
+                  hasGoal={!!primaryGoal}
                   paceMode={{ diff: yearData.diff, expected: yearData.expected }}
                   onClick={() => navigateToStats('year')}
                 />
@@ -120,7 +116,10 @@ const Index = () => {
               <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">
                 Siste 7 dager
               </h2>
-              <StatsOverview stats={stats} />
+              <WeeklySessionIcons sessions={allSessions} />
+              <div className="mt-2">
+                <StatsOverview stats={stats} />
+              </div>
             </section>
 
             <section>
@@ -142,7 +141,7 @@ const Index = () => {
         )}
 
         {activeTab === 'kalender' && <CalendarPage />}
-        {activeTab === 'trening' && <TrainingPage initialStatPeriod={initialStatPeriod} subTab={trainingSubTab} />}
+        {activeTab === 'trening' && <TrainingPage initialStatPeriod={initialStatPeriod} />}
         {activeTab === 'fellesskap' && <CommunityPage />}
         {activeTab === 'settings' && <SettingsPage />}
       </main>
@@ -160,8 +159,6 @@ const Index = () => {
       <BottomNav
         active={activeTab}
         onNavigate={(tab) => { setInitialStatPeriod(undefined); setActiveTab(tab); }}
-        trainingSubTab={trainingSubTab}
-        onTrainingSubTabChange={setTrainingSubTab}
       />
 
       <WorkoutDialog

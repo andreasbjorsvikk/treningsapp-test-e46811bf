@@ -1,8 +1,8 @@
-import { WorkoutGoal } from '@/types/workout';
+import { ExtraGoal } from '@/types/workout';
 
 const STORAGE_KEY = 'treningslogg_goals';
 
-function loadGoals(): WorkoutGoal[] {
+function loadGoals(): ExtraGoal[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) return JSON.parse(stored);
@@ -10,19 +10,19 @@ function loadGoals(): WorkoutGoal[] {
   return [];
 }
 
-function saveGoals(goals: WorkoutGoal[]): void {
+function saveGoals(goals: ExtraGoal[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(goals));
 }
 
-let goals: WorkoutGoal[] = loadGoals();
+let goals: ExtraGoal[] = loadGoals();
 
 export const goalService = {
-  getAll(): WorkoutGoal[] {
+  getAll(): ExtraGoal[] {
     return [...goals];
   },
 
-  add(goal: Omit<WorkoutGoal, 'id' | 'createdAt'>): WorkoutGoal {
-    const newGoal: WorkoutGoal = {
+  add(goal: Omit<ExtraGoal, 'id' | 'createdAt'>): ExtraGoal {
+    const newGoal: ExtraGoal = {
       ...goal,
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
@@ -32,7 +32,7 @@ export const goalService = {
     return newGoal;
   },
 
-  update(id: string, data: Partial<Omit<WorkoutGoal, 'id' | 'createdAt'>>): void {
+  update(id: string, data: Partial<Omit<ExtraGoal, 'id' | 'createdAt'>>): void {
     const idx = goals.findIndex(g => g.id === id);
     if (idx === -1) return;
     goals[idx] = { ...goals[idx], ...data };
