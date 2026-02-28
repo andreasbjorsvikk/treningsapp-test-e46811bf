@@ -25,7 +25,7 @@ const ActivityTypeFilter = ({ selected, onToggle }: ActivityTypeFilterProps) => 
   };
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none justify-center flex-wrap">
+    <div className="flex gap-1.5 pb-1 justify-center flex-wrap">
       <button
         onClick={handleToggleAll}
         className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
@@ -44,7 +44,7 @@ const ActivityTypeFilter = ({ selected, onToggle }: ActivityTypeFilterProps) => 
           <button
             key={type}
             onClick={() => onToggle(type)}
-            className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors ${
               !isActive ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80' : ''
             }`}
             style={isActive ? { backgroundColor: color, color: '#fff' } : undefined}

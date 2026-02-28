@@ -114,7 +114,9 @@ const Index = () => {
       <main className="container py-6 space-y-6">
         {activeTab === 'hjem' && (
           <>
-            <section>
+            {/* Desktop: 2-column layout with wheels left, stats right */}
+            <section className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-6 lg:space-y-0">
+              {/* Left: Progress wheels */}
               <div className="grid grid-cols-2 gap-3">
                 <ProgressWheel
                   percent={monthData.percent}
@@ -136,6 +138,17 @@ const Index = () => {
                   paceMode={{ diff: yearData.diff, expected: yearData.expected }}
                   onClick={navigateToGoals}
                 />
+              </div>
+
+              {/* Right: Last 7 days */}
+              <div>
+                <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">
+                  Siste 7 dager
+                </h2>
+                <WeeklySessionIcons sessions={allSessions} />
+                <div className="mt-2">
+                  <StatsOverview stats={stats} />
+                </div>
               </div>
             </section>
 
@@ -169,16 +182,6 @@ const Index = () => {
                 </section>
               );
             })()}
-
-            <section>
-              <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">
-                Siste 7 dager
-              </h2>
-              <WeeklySessionIcons sessions={allSessions} />
-              <div className="mt-2">
-                <StatsOverview stats={stats} />
-              </div>
-            </section>
 
             <section>
               <div className="flex items-center justify-between mb-3">

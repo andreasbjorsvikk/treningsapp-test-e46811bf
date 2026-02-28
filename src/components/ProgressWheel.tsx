@@ -169,10 +169,10 @@ const ProgressWheel = ({
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center gap-1 p-2 rounded-2xl glass-card shadow-md hover:shadow-xl transition-all cursor-pointer overflow-visible flex-1 min-w-0"
+      className="flex flex-col items-center gap-0.5 p-2 pt-3 rounded-2xl glass-card shadow-md hover:shadow-xl transition-all cursor-pointer overflow-visible flex-1 min-w-0"
       aria-label={label}
     >
-      <span className="text-xl font-bold text-foreground mb-3">{title}</span>
+      <span className="text-xl font-bold text-foreground mb-1">{title}</span>
 
       <svg
         width={SIZE}
