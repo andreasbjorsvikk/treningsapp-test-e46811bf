@@ -36,11 +36,14 @@ const WeeklySessionIcons = ({ sessions }: WeeklySessionIconsProps) => {
         return (
           <div
             key={session.id}
-            className="rounded-md p-1.5 flex items-center justify-center"
-            style={{ backgroundColor: colors.bg }}
+            className="rounded-lg p-1.5 flex items-center justify-center shadow-sm border border-white/20 dark:border-white/10 backdrop-blur-sm"
+            style={{
+              background: `linear-gradient(135deg, ${colors.bg}, ${colors.bg}dd)`,
+              boxShadow: `0 2px 8px ${colors.bg}40, inset 0 1px 1px rgba(255,255,255,0.2)`,
+            }}
             title={`${session.type} – ${new Date(session.date).toLocaleDateString('nb-NO', { weekday: 'short', day: 'numeric' })}`}
           >
-            <ActivityIcon type={session.type} className="w-4 h-4" colorOverride={!isDark ? colors.text : undefined} />
+            <ActivityIcon type={session.type} className="w-4 h-4 drop-shadow-sm" colorOverride={!isDark ? colors.text : undefined} />
           </div>
         );
       })}
