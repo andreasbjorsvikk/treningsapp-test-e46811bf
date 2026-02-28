@@ -161,34 +161,36 @@ const CalendarPage = () => {
     }
   }, [months]);
 
-  // Infinite scroll handler
+  // Infinite scroll handler - debounced for performance
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
+    if (scrollTimeoutRef.current) return; // throttle
+    scrollTimeoutRef.current = setTimeout(() => {
+      scrollTimeoutRef.current = null;
+      const el = scrollRef.current;
+      if (!el) return;
 
-    // Near top: load 12 more months before
-    if (el.scrollTop < 300) {
-      const prevHeight = el.scrollHeight;
-      setRangeStart(prev => {
-        let y = prev.year - 1;
-        return { year: y, month: prev.month };
-      });
-      // Preserve scroll position after prepending
-      requestAnimationFrame(() => {
-        if (el) {
-          const newHeight = el.scrollHeight;
-          el.scrollTop += (newHeight - prevHeight);
-        }
-      });
-    }
+      if (el.scrollTop < 300) {
+        const prevHeight = el.scrollHeight;
+        setRangeStart(prev => ({
+          year: prev.year - 1,
+          month: prev.month,
+        }));
+        requestAnimationFrame(() => {
+          if (el) {
+            const newHeight = el.scrollHeight;
+            el.scrollTop += (newHeight - prevHeight);
+          }
+        });
+      }
 
-    // Near bottom: load 12 more months after
-    if (el.scrollHeight - el.scrollTop - el.clientHeight < 300) {
-      setRangeEnd(prev => {
-        let y = prev.year + 1;
-        return { year: y, month: prev.month };
-      });
-    }
+      if (el.scrollHeight - el.scrollTop - el.clientHeight < 300) {
+        setRangeEnd(prev => ({
+          year: prev.year + 1,
+          month: prev.month,
+        }));
+      }
+    }, 100);
   }, []);
 
   // Render session stats for desktop
@@ -332,7 +334,7 @@ const CalendarPage = () => {
   );
 
   // Render a single month grid
-  const renderMonth = (monthData: { year: number; month: number }) => {
+  const renderMonth = useCallback((monthData: { year: number; month: number }) => {
     const grid = getMonthGrid(monthData.year, monthData.month, sundayStart);
     const isCurrentMonth = monthData.year === now.getFullYear() && monthData.month === now.getMonth();
 
@@ -441,7 +443,7 @@ const CalendarPage = () => {
         </div>
       </div>
     );
-  };
+  }, [sundayStart, sessionsByDate, todayKey, selectedDay, isDark, isMobile]);
 
   return (
     <div className="space-y-1">
@@ -461,7 +463,12 @@ const CalendarPage = () => {
         ref={scrollRef}
         onScroll={handleScroll}
         className="overflow-y-auto"
-        style={{ maxHeight: 'calc(100vh - 160px)' }}
+        style={{
+          maxHeight: 'calc(100vh - 160px)',
+          contain: 'layout style',
+          willChange: 'scroll-position',
+          WebkitOverflowScrolling: 'touch',
+        } as React.CSSProperties}
       >
         {months.map(m => renderMonth(m))}
       </div>
