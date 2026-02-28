@@ -20,20 +20,18 @@ const GoalProgressVisual = ({ metric, activityType, percent, current, target }: 
   const done = percent >= 100;
 
   return (
-    <div className="flex items-center justify-center">
-      <div className="relative w-16 h-16">
-        <svg viewBox="0 0 64 64" className="w-full h-full" aria-label={`${Math.round(fillPct)}% fremgang`}>
-          {metric === 'elevation' ? (
-            <MountainShape fillPct={fillPct} color={colors.text} done={done} />
-          ) : metric === 'minutes' ? (
-            <ClockShape fillPct={fillPct} color={colors.text} done={done} />
-          ) : metric === 'distance' ? (
-            <RouteShape fillPct={fillPct} color={colors.text} done={done} />
-          ) : (
-            <BoltShape fillPct={fillPct} color={colors.text} done={done} />
-          )}
-        </svg>
-      </div>
+    <div className="flex items-center justify-center w-full h-full">
+      <svg viewBox="0 0 64 64" className="w-full h-full" aria-label={`${Math.round(fillPct)}% fremgang`}>
+        {metric === 'elevation' ? (
+          <MountainShape fillPct={fillPct} color={colors.text} done={done} />
+        ) : metric === 'minutes' ? (
+          <ClockShape fillPct={fillPct} color={colors.text} done={done} />
+        ) : metric === 'distance' ? (
+          <CircuitShape fillPct={fillPct} color={colors.text} done={done} />
+        ) : (
+          <BoltShape fillPct={fillPct} color={colors.text} done={done} />
+        )}
+      </svg>
     </div>
   );
 };
@@ -96,37 +94,42 @@ function ClockShape({ fillPct, color, done }: { fillPct: number; color: string; 
   );
 }
 
-// Route/path for distance
-function RouteShape({ fillPct, color, done }: { fillPct: number; color: string; done: boolean }) {
-  const totalLength = 160;
-  const dashOffset = totalLength - (fillPct / 100) * totalLength;
+// Circuit/ring for distance — a donut that fills up
+function CircuitShape({ fillPct, color, done }: { fillPct: number; color: string; done: boolean }) {
+  const cx = 32, cy = 32, r = 22;
+  const circumference = 2 * Math.PI * r;
+  const dashOffset = circumference - (fillPct / 100) * circumference;
+  const angle = (fillPct / 100) * 360;
+  const rad = ((angle - 90) * Math.PI) / 180;
+  const dotX = cx + r * Math.cos(rad);
+  const dotY = cy + r * Math.sin(rad);
+
   return (
     <>
-      {/* Background path */}
-      <path
-        d="M12 52 C12 52, 20 10, 32 32 S52 12, 52 12"
+      {/* Background ring */}
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={6} opacity={0.12} />
+      {/* Filled ring */}
+      <circle
+        cx={cx} cy={cy} r={r}
         fill="none"
         stroke={color}
-        strokeWidth={5}
-        opacity={0.15}
-        strokeLinecap="round"
-      />
-      {/* Filled path */}
-      <path
-        d="M12 52 C12 52, 20 10, 32 32 S52 12, 52 12"
-        fill="none"
-        stroke={color}
-        strokeWidth={5}
+        strokeWidth={6}
         opacity={done ? 1 : 0.7}
         strokeLinecap="round"
-        strokeDasharray={totalLength}
+        strokeDasharray={circumference}
         strokeDashoffset={dashOffset}
+        transform={`rotate(-90 ${cx} ${cy})`}
       />
-      {/* Start dot */}
-      <circle cx={12} cy={52} r={3} fill={color} opacity={0.5} />
-      {/* End flag */}
-      <rect x={49} y={8} width={6} height={4} rx={1} fill={color} opacity={fillPct >= 95 ? 1 : 0.3} />
-      <line x1={49} y1={8} x2={49} y2={16} stroke={color} strokeWidth={1.5} opacity={0.5} />
+      {/* Moving dot */}
+      {fillPct > 0 && fillPct < 100 && (
+        <circle cx={dotX} cy={dotY} r={3.5} fill={color} opacity={0.9} />
+      )}
+      {/* Center km label */}
+      <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="middle" fontSize="11" fontWeight="700" fill={color} opacity={0.8}>
+        km
+      </text>
+      {/* Start marker */}
+      <circle cx={cx} cy={cy - r} r={2} fill={color} opacity={0.3} />
     </>
   );
 }

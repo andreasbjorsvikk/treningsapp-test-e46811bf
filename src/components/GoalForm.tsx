@@ -15,7 +15,7 @@ interface GoalFormProps {
 
 const metricOptions: { id: GoalMetric; label: string; unit: string; icon: typeof Hash }[] = [
   { id: 'sessions', label: 'Økter', unit: 'økter', icon: Hash },
-  { id: 'minutes', label: 'Tid', unit: 'minutter', icon: Clock },
+  { id: 'minutes', label: 'Tid', unit: 'timer', icon: Clock },
   { id: 'distance', label: 'Distanse', unit: 'km', icon: MapPin },
   { id: 'elevation', label: 'Høydemeter', unit: 'm', icon: Mountain },
 ];
@@ -193,7 +193,7 @@ const GoalForm = ({ goal, onSave, onCancel }: GoalFormProps) => {
           step={metric === 'distance' ? '0.1' : '1'}
           value={target}
           onChange={e => setTarget(e.target.value)}
-          placeholder={`f.eks. ${metric === 'sessions' ? '12' : metric === 'minutes' ? '600' : metric === 'distance' ? '50' : '2000'}`}
+          placeholder={`f.eks. ${metric === 'sessions' ? '12' : metric === 'minutes' ? '10' : metric === 'distance' ? '50' : '2000'}`}
           className="w-full bg-secondary rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           required
         />
