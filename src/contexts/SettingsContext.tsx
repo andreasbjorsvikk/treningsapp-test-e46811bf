@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { SessionType } from '@/types/workout';
 import { defaultTypeColors } from '@/utils/workoutUtils';
 
-export type AppColorTheme = 'orange' | 'blue' | 'green' | 'rose';
+export type AppColorTheme = 'white' | 'orange' | 'blue' | 'green' | 'rose';
 export type FirstDayOfWeek = 'monday' | 'sunday';
 export type UnitSystem = 'metric' | 'imperial';
 
@@ -18,33 +18,45 @@ export interface AppSettings {
 interface ThemeColors {
   label: string;
   swatch: string;
+  swatchDark: string;
   light: { background: string; card: string; border: string; muted: string };
   dark: { background: string; card: string; border: string; muted: string };
 }
 
 export const APP_THEMES: Record<AppColorTheme, ThemeColors> = {
+  white: {
+    label: 'Hvit',
+    swatch: 'hsl(0, 0%, 96%)',
+    swatchDark: 'hsl(0, 0%, 12%)',
+    light: { background: '0 0% 97%', card: '0 0% 100%', border: '0 0% 90%', muted: '0 0% 95%' },
+    dark: { background: '0 0% 8%', card: '0 0% 12%', border: '0 0% 18%', muted: '0 0% 15%' },
+  },
   orange: {
     label: 'Oransje',
-    swatch: 'hsl(30, 40%, 93%)',
-    light: { background: '30 30% 96%', card: '30 20% 99%', border: '30 15% 90%', muted: '30 15% 94%' },
+    swatch: 'hsl(30, 55%, 88%)',
+    swatchDark: 'hsl(25, 30%, 13%)',
+    light: { background: '30 40% 94%', card: '30 25% 97%', border: '30 20% 88%', muted: '30 20% 92%' },
     dark: { background: '25 25% 9%', card: '25 20% 13%', border: '25 18% 18%', muted: '25 18% 15%' },
   },
   blue: {
     label: 'Blå',
-    swatch: 'hsl(210, 40%, 93%)',
-    light: { background: '210 35% 96%', card: '210 25% 99%', border: '210 20% 90%', muted: '210 20% 94%' },
+    swatch: 'hsl(210, 55%, 88%)',
+    swatchDark: 'hsl(215, 30%, 13%)',
+    light: { background: '210 45% 94%', card: '210 30% 97%', border: '210 25% 88%', muted: '210 25% 92%' },
     dark: { background: '215 30% 9%', card: '215 25% 13%', border: '215 20% 18%', muted: '215 20% 15%' },
   },
   green: {
     label: 'Grønn',
-    swatch: 'hsl(150, 30%, 92%)',
-    light: { background: '150 25% 96%', card: '150 18% 99%', border: '150 15% 90%', muted: '150 15% 94%' },
+    swatch: 'hsl(150, 40%, 87%)',
+    swatchDark: 'hsl(155, 25%, 13%)',
+    light: { background: '150 35% 93%', card: '150 22% 97%', border: '150 20% 87%', muted: '150 18% 91%' },
     dark: { background: '155 25% 9%', card: '155 20% 13%', border: '155 18% 18%', muted: '155 18% 15%' },
   },
   rose: {
     label: 'Rosa',
-    swatch: 'hsl(340, 35%, 93%)',
-    light: { background: '340 30% 96%', card: '340 20% 99%', border: '340 15% 90%', muted: '340 15% 94%' },
+    swatch: 'hsl(340, 50%, 90%)',
+    swatchDark: 'hsl(340, 25%, 13%)',
+    light: { background: '340 40% 94%', card: '340 25% 97%', border: '340 20% 88%', muted: '340 18% 92%' },
     dark: { background: '340 25% 9%', card: '340 20% 13%', border: '340 18% 18%', muted: '340 18% 15%' },
   },
 };
@@ -78,7 +90,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         return {
           ...defaultSettings,
           ...parsed,
-          colorTheme: ['orange', 'blue', 'green', 'rose'].includes(colorTheme) ? colorTheme : 'orange',
+          colorTheme: ['white', 'orange', 'blue', 'green', 'rose'].includes(colorTheme) ? colorTheme : 'orange',
           sessionTypeColors: { ...defaultTypeColors, ...(parsed.sessionTypeColors || {}) },
         };
       }

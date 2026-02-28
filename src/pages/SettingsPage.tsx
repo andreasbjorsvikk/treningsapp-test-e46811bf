@@ -66,16 +66,14 @@ const SettingsPage = () => {
           <div className="flex gap-3 flex-wrap">
             {(Object.entries(appThemes) as [AppColorTheme, typeof appThemes[AppColorTheme]][]).map(
               ([key, theme]) => {
-                const previewColor = settings.darkMode
-                  ? `hsl(${theme.dark.card})`
-                  : theme.swatch;
+                const previewColor = settings.darkMode ? theme.swatchDark : theme.swatch;
                 return (
                   <button
                     key={key}
                     onClick={() => updateSettings({ colorTheme: key })}
                     className={`
                       w-9 h-9 rounded-full transition-all border-2
-                      ${settings.colorTheme === key ? 'border-foreground scale-110 shadow-lg' : 'border-transparent hover:scale-105'}
+                      ${settings.colorTheme === key ? 'border-foreground scale-110 shadow-lg' : 'border-border hover:scale-105'}
                     `}
                     style={{ backgroundColor: previewColor }}
                     title={theme.label}

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { SessionType, WorkoutSession } from '@/types/workout';
 import GoalsSection from '@/components/GoalsSection';
 import { workoutService } from '@/services/workoutService';
@@ -15,8 +15,10 @@ import TrendChart from '@/components/TrendChart';
 import ProgressWheel from '@/components/ProgressWheel';
 import MetricSelector, { ChartMetric } from '@/components/MetricSelector';
 import { TrainingSubTab } from '@/components/BottomNav';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, Upload, Replace, MoreVertical } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 
 interface TrainingPageProps {
   initialStatPeriod?: 'month' | 'year';
@@ -33,6 +35,8 @@ const TrainingPage = ({ initialStatPeriod, subTab }: TrainingPageProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
   const [, setRefresh] = useState(0);
+  const importFileRef = useRef<HTMLInputElement>(null);
+  const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge');
 
   const now = new Date();
   const [period, setPeriod] = useState<Period>(initialStatPeriod || 'month');
@@ -158,6 +162,54 @@ const TrainingPage = ({ initialStatPeriod, subTab }: TrainingPageProps) => {
     setRefresh(r => r + 1);
   }, [editSession]);
 
+  const handleExport = useCallback(() => {
+    const data = workoutService.exportAll();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `treningslogg-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Økter eksportert!');
+  }, []);
+
+  const handleImportFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target?.result as string);
+        if (!Array.isArray(data)) throw new Error('Invalid format');
+        if (importMode === 'replace') {
+          workoutService.importReplace(data);
+          toast.success(`Alle økter erstattet med ${data.length} økter.`);
+        } else {
+          const added = workoutService.importMerge(data);
+          toast.success(`${added} nye økter lagt til (duplikater hoppet over).`);
+        }
+        setRefresh(r => r + 1);
+      } catch {
+        toast.error('Kunne ikke lese filen. Sjekk at det er en gyldig JSON-fil.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }, [importMode]);
+
+  const handleImportMerge = useCallback(() => {
+    setImportMode('merge');
+    setTimeout(() => importFileRef.current?.click(), 0);
+  }, []);
+
+  const handleImportReplace = useCallback(() => {
+    if (confirm('⚠️ Dette vil overskrive alle økter du har i appen fra før. Er du sikker?')) {
+      setImportMode('replace');
+      setTimeout(() => importFileRef.current?.click(), 0);
+    }
+  }, []);
+
   return (
     <div className="space-y-4">
       {subTab === 'statistikk' && (
@@ -203,18 +255,39 @@ const TrainingPage = ({ initialStatPeriod, subTab }: TrainingPageProps) => {
 
       {subTab === 'historikk' && (
         <div className="space-y-4">
+          <input ref={importFileRef} type="file" accept=".json" className="hidden" onChange={handleImportFile} />
           <div className="flex items-center justify-between gap-2">
             <TypeFilter selected={filterType} onSelect={setFilterType} />
-            <Select value={historyYear} onValueChange={setHistoryYear}>
-              <SelectTrigger className="w-24 h-8 text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {availableYears.map(y => (
-                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-1">
+              <Select value={historyYear} onValueChange={setHistoryYear}>
+                <SelectTrigger className="w-24 h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableYears.map(y => (
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="p-1.5 rounded-md hover:bg-secondary transition-colors">
+                    <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleExport}>
+                    <Download className="w-4 h-4 mr-2" /> Eksporter alle økter
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleImportMerge}>
+                    <Upload className="w-4 h-4 mr-2" /> Importer (legg til)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleImportReplace} className="text-destructive focus:text-destructive">
+                    <Replace className="w-4 h-4 mr-2" /> Importer (erstatt alt)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           <div className="space-y-2">

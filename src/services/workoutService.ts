@@ -60,6 +60,23 @@ export const workoutService = {
     saveSessions(sessions);
   },
 
+  exportAll(): WorkoutSession[] {
+    return [...sessions];
+  },
+
+  importMerge(newSessions: WorkoutSession[]): number {
+    const existingIds = new Set(sessions.map(s => s.id));
+    const toAdd = newSessions.filter(s => !existingIds.has(s.id));
+    sessions = [...sessions, ...toAdd];
+    saveSessions(sessions);
+    return toAdd.length;
+  },
+
+  importReplace(newSessions: WorkoutSession[]): void {
+    sessions = [...newSessions];
+    saveSessions(sessions);
+  },
+
   getWeeklyStats(): WeeklyStats {
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
