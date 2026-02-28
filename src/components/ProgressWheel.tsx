@@ -106,34 +106,24 @@ const ProgressWheel = ({
   const rotation = `rotate(-90 ${CENTER} ${CENTER})`;
   const markerAngle = expectedFraction != null ? expectedFraction * 360 : null;
 
-  // Marker: small diamond/triangle indicator on the ring
+  // Marker: a bold line across the ring with a small dot
   const renderMarker = () => {
     if (!hasGoal || markerAngle == null || isGold) return null;
     const rad = ((markerAngle - 90) * Math.PI) / 180;
-    // Position on the outer edge of the ring
-    const outerR = RADIUS + STROKE / 2 + 1;
-    const cx = CENTER + outerR * Math.cos(rad);
-    const cy = CENTER + outerR * Math.sin(rad);
-    // Small triangle pointing inward
-    const inwardRad = rad + Math.PI; // pointing toward center
-    const perpRad1 = rad + Math.PI / 2;
-    const perpRad2 = rad - Math.PI / 2;
-    const tipLen = 7;
-    const baseLen = 4;
-    const tipX = cx + tipLen * Math.cos(inwardRad);
-    const tipY = cy + tipLen * Math.sin(inwardRad);
-    const b1x = cx + baseLen * Math.cos(perpRad1);
-    const b1y = cy + baseLen * Math.sin(perpRad1);
-    const b2x = cx + baseLen * Math.cos(perpRad2);
-    const b2y = cy + baseLen * Math.sin(perpRad2);
+    const innerR = RADIUS - STROKE / 2 - 4;
+    const outerR = RADIUS + STROKE / 2 + 4;
+    const x1 = CENTER + innerR * Math.cos(rad);
+    const y1 = CENTER + innerR * Math.sin(rad);
+    const x2 = CENTER + outerR * Math.cos(rad);
+    const y2 = CENTER + outerR * Math.sin(rad);
+    const dotR = RADIUS + STROKE / 2 + 7;
+    const dx = CENTER + dotR * Math.cos(rad);
+    const dy = CENTER + dotR * Math.sin(rad);
     return (
       <g>
-        <polygon
-          points={`${tipX},${tipY} ${b1x},${b1y} ${b2x},${b2y}`}
-          fill="hsl(var(--foreground))"
-          opacity={0.8}
-        />
-        {/* Small label "I DAG" near marker */}
+        <line x1={x1} y1={y1} x2={x2} y2={y2}
+          stroke="hsl(var(--foreground))" strokeWidth={3} strokeLinecap="round" opacity={0.85} />
+        <circle cx={dx} cy={dy} r={3} fill="hsl(var(--foreground))" opacity={0.85} />
       </g>
     );
   };
@@ -162,7 +152,7 @@ const ProgressWheel = ({
                 <stop offset="100%" stopColor={goldGlow} />
               </linearGradient>
               <filter id={`gold-glow-${safeId}`} x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation={4 + glowIntensity * 10} result="blur" />
+                <feGaussianBlur stdDeviation={2 + glowIntensity * 5} result="blur" />
                 <feMerge>
                   <feMergeNode in="blur" />
                   <feMergeNode in="SourceGraphic" />
@@ -189,7 +179,7 @@ const ProgressWheel = ({
 
           {/* Glow behind the progress ring */}
           <filter id={`ring-glow-${safeId}`} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feGaussianBlur stdDeviation="2" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
