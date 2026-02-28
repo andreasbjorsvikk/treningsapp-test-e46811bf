@@ -43,4 +43,17 @@ export const goalService = {
     goals = goals.filter(g => g.id !== id);
     saveGoals(goals);
   },
+
+  reorder(orderedIds: string[]): void {
+    const map = new Map(goals.map(g => [g.id, g]));
+    const reordered: ExtraGoal[] = [];
+    for (const id of orderedIds) {
+      const g = map.get(id);
+      if (g) reordered.push(g);
+    }
+    // Add any goals not in the list (shouldn't happen, but safety)
+    goals.forEach(g => { if (!orderedIds.includes(g.id)) reordered.push(g); });
+    goals = reordered;
+    saveGoals(goals);
+  },
 };
