@@ -3,12 +3,14 @@ import { SessionType } from '@/types/workout';
 import { defaultTypeColors } from '@/utils/workoutUtils';
 
 export type AppColorTheme = 'white' | 'orange' | 'blue' | 'green' | 'rose';
+export type AccentColor = 'black' | 'orange' | 'blue' | 'green' | 'red' | 'purple';
 export type FirstDayOfWeek = 'monday' | 'sunday';
 export type UnitSystem = 'metric' | 'imperial';
 
 export interface AppSettings {
   darkMode: boolean;
   colorTheme: AppColorTheme;
+  accentColor: AccentColor;
   firstDayOfWeek: FirstDayOfWeek;
   unitSystem: UnitSystem;
   defaultSessionType: SessionType;
@@ -61,9 +63,56 @@ export const APP_THEMES: Record<AppColorTheme, ThemeColors> = {
   },
 };
 
+interface AccentPreset {
+  label: string;
+  swatch: string;
+  light: { primary: string; energy: string; energyGlow: string };
+  dark: { primary: string; energy: string; energyGlow: string };
+}
+
+export const ACCENT_PRESETS: Record<AccentColor, AccentPreset> = {
+  black: {
+    label: 'Svart',
+    swatch: 'hsl(0, 0%, 15%)',
+    light: { primary: '0 0% 15%', energy: '0 0% 15%', energyGlow: '0 0% 25%' },
+    dark: { primary: '0 0% 85%', energy: '0 0% 85%', energyGlow: '0 0% 75%' },
+  },
+  orange: {
+    label: 'Oransje',
+    swatch: 'hsl(24, 95%, 53%)',
+    light: { primary: '24 95% 53%', energy: '24 95% 53%', energyGlow: '24 100% 60%' },
+    dark: { primary: '24 95% 53%', energy: '24 95% 53%', energyGlow: '24 100% 65%' },
+  },
+  blue: {
+    label: 'Blå',
+    swatch: 'hsl(210, 80%, 50%)',
+    light: { primary: '210 80% 50%', energy: '210 80% 50%', energyGlow: '210 85% 60%' },
+    dark: { primary: '210 80% 60%', energy: '210 80% 60%', energyGlow: '210 85% 70%' },
+  },
+  green: {
+    label: 'Grønn',
+    swatch: 'hsl(150, 60%, 40%)',
+    light: { primary: '150 60% 40%', energy: '150 60% 40%', energyGlow: '150 65% 50%' },
+    dark: { primary: '150 60% 50%', energy: '150 60% 50%', energyGlow: '150 65% 60%' },
+  },
+  red: {
+    label: 'Rød',
+    swatch: 'hsl(0, 75%, 50%)',
+    light: { primary: '0 75% 50%', energy: '0 75% 50%', energyGlow: '0 80% 60%' },
+    dark: { primary: '0 75% 55%', energy: '0 75% 55%', energyGlow: '0 80% 65%' },
+  },
+  purple: {
+    label: 'Lilla',
+    swatch: 'hsl(270, 60%, 50%)',
+    light: { primary: '270 60% 50%', energy: '270 60% 50%', energyGlow: '270 65% 60%' },
+    dark: { primary: '270 60% 65%', energy: '270 60% 65%', energyGlow: '270 65% 75%' },
+  },
+};
+
 const defaultSettings: AppSettings = {
   darkMode: true,
   colorTheme: 'orange',
+  accentColor: 'black',
   firstDayOfWeek: 'monday',
   unitSystem: 'metric',
   defaultSessionType: 'styrke',
@@ -74,6 +123,7 @@ interface SettingsContextType {
   settings: AppSettings;
   updateSettings: (patch: Partial<AppSettings>) => void;
   appThemes: typeof APP_THEMES;
+  accentPresets: typeof ACCENT_PRESETS;
   getTypeColor: (type: SessionType) => string;
 }
 
@@ -85,12 +135,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       const stored = localStorage.getItem('treningslogg_settings');
       if (stored) {
         const parsed = JSON.parse(stored);
-        // Migrate old accentColor to colorTheme
-        const colorTheme = parsed.colorTheme || parsed.accentColor || defaultSettings.colorTheme;
+        const colorTheme = parsed.colorTheme || 'orange';
         return {
           ...defaultSettings,
           ...parsed,
           colorTheme: ['white', 'orange', 'blue', 'green', 'rose'].includes(colorTheme) ? colorTheme : 'orange',
+          accentColor: ['black', 'orange', 'blue', 'green', 'red', 'purple'].includes(parsed.accentColor) ? parsed.accentColor : 'black',
           sessionTypeColors: { ...defaultTypeColors, ...(parsed.sessionTypeColors || {}) },
         };
       }
@@ -116,6 +166,17 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--muted', mode.muted);
   }, [settings.colorTheme, settings.darkMode]);
 
+  // Apply accent color CSS vars
+  useEffect(() => {
+    const accent = ACCENT_PRESETS[settings.accentColor];
+    const mode = settings.darkMode ? accent.dark : accent.light;
+    const root = document.documentElement;
+    root.style.setProperty('--primary', mode.primary);
+    root.style.setProperty('--energy', mode.energy);
+    root.style.setProperty('--energy-glow', mode.energyGlow);
+    root.style.setProperty('--ring', mode.primary);
+  }, [settings.accentColor, settings.darkMode]);
+
   // Persist
   useEffect(() => {
     localStorage.setItem('treningslogg_settings', JSON.stringify(settings));
@@ -130,7 +191,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings, appThemes: APP_THEMES, getTypeColor }}>
+    <SettingsContext.Provider value={{ settings, updateSettings, appThemes: APP_THEMES, accentPresets: ACCENT_PRESETS, getTypeColor }}>
       {children}
     </SettingsContext.Provider>
   );

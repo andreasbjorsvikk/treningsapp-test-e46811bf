@@ -3,7 +3,7 @@ import { WorkoutSession, ExtraGoal } from '@/types/workout';
 import { workoutService } from '@/services/workoutService';
 import { primaryGoalService, convertGoalValue, getProratedTarget } from '@/services/primaryGoalService';
 import { goalService } from '@/services/goalService';
-import AppHeader from '@/components/AppHeader';
+
 import BottomNav, { TabId } from '@/components/BottomNav';
 import StatsOverview from '@/components/StatsOverview';
 import SessionCard from '@/components/SessionCard';
@@ -109,7 +109,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20 lg:pb-0 lg:pt-16">
-      <AppHeader className="lg:hidden" />
 
       <main className="container py-6 space-y-6">
         {activeTab === 'hjem' && (

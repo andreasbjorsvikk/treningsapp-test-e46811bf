@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { useSettings, AppColorTheme } from '@/contexts/SettingsContext';
+import { useSettings, AppColorTheme, AccentColor } from '@/contexts/SettingsContext';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Slider } from '@/components/ui/slider';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { SessionType } from '@/types/workout';
@@ -24,7 +23,7 @@ const COLOR_PRESETS = [
 ];
 
 const SettingsPage = () => {
-  const { settings, updateSettings, appThemes, getTypeColor } = useSettings();
+  const { settings, updateSettings, appThemes, accentPresets, getTypeColor } = useSettings();
   const [editingType, setEditingType] = useState<SessionType | null>(null);
 
   const handleClearData = () => {
@@ -83,6 +82,27 @@ const SettingsPage = () => {
             )}
           </div>
         </div>
+
+        {/* Accent color */}
+        <div className="space-y-2">
+          <Label className="text-sm">Detaljfarge</Label>
+          <div className="flex gap-3 flex-wrap">
+            {(Object.entries(accentPresets) as [AccentColor, typeof accentPresets[AccentColor]][]).map(
+              ([key, preset]) => (
+                <button
+                  key={key}
+                  onClick={() => updateSettings({ accentColor: key })}
+                  className={`
+                    w-9 h-9 rounded-full transition-all border-2
+                    ${settings.accentColor === key ? 'border-foreground scale-110 shadow-lg' : 'border-border hover:scale-105'}
+                  `}
+                  style={{ backgroundColor: preset.swatch }}
+                  title={preset.label}
+                />
+              )
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Session type colors */}
@@ -117,9 +137,7 @@ const SettingsPage = () => {
                           <button
                             key={idx}
                             onClick={() => {
-                              // Update activityColorMap dynamically
                               (activityColorMap as any)[type] = { light: preset.light, dark: preset.dark };
-                              // Force re-render by updating a setting
                               updateSettings({
                                 sessionTypeColors: {
                                   ...settings.sessionTypeColors,
