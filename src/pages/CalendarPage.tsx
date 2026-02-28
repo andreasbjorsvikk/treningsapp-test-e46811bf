@@ -353,7 +353,7 @@ const CalendarPage = () => {
 
   // Render mobile single session
   const renderMobileSingle = (sessions: WorkoutSession[]) => (
-    <div className="flex flex-wrap gap-[3px] justify-center mt-0">
+    <div className="flex flex-wrap gap-[3px] justify-center w-full mt-0">
       {sessions.slice(0, 4).map((s) => (
         <SessionBadge key={s.id} session={s} size="sm-single" isDark={isDark} />
       ))}
@@ -369,7 +369,7 @@ const CalendarPage = () => {
       <div
         key={`${monthData.year}-${monthData.month}`}
         ref={isCurrentMonth ? currentMonthRef : undefined}
-        className="mb-4"
+        className="mb-6"
       >
         {/* Month header */}
         <div className={`rounded-2xl px-4 py-3 mb-2 text-center ${isCurrentMonth ? 'glass-card border-l-4 border-primary/40' : 'glass-card'}`}>
@@ -452,7 +452,7 @@ const CalendarPage = () => {
                     {sessionCount === 1 && (
                       <>
                         {isMobile ? (
-                          <div className="flex-1 flex items-center justify-center pt-2">
+                          <div className="flex-1 flex items-center justify-center w-full pt-2">
                             {renderMobileSingle(daySessions)}
                           </div>
                         ) : (

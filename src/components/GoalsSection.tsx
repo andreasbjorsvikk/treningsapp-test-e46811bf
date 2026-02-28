@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
-import { Plus, Target } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import TargetIcon from '@/components/TargetIcon';
 import { ExtraGoal, PrimaryGoal } from '@/types/workout';
 import { goalService } from '@/services/goalService';
 import { primaryGoalService, convertGoalValue, getProratedTarget } from '@/services/primaryGoalService';
@@ -191,7 +192,7 @@ const GoalsSection = () => {
           />
         ) : primaryGoal ? (
           <div className="glass-card rounded-lg p-6 flex flex-col items-center text-center">
-              <Target className="w-6 h-6 text-primary mb-2" />
+              <TargetIcon className="w-6 h-6 mb-2" />
               <p className="text-2xl font-bold text-foreground">
                 {primaryGoal.inputTarget} økter per {periodLabel}
               </p>
@@ -216,7 +217,7 @@ const GoalsSection = () => {
             onClick={() => setShowPrimaryForm(true)}
             className="w-full gradient-energy text-primary-foreground"
           >
-            <Target className="w-4 h-4 mr-1" />
+            <TargetIcon className="w-4 h-4 mr-1" />
             Sett ditt treningsmål
           </Button>
         )}
