@@ -250,7 +250,7 @@ const ProgressWheel = ({
       </svg>
 
       {hasGoal && (
-        <span className="text-[13px] font-medium text-muted-foreground">
+        <span className="text-base font-bold text-foreground tracking-tight">
           {current} / {target} {unit}
         </span>
       )}

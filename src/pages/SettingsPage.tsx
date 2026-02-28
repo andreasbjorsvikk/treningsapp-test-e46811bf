@@ -20,6 +20,10 @@ const COLOR_PRESETS = [
   { label: 'Brun', light: { bg: 'rgb(232,212,195)', text: 'rgb(75,46,31)', badge: 'rgb(242,228,217)' }, dark: { bg: 'rgb(149,115,86)', text: '#ffffff', badge: '#423122' } },
   { label: 'Cyan', light: { bg: 'rgb(229,247,255)', text: '#3f6fa8', badge: 'rgb(240,251,255)' }, dark: { bg: 'rgb(105,172,203)', text: '#ffffff', badge: '#345260' } },
   { label: 'Grå', light: { bg: 'rgb(212,212,216)', text: '#000000', badge: 'rgb(228,228,232)' }, dark: { bg: 'rgb(98,100,104)', text: '#ffffff', badge: '#313030' } },
+  { label: 'Dus rosa', light: { bg: 'rgb(245,218,225)', text: 'rgb(130,45,70)', badge: 'rgb(250,230,236)' }, dark: { bg: 'rgb(155,95,115)', text: '#ffffff', badge: '#4a1a2e' } },
+  { label: 'Oransje', light: { bg: 'rgb(255,218,185)', text: 'rgb(140,55,10)', badge: 'rgb(255,232,208)' }, dark: { bg: 'rgb(190,110,55)', text: '#ffffff', badge: '#5a2a0d' } },
+  { label: 'Sol', light: { bg: 'rgb(255,240,180)', text: 'rgb(120,85,5)', badge: 'rgb(255,245,200)' }, dark: { bg: 'rgb(185,155,55)', text: '#ffffff', badge: '#4a3a10' } },
+  { label: 'Mint', light: { bg: 'rgb(210,240,230)', text: 'rgb(35,95,75)', badge: 'rgb(225,248,240)' }, dark: { bg: 'rgb(80,145,120)', text: '#ffffff', badge: '#1a3a2e' } },
 ];
 
 const SettingsPage = () => {
@@ -83,23 +87,32 @@ const SettingsPage = () => {
           </div>
         </div>
 
-        {/* Accent color */}
-        <div className="space-y-2">
+        {/* Accent color — elegant grid with labels */}
+        <div className="space-y-3">
           <Label className="text-sm">Detaljfarge</Label>
-          <div className="flex gap-3 flex-wrap">
+          <div className="grid grid-cols-3 gap-2">
             {(Object.entries(accentPresets) as [AccentColor, typeof accentPresets[AccentColor]][]).map(
-              ([key, preset]) => (
-                <button
-                  key={key}
-                  onClick={() => updateSettings({ accentColor: key })}
-                  className={`
-                    w-9 h-9 rounded-full transition-all border-2
-                    ${settings.accentColor === key ? 'border-foreground scale-110 shadow-lg' : 'border-border hover:scale-105'}
-                  `}
-                  style={{ backgroundColor: preset.swatch }}
-                  title={preset.label}
-                />
-              )
+              ([key, preset]) => {
+                const isActive = settings.accentColor === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => updateSettings({ accentColor: key })}
+                    className={`
+                      flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all text-left
+                      ${isActive
+                        ? 'bg-foreground/10 ring-2 ring-foreground/30 shadow-sm'
+                        : 'hover:bg-foreground/5'}
+                    `}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full shrink-0 shadow-sm transition-transform ${isActive ? 'scale-110' : ''}`}
+                      style={{ backgroundColor: preset.swatch }}
+                    />
+                    <span className="text-xs font-medium text-foreground/80 truncate">{preset.label}</span>
+                  </button>
+                );
+              }
             )}
           </div>
         </div>

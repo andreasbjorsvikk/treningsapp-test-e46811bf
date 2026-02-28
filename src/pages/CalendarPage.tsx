@@ -369,14 +369,25 @@ const CalendarPage = () => {
       <div
         key={`${monthData.year}-${monthData.month}`}
         ref={isCurrentMonth ? currentMonthRef : undefined}
-        className="mb-6"
+        className="mb-6 relative"
       >
         {/* Month header */}
-        <div className={`rounded-2xl px-4 py-3 mb-2 text-center ${isCurrentMonth ? 'glass-card border-l-4 border-primary/40' : 'glass-card'}`}>
+        <div className={`rounded-2xl px-4 py-3 mb-2 text-center ${isCurrentMonth ? 'glass-card border-l-4 border-primary/60 shadow-md' : 'glass-card'}`}>
           <h2 className={`font-display font-bold text-lg ${isCurrentMonth ? 'text-primary' : ''}`}>
             {MONTH_NAMES[monthData.month]} {monthData.year}
           </h2>
         </div>
+
+        {/* Subtle background glow for current month */}
+        {isCurrentMonth && (
+          <div className="absolute inset-0 -z-10 rounded-2xl pointer-events-none"
+            style={{
+              background: 'hsl(var(--primary) / 0.03)',
+              boxShadow: 'inset 0 0 0 1px hsl(var(--primary) / 0.06)',
+              borderRadius: '1rem',
+            }}
+          />
+        )}
 
         {/* Calendar grid */}
         <div className="grid grid-cols-7 gap-[3px] lg:gap-1">

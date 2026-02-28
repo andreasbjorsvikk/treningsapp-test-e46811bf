@@ -34,7 +34,7 @@ const SessionCard = ({ session, onEdit, onDelete }: SessionCardProps) => {
                 {session.title || config.label}
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {config.label} · {formatDate(session.date)}
+                {formatDate(session.date)}
               </p>
             </div>
             <div className="flex gap-1 shrink-0">
