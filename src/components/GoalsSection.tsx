@@ -1,5 +1,6 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import TargetIcon from '@/components/TargetIcon';
 import { ExtraGoal, PrimaryGoal } from '@/types/workout';
 import { goalService } from '@/services/goalService';
@@ -7,8 +8,8 @@ import { primaryGoalService, convertGoalValue, getProratedTarget } from '@/servi
 import { workoutService } from '@/services/workoutService';
 import { Button } from '@/components/ui/button';
 import GoalForm from '@/components/GoalForm';
-import GoalCard from '@/components/GoalCard';
 import PrimaryGoalForm from '@/components/PrimaryGoalForm';
+import DraggableGoalGrid from '@/components/DraggableGoalGrid';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 
@@ -16,14 +17,10 @@ const GoalsSection = () => {
   const [showExtraForm, setShowExtraForm] = useState(false);
   const [showPrimaryForm, setShowPrimaryForm] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeletePrimaryConfirm, setShowDeletePrimaryConfirm] = useState(false);
   const [editGoal, setEditGoal] = useState<ExtraGoal | undefined>();
   const [, setRefresh] = useState(0);
 
-  // Drag state
-  const [dragId, setDragId] = useState<string | null>(null);
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
 
   const primaryGoal = primaryGoalService.get();
   const extraGoals = goalService.getAll();
@@ -91,91 +88,6 @@ const GoalsSection = () => {
     setRefresh(r => r + 1);
   };
 
-  // Drag handlers
-  const handleDragStart = useCallback((id: string) => {
-    setDragId(id);
-    setIsDragging(true);
-  }, []);
-
-  const handleDragOver = useCallback((e: React.DragEvent, id: string) => {
-    e.preventDefault();
-    setDragOverId(id);
-  }, []);
-
-  const handleDrop = useCallback((targetId: string) => {
-    if (!dragId || dragId === targetId) {
-      setDragId(null);
-      setDragOverId(null);
-      setIsDragging(false);
-      return;
-    }
-    const ids = extraGoals.map(g => g.id);
-    const fromIdx = ids.indexOf(dragId);
-    const toIdx = ids.indexOf(targetId);
-    if (fromIdx === -1 || toIdx === -1) return;
-    ids.splice(fromIdx, 1);
-    ids.splice(toIdx, 0, dragId);
-    goalService.reorder(ids);
-    setDragId(null);
-    setDragOverId(null);
-    setIsDragging(false);
-    setRefresh(r => r + 1);
-  }, [dragId, extraGoals]);
-
-  const handleDragEnd = useCallback(() => {
-    setDragId(null);
-    setDragOverId(null);
-    setIsDragging(false);
-  }, []);
-
-  // Touch-based drag
-  const touchDragId = useRef<string | null>(null);
-  const touchClone = useRef<HTMLElement | null>(null);
-  const touchStartPos = useRef({ x: 0, y: 0 });
-
-  const handleTouchStart = useCallback((e: React.TouchEvent, id: string) => {
-    const touch = e.touches[0];
-    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
-    longPressTimer.current = setTimeout(() => {
-      touchDragId.current = id;
-      setDragId(id);
-      setIsDragging(true);
-      // Haptic feedback if available
-      if (navigator.vibrate) navigator.vibrate(30);
-    }, 400);
-  }, []);
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    const dx = Math.abs(touch.clientX - touchStartPos.current.x);
-    const dy = Math.abs(touch.clientY - touchStartPos.current.y);
-    // Cancel long press if moved too much before timer
-    if (!touchDragId.current && (dx > 10 || dy > 10)) {
-      if (longPressTimer.current) clearTimeout(longPressTimer.current);
-      return;
-    }
-    if (!touchDragId.current) return;
-    e.preventDefault();
-    // Find element under touch
-    const el = document.elementFromPoint(touch.clientX, touch.clientY);
-    const card = el?.closest('[data-goal-id]');
-    if (card) {
-      const overId = card.getAttribute('data-goal-id');
-      if (overId) setDragOverId(overId);
-    }
-  }, []);
-
-  const handleTouchEnd = useCallback(() => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current);
-    if (touchDragId.current && dragOverId) {
-      handleDrop(dragOverId);
-    }
-    touchDragId.current = null;
-    setDragId(null);
-    setDragOverId(null);
-    setIsDragging(false);
-  }, [dragOverId, handleDrop]);
-
   return (
     <div className="space-y-6">
       {/* Primary Goal */}
@@ -207,7 +119,7 @@ const GoalsSection = () => {
                 <button onClick={() => setShowPrimaryForm(true)} className="px-3 py-1 rounded-md hover:bg-secondary transition-colors text-xs text-muted-foreground">
                   Endre
                 </button>
-                <button onClick={handleDeletePrimary} className="px-3 py-1 rounded-md hover:bg-destructive/10 transition-colors text-xs text-destructive">
+                <button onClick={() => setShowDeletePrimaryConfirm(true)} className="px-3 py-1 rounded-md hover:bg-destructive/10 transition-colors text-xs text-destructive">
                   Slett
                 </button>
               </div>
@@ -253,35 +165,14 @@ const GoalsSection = () => {
             Ingen andre mål ennå.
           </p>
         ) : (
-          <div
-            className="grid grid-cols-2 md:grid-cols-3 gap-3"
-            onTouchMove={handleTouchMove as any}
-            onTouchEnd={handleTouchEnd}
-          >
-            {extraGoals.map(goal => (
-              <div
-                key={goal.id}
-                data-goal-id={goal.id}
-                draggable
-                onDragStart={() => handleDragStart(goal.id)}
-                onDragOver={(e) => handleDragOver(e, goal.id)}
-                onDrop={() => handleDrop(goal.id)}
-                onDragEnd={handleDragEnd}
-                onTouchStart={(e) => handleTouchStart(e, goal.id)}
-                className={`transition-all duration-200 ${
-                  dragId === goal.id ? 'opacity-50 scale-95' : ''
-                } ${dragOverId === goal.id && dragId !== goal.id ? 'ring-2 ring-primary/50 scale-[1.02]' : ''}`}
-              >
-                <GoalCard
-                  goal={goal}
-                  sessions={sessions}
-                  onEdit={handleEditExtra}
-                  onDelete={handleDeleteExtra}
-                  onToggleHome={handleToggleHome}
-                />
-              </div>
-            ))}
-          </div>
+          <DraggableGoalGrid
+            goals={extraGoals}
+            sessions={sessions}
+            onEdit={handleEditExtra}
+            onDelete={handleDeleteExtra}
+            onToggleHome={handleToggleHome}
+            onReorder={() => setRefresh(r => r + 1)}
+          />
         )}
       </div>
 
@@ -301,6 +192,24 @@ const GoalsSection = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Primary Goal Confirmation */}
+      <AlertDialog open={showDeletePrimaryConfirm} onOpenChange={setShowDeletePrimaryConfirm}>
+        <AlertDialogContent className="max-w-[min(calc(100vw-2rem),20rem)]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Slett treningsmål</AlertDialogTitle>
+            <AlertDialogDescription>
+              Er du sikker på at du vil slette det generelle treningsmålet? Denne handlingen kan ikke angres.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { handleDeletePrimary(); setShowDeletePrimaryConfirm(false); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Slett
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

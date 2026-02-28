@@ -17,6 +17,7 @@ import ProgressWheel from '@/components/ProgressWheel';
 import WeeklySessionIcons from '@/components/WeeklySessionIcons';
 import MiniCalendar from '@/components/MiniCalendar';
 import GoalCard from '@/components/GoalCard';
+import DraggableGoalGrid from '@/components/DraggableGoalGrid';
 import { Plus, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -156,7 +157,13 @@ const Index = () => {
                   <StatsOverview stats={stats} />
                 </div>
               </div>
-              <MiniCalendar sessions={allSessions} />
+            </section>
+
+            {/* Mini calendar - small, right-aligned on desktop */}
+            <section className="lg:flex lg:justify-end">
+              <div className="lg:w-48 w-full max-w-[12rem] mx-auto lg:mx-0">
+                <MiniCalendar sessions={allSessions} />
+              </div>
             </section>
 
             {/* Home-pinned extra goals */}
@@ -168,24 +175,20 @@ const Index = () => {
                   <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">
                     Mål
                   </h2>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {homeGoals.map(goal => (
-                      <GoalCard
-                        key={goal.id}
-                        goal={goal}
-                        sessions={allSessions}
-                        onEdit={(g) => {
-                          setEditGoal(g);
-                          setShowGoalEditDialog(true);
-                        }}
-                        onDelete={() => {}}
-                        onToggleHome={(id) => {
-                          goalService.update(id, { showOnHome: false });
-                          setRefresh(r => r + 1);
-                        }}
-                      />
-                    ))}
-                  </div>
+                  <DraggableGoalGrid
+                    goals={homeGoals}
+                    sessions={allSessions}
+                    onEdit={(g) => {
+                      setEditGoal(g);
+                      setShowGoalEditDialog(true);
+                    }}
+                    onDelete={() => {}}
+                    onToggleHome={(id) => {
+                      goalService.update(id, { showOnHome: false });
+                      setRefresh(r => r + 1);
+                    }}
+                    onReorder={() => setRefresh(r => r + 1)}
+                  />
                 </section>
               );
             })()}
