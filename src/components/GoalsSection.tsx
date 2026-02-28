@@ -179,7 +179,7 @@ const GoalsSection = () => {
       {/* Primary Goal */}
       <div className="space-y-3">
         <h3 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-          Hovedmål
+          Generelt treningsmål
         </h3>
 
         {showPrimaryForm ? (
@@ -224,7 +224,7 @@ const GoalsSection = () => {
       {/* Extra Goals */}
       <div className="space-y-3">
         <h3 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-          Ekstra mål
+          Andre mål
         </h3>
 
         {!showExtraForm && (
@@ -234,7 +234,7 @@ const GoalsSection = () => {
             className="w-full"
           >
             <Plus className="w-4 h-4 mr-1" />
-            Legg til ekstra mål
+            Legg til mål
           </Button>
         )}
 
@@ -248,7 +248,7 @@ const GoalsSection = () => {
 
         {extraGoals.length === 0 && !showExtraForm ? (
           <p className="text-center py-6 text-sm text-muted-foreground">
-            Ingen ekstra mål ennå.
+            Ingen andre mål ennå.
           </p>
         ) : (
           <div
