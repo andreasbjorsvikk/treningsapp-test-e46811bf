@@ -50,7 +50,7 @@ function MountainShape({ fillPct, color, done, uid }: { fillPct: number; color: 
         </clipPath>
       </defs>
       <path d="M32 6 L58 58 H6 Z" fill={color} opacity={0.12} strokeLinejoin="round" />
-      <path d="M32 6 L58 58 H6 Z" fill={color} opacity={done ? 1 : 0.65} clipPath={`url(#mtn-${uid})`} strokeLinejoin="round" />
+      <path d="M32 6 L58 58 H6 Z" fill={color} opacity={done ? 1 : 0.8} clipPath={`url(#mtn-${uid})`} strokeLinejoin="round" />
       <path d="M32 6 L39 19 H25 Z" fill="white" opacity={0.45} />
     </>
   );
@@ -71,7 +71,7 @@ function ClockShape({ fillPct, color, done }: { fillPct: number; color: string; 
   return (
     <>
       <circle cx={cx} cy={cy} r={r} fill={color} opacity={0.1} />
-      <path d={arcPath} fill={color} opacity={done ? 1 : 0.6} />
+      <path d={arcPath} fill={color} opacity={done ? 1 : 0.75} />
       <circle cx={cx} cy={cy} r={2.5} fill="white" opacity={0.85} />
       {[0, 90, 180, 270].map(a => {
         const tr = (a - 90) * (Math.PI / 180);
@@ -92,35 +92,25 @@ function ClockShape({ fillPct, color, done }: { fillPct: number; color: string; 
   );
 }
 
-// Horizontal road/bar for distance
+// Horizontal road bar for distance
 function DistanceShape({ fillPct, color, done, uid }: { fillPct: number; color: string; done: boolean; uid: string }) {
-  const barY = 26;
-  const barH = 12;
-  const barW = 52;
-  const barX = 6;
+  const barY = 24;
+  const barH = 16;
+  const barW = 56;
+  const barX = 4;
   const fillW = (fillPct / 100) * barW;
   
   return (
     <>
       {/* Road background */}
-      <rect x={barX} y={barY} width={barW} height={barH} rx={6} fill={color} opacity={0.12} />
+      <rect x={barX} y={barY} width={barW} height={barH} rx={8} fill={color} opacity={0.12} />
       {/* Road dashes */}
       {[0, 1, 2, 3, 4, 5, 6, 7].map(i => (
-        <rect key={i} x={barX + 4 + i * 6.5} y={barY + 5} width={3.5} height={2} rx={1} fill={color} opacity={0.08} />
+        <rect key={i} x={barX + 4 + i * 6.5} y={barY + 7} width={3.5} height={2} rx={1} fill={color} opacity={0.08} />
       ))}
       {/* Filled progress */}
-      <rect x={barX} y={barY} width={Math.max(fillW, barH)} height={barH} rx={6} fill={color} opacity={done ? 1 : 0.7}>
-        <clipPath id={`dist-clip-${uid}`}>
-          <rect x={barX} y={barY} width={fillW} height={barH} />
-        </clipPath>
-      </rect>
-      <rect x={barX} y={barY} width={fillW} height={barH} rx={6} fill={color} opacity={done ? 1 : 0.7} />
-      {/* Start pin */}
-      <circle cx={barX + 3} cy={barY + barH + 6} r={2.5} fill={color} opacity={0.3} />
-      <line x1={barX + 3} y1={barY + barH} x2={barX + 3} y2={barY + barH + 4} stroke={color} strokeWidth={1.5} opacity={0.3} />
-      {/* End flag */}
-      <line x1={barX + barW - 3} y1={barY - 2} x2={barX + barW - 3} y2={barY + barH + 6} stroke={color} strokeWidth={1.5} opacity={done ? 0.8 : 0.2} />
-      <path d={`M${barX + barW - 3} ${barY - 2} L${barX + barW + 5} ${barY + 2} L${barX + barW - 3} ${barY + 6}`} fill={color} opacity={done ? 0.9 : 0.2} />
+      <rect x={barX} y={barY} width={Math.max(fillW, barH)} height={barH} rx={8} fill={color} opacity={done ? 1 : 0.75} />
+      <rect x={barX} y={barY} width={fillW} height={barH} rx={8} fill={color} opacity={done ? 1 : 0.75} />
     </>
   );
 }
@@ -136,7 +126,7 @@ function BoltShape({ fillPct, color, done, uid }: { fillPct: number; color: stri
         </clipPath>
       </defs>
       <path d="M36 4 L16 34 H28 L22 60 L48 26 H34 Z" fill={color} opacity={0.12} />
-      <path d="M36 4 L16 34 H28 L22 60 L48 26 H34 Z" fill={color} opacity={done ? 1 : 0.7} clipPath={`url(#bolt-${uid})`} />
+      <path d="M36 4 L16 34 H28 L22 60 L48 26 H34 Z" fill={color} opacity={done ? 1 : 0.8} clipPath={`url(#bolt-${uid})`} />
     </>
   );
 }

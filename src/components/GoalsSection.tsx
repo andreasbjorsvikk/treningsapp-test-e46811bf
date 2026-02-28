@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Plus, Target } from 'lucide-react';
 import { ExtraGoal, PrimaryGoal } from '@/types/workout';
 import { goalService } from '@/services/goalService';
@@ -8,8 +8,6 @@ import { Button } from '@/components/ui/button';
 import GoalForm from '@/components/GoalForm';
 import GoalCard from '@/components/GoalCard';
 import PrimaryGoalForm from '@/components/PrimaryGoalForm';
-import { Progress } from '@/components/ui/progress';
-import { getSessionsInPeriod, getDaysRemainingInPeriod, getPeriodFractionElapsed } from '@/utils/goalUtils';
 
 const GoalsSection = () => {
   const [showExtraForm, setShowExtraForm] = useState(false);
@@ -17,23 +15,23 @@ const GoalsSection = () => {
   const [editGoal, setEditGoal] = useState<ExtraGoal | undefined>();
   const [, setRefresh] = useState(0);
 
+  // Drag state
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
   const primaryGoal = primaryGoalService.get();
   const extraGoals = goalService.getAll();
   const sessions = workoutService.getAll();
 
-  // Primary goal - prorated targets
   const weekTarget = primaryGoal ? getProratedTarget(primaryGoal, 'week') : 0;
   const monthTarget = primaryGoal ? getProratedTarget(primaryGoal, 'month') : 0;
   const yearTarget = primaryGoal ? getProratedTarget(primaryGoal, 'year') : 0;
 
-  const monthSessions = getSessionsInPeriod(sessions, 'month', 'all');
-  const monthCurrent = monthSessions.length;
-  const monthPct = monthTarget > 0 ? Math.min((monthCurrent / monthTarget) * 100, 100) : 0;
-  const monthRemaining = Math.max(0, Math.round(monthTarget) - monthCurrent);
-  const monthDaysLeft = getDaysRemainingInPeriod('month');
-  const monthFraction = getPeriodFractionElapsed('month');
-  const expectedMonth = monthTarget * monthFraction;
-  const aheadOfSchedule = monthCurrent >= expectedMonth;
+  const periodLabel = primaryGoal
+    ? primaryGoal.inputPeriod === 'week' ? 'uke' : primaryGoal.inputPeriod === 'month' ? 'måned' : 'år'
+    : '';
 
   const handleSaveExtra = (data: Omit<ExtraGoal, 'id' | 'createdAt'>) => {
     if (editGoal) {
@@ -79,9 +77,90 @@ const GoalsSection = () => {
     setRefresh(r => r + 1);
   };
 
-  const periodLabel = primaryGoal
-    ? primaryGoal.inputPeriod === 'week' ? 'uke' : primaryGoal.inputPeriod === 'month' ? 'måned' : 'år'
-    : '';
+  // Drag handlers
+  const handleDragStart = useCallback((id: string) => {
+    setDragId(id);
+    setIsDragging(true);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    setDragOverId(id);
+  }, []);
+
+  const handleDrop = useCallback((targetId: string) => {
+    if (!dragId || dragId === targetId) {
+      setDragId(null);
+      setDragOverId(null);
+      setIsDragging(false);
+      return;
+    }
+    const ids = extraGoals.map(g => g.id);
+    const fromIdx = ids.indexOf(dragId);
+    const toIdx = ids.indexOf(targetId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    ids.splice(fromIdx, 1);
+    ids.splice(toIdx, 0, dragId);
+    goalService.reorder(ids);
+    setDragId(null);
+    setDragOverId(null);
+    setIsDragging(false);
+    setRefresh(r => r + 1);
+  }, [dragId, extraGoals]);
+
+  const handleDragEnd = useCallback(() => {
+    setDragId(null);
+    setDragOverId(null);
+    setIsDragging(false);
+  }, []);
+
+  // Touch-based drag
+  const touchDragId = useRef<string | null>(null);
+  const touchClone = useRef<HTMLElement | null>(null);
+  const touchStartPos = useRef({ x: 0, y: 0 });
+
+  const handleTouchStart = useCallback((e: React.TouchEvent, id: string) => {
+    const touch = e.touches[0];
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+    longPressTimer.current = setTimeout(() => {
+      touchDragId.current = id;
+      setDragId(id);
+      setIsDragging(true);
+      // Haptic feedback if available
+      if (navigator.vibrate) navigator.vibrate(30);
+    }, 400);
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - touchStartPos.current.x);
+    const dy = Math.abs(touch.clientY - touchStartPos.current.y);
+    // Cancel long press if moved too much before timer
+    if (!touchDragId.current && (dx > 10 || dy > 10)) {
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+      return;
+    }
+    if (!touchDragId.current) return;
+    e.preventDefault();
+    // Find element under touch
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const card = el?.closest('[data-goal-id]');
+    if (card) {
+      const overId = card.getAttribute('data-goal-id');
+      if (overId) setDragOverId(overId);
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    if (touchDragId.current && dragOverId) {
+      handleDrop(dragOverId);
+    }
+    touchDragId.current = null;
+    setDragId(null);
+    setDragOverId(null);
+    setIsDragging(false);
+  }, [dragOverId, handleDrop]);
 
   return (
     <div className="space-y-6">
@@ -98,18 +177,13 @@ const GoalsSection = () => {
             onCancel={() => setShowPrimaryForm(false)}
           />
         ) : primaryGoal ? (
-          <div className="glass-card rounded-lg p-4 space-y-3">
-            <div className="flex items-start justify-between">
+          <div className="glass-card rounded-lg p-4">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Target className={`w-5 h-5 ${monthCurrent >= monthTarget && monthTarget > 0 ? 'text-success' : 'text-primary'}`} />
-                <div>
-                  <p className="text-sm font-semibold">
-                    {monthCurrent} / {Math.round(monthTarget)} økter denne måneden
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {primaryGoal.inputTarget} økter per {periodLabel}
-                  </p>
-                </div>
+                <Target className="w-5 h-5 text-primary" />
+                <p className="text-lg font-bold text-foreground">
+                  {primaryGoal.inputTarget} økter per {periodLabel}
+                </p>
               </div>
               <div className="flex gap-1">
                 <button onClick={() => setShowPrimaryForm(true)} className="p-1.5 rounded-md hover:bg-secondary transition-colors text-xs text-muted-foreground">
@@ -121,26 +195,12 @@ const GoalsSection = () => {
               </div>
             </div>
 
-            <div className="space-y-1">
-              <Progress value={monthPct} className="h-2" />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>
-                  {monthRemaining > 0 ? `${monthRemaining} igjen` : '✓ Nådd!'}{' '}
-                  · {monthDaysLeft} dager igjen
-                </span>
-                <span className={aheadOfSchedule ? 'text-success font-medium' : 'text-warning font-medium'}>
-                  {aheadOfSchedule ? 'Foran skjema' : 'Bak skjema'}
-                </span>
-              </div>
-            </div>
-
-            {/* Week/Month/Year breakdown - just targets */}
-            <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">
-              <span><span className="font-semibold text-foreground">{Math.round(weekTarget * 10) / 10}</span>/uke</span>
+            <div className="flex items-center gap-3 text-sm text-muted-foreground mt-2">
+              <span><span className="font-semibold text-foreground text-base">{Math.round(weekTarget * 10) / 10}</span> /uke</span>
               <span className="text-border">·</span>
-              <span><span className="font-semibold text-foreground">{Math.round(monthTarget * 10) / 10}</span>/mnd</span>
+              <span><span className="font-semibold text-foreground text-base">{Math.round(monthTarget * 10) / 10}</span> /mnd</span>
               <span className="text-border">·</span>
-              <span><span className="font-semibold text-foreground">{Math.round(yearTarget)}</span>/år</span>
+              <span><span className="font-semibold text-foreground text-base">{Math.round(yearTarget)}</span> /år</span>
             </div>
           </div>
         ) : (
@@ -184,16 +244,33 @@ const GoalsSection = () => {
             Ingen ekstra mål ennå.
           </p>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div
+            className="grid grid-cols-2 md:grid-cols-3 gap-3"
+            onTouchMove={handleTouchMove as any}
+            onTouchEnd={handleTouchEnd}
+          >
             {extraGoals.map(goal => (
-              <GoalCard
+              <div
                 key={goal.id}
-                goal={goal}
-                sessions={sessions}
-                onEdit={handleEditExtra}
-                onDelete={handleDeleteExtra}
-                onToggleHome={handleToggleHome}
-              />
+                data-goal-id={goal.id}
+                draggable
+                onDragStart={() => handleDragStart(goal.id)}
+                onDragOver={(e) => handleDragOver(e, goal.id)}
+                onDrop={() => handleDrop(goal.id)}
+                onDragEnd={handleDragEnd}
+                onTouchStart={(e) => handleTouchStart(e, goal.id)}
+                className={`transition-all duration-200 ${
+                  dragId === goal.id ? 'opacity-50 scale-95' : ''
+                } ${dragOverId === goal.id && dragId !== goal.id ? 'ring-2 ring-primary/50 scale-[1.02]' : ''}`}
+              >
+                <GoalCard
+                  goal={goal}
+                  sessions={sessions}
+                  onEdit={handleEditExtra}
+                  onDelete={handleDeleteExtra}
+                  onToggleHome={handleToggleHome}
+                />
+              </div>
             ))}
           </div>
         )}
