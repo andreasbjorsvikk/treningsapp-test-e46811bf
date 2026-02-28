@@ -24,7 +24,7 @@ const SessionCard = ({ session, onEdit, onDelete }: SessionCardProps) => {
           className="rounded-md p-1.5 shrink-0 flex items-center justify-center"
           style={{ backgroundColor: colors.bg }}
         >
-          <ActivityIcon type={session.type} className="w-4 h-4" colorOverride={!isDark ? colors.text : undefined} />
+          <ActivityIcon type={session.type} className="w-5 h-5" colorOverride={!isDark ? colors.text : undefined} />
         </div>
 
         <div className="flex-1 min-w-0">
