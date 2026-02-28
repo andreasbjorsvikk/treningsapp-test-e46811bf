@@ -34,24 +34,41 @@ const Index = () => {
   const primaryGoal = primaryGoalService.get();
 
   const monthData = useMemo(() => {
-    const target = primaryGoal ? getProratedTarget(primaryGoal, 'month') : 0;
     const now = new Date();
+    const target = primaryGoal ? getProratedTarget(primaryGoal, 'month') : 0;
+    const goalStart = primaryGoal ? new Date(primaryGoal.startDate) : null;
+    // Only count sessions from goal start date onwards, within current month
     const current = allSessions.filter(s => {
       const d = new Date(s.date);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      if (d.getMonth() !== now.getMonth() || d.getFullYear() !== now.getFullYear()) return false;
+      if (goalStart && d < goalStart) return false;
+      return true;
     }).length;
     const percent = target === 0 ? 0 : (current / target) * 100;
     return { current, target: Math.round(target * 10) / 10, percent, unit: 'økter' };
   }, [allSessions, primaryGoal]);
 
   const yearData = useMemo(() => {
-    const target = primaryGoal ? getProratedTarget(primaryGoal, 'year') : 0;
     const now = new Date();
-    const current = allSessions.filter(s => new Date(s.date).getFullYear() === now.getFullYear()).length;
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
-    const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
-    const yearFraction = (now.getTime() - startOfYear.getTime()) / (endOfYear.getTime() - startOfYear.getTime());
-    const expected = target * yearFraction;
+    const goalStart = primaryGoal ? new Date(primaryGoal.startDate) : null;
+    // Total target = prorated year target (accounts for start date)
+    const target = primaryGoal ? getProratedTarget(primaryGoal, 'year') : 0;
+    // Only count sessions from goal start date onwards, within current year
+    const current = allSessions.filter(s => {
+      const d = new Date(s.date);
+      if (d.getFullYear() !== now.getFullYear()) return false;
+      if (goalStart && d < goalStart) return false;
+      return true;
+    }).length;
+    // Expected: fraction of time elapsed since goal start (or year start) to year end
+    const effectiveStart = goalStart && goalStart.getFullYear() === now.getFullYear()
+      ? Math.max(goalStart.getTime(), new Date(now.getFullYear(), 0, 1).getTime())
+      : new Date(now.getFullYear(), 0, 1).getTime();
+    const yearEnd = new Date(now.getFullYear() + 1, 0, 1).getTime();
+    const totalSpan = yearEnd - effectiveStart;
+    const elapsedSpan = now.getTime() - effectiveStart;
+    const fractionElapsed = totalSpan > 0 ? Math.max(0, elapsedSpan / totalSpan) : 1;
+    const expected = target * fractionElapsed;
     const diff = current - expected;
     return { current, target: Math.round(target), diff, expected, unit: 'økter' };
   }, [allSessions, primaryGoal]);
