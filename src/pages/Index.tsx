@@ -190,7 +190,7 @@ const Index = () => {
 
       <BottomNav
         active={activeTab}
-        onNavigate={(tab) => { setInitialStatPeriod(undefined); setActiveTab(tab); }}
+        onNavigate={(tab) => { setInitialStatPeriod(undefined); setActiveTab(tab); window.scrollTo({ top: 0 }); }}
       />
 
       <WorkoutDialog
