@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Pencil, Trash2, Home } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ExtraGoal, WorkoutSession, GoalMetric, GoalPeriod, SessionType } from '@/types/workout';
 import { getSessionsInPeriod, computeProgress, metricLabels, getDaysRemainingInPeriod, getPeriodFractionElapsed } from '@/utils/goalUtils';
 import GoalProgressVisual from '@/components/GoalProgressVisual';
@@ -46,6 +47,7 @@ interface GoalCardProps {
 }
 
 const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome }: GoalCardProps) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { settings } = useSettings();
   const isDark = settings.darkMode;
 
@@ -89,7 +91,7 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome }: GoalCardPr
         <button onClick={() => onEdit(goal)} className="p-1 rounded-md hover:bg-secondary transition-colors">
           <Pencil className="w-3 h-3 text-muted-foreground" />
         </button>
-        <button onClick={() => onDelete(goal.id)} className="p-1 rounded-md hover:bg-destructive/10 transition-colors">
+        <button onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true); }} className="p-1 rounded-md hover:bg-destructive/10 transition-colors">
           <Trash2 className="w-3 h-3 text-destructive" />
         </button>
       </div>
@@ -154,6 +156,23 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome }: GoalCardPr
       >
         <Home className="w-3.5 h-3.5" />
       </button>
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent className="max-w-[min(calc(100vw-2rem),20rem)]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Slett mål</AlertDialogTitle>
+            <AlertDialogDescription>
+              Er du sikker på at du vil slette dette målet? Denne handlingen kan ikke angres.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogAction onClick={() => onDelete(goal.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Slett
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

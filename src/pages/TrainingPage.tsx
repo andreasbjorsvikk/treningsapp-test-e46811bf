@@ -235,43 +235,50 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
 
       {subTab === 'statistikk' && (
         <div className="space-y-4">
-          <div className="flex gap-2">
-            <ProgressWheel
-              percent={monthData.percent}
-              current={monthData.current}
-              target={monthData.target}
-              unit={monthData.unit}
-              title={`${monthNames[statMonth]} ${statYear}`}
-              hasGoal={!!primaryGoal}
-              onClick={() => setSubTab('mål')}
-            />
-            <ProgressWheel
-              percent={0}
-              current={yearData.current}
-              target={yearData.target}
-              unit={yearData.unit}
-              title={String(statYear)}
-              hasGoal={!!primaryGoal}
-              paceMode={{ diff: yearData.diff, expected: yearData.expected }}
-              onClick={() => setSubTab('mål')}
-            />
-          </div>
+          {/* Desktop: wheels left, chart+stats right */}
+          <div className="lg:grid lg:grid-cols-[auto_1fr] lg:gap-6 space-y-4 lg:space-y-0">
+            {/* Left column: wheels stacked */}
+            <div className="flex flex-col gap-3 lg:w-64">
+              <ProgressWheel
+                percent={monthData.percent}
+                current={monthData.current}
+                target={monthData.target}
+                unit={monthData.unit}
+                title={`${monthNames[statMonth]} ${statYear}`}
+                hasGoal={!!primaryGoal}
+                onClick={() => setSubTab('mål')}
+              />
+              <ProgressWheel
+                percent={0}
+                current={yearData.current}
+                target={yearData.target}
+                unit={yearData.unit}
+                title={String(statYear)}
+                hasGoal={!!primaryGoal}
+                paceMode={{ diff: yearData.diff, expected: yearData.expected }}
+                onClick={() => setSubTab('mål')}
+              />
+            </div>
 
-          <PeriodSelector
-            period={period}
-            onPeriodChange={setPeriod}
-            month={statMonth}
-            year={statYear}
-            onMonthChange={setStatMonth}
-            onYearChange={setStatYear}
-          />
+            {/* Right column: period, tiles, filter, chart */}
+            <div className="space-y-4">
+              <PeriodSelector
+                period={period}
+                onPeriodChange={setPeriod}
+                month={statMonth}
+                year={statYear}
+                onMonthChange={setStatMonth}
+                onYearChange={setStatYear}
+              />
 
-          <StatsTiles sessions={statSessions} />
-          <ActivityTypeFilter selected={selectedTypes} onToggle={handleToggleType} />
-          <MetricSelector selected={chartMetric} onSelect={setChartMetric} />
-          
-          <div className="h-[280px] lg:h-[360px]">
-            <TrendChart sessions={statSessions} period={period} month={statMonth} year={statYear} metric={chartMetric} />
+              <StatsTiles sessions={statSessions} />
+              <ActivityTypeFilter selected={selectedTypes} onToggle={handleToggleType} />
+              <MetricSelector selected={chartMetric} onSelect={setChartMetric} />
+              
+              <div className="h-[280px] lg:h-[360px]">
+                <TrendChart sessions={statSessions} period={period} month={statMonth} year={statYear} metric={chartMetric} />
+              </div>
+            </div>
           </div>
         </div>
       )}
