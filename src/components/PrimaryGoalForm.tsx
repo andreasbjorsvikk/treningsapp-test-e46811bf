@@ -92,7 +92,7 @@ const PrimaryGoalForm = ({ existing, onSave, onCancel }: PrimaryGoalFormProps) =
           required
         />
         <p className="text-xs text-muted-foreground">
-          Mål beregnes fra denne datoen. Starter du midt i en periode, justeres kravet ned.
+          Mål beregnes fra denne datoen.
         </p>
       </div>
 

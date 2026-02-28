@@ -35,9 +35,6 @@ const GoalsSection = () => {
   const expectedMonth = monthTarget * monthFraction;
   const aheadOfSchedule = monthCurrent >= expectedMonth;
 
-  const weekSessions = getSessionsInPeriod(sessions, 'week', 'all');
-  const yearSessions = getSessionsInPeriod(sessions, 'year', 'all');
-
   const handleSaveExtra = (data: Omit<ExtraGoal, 'id' | 'createdAt'>) => {
     if (editGoal) {
       goalService.update(editGoal.id, data);
@@ -57,6 +54,14 @@ const GoalsSection = () => {
   const handleDeleteExtra = (id: string) => {
     goalService.delete(id);
     setRefresh(r => r + 1);
+  };
+
+  const handleToggleHome = (id: string) => {
+    const goal = extraGoals.find(g => g.id === id);
+    if (goal) {
+      goalService.update(id, { showOnHome: !goal.showOnHome });
+      setRefresh(r => r + 1);
+    }
   };
 
   const handleCancelExtra = () => {
@@ -129,20 +134,13 @@ const GoalsSection = () => {
               </div>
             </div>
 
-            {/* Week/Month/Year breakdown */}
-            <div className="grid grid-cols-3 gap-2 pt-1">
-              <div className="text-center bg-secondary/50 rounded-md py-2 px-1">
-                <p className="text-xs text-muted-foreground">Uke</p>
-                <p className="text-sm font-semibold">{weekSessions.length}/{Math.round(weekTarget)}</p>
-              </div>
-              <div className="text-center bg-secondary/50 rounded-md py-2 px-1">
-                <p className="text-xs text-muted-foreground">Måned</p>
-                <p className="text-sm font-semibold">{monthCurrent}/{Math.round(monthTarget)}</p>
-              </div>
-              <div className="text-center bg-secondary/50 rounded-md py-2 px-1">
-                <p className="text-xs text-muted-foreground">År</p>
-                <p className="text-sm font-semibold">{yearSessions.length}/{Math.round(yearTarget)}</p>
-              </div>
+            {/* Week/Month/Year breakdown - just targets */}
+            <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">
+              <span><span className="font-semibold text-foreground">{Math.round(weekTarget * 10) / 10}</span>/uke</span>
+              <span className="text-border">·</span>
+              <span><span className="font-semibold text-foreground">{Math.round(monthTarget * 10) / 10}</span>/mnd</span>
+              <span className="text-border">·</span>
+              <span><span className="font-semibold text-foreground">{Math.round(yearTarget)}</span>/år</span>
             </div>
           </div>
         ) : (
@@ -186,7 +184,7 @@ const GoalsSection = () => {
             Ingen ekstra mål ennå.
           </p>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {extraGoals.map(goal => (
               <GoalCard
                 key={goal.id}
@@ -194,6 +192,7 @@ const GoalsSection = () => {
                 sessions={sessions}
                 onEdit={handleEditExtra}
                 onDelete={handleDeleteExtra}
+                onToggleHome={handleToggleHome}
               />
             ))}
           </div>

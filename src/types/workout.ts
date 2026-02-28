@@ -64,5 +64,6 @@ export interface ExtraGoal {
   target: number;
   customStart?: string;
   customEnd?: string;
+  showOnHome?: boolean;
   createdAt: string;
 }

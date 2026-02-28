@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { WorkoutSession } from '@/types/workout';
 import { workoutService } from '@/services/workoutService';
 import { primaryGoalService, convertGoalValue, getProratedTarget } from '@/services/primaryGoalService';
+import { goalService } from '@/services/goalService';
 import AppHeader from '@/components/AppHeader';
 import BottomNav, { TabId } from '@/components/BottomNav';
 import StatsOverview from '@/components/StatsOverview';
@@ -13,6 +14,7 @@ import CommunityPage from '@/pages/CommunityPage';
 import SettingsPage from '@/pages/SettingsPage';
 import ProgressWheel from '@/components/ProgressWheel';
 import WeeklySessionIcons from '@/components/WeeklySessionIcons';
+import GoalCard from '@/components/GoalCard';
 import { Plus, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -110,6 +112,34 @@ const Index = () => {
                 />
               </div>
             </section>
+
+            {/* Home-pinned extra goals */}
+            {(() => {
+              const homeGoals = goalService.getAll().filter(g => g.showOnHome);
+              if (homeGoals.length === 0) return null;
+              return (
+                <section>
+                  <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">
+                    Mål
+                  </h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {homeGoals.map(goal => (
+                      <GoalCard
+                        key={goal.id}
+                        goal={goal}
+                        sessions={allSessions}
+                        onEdit={handleEdit as any}
+                        onDelete={() => {}}
+                        onToggleHome={(id) => {
+                          goalService.update(id, { showOnHome: false });
+                          setRefresh(r => r + 1);
+                        }}
+                      />
+                    ))}
+                  </div>
+                </section>
+              );
+            })()}
 
             <section>
               <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">
