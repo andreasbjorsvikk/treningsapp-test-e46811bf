@@ -154,17 +154,28 @@ const CalendarPage = () => {
 
   const selectedSessions = selectedDay ? (sessionsByDate.get(selectedDay) || []) : [];
 
-  // Scroll to current month on first render and when calendar tab is re-opened
+  // Scroll to current month on first render - retry until element is available
   useEffect(() => {
-    if (currentMonthRef.current) {
-      // Use a short delay to ensure DOM is laid out
-      const timer = setTimeout(() => {
-        currentMonthRef.current?.scrollIntoView({ block: 'start' });
+    let attempts = 0;
+    const maxAttempts = 20;
+    const tryScroll = () => {
+      if (currentMonthRef.current && scrollRef.current) {
+        const container = scrollRef.current;
+        const target = currentMonthRef.current;
+        const containerRect = container.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
+        const scrollOffset = targetRect.top - containerRect.top + container.scrollTop;
+        container.scrollTop = scrollOffset;
         hasScrolledToToday.current = true;
-      }, hasScrolledToToday.current ? 0 : 50);
-      return () => clearTimeout(timer);
+      } else if (attempts < maxAttempts) {
+        attempts++;
+        requestAnimationFrame(tryScroll);
+      }
+    };
+    if (!hasScrolledToToday.current) {
+      requestAnimationFrame(tryScroll);
     }
-  }, [months]);
+  }, []);
 
   // Infinite scroll handler - debounced for performance
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);

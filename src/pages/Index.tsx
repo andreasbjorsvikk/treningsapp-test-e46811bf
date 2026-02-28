@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { WorkoutSession } from '@/types/workout';
+import { WorkoutSession, ExtraGoal } from '@/types/workout';
 import { workoutService } from '@/services/workoutService';
 import { primaryGoalService, convertGoalValue, getProratedTarget } from '@/services/primaryGoalService';
 import { goalService } from '@/services/goalService';
@@ -8,6 +8,7 @@ import BottomNav, { TabId } from '@/components/BottomNav';
 import StatsOverview from '@/components/StatsOverview';
 import SessionCard from '@/components/SessionCard';
 import WorkoutDialog from '@/components/WorkoutDialog';
+import GoalForm from '@/components/GoalForm';
 import CalendarPage from '@/pages/CalendarPage';
 import TrainingPage from '@/pages/TrainingPage';
 import CommunityPage from '@/pages/CommunityPage';
@@ -18,6 +19,9 @@ import GoalCard from '@/components/GoalCard';
 import { Plus, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSettings } from '@/contexts/SettingsContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
+
 
 const Index = () => {
   const { settings, updateSettings } = useSettings();
@@ -26,6 +30,8 @@ const Index = () => {
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
   const [, setRefresh] = useState(0);
   const [initialStatPeriod, setInitialStatPeriod] = useState<'month' | 'year' | undefined>();
+  const [editGoal, setEditGoal] = useState<ExtraGoal | undefined>();
+  const [showGoalEditDialog, setShowGoalEditDialog] = useState(false);
 
   const stats = workoutService.getWeeklyStats();
   const allSessions = workoutService.getAll();
@@ -148,7 +154,10 @@ const Index = () => {
                         key={goal.id}
                         goal={goal}
                         sessions={allSessions}
-                        onEdit={handleEdit as any}
+                        onEdit={(g) => {
+                          setEditGoal(g);
+                          setShowGoalEditDialog(true);
+                        }}
                         onDelete={() => {}}
                         onToggleHome={(id) => {
                           goalService.update(id, { showOnHome: false });
@@ -216,6 +225,27 @@ const Index = () => {
         onSave={handleSave}
         session={editSession}
       />
+
+      {/* Edit Goal Dialog (for home-pinned goals) */}
+      <Dialog open={showGoalEditDialog} onOpenChange={(open) => { if (!open) { setShowGoalEditDialog(false); setEditGoal(undefined); } }}>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md mx-auto">
+          <DialogHeader>
+            <DialogTitle>Rediger mål</DialogTitle>
+          </DialogHeader>
+          {editGoal && (
+            <GoalForm
+              goal={editGoal}
+              onSave={(data) => {
+                goalService.update(editGoal.id, data);
+                setEditGoal(undefined);
+                setShowGoalEditDialog(false);
+                setRefresh(r => r + 1);
+              }}
+              onCancel={() => { setShowGoalEditDialog(false); setEditGoal(undefined); }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

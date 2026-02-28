@@ -86,7 +86,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{session ? 'Rediger økt' : 'Ny økt'}</DialogTitle>
         </DialogHeader>
@@ -123,7 +123,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
 
           <div className="space-y-1.5">
             <Label>Dato</Label>
-            <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full max-w-full" />
           </div>
 
           <div className="space-y-1.5">
