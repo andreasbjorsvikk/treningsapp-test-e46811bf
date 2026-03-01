@@ -1,20 +1,16 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { SessionType, WorkoutSession } from '@/types/workout';
 import GoalsSection from '@/components/GoalsSection';
+import StatistikkContent from '@/components/StatistikkContent';
 import { workoutService } from '@/services/workoutService';
-import { primaryGoalService, convertGoalValue } from '@/services/primaryGoalService';
+import { primaryGoalService } from '@/services/primaryGoalService';
 import { computeMonthWheelData, computeYearWheelData } from '@/utils/goalWheelData';
 import { allSessionTypes } from '@/utils/workoutUtils';
-import { computeProgress, metricLabels } from '@/utils/goalUtils';
 import SessionCard from '@/components/SessionCard';
 import TypeFilter from '@/components/TypeFilter';
 import WorkoutDialog from '@/components/WorkoutDialog';
-import PeriodSelector, { Period } from '@/components/PeriodSelector';
-import ActivityTypeFilter from '@/components/ActivityTypeFilter';
-import StatsTiles from '@/components/StatsTiles';
-import TrendChart from '@/components/TrendChart';
-import ProgressWheel from '@/components/ProgressWheel';
-import MetricSelector, { ChartMetric } from '@/components/MetricSelector';
+import { Period } from '@/components/PeriodSelector';
+import { ChartMetric } from '@/components/MetricSelector';
 import TrainingSubTabs from '@/components/TrainingSubTabs';
 import { TrainingSubTab } from '@/components/BottomNav';
 import { ChevronRight, Download, Upload, Replace, MoreVertical } from 'lucide-react';
@@ -212,56 +208,17 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
       <TrainingSubTabs active={subTab} onChange={(tab) => { setSubTab(tab); window.scrollTo({ top: 0 }); }} />
 
       {subTab === 'statistikk' && (
-        <div className="space-y-4">
-          {/* Desktop: wheels left, chart+stats right */}
-          <div className="lg:grid lg:grid-cols-[auto_1fr] lg:gap-6 space-y-4 lg:space-y-0">
-            {/* Left column: wheels stacked - desktop only */}
-            <div className="hidden lg:grid lg:grid-cols-1 lg:w-64 lg:gap-3">
-              <ProgressWheel
-                percent={monthData.percent}
-                current={monthData.current}
-                target={monthData.target}
-                unit={monthData.unit}
-                title={`${monthNames[statMonth]} ${statYear}`}
-                hasGoal={!!primaryGoal}
-                expectedFraction={monthData.expectedFraction}
-                paceDiff={monthData.diff}
-                onClick={() => setSubTab('mål')}
-              />
-              <ProgressWheel
-                percent={yearData.percent}
-                current={yearData.current}
-                target={yearData.target}
-                unit={yearData.unit}
-                title={String(statYear)}
-                hasGoal={!!primaryGoal}
-                expectedFraction={yearData.expectedFraction}
-                paceDiff={yearData.diff}
-                onClick={() => setSubTab('mål')}
-              />
-            </div>
-
-            {/* Right column: period, tiles, filter, chart */}
-            <div className="space-y-4">
-              <PeriodSelector
-                period={period}
-                onPeriodChange={setPeriod}
-                month={statMonth}
-                year={statYear}
-                onMonthChange={setStatMonth}
-                onYearChange={setStatYear}
-              />
-
-              <StatsTiles sessions={statSessions} />
-              <ActivityTypeFilter selected={selectedTypes} onToggle={handleToggleType} />
-              <MetricSelector selected={chartMetric} onSelect={setChartMetric} />
-              
-              <div className="h-[280px] lg:h-[360px]">
-                <TrendChart sessions={statSessions} period={period} month={statMonth} year={statYear} metric={chartMetric} />
-              </div>
-            </div>
-          </div>
-        </div>
+        <StatistikkContent
+          period={period} setPeriod={setPeriod}
+          statMonth={statMonth} setStatMonth={setStatMonth}
+          statYear={statYear} setStatYear={setStatYear}
+          statSessions={statSessions}
+          selectedTypes={selectedTypes} handleToggleType={handleToggleType}
+          chartMetric={chartMetric} setChartMetric={setChartMetric}
+          monthData={monthData} yearData={yearData}
+          monthNames={monthNames} primaryGoal={primaryGoal}
+          onGoToGoals={() => setSubTab('mål')}
+        />
       )}
 
       {subTab === 'historikk' && (

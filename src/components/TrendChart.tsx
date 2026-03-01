@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { WorkoutSession, SessionType } from '@/types/workout';
 import { Period } from '@/components/PeriodSelector';
 import { ChartMetric } from '@/components/MetricSelector';
@@ -40,21 +40,11 @@ const metricUnitLabel: Record<ChartMetric, string> = {
   minutes: 'Min',
 };
 
-// Lighten a hex color by a percentage
-function lightenColor(hex: string, percent: number): string {
-  const num = parseInt(hex.replace('#', ''), 16);
-  const r = Math.min(255, (num >> 16) + Math.round((255 - (num >> 16)) * percent));
-  const g = Math.min(255, ((num >> 8) & 0x00FF) + Math.round((255 - ((num >> 8) & 0x00FF)) * percent));
-  const b = Math.min(255, (num & 0x0000FF) + Math.round((255 - (num & 0x0000FF)) * percent));
-  return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
-}
-
-
 const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) => {
-  const { getTypeColor } = useSettings();
+  const { getTypeColor, settings } = useSettings();
   const isMobile = useIsMobile();
+  const isDark = settings.darkMode;
   const suffix = metricSuffix[metric];
-  
 
   const typeOrder = useMemo(() => {
     const totals: { type: SessionType; total: number }[] = allSessionTypes.map(type => ({
@@ -64,6 +54,17 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
     totals.sort((a, b) => b.total - a.total);
     return totals.filter(t => t.total > 0).map(t => t.type);
   }, [sessions, metric]);
+
+  // Compute bar colors: slightly adjust for dark/light mode
+  const typeColors = useMemo(() => {
+    const colors: Record<string, string> = {};
+    for (const type of typeOrder) {
+      const hex = getTypeColor(type);
+      // In light mode, darken slightly for better contrast; in dark mode, use as-is (these are already bright)
+      colors[type] = hex;
+    }
+    return colors;
+  }, [typeOrder, getTypeColor, isDark]);
 
   const data = useMemo(() => {
     const buildEntry = (label: string, bucketSessions: WorkoutSession[]) => {
@@ -111,15 +112,12 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
       <div className="bg-card/95 backdrop-blur-md border border-border/40 rounded-2xl p-3.5 text-xs shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
         <p className="font-display font-bold text-foreground mb-2 text-sm">{label}</p>
         {items.map((item: any) => {
-          const baseColor = getTypeColor(item.dataKey as SessionType);
+          const color = typeColors[item.dataKey] || getTypeColor(item.dataKey as SessionType);
           return (
             <div key={item.dataKey} className="flex items-center gap-2.5 py-0.5">
-              <span 
-                className="w-3 h-3 rounded-md" 
-                style={{ 
-                  background: `linear-gradient(135deg, ${lightenColor(baseColor, 0.2)}, ${baseColor})`,
-                  boxShadow: `0 2px 6px ${baseColor}50`
-                }} 
+              <span
+                className="w-3 h-3 rounded-md"
+                style={{ backgroundColor: color }}
               />
               <span className="text-muted-foreground">{sessionTypeConfig[item.dataKey as SessionType]?.label}</span>
               <span className="font-bold ml-auto text-foreground">{item.value}{suffix}</span>
@@ -137,7 +135,7 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
 
   return (
     <div className="rounded-2xl p-4 flex flex-col h-full relative overflow-hidden bg-gradient-to-br from-card/90 to-card/60 backdrop-blur-xl border border-border/30 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
-      {/* Unit label rendered outside the chart for reliable positioning */}
+      {/* Unit label */}
       <div className="absolute top-2.5 left-4 z-10">
         <span className="text-[10px] font-semibold text-muted-foreground">{metricUnitLabel[metric]}</span>
       </div>
@@ -146,9 +144,8 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
           <BarChart
             data={hasData ? data : safeData}
             barCategoryGap={isMobile ? '12%' : '20%'}
-            margin={{ top: 20, right: 4, left: isMobile ? 2 : 4, bottom: 0 }}
+            margin={{ top: 20, right: 4, left: isMobile ? 4 : 6, bottom: 0 }}
           >
-            <defs />
             <CartesianGrid
               strokeDasharray="3 3"
               stroke="hsl(var(--border))"
@@ -170,25 +167,29 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
               tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontWeight: 500 }}
               tickLine={false}
               axisLine={false}
-              width={isMobile ? 30 : 42}
+              width={isMobile ? 32 : 42}
               tickFormatter={(v) => `${v}`}
             />
             {hasData && (
-              <Tooltip 
-                content={<CustomTooltip />} 
-                cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2, radius: 6 }} 
+              <Tooltip
+                content={<CustomTooltip />}
+                cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2, radius: 6 }}
               />
             )}
-            {hasData && typeOrder.map((type, i) => {
-              const baseColor = getTypeColor(type);
+            {hasData && typeOrder.map((type) => {
+              const color = typeColors[type];
               return (
                 <Bar
                   key={type}
                   dataKey={type}
                   stackId="stack"
-                  fill={baseColor}
-                  radius={i === typeOrder.length - 1 ? [6, 6, 0, 0] : [0, 0, 0, 0]}
-                />
+                  radius={[4, 4, 0, 0]}
+                  fill="none"
+                >
+                  {data.map((_, index) => (
+                    <Cell key={index} fill={color} />
+                  ))}
+                </Bar>
               );
             })}
           </BarChart>

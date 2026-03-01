@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { useSwipe } from '@/hooks/use-swipe';
 import { Plus, ChevronLeft, ChevronRight, ChevronDown, Home, Pencil, Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import TargetIcon from '@/components/TargetIcon';
@@ -82,6 +83,11 @@ const GoalsSection = () => {
     setWheelMonth(now.getMonth());
     setWheelYear(now.getFullYear());
   };
+
+  const goalSwipe = useSwipe({
+    onSwipeLeft: handleNextMonth,
+    onSwipeRight: handlePrevMonth,
+  });
 
   const isToday = wheelMonth === now.getMonth() && wheelYear === now.getFullYear();
 
@@ -235,7 +241,7 @@ const GoalsSection = () => {
                 onCancel={() => setShowPrimaryForm(false)}
               />
             ) : currentGoal ? (
-              <div className="glass-card rounded-lg p-4 relative">
+              <div className="glass-card rounded-lg p-4 relative" {...goalSwipe}>
                 {/* Pin-to-home button */}
                 <button
                   onClick={handleTogglePrimaryWheelsHome}

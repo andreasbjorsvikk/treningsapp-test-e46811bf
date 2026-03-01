@@ -59,19 +59,27 @@ const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, on
         ))}
       </div>
 
-      {period !== 'total' && (
-        <div className="flex items-center justify-between">
-          <button onClick={handlePrev} className="p-2 rounded-md hover:bg-secondary transition-colors">
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="text-xl font-display font-bold">
-            {period === 'month' ? `${monthNames[month]} ${year}` : year}
-          </span>
-          <button onClick={handleNext} className="p-2 rounded-md hover:bg-secondary transition-colors">
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+      <div className="flex items-center justify-between">
+        {period !== 'total' ? (
+          <>
+            <button onClick={handlePrev} className="p-2 rounded-md hover:bg-secondary transition-colors">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xl font-display font-bold">
+              {period === 'month' ? `${monthNames[month]} ${year}` : year}
+            </span>
+            <button onClick={handleNext} className="p-2 rounded-md hover:bg-secondary transition-colors">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="p-2 w-8" />
+            <span className="text-xl font-display font-bold">Total</span>
+            <div className="p-2 w-8" />
+          </>
+        )}
+      </div>
     </div>
   );
 };
