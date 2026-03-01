@@ -1,8 +1,9 @@
 import { useState, useCallback, useMemo } from 'react';
 import { WorkoutSession, ExtraGoal } from '@/types/workout';
 import { workoutService } from '@/services/workoutService';
-import { primaryGoalService, convertGoalValue, getProratedTarget } from '@/services/primaryGoalService';
+import { primaryGoalService, convertGoalValue } from '@/services/primaryGoalService';
 import { goalService } from '@/services/goalService';
+import { computeMonthWheelData, computeYearWheelData } from '@/utils/goalWheelData';
 
 import BottomNav, { TabId } from '@/components/BottomNav';
 import StatsOverview from '@/components/StatsOverview';
@@ -40,47 +41,17 @@ const Index = () => {
   const recentSessions = allSessions.slice(0, 5);
 
   const primaryGoal = primaryGoalService.get();
+  const allPeriods = primaryGoalService.getAll();
 
   const monthData = useMemo(() => {
     const now = new Date();
-    const target = primaryGoal ? getProratedTarget(primaryGoal, 'month') : 0;
-    const goalStart = primaryGoal ? new Date(primaryGoal.startDate) : null;
-    const current = allSessions.filter(s => {
-      const d = new Date(s.date);
-      if (d.getMonth() !== now.getMonth() || d.getFullYear() !== now.getFullYear()) return false;
-      if (goalStart && d < goalStart) return false;
-      return true;
-    }).length;
-    const percent = target === 0 ? 0 : (current / target) * 100;
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const expectedFraction = now.getDate() / daysInMonth;
-    const expected = target * expectedFraction;
-    const diff = current - expected;
-    return { current, target: Math.round(target * 10) / 10, percent, unit: 'økter', expectedFraction, diff };
-  }, [allSessions, primaryGoal]);
+    return computeMonthWheelData(allPeriods, allSessions, now.getMonth(), now.getFullYear(), now, t('metric.sessions'));
+  }, [allSessions, allPeriods, t]);
 
   const yearData = useMemo(() => {
     const now = new Date();
-    const goalStart = primaryGoal ? new Date(primaryGoal.startDate) : null;
-    const target = primaryGoal ? getProratedTarget(primaryGoal, 'year') : 0;
-    const current = allSessions.filter(s => {
-      const d = new Date(s.date);
-      if (d.getFullYear() !== now.getFullYear()) return false;
-      if (goalStart && d < goalStart) return false;
-      return true;
-    }).length;
-    const effectiveStart = goalStart && goalStart.getFullYear() === now.getFullYear()
-      ? Math.max(goalStart.getTime(), new Date(now.getFullYear(), 0, 1).getTime())
-      : new Date(now.getFullYear(), 0, 1).getTime();
-    const yearEnd = new Date(now.getFullYear() + 1, 0, 1).getTime();
-    const totalSpan = yearEnd - effectiveStart;
-    const elapsedSpan = now.getTime() - effectiveStart;
-    const fractionElapsed = totalSpan > 0 ? Math.max(0, elapsedSpan / totalSpan) : 1;
-    const expected = target * fractionElapsed;
-    const diff = current - expected;
-    const percent = target === 0 ? 0 : (current / target) * 100;
-    return { current, target: Math.round(target), diff, expected, unit: 'økter', expectedFraction: fractionElapsed, percent };
-  }, [allSessions, primaryGoal]);
+    return computeYearWheelData(allPeriods, allSessions, now.getFullYear(), now, t('metric.sessions'));
+  }, [allSessions, allPeriods, t]);
 
   const handleDelete = useCallback((id: string) => {
     workoutService.delete(id);

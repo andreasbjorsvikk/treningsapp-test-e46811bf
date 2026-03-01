@@ -58,6 +58,11 @@ const no: Record<string, string> = {
   'goals.period.week': 'uke',
   'goals.period.month': 'måned',
   'goals.period.year': 'år',
+  'goals.previousGoals': 'Tidligere mål',
+  'goals.ongoing': 'pågående',
+  'goals.updateGoal': 'Oppdater treningsmål',
+  'goals.validFrom': 'Gyldig fra',
+  'goals.otherDate': 'Annen dato',
 
   // Goal card
   'goalCard.thisWeek': 'Denne uken',
@@ -257,6 +262,11 @@ const en: Record<string, string> = {
   'goals.period.week': 'week',
   'goals.period.month': 'month',
   'goals.period.year': 'year',
+  'goals.previousGoals': 'Previous goals',
+  'goals.ongoing': 'ongoing',
+  'goals.updateGoal': 'Update training goal',
+  'goals.validFrom': 'Valid from',
+  'goals.otherDate': 'Other date',
 
   // Goal card
   'goalCard.thisWeek': 'This week',

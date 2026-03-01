@@ -2,9 +2,9 @@ import { useState, useMemo } from 'react';
 import { Plus, ChevronLeft, ChevronRight, ChevronDown, Home } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import TargetIcon from '@/components/TargetIcon';
-import { ExtraGoal, PrimaryGoal } from '@/types/workout';
+import { ExtraGoal, PrimaryGoalPeriod } from '@/types/workout';
 import { goalService } from '@/services/goalService';
-import { primaryGoalService, convertGoalValue, getProratedTarget } from '@/services/primaryGoalService';
+import { primaryGoalService, convertGoalValue, getMonthTarget } from '@/services/primaryGoalService';
 import { workoutService } from '@/services/workoutService';
 import { Button } from '@/components/ui/button';
 import GoalForm from '@/components/GoalForm';
@@ -14,6 +14,7 @@ import ProgressWheel from '@/components/ProgressWheel';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/i18n/useTranslation';
+import { computeMonthWheelData, computeYearWheelData } from '@/utils/goalWheelData';
 
 const GoalsSection = () => {
   const { settings, updateSettings } = useSettings();
@@ -24,6 +25,7 @@ const GoalsSection = () => {
   const [showDeletePrimaryConfirm, setShowDeletePrimaryConfirm] = useState(false);
   const [editGoal, setEditGoal] = useState<ExtraGoal | undefined>();
   const [, setRefresh] = useState(0);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   // Collapsible state
   const [primaryOpen, setPrimaryOpen] = useState(true);
@@ -33,61 +35,28 @@ const GoalsSection = () => {
   const [wheelMonth, setWheelMonth] = useState(now.getMonth());
   const [wheelYear, setWheelYear] = useState(now.getFullYear());
 
-  const primaryGoal = primaryGoalService.get();
+  const allPeriods = primaryGoalService.getAll();
+  const currentGoal = primaryGoalService.get();
   const extraGoals = goalService.getAll();
   const sessions = workoutService.getAll();
-  const allSessions = sessions;
 
-  const weekTarget = primaryGoal ? getProratedTarget(primaryGoal, 'week') : 0;
-  const monthTarget = primaryGoal ? getProratedTarget(primaryGoal, 'month') : 0;
-  const yearTarget = primaryGoal ? getProratedTarget(primaryGoal, 'year') : 0;
+  // Current goal display values
+  const weekTarget = currentGoal ? convertGoalValue(currentGoal.inputTarget, currentGoal.inputPeriod, 'week') : 0;
+  const monthTarget = currentGoal ? convertGoalValue(currentGoal.inputTarget, currentGoal.inputPeriod, 'month') : 0;
+  const yearTarget = currentGoal ? convertGoalValue(currentGoal.inputTarget, currentGoal.inputPeriod, 'year') : 0;
+  const periodLabel = currentGoal ? t(`goals.period.${currentGoal.inputPeriod}`) : '';
 
-  const periodLabel = primaryGoal
-    ? t(`goals.period.${primaryGoal.inputPeriod}`)
-    : '';
+  // Navigable month data using versioned periods
+  const monthData = useMemo(() =>
+    computeMonthWheelData(allPeriods, sessions, wheelMonth, wheelYear, now, t('metric.sessions')),
+    [allPeriods, sessions, wheelMonth, wheelYear, t]
+  );
 
-  // Navigable month data
-  const monthData = useMemo(() => {
-    const target = primaryGoal ? getProratedTarget(primaryGoal, 'month') : 0;
-    const goalStart = primaryGoal ? new Date(primaryGoal.startDate) : null;
-    const current = allSessions.filter(s => {
-      const d = new Date(s.date);
-      if (d.getMonth() !== wheelMonth || d.getFullYear() !== wheelYear) return false;
-      if (goalStart && d < goalStart) return false;
-      return true;
-    }).length;
-    const percent = target === 0 ? 0 : (current / target) * 100;
-    const daysInMonth = new Date(wheelYear, wheelMonth + 1, 0).getDate();
-    const isCurrentMonth = wheelMonth === now.getMonth() && wheelYear === now.getFullYear();
-    const expectedFraction = isCurrentMonth ? now.getDate() / daysInMonth : 1;
-    const expected = target * expectedFraction;
-    const diff = current - expected;
-    return { current, target: Math.round(target * 10) / 10, percent, unit: t('metric.sessions'), expectedFraction, diff };
-  }, [allSessions, primaryGoal, wheelMonth, wheelYear, t]);
-
-  // Navigable year data
-  const yearData = useMemo(() => {
-    const goalStart = primaryGoal ? new Date(primaryGoal.startDate) : null;
-    const target = primaryGoal ? getProratedTarget(primaryGoal, 'year') : 0;
-    const current = allSessions.filter(s => {
-      const d = new Date(s.date);
-      if (d.getFullYear() !== wheelYear) return false;
-      if (goalStart && d < goalStart) return false;
-      return true;
-    }).length;
-    const effectiveStart = goalStart && goalStart.getFullYear() === wheelYear
-      ? Math.max(goalStart.getTime(), new Date(wheelYear, 0, 1).getTime())
-      : new Date(wheelYear, 0, 1).getTime();
-    const yearEnd = new Date(wheelYear + 1, 0, 1).getTime();
-    const totalSpan = yearEnd - effectiveStart;
-    const refDate = wheelYear === now.getFullYear() ? now : new Date(wheelYear + 1, 0, 1);
-    const elapsedSpan = refDate.getTime() - effectiveStart;
-    const fractionElapsed = totalSpan > 0 ? Math.max(0, elapsedSpan / totalSpan) : 1;
-    const expected = target * fractionElapsed;
-    const diff = current - expected;
-    const percent = target === 0 ? 0 : (current / target) * 100;
-    return { current, target: Math.round(target), diff, expected, unit: t('metric.sessions'), expectedFraction: fractionElapsed, percent };
-  }, [allSessions, primaryGoal, wheelYear, t]);
+  // Navigable year data using versioned periods
+  const yearData = useMemo(() =>
+    computeYearWheelData(allPeriods, sessions, wheelYear, now, t('metric.sessions')),
+    [allPeriods, sessions, wheelYear, t]
+  );
 
   const handlePrevMonth = () => {
     if (wheelMonth === 0) { setWheelMonth(11); setWheelYear(y => y - 1); }
@@ -160,9 +129,26 @@ const GoalsSection = () => {
     setRefresh(r => r + 1);
   };
 
+  const handleDeletePeriod = (id: string) => {
+    primaryGoalService.delete(id);
+    setRefresh(r => r + 1);
+  };
+
   const handleTogglePrimaryWheelsHome = () => {
     updateSettings({ showPrimaryWheelsOnHome: !settings.showPrimaryWheelsOnHome });
   };
+
+  // Build history list with derived "to" dates
+  const historyItems = useMemo(() => {
+    const sorted = [...allPeriods].sort((a, b) => a.validFrom.localeCompare(b.validFrom));
+    return sorted.map((p, i) => {
+      const nextFrom = i < sorted.length - 1 ? sorted[i + 1].validFrom : null;
+      const toDate = nextFrom
+        ? new Date(new Date(nextFrom).getTime() - 86400000).toISOString().slice(0, 10)
+        : null; // null = still active
+      return { ...p, toDate };
+    });
+  }, [allPeriods]);
 
   // Collapsible section header
   const SectionHeader = ({ label, open, onToggle }: { label: string; open: boolean; onToggle: () => void }) => (
@@ -177,6 +163,15 @@ const GoalsSection = () => {
     </button>
   );
 
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString(t('date.locale'), { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  const periodTypeLabel = (p: PrimaryGoalPeriod) => {
+    return `${p.inputTarget} ${t('goals.sessionsPer')} ${t(`goals.period.${p.inputPeriod}`)}`;
+  };
+
   return (
     <div className="space-y-6">
       {/* Primary Goal */}
@@ -187,11 +182,11 @@ const GoalsSection = () => {
           <>
             {showPrimaryForm ? (
               <PrimaryGoalForm
-                existing={primaryGoal}
+                existing={currentGoal}
                 onSave={handleSavePrimary}
                 onCancel={() => setShowPrimaryForm(false)}
               />
-            ) : primaryGoal ? (
+            ) : currentGoal ? (
               <div className="glass-card rounded-lg p-4 relative">
                 {/* Pin-to-home button */}
                 <button
@@ -249,7 +244,7 @@ const GoalsSection = () => {
                         <ChevronRight className="w-4 h-4 text-muted-foreground/60" />
                       </button>
                     </div>
-                    {/* Today button - fixed height so layout doesn't shift */}
+                    {/* Today button - fixed height */}
                     <div className="h-5 flex items-center">
                       {!isToday && (
                         <button
@@ -262,7 +257,7 @@ const GoalsSection = () => {
                     </div>
                     <TargetIcon className="w-5 h-5 mb-1.5" />
                     <p className="text-xl font-bold text-foreground">
-                      {primaryGoal.inputTarget} {t('goals.sessionsPer')} {periodLabel}
+                      {currentGoal.inputTarget} {t('goals.sessionsPer')} {periodLabel}
                     </p>
                     <div className="flex items-center gap-3 text-sm text-muted-foreground mt-2">
                       <span><span className="font-semibold text-foreground text-base">{Math.round(weekTarget * 10) / 10}</span> {t('goals.perWeek')}</span>
@@ -299,7 +294,6 @@ const GoalsSection = () => {
 
                 {/* Mobile: combined nav + wheels side-by-side */}
                 <div className="md:hidden space-y-2">
-                  {/* Centered month/year nav */}
                   <div className="flex flex-col items-center">
                     <div className="flex items-center gap-1">
                       <button onClick={handlePrevMonth} className="p-1.5 rounded-lg hover:bg-secondary/60 transition-colors">
@@ -365,7 +359,7 @@ const GoalsSection = () => {
                   <div className="flex flex-col items-center text-center pt-2 border-t border-border/30">
                     <TargetIcon className="w-5 h-5 mb-1" />
                     <p className="text-lg font-bold text-foreground">
-                      {primaryGoal.inputTarget} {t('goals.sessionsPer')} {periodLabel}
+                      {currentGoal.inputTarget} {t('goals.sessionsPer')} {periodLabel}
                     </p>
                     <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                       <span><span className="font-semibold text-foreground text-base">{Math.round(weekTarget * 10) / 10}</span> {t('goals.perWeek')}</span>
@@ -393,6 +387,42 @@ const GoalsSection = () => {
                 <TargetIcon className="w-4 h-4 mr-1" />
                 {t('goals.setGoal')}
               </Button>
+            )}
+
+            {/* Goal history */}
+            {allPeriods.length > 1 && (
+              <div className="mt-2">
+                <button
+                  onClick={() => setHistoryOpen(o => !o)}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${historyOpen ? '' : '-rotate-90'}`} />
+                  {t('goals.previousGoals')}
+                </button>
+                {historyOpen && (
+                  <div className="mt-2 space-y-1">
+                    {historyItems.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between text-xs bg-secondary/40 rounded-md px-3 py-2">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-medium text-foreground">{periodTypeLabel(item)}</span>
+                          <span className="text-muted-foreground">
+                            {formatDate(item.validFrom)}
+                            {item.toDate ? ` → ${formatDate(item.toDate)}` : ` → ${t('goals.ongoing')}`}
+                          </span>
+                        </div>
+                        {item.toDate && (
+                          <button
+                            onClick={() => handleDeletePeriod(item.id)}
+                            className="text-destructive/60 hover:text-destructive text-[10px] px-1.5 py-0.5 rounded hover:bg-destructive/10 transition-colors"
+                          >
+                            {t('common.delete')}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
           </>
         )}

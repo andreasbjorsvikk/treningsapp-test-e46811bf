@@ -49,11 +49,20 @@ export interface WorkoutGoal {
   createdAt: string;
 }
 
+export interface PrimaryGoalPeriod {
+  id: string;
+  inputPeriod: GoalPeriod;
+  inputTarget: number;
+  validFrom: string; // ISO date - when this goal period starts
+  createdAt: string;
+}
+
+/** @deprecated Use PrimaryGoalPeriod[] instead */
 export interface PrimaryGoal {
   id: string;
   inputPeriod: GoalPeriod;
   inputTarget: number;
-  startDate: string; // ISO date - when the goal starts
+  startDate: string;
   createdAt: string;
 }
 
