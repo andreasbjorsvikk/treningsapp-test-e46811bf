@@ -1,14 +1,16 @@
 import { useState, useCallback, useMemo } from 'react';
 import { WorkoutSession, ExtraGoal } from '@/types/workout';
 import { workoutService } from '@/services/workoutService';
-import { primaryGoalService, convertGoalValue } from '@/services/primaryGoalService';
+import { primaryGoalService } from '@/services/primaryGoalService';
 import { goalService } from '@/services/goalService';
+import { healthEventService } from '@/services/healthEventService';
 import { computeMonthWheelData, computeYearWheelData } from '@/utils/goalWheelData';
 
 import BottomNav, { TabId } from '@/components/BottomNav';
 import StatsOverview from '@/components/StatsOverview';
 import SessionCard from '@/components/SessionCard';
 import WorkoutDialog from '@/components/WorkoutDialog';
+import HealthEventDialog from '@/components/HealthEventDialog';
 import GoalForm from '@/components/GoalForm';
 import CalendarPage from '@/pages/CalendarPage';
 import TrainingPage from '@/pages/TrainingPage';
@@ -17,26 +19,31 @@ import SettingsPage from '@/pages/SettingsPage';
 import ProgressWheel from '@/components/ProgressWheel';
 import WeeklySessionIcons from '@/components/WeeklySessionIcons';
 import MiniCalendar from '@/components/MiniCalendar';
-import GoalCard from '@/components/GoalCard';
 import DraggableGoalGrid from '@/components/DraggableGoalGrid';
-import { Plus, Sun, Moon } from 'lucide-react';
+import { Plus, Sun, Moon, Dumbbell, Ambulance } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { HealthEvent } from '@/types/workout';
 
 const Index = () => {
   const { settings, updateSettings } = useSettings();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabId>('hjem');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [healthDialogOpen, setHealthDialogOpen] = useState(false);
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
   const [, setRefresh] = useState(0);
   const [initialStatPeriod, setInitialStatPeriod] = useState<'month' | 'year' | undefined>();
   const [editGoal, setEditGoal] = useState<ExtraGoal | undefined>();
   const [showGoalEditDialog, setShowGoalEditDialog] = useState(false);
+  const [homeStatMode, setHomeStatMode] = useState<'week' | 'month'>('week');
 
-  const stats = workoutService.getWeeklyStats();
+  const weekStats = workoutService.getWeeklyStats();
+  const monthStats = workoutService.getMonthlyStats();
+  const stats = homeStatMode === 'week' ? weekStats : monthStats;
   const allSessions = workoutService.getAll();
   const recentSessions = allSessions.slice(0, 5);
 
@@ -73,6 +80,11 @@ const Index = () => {
     setRefresh(r => r + 1);
   }, [editSession]);
 
+  const handleHealthSave = useCallback((data: Omit<HealthEvent, 'id'>) => {
+    healthEventService.add(data);
+    setRefresh(r => r + 1);
+  }, []);
+
   const navigateToGoals = () => {
     setInitialStatPeriod(undefined);
     (window as any).__navigateToGoals = true;
@@ -81,135 +93,159 @@ const Index = () => {
     setTimeout(() => window.dispatchEvent(new CustomEvent('navigate-to-goals')), 50);
   };
 
+  const navigateToStats = () => {
+    setInitialStatPeriod(undefined);
+    setActiveTab('trening');
+    window.scrollTo({ top: 0 });
+  };
+
+  const navigateToCalendar = () => {
+    setActiveTab('kalender');
+    window.scrollTo({ top: 0 });
+  };
+
+  const navigateToHistory = () => {
+    setInitialStatPeriod(undefined);
+    (window as any).__navigateToHistory = true;
+    setActiveTab('trening');
+    window.scrollTo({ top: 0 });
+    setTimeout(() => window.dispatchEvent(new CustomEvent('navigate-to-history')), 50);
+  };
+
+  const StatModeToggle = () => (
+    <div className="flex items-center gap-1 mb-1">
+      <button
+        onClick={() => setHomeStatMode('week')}
+        className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full transition-all ${
+          homeStatMode === 'week'
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:text-foreground'
+        }`}
+      >
+        {t('home.thisWeek')}
+      </button>
+      <button
+        onClick={() => setHomeStatMode('month')}
+        className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full transition-all ${
+          homeStatMode === 'month'
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:text-foreground'
+        }`}
+      >
+        {t('home.thisMonth')}
+      </button>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background pb-20 lg:pb-0 lg:pt-16">
 
       <main className="container py-6 space-y-6">
         {activeTab === 'hjem' && (
           <>
-            {/* ===== DESKTOP (lg+): 4-column — month | year | calendar | last 7 days ===== */}
+            {/* Top-right + button */}
+            <div className="flex justify-end -mb-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="icon" variant="ghost" className="rounded-full h-9 w-9">
+                    <Plus className="w-5 h-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => { setEditSession(undefined); setDialogOpen(true); }}>
+                    <Dumbbell className="w-4 h-4 mr-2" />
+                    {t('home.newSession')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setHealthDialogOpen(true)}>
+                    <Ambulance className="w-4 h-4 mr-2" />
+                    {t('health.newEvent')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* ===== DESKTOP (lg+): 4-column ===== */}
             <section className="hidden lg:grid lg:grid-cols-4 lg:gap-3">
               <ProgressWheel
-                percent={monthData.percent}
-                current={monthData.current}
-                target={monthData.target}
-                unit={monthData.unit}
-                title={t(`month.${new Date().getMonth()}`)}
-                hasGoal={!!primaryGoal}
-                expectedFraction={monthData.expectedFraction}
-                paceDiff={monthData.diff}
-                showPaceLabel
-                onClick={navigateToGoals}
+                percent={monthData.percent} current={monthData.current} target={monthData.target}
+                unit={monthData.unit} title={t(`month.${new Date().getMonth()}`)}
+                hasGoal={!!primaryGoal} expectedFraction={monthData.expectedFraction}
+                paceDiff={monthData.diff} showPaceLabel onClick={navigateToGoals}
               />
               <ProgressWheel
-                percent={yearData.percent}
-                current={yearData.current}
-                target={yearData.target}
-                unit={yearData.unit}
-                title={String(new Date().getFullYear())}
-                hasGoal={!!primaryGoal}
-                expectedFraction={yearData.expectedFraction}
-                paceDiff={yearData.diff}
-                showPaceLabel
-                onClick={navigateToGoals}
+                percent={yearData.percent} current={yearData.current} target={yearData.target}
+                unit={yearData.unit} title={String(new Date().getFullYear())}
+                hasGoal={!!primaryGoal} expectedFraction={yearData.expectedFraction}
+                paceDiff={yearData.diff} showPaceLabel onClick={navigateToGoals}
               />
-              <MiniCalendar sessions={allSessions} />
+              <MiniCalendar sessions={allSessions} onClick={navigateToCalendar} />
               <div className="glass-card rounded-2xl p-3 flex flex-col">
                 <h2 className="font-display font-semibold text-[10px] text-muted-foreground uppercase tracking-wide mb-2">
                   {t('home.last7days')}
                 </h2>
-                <WeeklySessionIcons sessions={allSessions} />
+                <WeeklySessionIcons sessions={allSessions} onClick={navigateToHistory} />
                 <div className="mt-auto pt-2">
-                  <StatsOverview stats={stats} compact />
+                  <StatModeToggle />
+                  <StatsOverview stats={stats} compact onClick={navigateToStats} />
                 </div>
               </div>
             </section>
 
-            {/* ===== TABLET (md, not lg): 3-col wheels + calendar ===== */}
+            {/* ===== TABLET (md, not lg) ===== */}
             <section className="hidden md:grid md:grid-cols-3 md:gap-3 lg:hidden">
-              <div className="px-0">
-                <ProgressWheel
-                  percent={monthData.percent}
-                  current={monthData.current}
-                  target={monthData.target}
-                  unit={monthData.unit}
-                  title={t(`month.${new Date().getMonth()}`)}
-                  hasGoal={!!primaryGoal}
-                  expectedFraction={monthData.expectedFraction}
-                  paceDiff={monthData.diff}
-                  showPaceLabel
-                  onClick={navigateToGoals}
-                />
-              </div>
-              <div className="px-0">
-                <ProgressWheel
-                  percent={yearData.percent}
-                  current={yearData.current}
-                  target={yearData.target}
-                  unit={yearData.unit}
-                  title={String(new Date().getFullYear())}
-                  hasGoal={!!primaryGoal}
-                  expectedFraction={yearData.expectedFraction}
-                  paceDiff={yearData.diff}
-                  showPaceLabel
-                  onClick={navigateToGoals}
-                />
-              </div>
-              <MiniCalendar sessions={allSessions} />
+              <ProgressWheel
+                percent={monthData.percent} current={monthData.current} target={monthData.target}
+                unit={monthData.unit} title={t(`month.${new Date().getMonth()}`)}
+                hasGoal={!!primaryGoal} expectedFraction={monthData.expectedFraction}
+                paceDiff={monthData.diff} showPaceLabel onClick={navigateToGoals}
+              />
+              <ProgressWheel
+                percent={yearData.percent} current={yearData.current} target={yearData.target}
+                unit={yearData.unit} title={String(new Date().getFullYear())}
+                hasGoal={!!primaryGoal} expectedFraction={yearData.expectedFraction}
+                paceDiff={yearData.diff} showPaceLabel onClick={navigateToGoals}
+              />
+              <MiniCalendar sessions={allSessions} onClick={navigateToCalendar} />
             </section>
 
-            {/* Tablet: Siste 7 dager + stats below */}
             <section className="hidden md:block lg:hidden space-y-3">
               <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">
                 {t('home.last7days')}
               </h2>
-              <WeeklySessionIcons sessions={allSessions} />
-              <StatsOverview stats={stats} />
+              <WeeklySessionIcons sessions={allSessions} onClick={navigateToHistory} />
+              <StatModeToggle />
+              <StatsOverview stats={stats} onClick={navigateToStats} />
             </section>
 
-            {/* ===== MOBILE (below md): wheels, then weekly + calendar side by side ===== */}
+            {/* ===== MOBILE ===== */}
             <section className="md:hidden space-y-4">
-              {/* Wheels */}
               <div className="grid grid-cols-2 gap-3">
                 <ProgressWheel
-                  percent={monthData.percent}
-                  current={monthData.current}
-                  target={monthData.target}
-                  unit={monthData.unit}
-                  title={t(`month.${new Date().getMonth()}`)}
-                  hasGoal={!!primaryGoal}
-                  expectedFraction={monthData.expectedFraction}
-                  paceDiff={monthData.diff}
-                  showPaceLabel
-                  onClick={navigateToGoals}
+                  percent={monthData.percent} current={monthData.current} target={monthData.target}
+                  unit={monthData.unit} title={t(`month.${new Date().getMonth()}`)}
+                  hasGoal={!!primaryGoal} expectedFraction={monthData.expectedFraction}
+                  paceDiff={monthData.diff} showPaceLabel onClick={navigateToGoals}
                 />
                 <ProgressWheel
-                  percent={yearData.percent}
-                  current={yearData.current}
-                  target={yearData.target}
-                  unit={yearData.unit}
-                  title={String(new Date().getFullYear())}
-                  hasGoal={!!primaryGoal}
-                  expectedFraction={yearData.expectedFraction}
-                  paceDiff={yearData.diff}
-                  showPaceLabel
-                  onClick={navigateToGoals}
+                  percent={yearData.percent} current={yearData.current} target={yearData.target}
+                  unit={yearData.unit} title={String(new Date().getFullYear())}
+                  hasGoal={!!primaryGoal} expectedFraction={yearData.expectedFraction}
+                  paceDiff={yearData.diff} showPaceLabel onClick={navigateToGoals}
                 />
               </div>
 
-              {/* Weekly icons (left) + Mini calendar (right) */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <h2 className="font-display font-semibold text-[10px] text-muted-foreground uppercase tracking-wide">
                     {t('home.last7days')}
                   </h2>
-                  <WeeklySessionIcons sessions={allSessions} />
+                  <WeeklySessionIcons sessions={allSessions} onClick={navigateToHistory} />
                 </div>
-                <MiniCalendar sessions={allSessions} />
+                <MiniCalendar sessions={allSessions} onClick={navigateToCalendar} />
               </div>
 
-              {/* Stats 2x2 compact */}
-              <StatsOverview stats={stats} compact />
+              <StatModeToggle />
+              <StatsOverview stats={stats} compact onClick={navigateToStats} />
             </section>
 
             {/* Home-pinned extra goals */}
@@ -224,15 +260,9 @@ const Index = () => {
                   <DraggableGoalGrid
                     goals={homeGoals}
                     sessions={allSessions}
-                    onEdit={(g) => {
-                      setEditGoal(g);
-                      setShowGoalEditDialog(true);
-                    }}
+                    onEdit={(g) => { setEditGoal(g); setShowGoalEditDialog(true); }}
                     onDelete={() => {}}
-                    onToggleHome={(id) => {
-                      goalService.update(id, { showOnHome: false });
-                      setRefresh(r => r + 1);
-                    }}
+                    onToggleHome={(id) => { goalService.update(id, { showOnHome: false }); setRefresh(r => r + 1); }}
                     onReorder={() => setRefresh(r => r + 1)}
                   />
                 </section>
@@ -283,6 +313,12 @@ const Index = () => {
         onClose={() => { setDialogOpen(false); setEditSession(undefined); }}
         onSave={handleSave}
         session={editSession}
+      />
+
+      <HealthEventDialog
+        open={healthDialogOpen}
+        onClose={() => setHealthDialogOpen(false)}
+        onSave={handleHealthSave}
       />
 
       {/* Edit Goal Dialog (for home-pinned goals) */}
