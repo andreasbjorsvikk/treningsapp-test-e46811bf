@@ -162,10 +162,22 @@ export const primaryGoalService = {
     return newPeriod;
   },
 
-  /** Delete a specific goal period */
+  /** Delete a specific goal period by id only */
   delete(id: string): void {
     const periods = loadPeriods().filter(p => p.id !== id);
     savePeriods(periods);
+  },
+
+  /** Update a specific goal period */
+  update(id: string, data: Partial<Pick<PrimaryGoalPeriod, 'inputPeriod' | 'inputTarget' | 'validFrom'>>): void {
+    const periods = loadPeriods();
+    const idx = periods.findIndex(p => p.id === id);
+    if (idx !== -1) {
+      if (data.inputPeriod !== undefined) periods[idx].inputPeriod = data.inputPeriod;
+      if (data.inputTarget !== undefined) periods[idx].inputTarget = data.inputTarget;
+      if (data.validFrom !== undefined) periods[idx].validFrom = data.validFrom;
+      savePeriods(periods);
+    }
   },
 
   /** Clear all goal periods */

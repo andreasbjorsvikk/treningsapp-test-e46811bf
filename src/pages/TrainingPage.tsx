@@ -215,8 +215,8 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
         <div className="space-y-4">
           {/* Desktop: wheels left, chart+stats right */}
           <div className="lg:grid lg:grid-cols-[auto_1fr] lg:gap-6 space-y-4 lg:space-y-0">
-            {/* Left column: wheels stacked */}
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-1 lg:w-64">
+            {/* Left column: wheels stacked - desktop only */}
+            <div className="hidden lg:grid lg:grid-cols-1 lg:w-64 lg:gap-3">
               <ProgressWheel
                 percent={monthData.percent}
                 current={monthData.current}

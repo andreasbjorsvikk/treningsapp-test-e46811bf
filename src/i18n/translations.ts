@@ -63,6 +63,10 @@ const no: Record<string, string> = {
   'goals.updateGoal': 'Oppdater treningsmål',
   'goals.validFrom': 'Gyldig fra',
   'goals.otherDate': 'Annen dato',
+  'goals.deleteCurrentTitle': 'Slett nåværende mål',
+  'goals.deleteCurrentDesc': 'Dette er ditt nåværende mål. Vil du gå tilbake til ditt forrige mål eller sette et nytt?',
+  'goals.revertToPrevious': 'Gå tilbake til forrige mål',
+  'goals.setNewGoal': 'Sett et nytt mål',
 
   // Goal card
   'goalCard.thisWeek': 'Denne uken',
@@ -267,6 +271,10 @@ const en: Record<string, string> = {
   'goals.updateGoal': 'Update training goal',
   'goals.validFrom': 'Valid from',
   'goals.otherDate': 'Other date',
+  'goals.deleteCurrentTitle': 'Delete current goal',
+  'goals.deleteCurrentDesc': 'This is your current goal. Do you want to revert to your previous goal or set a new one?',
+  'goals.revertToPrevious': 'Revert to previous goal',
+  'goals.setNewGoal': 'Set a new goal',
 
   // Goal card
   'goalCard.thisWeek': 'This week',
