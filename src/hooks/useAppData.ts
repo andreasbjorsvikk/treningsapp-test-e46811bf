@@ -39,11 +39,13 @@ export function useAppData() {
       }
     } catch (err) {
       console.error('Failed to load data:', err);
-      // Fallback to local
-      setSessions(workoutService.getAll());
-      setGoals(goalService.getAll());
-      setPrimaryGoals(primaryGoalService.getAll());
-      setHealthEvents(healthEventService.getAll());
+      // Only fallback to local if NOT logged in
+      if (!isOnline) {
+        setSessions(workoutService.getAll());
+        setGoals(goalService.getAll());
+        setPrimaryGoals(primaryGoalService.getAll());
+        setHealthEvents(healthEventService.getAll());
+      }
     }
     setLoading(false);
   }, [isOnline, user]);

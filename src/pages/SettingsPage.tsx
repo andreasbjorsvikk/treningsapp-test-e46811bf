@@ -1,15 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSettings, AppColorTheme, AccentColor } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { SessionType } from '@/types/workout';
-import { Moon, Globe } from 'lucide-react';
+import { Moon, Globe, LogOut, User } from 'lucide-react';
 import { getActivityColors, activityColorMap, ActivityColorSet } from '@/utils/activityColors';
+import { useNavigate } from 'react-router-dom';
 
 // Predefined color options for activity types
 const COLOR_PRESETS = [
@@ -30,7 +35,35 @@ const COLOR_PRESETS = [
 const SettingsPage = () => {
   const { settings, updateSettings, appThemes, accentPresets, getTypeColor } = useSettings();
   const { t } = useTranslation();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [editingType, setEditingType] = useState<SessionType | null>(null);
+  const [username, setUsername] = useState('');
+  const [usernameLoading, setUsernameLoading] = useState(false);
+  const [usernameSaved, setUsernameSaved] = useState(false);
+
+  // Load username from profile
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('profiles').select('username').eq('id', user.id).single()
+      .then(({ data }) => {
+        if (data?.username) setUsername(data.username);
+      });
+  }, [user]);
+
+  const handleSaveUsername = async () => {
+    if (!user) return;
+    setUsernameLoading(true);
+    await supabase.from('profiles').update({ username }).eq('id', user.id);
+    setUsernameLoading(false);
+    setUsernameSaved(true);
+    setTimeout(() => setUsernameSaved(false), 2000);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
 
   const handleClearData = () => {
     if (confirm(t('settings.deleteAllDataConfirm'))) {
@@ -272,6 +305,49 @@ const SettingsPage = () => {
           {t('settings.deleteAllData')}
         </button>
       </div>
+
+      {/* Account / Profile section */}
+      {user ? (
+        <div className="glass-card rounded-lg p-4 space-y-4">
+          <h3 className="font-display font-semibold text-sm">{t('settings.account') || 'Konto'}</h3>
+          <p className="text-xs text-muted-foreground">{user.email}</p>
+
+          {/* Username */}
+          <div className="space-y-2">
+            <Label className="text-sm flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5" />
+              {t('settings.username') || 'Brukernavn'}
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder={t('settings.usernamePlaceholder') || 'Skriv inn brukernavn'}
+                className="flex-1"
+              />
+              <Button size="sm" onClick={handleSaveUsername} disabled={usernameLoading}>
+                {usernameSaved ? '✓' : (t('settings.save') || 'Lagre')}
+              </Button>
+            </div>
+          </div>
+
+          {/* Sign out */}
+          <Button variant="outline" className="w-full" onClick={handleSignOut}>
+            <LogOut className="w-4 h-4 mr-2" />
+            {t('settings.signOut') || 'Logg ut'}
+          </Button>
+        </div>
+      ) : (
+        <div className="glass-card rounded-lg p-4 space-y-3">
+          <h3 className="font-display font-semibold text-sm">{t('settings.account') || 'Konto'}</h3>
+          <p className="text-xs text-muted-foreground">
+            {t('settings.notLoggedIn') || 'Du er ikke logget inn. Logg inn for å lagre data permanent.'}
+          </p>
+          <Button variant="outline" onClick={() => navigate('/login')}>
+            {t('settings.signIn') || 'Logg inn'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
