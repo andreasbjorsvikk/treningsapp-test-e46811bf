@@ -6,11 +6,12 @@ import { useSettings } from '@/contexts/SettingsContext';
 
 interface WeeklySessionIconsProps {
   sessions: WorkoutSession[];
+  onClick?: () => void;
 }
 
 const MAX_VISIBLE = 8;
 
-const WeeklySessionIcons = ({ sessions }: WeeklySessionIconsProps) => {
+const WeeklySessionIcons = ({ sessions, onClick }: WeeklySessionIconsProps) => {
   const { settings } = useSettings();
   const isDark = settings.darkMode;
 
@@ -30,7 +31,7 @@ const WeeklySessionIcons = ({ sessions }: WeeklySessionIconsProps) => {
   const overflow = recentSessions.length - MAX_VISIBLE;
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex items-center gap-2 flex-wrap cursor-pointer" onClick={onClick}>
       {visible.map((session) => {
         const colors = getActivityColors(session.type, isDark);
         return (

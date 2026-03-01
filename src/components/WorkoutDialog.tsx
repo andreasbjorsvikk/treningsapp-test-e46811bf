@@ -91,7 +91,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
           <DialogTitle className="text-center">{session ? t('workout.editSession') : t('workout.newSession')}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           <div className="space-y-1.5">
             <Label>{t('workout.type')}</Label>
             <Select value={type} onValueChange={(v) => setType(v as SessionType)}>

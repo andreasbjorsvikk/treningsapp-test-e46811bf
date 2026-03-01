@@ -74,9 +74,9 @@ const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, on
           </>
         ) : (
           <>
-            <div className="p-2 w-8" />
+            <div className="p-2 w-8 h-8" aria-hidden />
             <span className="text-xl font-display font-bold">Total</span>
-            <div className="p-2 w-8" />
+            <div className="p-2 w-8 h-8" aria-hidden />
           </>
         )}
       </div>
