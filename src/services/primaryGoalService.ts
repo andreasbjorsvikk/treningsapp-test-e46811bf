@@ -1,4 +1,5 @@
 import { PrimaryGoalPeriod, GoalPeriod } from '@/types/workout';
+import { supabase } from '@/integrations/supabase/client';
 
 const STORAGE_KEY = 'treningslogg_primary_goal_periods';
 const LEGACY_KEY = 'treningslogg_primary_goal';
@@ -8,8 +9,6 @@ function loadPeriods(): PrimaryGoalPeriod[] {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) return JSON.parse(stored);
   } catch { /* ignore */ }
-
-  // Migrate legacy single goal
   try {
     const legacy = localStorage.getItem(LEGACY_KEY);
     if (legacy) {
@@ -26,7 +25,6 @@ function loadPeriods(): PrimaryGoalPeriod[] {
       return [migrated];
     }
   } catch { /* ignore */ }
-
   return [];
 }
 
@@ -34,7 +32,6 @@ function savePeriods(periods: PrimaryGoalPeriod[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(periods));
 }
 
-/** Sort periods by validFrom ascending */
 function sorted(periods: PrimaryGoalPeriod[]): PrimaryGoalPeriod[] {
   return [...periods].sort((a, b) => a.validFrom.localeCompare(b.validFrom));
 }
@@ -53,10 +50,6 @@ export function convertGoalValue(value: number, from: GoalPeriod, to: GoalPeriod
   }
 }
 
-/**
- * Get the active goal period for a given date.
- * Returns the latest period whose validFrom <= date.
- */
 export function getActiveGoalForDate(periods: PrimaryGoalPeriod[], date: Date): PrimaryGoalPeriod | null {
   const dateStr = date.toISOString().slice(0, 10);
   const s = sorted(periods);
@@ -68,22 +61,13 @@ export function getActiveGoalForDate(periods: PrimaryGoalPeriod[], date: Date): 
   return active;
 }
 
-/**
- * Get the target for a specific month, using the latest goal active during that month.
- * If a new goal starts mid-month, the full month uses the new goal's target (no pro-rata).
- */
 export function getMonthTarget(periods: PrimaryGoalPeriod[], year: number, month: number): number {
-  const monthEnd = new Date(year, month + 1, 0); // last day of month
+  const monthEnd = new Date(year, month + 1, 0);
   const goal = getActiveGoalForDate(periods, monthEnd);
   if (!goal) return 0;
-
   return convertGoalValue(goal.inputTarget, goal.inputPeriod, 'month');
 }
 
-/**
- * Get the year target by summing monthly targets across all 12 months.
- * Each month uses its own active goal period.
- */
 export function getYearTarget(periods: PrimaryGoalPeriod[], year: number): number {
   let total = 0;
   for (let m = 0; m < 12; m++) {
@@ -92,67 +76,50 @@ export function getYearTarget(periods: PrimaryGoalPeriod[], year: number): numbe
   return Math.round(total * 10) / 10;
 }
 
-/**
- * Get the earliest validFrom date across all periods.
- */
 export function getEarliestStart(periods: PrimaryGoalPeriod[]): Date | null {
   if (periods.length === 0) return null;
   const s = sorted(periods);
   return new Date(s[0].validFrom);
 }
 
-/**
- * Get expected year progress up to a reference date, accounting for multiple goal periods.
- */
 export function getYearExpectedProgress(periods: PrimaryGoalPeriod[], year: number, refDate: Date): { target: number; expected: number; fractionElapsed: number } {
   const target = getYearTarget(periods, year);
   if (target === 0) return { target: 0, expected: 0, fractionElapsed: 0 };
-
-  // Sum expected for each completed month + partial current month
   let expected = 0;
   for (let m = 0; m < 12; m++) {
     const mTarget = getMonthTarget(periods, year, m);
     const monthEnd = new Date(year, m + 1, 0);
     const monthStart = new Date(year, m, 1);
-
     if (refDate >= monthEnd) {
-      // Full month elapsed
       expected += mTarget;
     } else if (refDate >= monthStart) {
-      // Partial month
       const daysInMonth = monthEnd.getDate();
       const dayOfMonth = refDate.getDate();
       expected += mTarget * (dayOfMonth / daysInMonth);
     }
-    // Future months: 0
   }
-
   const fractionElapsed = target > 0 ? expected / target : 0;
   return { target, expected, fractionElapsed };
 }
 
-/** For backward compat: get current active goal as a "PrimaryGoal-like" object */
 export function getCurrentGoal(periods: PrimaryGoalPeriod[]): PrimaryGoalPeriod | null {
   return getActiveGoalForDate(periods, new Date());
 }
 
+// ========== Local service ==========
 export const primaryGoalService = {
-  /** Get all goal periods sorted by validFrom */
   getAll(): PrimaryGoalPeriod[] {
     return sorted(loadPeriods());
   },
 
-  /** Get the currently active goal */
   get(): PrimaryGoalPeriod | null {
     return getCurrentGoal(loadPeriods());
   },
 
-  /** Add a new goal period. If one already exists with the same validFrom date, overwrite it. */
   add(data: { inputPeriod: GoalPeriod; inputTarget: number; validFrom: string }): PrimaryGoalPeriod {
     const periods = loadPeriods();
     const existingIdx = periods.findIndex(p => p.validFrom === data.validFrom);
     if (existingIdx !== -1) {
-      // Overwrite existing period with same date
       periods[existingIdx].inputPeriod = data.inputPeriod;
       periods[existingIdx].inputTarget = data.inputTarget;
       savePeriods(periods);
@@ -170,13 +137,11 @@ export const primaryGoalService = {
     return newPeriod;
   },
 
-  /** Delete a specific goal period by id only */
   delete(id: string): void {
     const periods = loadPeriods().filter(p => p.id !== id);
     savePeriods(periods);
   },
 
-  /** Update a specific goal period */
   update(id: string, data: Partial<Pick<PrimaryGoalPeriod, 'inputPeriod' | 'inputTarget' | 'validFrom'>>): void {
     const periods = loadPeriods();
     const idx = periods.findIndex(p => p.id === id);
@@ -188,17 +153,88 @@ export const primaryGoalService = {
     }
   },
 
-  /** Clear all goal periods */
   clear(): void {
     savePeriods([]);
   },
 
-  /** Legacy compat: set replaces with a single period (used by form) */
   set(data: { inputPeriod: GoalPeriod; inputTarget: number; startDate: string }): PrimaryGoalPeriod {
     return this.add({
       inputPeriod: data.inputPeriod,
       inputTarget: data.inputTarget,
       validFrom: data.startDate,
     });
+  },
+};
+
+// ========== Supabase async service ==========
+function rowToPeriod(row: any): PrimaryGoalPeriod {
+  return {
+    id: row.id,
+    inputPeriod: row.input_period as GoalPeriod,
+    inputTarget: row.input_target,
+    validFrom: row.valid_from,
+    createdAt: row.created_at,
+  };
+}
+
+export const primaryGoalServiceAsync = {
+  async getAll(userId: string): Promise<PrimaryGoalPeriod[]> {
+    const { data, error } = await supabase
+      .from('primary_goal_periods')
+      .select('*')
+      .eq('user_id', userId)
+      .order('valid_from', { ascending: true });
+    if (error) throw error;
+    return (data || []).map(rowToPeriod);
+  },
+
+  async add(userId: string, data: { inputPeriod: GoalPeriod; inputTarget: number; validFrom: string }): Promise<PrimaryGoalPeriod> {
+    // Check if one exists with same validFrom
+    const { data: existing } = await supabase
+      .from('primary_goal_periods')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('valid_from', data.validFrom)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase.from('primary_goal_periods').update({
+        input_period: data.inputPeriod,
+        input_target: data.inputTarget,
+      }).eq('id', existing.id);
+      return { id: existing.id, inputPeriod: data.inputPeriod, inputTarget: data.inputTarget, validFrom: data.validFrom, createdAt: '' };
+    }
+
+    const { data: row, error } = await supabase
+      .from('primary_goal_periods')
+      .insert({
+        user_id: userId,
+        input_period: data.inputPeriod,
+        input_target: data.inputTarget,
+        valid_from: data.validFrom,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return rowToPeriod(row);
+  },
+
+  async update(id: string, data: Partial<Pick<PrimaryGoalPeriod, 'inputPeriod' | 'inputTarget' | 'validFrom'>>): Promise<void> {
+    const updateObj: any = {};
+    if (data.inputPeriod !== undefined) updateObj.input_period = data.inputPeriod;
+    if (data.inputTarget !== undefined) updateObj.input_target = data.inputTarget;
+    if (data.validFrom !== undefined) updateObj.valid_from = data.validFrom;
+    const { error } = await supabase.from('primary_goal_periods').update(updateObj).eq('id', id);
+    if (error) throw error;
+  },
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase.from('primary_goal_periods').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  async clear(userId: string): Promise<void> {
+    const { error } = await supabase.from('primary_goal_periods').delete().eq('user_id', userId);
+    if (error) throw error;
   },
 };
