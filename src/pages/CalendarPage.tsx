@@ -171,18 +171,19 @@ const CalendarPage = () => {
     const containerRect = container.getBoundingClientRect();
     const targetRect = target.getBoundingClientRect();
     const scrollOffset = targetRect.top - containerRect.top + container.scrollTop;
-    // Mobile: offset back ~120px so 2 rows of previous month visible
-    // Desktop/tablet: no offset, month header at top
     return Math.max(0, scrollOffset - (isMobile ? 120 : 0));
   }, [isMobile]);
 
+  // iOS Safari fix: hide the container until we've scrolled to the right position
+  // to prevent the visible "jump" effect.
+  const [scrollReady, setScrollReady] = useState(false);
+
   useEffect(() => {
-    // Set initial scroll immediately (before paint) to avoid visible jump
+    setScrollReady(false);
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0;
     }
 
-    // Use multiple rAF frames to ensure layout is stable before scrolling
     let cancelled = false;
     const doScroll = () => {
       if (cancelled) return;
@@ -193,15 +194,17 @@ const CalendarPage = () => {
 
     // Try immediately
     doScroll();
-    // Then again after layout
+    // Then again after layout settles
     requestAnimationFrame(() => {
       doScroll();
       requestAnimationFrame(() => {
         doScroll();
-        // Unlock infinite scroll after position stabilises
+        if (!cancelled) setScrollReady(true);
         setTimeout(() => {
+          // One final correction for iOS Safari where layout can shift
+          doScroll();
           hasScrolledToToday.current = true;
-        }, 200);
+        }, 100);
       });
     });
 
@@ -521,7 +524,7 @@ const CalendarPage = () => {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="overflow-y-auto"
+        className={`overflow-y-auto transition-opacity duration-100 ${scrollReady ? 'opacity-100' : 'opacity-0'}`}
         style={{
           maxHeight: 'calc(100vh - 160px)',
           contain: 'layout style',

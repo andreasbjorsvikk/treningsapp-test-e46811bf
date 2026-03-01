@@ -137,12 +137,16 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
 
   return (
     <div className="rounded-2xl p-4 flex flex-col h-full relative overflow-hidden bg-gradient-to-br from-card/90 to-card/60 backdrop-blur-xl border border-border/30 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+      {/* Unit label rendered outside the chart for reliable positioning */}
+      <div className="absolute top-2.5 left-4 z-10">
+        <span className="text-[10px] font-semibold text-muted-foreground">{metricUnitLabel[metric]}</span>
+      </div>
       <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={hasData ? data : safeData}
             barCategoryGap={isMobile ? '12%' : '20%'}
-            margin={{ top: 36, right: 4, left: isMobile ? 2 : 4, bottom: 0 }}
+            margin={{ top: 20, right: 4, left: isMobile ? 2 : 4, bottom: 0 }}
           >
             <defs />
             <CartesianGrid
@@ -168,13 +172,6 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
               axisLine={false}
               width={isMobile ? 30 : 42}
               tickFormatter={(v) => `${v}`}
-              label={{ 
-                value: metricUnitLabel[metric], 
-                position: 'insideTopLeft', 
-                offset: -28,
-                dy: -8,
-                style: { fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontWeight: 600, textAnchor: 'start' }
-              }}
             />
             {hasData && (
               <Tooltip 
