@@ -6,6 +6,7 @@ import { ChartMetric } from '@/components/MetricSelector';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { getActivityColors } from '@/utils/activityColors';
 
 interface TrendChartProps {
   sessions: WorkoutSession[];
@@ -55,16 +56,14 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
     return totals.filter(t => t.total > 0).map(t => t.type);
   }, [sessions, metric]);
 
-  // Compute bar colors: slightly adjust for dark/light mode
+  // Use the activity background colors for chart bars (matching session card backgrounds)
   const typeColors = useMemo(() => {
     const colors: Record<string, string> = {};
     for (const type of typeOrder) {
-      const hex = getTypeColor(type);
-      // In light mode, darken slightly for better contrast; in dark mode, use as-is (these are already bright)
-      colors[type] = hex;
+      colors[type] = getActivityColors(type, isDark).bg;
     }
     return colors;
-  }, [typeOrder, getTypeColor, isDark]);
+  }, [typeOrder, isDark]);
 
   const data = useMemo(() => {
     const buildEntry = (label: string, bucketSessions: WorkoutSession[]) => {
@@ -176,15 +175,39 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
                 cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2, radius: 6 }}
               />
             )}
-            {hasData && typeOrder.map((type) => {
+            {hasData && typeOrder.map((type, typeIdx) => {
               const color = typeColors[type];
+              const isLastType = typeIdx === typeOrder.length - 1;
               return (
                 <Bar
                   key={type}
                   dataKey={type}
                   stackId="stack"
-                  radius={[4, 4, 0, 0]}
+                  radius={[0, 0, 0, 0]}
                   fill="none"
+                  shape={(props: any) => {
+                    const { x, y, width, height, fill: cellFill } = props;
+                    if (!height || height <= 0) return null;
+                    // Determine if this is the topmost visible segment for this data point
+                    const dataIndex = props.index;
+                    const entry = data[dataIndex];
+                    let isTop = isLastType;
+                    if (!isLastType && entry) {
+                      // Check if any type after this one has a value > 0
+                      const laterTypes = typeOrder.slice(typeIdx + 1);
+                      isTop = laterTypes.every(t => !(entry[t] as number > 0));
+                    }
+                    const r = isTop ? 4 : 0;
+                    if (r === 0) {
+                      return <rect x={x} y={y} width={width} height={height} fill={cellFill} />;
+                    }
+                    return (
+                      <path
+                        d={`M${x},${y + r} Q${x},${y} ${x + r},${y} L${x + width - r},${y} Q${x + width},${y} ${x + width},${y + r} L${x + width},${y + height} L${x},${y + height} Z`}
+                        fill={cellFill}
+                      />
+                    );
+                  }}
                 >
                   {data.map((_, index) => (
                     <Cell key={index} fill={color} />

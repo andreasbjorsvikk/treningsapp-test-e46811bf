@@ -147,9 +147,17 @@ export const primaryGoalService = {
     return getCurrentGoal(loadPeriods());
   },
 
-  /** Add a new goal period */
+  /** Add a new goal period. If one already exists with the same validFrom date, overwrite it. */
   add(data: { inputPeriod: GoalPeriod; inputTarget: number; validFrom: string }): PrimaryGoalPeriod {
     const periods = loadPeriods();
+    const existingIdx = periods.findIndex(p => p.validFrom === data.validFrom);
+    if (existingIdx !== -1) {
+      // Overwrite existing period with same date
+      periods[existingIdx].inputPeriod = data.inputPeriod;
+      periods[existingIdx].inputTarget = data.inputTarget;
+      savePeriods(periods);
+      return periods[existingIdx];
+    }
     const newPeriod: PrimaryGoalPeriod = {
       id: crypto.randomUUID(),
       inputPeriod: data.inputPeriod,
