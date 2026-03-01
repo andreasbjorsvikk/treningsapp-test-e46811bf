@@ -224,9 +224,9 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
       {subTab === 'historikk' && (
         <div className="space-y-4">
           <input ref={importFileRef} type="file" accept=".json" className="hidden" onChange={handleImportFile} />
-          <div className="flex items-center justify-between gap-2">
-            <TypeFilter selected={filterType} onSelect={setFilterType} />
-            <div className="flex items-center gap-1">
+          {/* Mobile: year + menu on their own row */}
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center justify-end gap-1 md:order-2">
               <Select value={historyYear} onValueChange={setHistoryYear}>
                 <SelectTrigger className="w-24 h-8 text-sm">
                   <SelectValue />
@@ -255,6 +255,9 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+            </div>
+            <div className="md:order-1">
+              <TypeFilter selected={filterType} onSelect={setFilterType} />
             </div>
           </div>
 

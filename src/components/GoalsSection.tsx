@@ -268,6 +268,7 @@ const GoalsSection = () => {
                       expectedFraction={monthData.expectedFraction}
                       paceDiff={monthData.diff}
                       naked
+                      disableAchievement
                     />
                   </div>
 
@@ -333,6 +334,7 @@ const GoalsSection = () => {
                       expectedFraction={yearData.expectedFraction}
                       paceDiff={yearData.diff}
                       naked
+                      disableAchievement
                     />
                   </div>
                 </div>
@@ -383,6 +385,7 @@ const GoalsSection = () => {
                       paceDiff={monthData.diff}
                       naked
                       compact
+                      disableAchievement
                     />
                     <ProgressWheel
                       percent={yearData.percent}
@@ -395,6 +398,7 @@ const GoalsSection = () => {
                       paceDiff={yearData.diff}
                       naked
                       compact
+                      disableAchievement
                     />
                   </div>
 

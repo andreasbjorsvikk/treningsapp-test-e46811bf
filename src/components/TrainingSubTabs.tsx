@@ -8,8 +8,8 @@ interface TrainingSubTabsProps {
 
 const tabConfig: { id: TrainingSubTab; labelKey: string }[] = [
   { id: 'statistikk', labelKey: 'training.statistics' },
-  { id: 'historikk', labelKey: 'training.history' },
   { id: 'mål', labelKey: 'training.goals' },
+  { id: 'historikk', labelKey: 'training.history' },
 ];
 
 const TrainingSubTabs = ({ active, onChange }: TrainingSubTabsProps) => {

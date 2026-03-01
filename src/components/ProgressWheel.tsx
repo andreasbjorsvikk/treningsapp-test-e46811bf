@@ -16,6 +16,7 @@ interface ProgressWheelProps {
   showPaceLabel?: boolean;
   compact?: boolean;
   naked?: boolean;
+  disableAchievement?: boolean;
 }
 
 const ANIM_DURATION = 1200;
@@ -35,7 +36,7 @@ function easeOutCubic(t: number): number {
 
 const ProgressWheel = ({
   percent, current, target, unit, label, title, titleOverride,
-  hasGoal, onClick, expectedFraction, paceDiff, showPaceLabel, compact, naked,
+  hasGoal, onClick, expectedFraction, paceDiff, showPaceLabel, compact, naked, disableAchievement,
 }: ProgressWheelProps) => {
   const { t } = useTranslation();
 
@@ -58,7 +59,7 @@ const ProgressWheel = ({
     const from = prevRef.current;
     const to = clampedPercent;
     prevRef.current = to;
-    if (from < 100 && to >= 100 && hasAnimatedInitial.current) {
+    if (from < 100 && to >= 100 && hasAnimatedInitial.current && !disableAchievement) {
       const timer = setTimeout(() => {
         setShowAchievement(true);
         setTimeout(() => setShowAchievement(false), 1500);
