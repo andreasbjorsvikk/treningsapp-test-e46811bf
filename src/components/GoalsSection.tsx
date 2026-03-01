@@ -206,43 +206,6 @@ const GoalsSection = () => {
                   <Home className="w-3.5 h-3.5" />
                 </button>
 
-                {/* Centered month/year navigation */}
-                <div className="flex flex-col items-center mb-3">
-                  {/* Month nav */}
-                  <div className="flex items-center gap-1">
-                    <button onClick={handlePrevMonth} className="p-1.5 rounded-lg hover:bg-secondary/60 transition-colors">
-                      <ChevronLeft className="w-5 h-5 text-muted-foreground" />
-                    </button>
-                    <span className="text-lg font-bold text-foreground min-w-[120px] text-center">
-                      {t(`month.${wheelMonth}`)}
-                    </span>
-                    <button onClick={handleNextMonth} className="p-1.5 rounded-lg hover:bg-secondary/60 transition-colors">
-                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                    </button>
-                  </div>
-                  {/* Year nav */}
-                  <div className="flex items-center gap-1 -mt-0.5">
-                    <button onClick={handlePrevYear} className="p-1 rounded-lg hover:bg-secondary/60 transition-colors">
-                      <ChevronLeft className="w-4 h-4 text-muted-foreground/60" />
-                    </button>
-                    <span className="text-sm font-semibold text-muted-foreground min-w-[50px] text-center">
-                      {wheelYear}
-                    </span>
-                    <button onClick={handleNextYear} className="p-1 rounded-lg hover:bg-secondary/60 transition-colors">
-                      <ChevronRight className="w-4 h-4 text-muted-foreground/60" />
-                    </button>
-                  </div>
-                  {/* Today button */}
-                  {!isToday && (
-                    <button
-                      onClick={handleGoToday}
-                      className="mt-1 px-3 py-0.5 rounded-md text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
-                    >
-                      {t('common.today')}
-                    </button>
-                  )}
-                </div>
-
                 {/* Desktop/Tablet: wheels flanking the text info */}
                 <div className="hidden md:flex md:items-center md:justify-center md:gap-4">
                   {/* Left wheel - month */}
@@ -260,8 +223,43 @@ const GoalsSection = () => {
                     />
                   </div>
 
-                  {/* Center text info */}
-                  <div className="flex flex-col items-center text-center justify-center py-2">
+                  {/* Center: month/year nav + text info */}
+                  <div className="flex flex-col items-center text-center justify-center py-1">
+                    {/* Month nav */}
+                    <div className="flex items-center gap-1">
+                      <button onClick={handlePrevMonth} className="p-1.5 rounded-lg hover:bg-secondary/60 transition-colors">
+                        <ChevronLeft className="w-5 h-5 text-muted-foreground" />
+                      </button>
+                      <span className="text-lg font-bold text-foreground min-w-[120px] text-center">
+                        {t(`month.${wheelMonth}`)}
+                      </span>
+                      <button onClick={handleNextMonth} className="p-1.5 rounded-lg hover:bg-secondary/60 transition-colors">
+                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                      </button>
+                    </div>
+                    {/* Year nav */}
+                    <div className="flex items-center gap-1 -mt-0.5">
+                      <button onClick={handlePrevYear} className="p-1 rounded-lg hover:bg-secondary/60 transition-colors">
+                        <ChevronLeft className="w-4 h-4 text-muted-foreground/60" />
+                      </button>
+                      <span className="text-sm font-semibold text-muted-foreground min-w-[50px] text-center">
+                        {wheelYear}
+                      </span>
+                      <button onClick={handleNextYear} className="p-1 rounded-lg hover:bg-secondary/60 transition-colors">
+                        <ChevronRight className="w-4 h-4 text-muted-foreground/60" />
+                      </button>
+                    </div>
+                    {/* Today button - fixed height so layout doesn't shift */}
+                    <div className="h-5 flex items-center">
+                      {!isToday && (
+                        <button
+                          onClick={handleGoToday}
+                          className="px-3 py-0.5 rounded-md text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+                        >
+                          {t('common.today')}
+                        </button>
+                      )}
+                    </div>
                     <TargetIcon className="w-5 h-5 mb-1.5" />
                     <p className="text-xl font-bold text-foreground">
                       {primaryGoal.inputTarget} {t('goals.sessionsPer')} {periodLabel}
@@ -299,8 +297,44 @@ const GoalsSection = () => {
                   </div>
                 </div>
 
-                {/* Mobile: wheels side-by-side under nav */}
-                <div className="md:hidden space-y-3">
+                {/* Mobile: combined nav + wheels side-by-side */}
+                <div className="md:hidden space-y-2">
+                  {/* Centered month/year nav */}
+                  <div className="flex flex-col items-center">
+                    <div className="flex items-center gap-1">
+                      <button onClick={handlePrevMonth} className="p-1.5 rounded-lg hover:bg-secondary/60 transition-colors">
+                        <ChevronLeft className="w-5 h-5 text-muted-foreground" />
+                      </button>
+                      <span className="text-base font-bold text-foreground min-w-[100px] text-center">
+                        {t(`month.${wheelMonth}`)}
+                      </span>
+                      <button onClick={handleNextMonth} className="p-1.5 rounded-lg hover:bg-secondary/60 transition-colors">
+                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-1 -mt-0.5">
+                      <button onClick={handlePrevYear} className="p-1 rounded-lg hover:bg-secondary/60 transition-colors">
+                        <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground/60" />
+                      </button>
+                      <span className="text-xs font-semibold text-muted-foreground min-w-[40px] text-center">
+                        {wheelYear}
+                      </span>
+                      <button onClick={handleNextYear} className="p-1 rounded-lg hover:bg-secondary/60 transition-colors">
+                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60" />
+                      </button>
+                    </div>
+                    <div className="h-5 flex items-center">
+                      {!isToday && (
+                        <button
+                          onClick={handleGoToday}
+                          className="px-3 py-0.5 rounded-md text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+                        >
+                          {t('common.today')}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-1">
                     <ProgressWheel
                       percent={monthData.percent}
@@ -329,18 +363,18 @@ const GoalsSection = () => {
                   </div>
 
                   <div className="flex flex-col items-center text-center pt-2 border-t border-border/30">
-                    <TargetIcon className="w-5 h-5 mb-1.5" />
-                    <p className="text-xl font-bold text-foreground">
+                    <TargetIcon className="w-5 h-5 mb-1" />
+                    <p className="text-lg font-bold text-foreground">
                       {primaryGoal.inputTarget} {t('goals.sessionsPer')} {periodLabel}
                     </p>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground mt-2">
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                       <span><span className="font-semibold text-foreground text-base">{Math.round(weekTarget * 10) / 10}</span> {t('goals.perWeek')}</span>
                       <span className="text-border">·</span>
                       <span><span className="font-semibold text-foreground text-base">{Math.round(monthTarget * 10) / 10}</span> {t('goals.perMonth')}</span>
                       <span className="text-border">·</span>
                       <span><span className="font-semibold text-foreground text-base">{Math.round(yearTarget)}</span> {t('goals.perYear')}</span>
                     </div>
-                    <div className="flex gap-2 mt-2">
+                    <div className="flex gap-2 mt-1">
                       <button onClick={() => setShowPrimaryForm(true)} className="px-3 py-1 rounded-md hover:bg-secondary transition-colors text-xs text-muted-foreground">
                         {t('goals.edit')}
                       </button>
