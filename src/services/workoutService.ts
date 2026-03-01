@@ -9,13 +9,25 @@ function loadSessions(): WorkoutSession[] {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) return JSON.parse(stored);
   } catch { /* ignore */ }
-  // First run: seed with mock data
   saveSessions(mockSessions);
   return [...mockSessions];
 }
 
 function saveSessions(sessions: WorkoutSession[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+}
+
+function computeStats(subset: WorkoutSession[]): WeeklyStats {
+  const sessionsByType = {} as Record<SessionType, number>;
+  allSessionTypes.forEach(t => { sessionsByType[t] = 0; });
+  subset.forEach(s => { sessionsByType[s.type]++; });
+  return {
+    totalSessions: subset.length,
+    totalMinutes: subset.reduce((sum, s) => sum + s.durationMinutes, 0),
+    totalDistance: subset.reduce((sum, s) => sum + (s.distance || 0), 0),
+    totalElevation: subset.reduce((sum, s) => sum + (s.elevationGain || 0), 0),
+    sessionsByType,
+  };
 }
 
 let sessions: WorkoutSession[] = loadSessions();
@@ -38,10 +50,7 @@ export const workoutService = {
   },
 
   add(session: Omit<WorkoutSession, 'id'>): WorkoutSession {
-    const newSession: WorkoutSession = {
-      ...session,
-      id: crypto.randomUUID(),
-    };
+    const newSession: WorkoutSession = { ...session, id: crypto.randomUUID() };
     sessions = [newSession, ...sessions];
     saveSessions(sessions);
     return newSession;
@@ -80,18 +89,12 @@ export const workoutService = {
   getWeeklyStats(): WeeklyStats {
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const weekSessions = sessions.filter(s => new Date(s.date) >= weekAgo);
+    return computeStats(sessions.filter(s => new Date(s.date) >= weekAgo));
+  },
 
-    const sessionsByType = {} as Record<SessionType, number>;
-    allSessionTypes.forEach(t => { sessionsByType[t] = 0; });
-    weekSessions.forEach(s => { sessionsByType[s.type]++; });
-
-    return {
-      totalSessions: weekSessions.length,
-      totalMinutes: weekSessions.reduce((sum, s) => sum + s.durationMinutes, 0),
-      totalDistance: weekSessions.reduce((sum, s) => sum + (s.distance || 0), 0),
-      totalElevation: weekSessions.reduce((sum, s) => sum + (s.elevationGain || 0), 0),
-      sessionsByType,
-    };
+  getMonthlyStats(): WeeklyStats {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    return computeStats(sessions.filter(s => new Date(s.date) >= monthStart));
   },
 };

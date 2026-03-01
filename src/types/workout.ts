@@ -77,3 +77,13 @@ export interface ExtraGoal {
   showOnHome?: boolean;
   createdAt: string;
 }
+
+export type HealthEventType = 'sickness' | 'injury';
+
+export interface HealthEvent {
+  id: string;
+  type: HealthEventType;
+  dateFrom: string; // ISO date
+  dateTo?: string;  // ISO date
+  notes?: string;
+}

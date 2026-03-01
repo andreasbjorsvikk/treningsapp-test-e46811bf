@@ -7,9 +7,10 @@ import DayDrawer from '@/components/DayDrawer';
 
 interface MiniCalendarProps {
   sessions: WorkoutSession[];
+  onClick?: () => void;
 }
 
-const MiniCalendar = ({ sessions }: MiniCalendarProps) => {
+const MiniCalendar = ({ sessions, onClick }: MiniCalendarProps) => {
   const { settings } = useSettings();
   const { t } = useTranslation();
   const isDark = settings.darkMode;
@@ -75,7 +76,7 @@ const MiniCalendar = ({ sessions }: MiniCalendarProps) => {
 
   return (
     <>
-      <div className="glass-card rounded-xl p-2.5">
+      <div className="glass-card rounded-xl p-2.5 cursor-pointer" onClick={onClick}>
         <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 text-center">
           {monthLabel}
         </div>
