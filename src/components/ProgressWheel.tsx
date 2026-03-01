@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, ReactNode } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ProgressWheelProps {
   percent: number;
@@ -27,13 +28,6 @@ function getPaceColor(diff: number): { main: string; light: string } {
   return { main: 'hsl(0, 65%, 48%)', light: 'hsl(0, 70%, 62%)' };
 }
 
-function getPaceLabel(diff: number): string {
-  const rounded = Math.round(Math.abs(diff));
-  if (Math.abs(diff) < 0.5) return 'Du er i rute';
-  if (diff > 0) return `${rounded} ${rounded === 1 ? 'økt' : 'økter'} foran skjema`;
-  return `${rounded} ${rounded === 1 ? 'økt' : 'økter'} bak skjema`;
-}
-
 function easeOutCubic(t: number): number {
   return 1 - Math.pow(1 - t, 3);
 }
@@ -42,6 +36,8 @@ const ProgressWheel = ({
   percent, current, target, unit, label, title, titleOverride,
   hasGoal, onClick, expectedFraction, paceDiff, showPaceLabel, compact,
 }: ProgressWheelProps) => {
+  const { t } = useTranslation();
+
   const RADIUS = compact ? 50 : 70;
   const STROKE = compact ? 9 : 12;
   const PADDING = compact ? 12 : 18;
@@ -108,6 +104,15 @@ const ProgressWheel = ({
   const safeId = (label || title || 'wheel').replace(/\s+/g, '-') + '-' + Math.random().toString(36).slice(2, 6);
   const rotation = `rotate(-90 ${CENTER} ${CENTER})`;
   const markerAngle = expectedFraction != null ? expectedFraction * 360 : null;
+
+  // Pace label
+  const getPaceLabel = (d: number): string => {
+    const rounded = Math.round(Math.abs(d));
+    if (Math.abs(d) < 0.5) return t('wheel.onTrack');
+    const unitWord = rounded === 1 ? t('wheel.session') : t('wheel.sessions');
+    if (d > 0) return t('wheel.ahead', { n: rounded, unit: unitWord });
+    return t('wheel.behind', { n: rounded, unit: unitWord });
+  };
 
   const renderMarker = () => {
     if (!hasGoal || markerAngle == null || isGold) return null;
@@ -242,7 +247,7 @@ const ProgressWheel = ({
         ) : (
           <text x={CENTER} y={CENTER} textAnchor="middle" dominantBaseline="central"
             className="font-display font-medium" fontSize={compact ? 10 : 13} fill="hsl(var(--muted-foreground))">
-            Sett mål
+            {t('wheel.setGoal')}
           </text>
         )}
       </svg>

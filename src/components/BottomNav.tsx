@@ -1,4 +1,5 @@
 import { Home, CalendarDays, Dumbbell, Users, Settings } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export type TabId = 'hjem' | 'kalender' | 'trening' | 'fellesskap' | 'settings';
 export type TrainingSubTab = 'statistikk' | 'historikk' | 'mål';
@@ -8,18 +9,20 @@ interface BottomNavProps {
   onNavigate: (tab: TabId) => void;
 }
 
-const tabs: { id: TabId; label: string; icon: typeof Home }[] = [
-  { id: 'hjem', label: 'Hjem', icon: Home },
-  { id: 'kalender', label: 'Kalender', icon: CalendarDays },
-  { id: 'trening', label: 'Trening', icon: Dumbbell },
-  { id: 'fellesskap', label: 'Fellesskap', icon: Users },
+const tabConfig: { id: TabId; labelKey: string; icon: typeof Home }[] = [
+  { id: 'hjem', labelKey: 'nav.home', icon: Home },
+  { id: 'kalender', labelKey: 'nav.calendar', icon: CalendarDays },
+  { id: 'trening', labelKey: 'nav.training', icon: Dumbbell },
+  { id: 'fellesskap', labelKey: 'nav.community', icon: Users },
 ];
 
 const BottomNav = ({ active, onNavigate }: BottomNavProps) => {
+  const { t } = useTranslation();
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 glass-card border-t border-border/50 lg:bottom-auto lg:top-0 lg:border-t-0 lg:border-b">
       <div className="flex items-center justify-between px-2 lg:container lg:justify-start lg:gap-1 lg:px-4">
-        {tabs.map(tab => {
+        {tabConfig.map(tab => {
           const Icon = tab.icon;
           const isActive = active === tab.id;
           return (
@@ -31,7 +34,7 @@ const BottomNav = ({ active, onNavigate }: BottomNavProps) => {
               }`}
             >
               <Icon className="w-5 h-5" />
-              <span className="text-[10px] font-medium lg:text-sm">{tab.label}</span>
+              <span className="text-[10px] font-medium lg:text-sm">{t(tab.labelKey)}</span>
             </button>
           );
         })}
@@ -43,7 +46,7 @@ const BottomNav = ({ active, onNavigate }: BottomNavProps) => {
           }`}
         >
           <Settings className="w-4 h-4 lg:w-5 lg:h-5" />
-          <span className="text-[10px] font-medium lg:text-sm">Innst.</span>
+          <span className="text-[10px] font-medium lg:text-sm">{t('nav.settings')}</span>
         </button>
       </div>
     </nav>

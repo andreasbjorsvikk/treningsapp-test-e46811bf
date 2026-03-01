@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Home } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import TargetIcon from '@/components/TargetIcon';
 import { ExtraGoal, PrimaryGoal } from '@/types/workout';
@@ -12,13 +12,12 @@ import PrimaryGoalForm from '@/components/PrimaryGoalForm';
 import DraggableGoalGrid from '@/components/DraggableGoalGrid';
 import ProgressWheel from '@/components/ProgressWheel';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-
-const monthNames = [
-  'Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni',
-  'Juli', 'August', 'September', 'Oktober', 'November', 'Desember',
-];
+import { useSettings } from '@/contexts/SettingsContext';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const GoalsSection = () => {
+  const { settings, updateSettings } = useSettings();
+  const { t } = useTranslation();
   const [showExtraForm, setShowExtraForm] = useState(false);
   const [showPrimaryForm, setShowPrimaryForm] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -40,7 +39,7 @@ const GoalsSection = () => {
   const yearTarget = primaryGoal ? getProratedTarget(primaryGoal, 'year') : 0;
 
   const periodLabel = primaryGoal
-    ? primaryGoal.inputPeriod === 'week' ? 'uke' : primaryGoal.inputPeriod === 'month' ? 'måned' : 'år'
+    ? t(`goals.period.${primaryGoal.inputPeriod}`)
     : '';
 
   // Navigable month data
@@ -59,8 +58,8 @@ const GoalsSection = () => {
     const expectedFraction = isCurrentMonth ? now.getDate() / daysInMonth : 1;
     const expected = target * expectedFraction;
     const diff = current - expected;
-    return { current, target: Math.round(target * 10) / 10, percent, unit: 'økter', expectedFraction, diff };
-  }, [allSessions, primaryGoal, wheelMonth, wheelYear]);
+    return { current, target: Math.round(target * 10) / 10, percent, unit: t('metric.sessions'), expectedFraction, diff };
+  }, [allSessions, primaryGoal, wheelMonth, wheelYear, t]);
 
   // Navigable year data
   const yearData = useMemo(() => {
@@ -83,8 +82,8 @@ const GoalsSection = () => {
     const expected = target * fractionElapsed;
     const diff = current - expected;
     const percent = target === 0 ? 0 : (current / target) * 100;
-    return { current, target: Math.round(target), diff, expected, unit: 'økter', expectedFraction: fractionElapsed, percent };
-  }, [allSessions, primaryGoal, wheelYear]);
+    return { current, target: Math.round(target), diff, expected, unit: t('metric.sessions'), expectedFraction: fractionElapsed, percent };
+  }, [allSessions, primaryGoal, wheelYear, t]);
 
   const handlePrevMonth = () => {
     if (wheelMonth === 0) { setWheelMonth(11); setWheelYear(y => y - 1); }
@@ -151,15 +150,19 @@ const GoalsSection = () => {
     setRefresh(r => r + 1);
   };
 
-  // Inline nav for wheel titles
+  const handleTogglePrimaryWheelsHome = () => {
+    updateSettings({ showPrimaryWheelsOnHome: !settings.showPrimaryWheelsOnHome });
+  };
+
+  // Inline nav for wheel titles — bigger text and arrows
   const WheelTitle = ({ label, onPrev, onNext }: { label: string; onPrev: () => void; onNext: () => void }) => (
-    <div className="flex items-center gap-0.5">
-      <button onClick={(e) => { e.stopPropagation(); onPrev(); }} className="p-0.5 rounded hover:bg-secondary/60 transition-colors">
-        <ChevronLeft className="w-3 h-3 text-muted-foreground" />
+    <div className="flex items-center gap-1">
+      <button onClick={(e) => { e.stopPropagation(); onPrev(); }} className="p-1 rounded hover:bg-secondary/60 transition-colors">
+        <ChevronLeft className="w-5 h-5 text-muted-foreground" />
       </button>
-      <span className="text-[10px] font-semibold text-muted-foreground">{label}</span>
-      <button onClick={(e) => { e.stopPropagation(); onNext(); }} className="p-0.5 rounded hover:bg-secondary/60 transition-colors">
-        <ChevronRight className="w-3 h-3 text-muted-foreground" />
+      <span className="text-sm font-bold text-foreground">{label}</span>
+      <button onClick={(e) => { e.stopPropagation(); onNext(); }} className="p-1 rounded hover:bg-secondary/60 transition-colors">
+        <ChevronRight className="w-5 h-5 text-muted-foreground" />
       </button>
     </div>
   );
@@ -169,7 +172,7 @@ const GoalsSection = () => {
       {/* Primary Goal */}
       <div className="space-y-3">
         <h3 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-          Generelt treningsmål
+          {t('goals.generalGoal')}
         </h3>
 
         {showPrimaryForm ? (
@@ -179,11 +182,24 @@ const GoalsSection = () => {
             onCancel={() => setShowPrimaryForm(false)}
           />
         ) : primaryGoal ? (
-          <div className="glass-card rounded-lg p-4 space-y-0">
+          <div className="glass-card rounded-lg p-4 space-y-0 relative">
+            {/* Pin-to-home button */}
+            <button
+              onClick={handleTogglePrimaryWheelsHome}
+              className={`absolute bottom-2 left-2 p-1 rounded-md transition-colors z-10 ${
+                settings.showPrimaryWheelsOnHome
+                  ? 'text-primary bg-primary/10'
+                  : 'text-muted-foreground/40 hover:text-muted-foreground'
+              }`}
+              title={settings.showPrimaryWheelsOnHome ? t('goals.removeFromHome') : t('goals.showOnHome')}
+            >
+              <Home className="w-3.5 h-3.5" />
+            </button>
+
             {/* Desktop/Tablet: wheels flanking the text info */}
-            <div className="hidden md:flex md:items-center md:gap-4">
+            <div className="hidden md:flex md:items-center md:justify-center md:gap-6">
               {/* Left wheel - month */}
-              <div className="flex-shrink-0 w-36">
+              <div className="flex-shrink-0">
                 <ProgressWheel
                   percent={monthData.percent}
                   current={monthData.current}
@@ -192,7 +208,7 @@ const GoalsSection = () => {
                   title=""
                   titleOverride={
                     <WheelTitle
-                      label={`${monthNames[wheelMonth].slice(0, 3)} ${wheelYear}`}
+                      label={`${t(`month.short.${wheelMonth}`)} ${wheelYear}`}
                       onPrev={handlePrevMonth}
                       onNext={handleNextMonth}
                     />
@@ -200,35 +216,34 @@ const GoalsSection = () => {
                   hasGoal={true}
                   expectedFraction={monthData.expectedFraction}
                   paceDiff={monthData.diff}
-                  compact
                 />
               </div>
 
-              {/* Center text info */}
-              <div className="flex-1 flex flex-col items-center text-center py-2">
+              {/* Center text info — vertically centered */}
+              <div className="flex flex-col items-center text-center justify-center py-4">
                 <TargetIcon className="w-5 h-5 mb-1.5" />
                 <p className="text-xl font-bold text-foreground">
-                  {primaryGoal.inputTarget} økter per {periodLabel}
+                  {primaryGoal.inputTarget} {t('goals.sessionsPer')} {periodLabel}
                 </p>
                 <div className="flex items-center gap-3 text-sm text-muted-foreground mt-2">
-                  <span><span className="font-semibold text-foreground text-base">{Math.round(weekTarget * 10) / 10}</span> /uke</span>
+                  <span><span className="font-semibold text-foreground text-base">{Math.round(weekTarget * 10) / 10}</span> {t('goals.perWeek')}</span>
                   <span className="text-border">·</span>
-                  <span><span className="font-semibold text-foreground text-base">{Math.round(monthTarget * 10) / 10}</span> /mnd</span>
+                  <span><span className="font-semibold text-foreground text-base">{Math.round(monthTarget * 10) / 10}</span> {t('goals.perMonth')}</span>
                   <span className="text-border">·</span>
-                  <span><span className="font-semibold text-foreground text-base">{Math.round(yearTarget)}</span> /år</span>
+                  <span><span className="font-semibold text-foreground text-base">{Math.round(yearTarget)}</span> {t('goals.perYear')}</span>
                 </div>
                 <div className="flex gap-2 mt-2">
                   <button onClick={() => setShowPrimaryForm(true)} className="px-3 py-1 rounded-md hover:bg-secondary transition-colors text-xs text-muted-foreground">
-                    Endre
+                    {t('goals.edit')}
                   </button>
                   <button onClick={() => setShowDeletePrimaryConfirm(true)} className="px-3 py-1 rounded-md hover:bg-destructive/10 transition-colors text-xs text-destructive">
-                    Slett
+                    {t('goals.delete')}
                   </button>
                 </div>
               </div>
 
               {/* Right wheel - year */}
-              <div className="flex-shrink-0 w-36">
+              <div className="flex-shrink-0">
                 <ProgressWheel
                   percent={yearData.percent}
                   current={yearData.current}
@@ -245,7 +260,6 @@ const GoalsSection = () => {
                   hasGoal={true}
                   expectedFraction={yearData.expectedFraction}
                   paceDiff={yearData.diff}
-                  compact
                 />
               </div>
             </div>
@@ -255,21 +269,21 @@ const GoalsSection = () => {
               <div className="flex flex-col items-center text-center">
                 <TargetIcon className="w-5 h-5 mb-1.5" />
                 <p className="text-xl font-bold text-foreground">
-                  {primaryGoal.inputTarget} økter per {periodLabel}
+                  {primaryGoal.inputTarget} {t('goals.sessionsPer')} {periodLabel}
                 </p>
                 <div className="flex items-center gap-3 text-sm text-muted-foreground mt-2">
-                  <span><span className="font-semibold text-foreground text-base">{Math.round(weekTarget * 10) / 10}</span> /uke</span>
+                  <span><span className="font-semibold text-foreground text-base">{Math.round(weekTarget * 10) / 10}</span> {t('goals.perWeek')}</span>
                   <span className="text-border">·</span>
-                  <span><span className="font-semibold text-foreground text-base">{Math.round(monthTarget * 10) / 10}</span> /mnd</span>
+                  <span><span className="font-semibold text-foreground text-base">{Math.round(monthTarget * 10) / 10}</span> {t('goals.perMonth')}</span>
                   <span className="text-border">·</span>
-                  <span><span className="font-semibold text-foreground text-base">{Math.round(yearTarget)}</span> /år</span>
+                  <span><span className="font-semibold text-foreground text-base">{Math.round(yearTarget)}</span> {t('goals.perYear')}</span>
                 </div>
                 <div className="flex gap-2 mt-2">
                   <button onClick={() => setShowPrimaryForm(true)} className="px-3 py-1 rounded-md hover:bg-secondary transition-colors text-xs text-muted-foreground">
-                    Endre
+                    {t('goals.edit')}
                   </button>
                   <button onClick={() => setShowDeletePrimaryConfirm(true)} className="px-3 py-1 rounded-md hover:bg-destructive/10 transition-colors text-xs text-destructive">
-                    Slett
+                    {t('goals.delete')}
                   </button>
                 </div>
               </div>
@@ -283,7 +297,7 @@ const GoalsSection = () => {
                   title=""
                   titleOverride={
                     <WheelTitle
-                      label={`${monthNames[wheelMonth].slice(0, 3)} ${wheelYear}`}
+                      label={`${t(`month.short.${wheelMonth}`)} ${wheelYear}`}
                       onPrev={handlePrevMonth}
                       onNext={handleNextMonth}
                     />
@@ -291,7 +305,6 @@ const GoalsSection = () => {
                   hasGoal={true}
                   expectedFraction={monthData.expectedFraction}
                   paceDiff={monthData.diff}
-                  compact
                 />
                 <ProgressWheel
                   percent={yearData.percent}
@@ -309,7 +322,6 @@ const GoalsSection = () => {
                   hasGoal={true}
                   expectedFraction={yearData.expectedFraction}
                   paceDiff={yearData.diff}
-                  compact
                 />
               </div>
             </div>
@@ -320,7 +332,7 @@ const GoalsSection = () => {
             className="w-full gradient-energy text-primary-foreground"
           >
             <TargetIcon className="w-4 h-4 mr-1" />
-            Sett ditt treningsmål
+            {t('goals.setGoal')}
           </Button>
         )}
       </div>
@@ -328,7 +340,7 @@ const GoalsSection = () => {
       {/* Extra Goals */}
       <div className="space-y-3">
         <h3 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-          Andre mål
+          {t('goals.otherGoals')}
         </h3>
 
         {!showExtraForm && (
@@ -338,7 +350,7 @@ const GoalsSection = () => {
             className="w-full"
           >
             <Plus className="w-4 h-4 mr-1" />
-            Legg til mål
+            {t('goals.addGoal')}
           </Button>
         )}
 
@@ -352,7 +364,7 @@ const GoalsSection = () => {
 
         {extraGoals.length === 0 && !showExtraForm ? (
           <p className="text-center py-6 text-sm text-muted-foreground">
-            Ingen andre mål ennå.
+            {t('goals.noGoalsYet')}
           </p>
         ) : (
           <DraggableGoalGrid
@@ -370,7 +382,7 @@ const GoalsSection = () => {
       <Dialog open={showEditDialog} onOpenChange={(open) => { if (!open) { setShowEditDialog(false); setEditGoal(undefined); } }}>
         <DialogContent className="max-w-[min(calc(100vw-2rem),26rem)] p-4 overflow-hidden">
           <DialogHeader>
-            <DialogTitle>Rediger mål</DialogTitle>
+            <DialogTitle>{t('goalForm.editGoal')}</DialogTitle>
           </DialogHeader>
           {editGoal && (
             <GoalForm
@@ -387,15 +399,15 @@ const GoalsSection = () => {
       <AlertDialog open={showDeletePrimaryConfirm} onOpenChange={setShowDeletePrimaryConfirm}>
         <AlertDialogContent className="max-w-[min(calc(100vw-2rem),20rem)]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Slett treningsmål</AlertDialogTitle>
+            <AlertDialogTitle>{t('goals.deleteGoalTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på at du vil slette det generelle treningsmålet? Denne handlingen kan ikke angres.
+              {t('goals.deleteGoalDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={() => { handleDeletePrimary(); setShowDeletePrimaryConfirm(false); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Slett
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

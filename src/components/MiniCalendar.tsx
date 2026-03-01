@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { WorkoutSession } from '@/types/workout';
 import { getActivityColors } from '@/utils/activityColors';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useTranslation } from '@/i18n/useTranslation';
 import DayDrawer from '@/components/DayDrawer';
 
 interface MiniCalendarProps {
@@ -10,6 +11,7 @@ interface MiniCalendarProps {
 
 const MiniCalendar = ({ sessions }: MiniCalendarProps) => {
   const { settings } = useSettings();
+  const { t } = useTranslation();
   const isDark = settings.darkMode;
   const sundayStart = settings.firstDayOfWeek === 'sunday';
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
@@ -38,10 +40,10 @@ const MiniCalendar = ({ sessions }: MiniCalendarProps) => {
     }
 
     const wds = sundayStart
-      ? ['S', 'M', 'T', 'O', 'T', 'F', 'L']
-      : ['M', 'T', 'O', 'T', 'F', 'L', 'S'];
+      ? [t('weekday.sun'), t('weekday.mon'), t('weekday.tue'), t('weekday.wed'), t('weekday.thu'), t('weekday.fri'), t('weekday.sat')]
+      : [t('weekday.mon'), t('weekday.tue'), t('weekday.wed'), t('weekday.thu'), t('weekday.fri'), t('weekday.sat'), t('weekday.sun')];
 
-    const label = now.toLocaleString('nb-NO', { month: 'long' }).replace(/^./, c => c.toUpperCase());
+    const label = t(`month.${month}`);
 
     return { weeks: weekRows, monthLabel: label, weekdays: wds };
   }, [sessions, sundayStart]);

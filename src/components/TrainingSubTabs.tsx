@@ -1,20 +1,23 @@
 import { TrainingSubTab } from '@/components/BottomNav';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TrainingSubTabsProps {
   active: TrainingSubTab;
   onChange: (tab: TrainingSubTab) => void;
 }
 
-const tabs: { id: TrainingSubTab; label: string }[] = [
-  { id: 'statistikk', label: 'Statistikk' },
-  { id: 'historikk', label: 'Historikk' },
-  { id: 'mål', label: 'Mål' },
+const tabConfig: { id: TrainingSubTab; labelKey: string }[] = [
+  { id: 'statistikk', labelKey: 'training.statistics' },
+  { id: 'historikk', labelKey: 'training.history' },
+  { id: 'mål', labelKey: 'training.goals' },
 ];
 
 const TrainingSubTabs = ({ active, onChange }: TrainingSubTabsProps) => {
+  const { t } = useTranslation();
+
   return (
     <div className="relative flex rounded-lg bg-muted p-1 mb-4">
-      {tabs.map(tab => (
+      {tabConfig.map(tab => (
         <button
           key={tab.id}
           onClick={() => onChange(tab.id)}
@@ -24,7 +27,7 @@ const TrainingSubTabs = ({ active, onChange }: TrainingSubTabsProps) => {
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          {tab.label}
+          {t(tab.labelKey)}
         </button>
       ))}
     </div>
