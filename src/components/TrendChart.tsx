@@ -149,7 +149,7 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
           <BarChart
             data={hasData ? data : safeData}
             barCategoryGap={isMobile ? '12%' : '20%'}
-            margin={{ top: 20, right: 4, left: -4, bottom: 0 }}
+            margin={{ top: 28, right: 4, left: -4, bottom: 0 }}
           >
             <defs>
               {/* Gradient definitions for each type */}
@@ -195,7 +195,7 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
               label={{ 
                 value: metricUnitLabel[metric], 
                 position: 'top', 
-                offset: -4,
+                offset: -14,
                 style: { fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontWeight: 600, textAnchor: 'start' }
               }}
             />
@@ -205,16 +205,23 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
                 cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2, radius: 6 }} 
               />
             )}
-            {hasData && typeOrder.map((type, i) => (
-              <Bar
-                key={type}
-                dataKey={type}
-                stackId="stack"
-                fill={`url(#grad-${uniqueId}-${type})`}
-                radius={i === typeOrder.length - 1 ? [8, 8, 0, 0] : [0, 0, 0, 0]}
-                style={{ filter: `url(#barShadow-${uniqueId})` }}
-              />
-            ))}
+            {hasData && typeOrder.map((type, i) => {
+              const baseColor = getTypeColor(type);
+              return (
+                <Bar
+                  key={type}
+                  dataKey={type}
+                  stackId="stack"
+                  fill={baseColor}
+                  radius={i === typeOrder.length - 1 ? [8, 8, 0, 0] : [0, 0, 0, 0]}
+                  style={{ filter: `url(#barShadow-${uniqueId})` }}
+                >
+                  {data.map((_, idx) => (
+                    <Cell key={idx} fill={`url(#grad-${uniqueId}-${type})`} />
+                  ))}
+                </Bar>
+              );
+            })}
           </BarChart>
         </ResponsiveContainer>
       </div>

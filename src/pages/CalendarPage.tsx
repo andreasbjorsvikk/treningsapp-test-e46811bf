@@ -162,9 +162,13 @@ const CalendarPage = () => {
   // the infinite scroll handler was firing first (scrollTop=0 < 300) and
   // adding extra months at the top, shifting the target position.
   useEffect(() => {
-    // Scroll to current month once layout is ready, then unlock infinite scroll.
-    // Use a single rAF + short delay instead of many cascading timeouts to avoid
-    // fighting with user scroll.
+    // Always reset scroll first to avoid inheriting scroll from other pages
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
+    
+    // Scroll to current month once layout is ready, offset so ~2 rows of
+    // the previous month are visible above the current month header.
     const timer = setTimeout(() => {
       requestAnimationFrame(() => {
         if (currentMonthRef.current && scrollRef.current) {
@@ -173,7 +177,8 @@ const CalendarPage = () => {
           const containerRect = container.getBoundingClientRect();
           const targetRect = target.getBoundingClientRect();
           const scrollOffset = targetRect.top - containerRect.top + container.scrollTop;
-          container.scrollTop = scrollOffset;
+          // Offset back ~120px so 2 rows of previous month are visible
+          container.scrollTop = Math.max(0, scrollOffset - 120);
         }
         // Unlock infinite scroll after a brief pause so the position stabilises
         setTimeout(() => {
