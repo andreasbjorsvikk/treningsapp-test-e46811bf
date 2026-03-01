@@ -15,6 +15,7 @@ interface ProgressWheelProps {
   paceDiff?: number;
   showPaceLabel?: boolean;
   compact?: boolean;
+  naked?: boolean;
 }
 
 const ANIM_DURATION = 1200;
@@ -34,11 +35,11 @@ function easeOutCubic(t: number): number {
 
 const ProgressWheel = ({
   percent, current, target, unit, label, title, titleOverride,
-  hasGoal, onClick, expectedFraction, paceDiff, showPaceLabel, compact,
+  hasGoal, onClick, expectedFraction, paceDiff, showPaceLabel, compact, naked,
 }: ProgressWheelProps) => {
   const { t } = useTranslation();
 
-  const RADIUS = compact ? 50 : 70;
+  const RADIUS = compact ? 50 : 62;
   const STROKE = compact ? 9 : 12;
   const PADDING = compact ? 12 : 18;
   const SIZE = (RADIUS + STROKE) * 2 + PADDING * 2;
@@ -140,7 +141,7 @@ const ProgressWheel = ({
   return (
     <Wrapper
       onClick={onClick}
-      className={`flex flex-col items-center gap-0.5 ${compact ? 'p-1 pt-1.5' : 'p-2 pt-3'} rounded-2xl glass-card shadow-md hover:shadow-xl transition-all ${onClick ? 'cursor-pointer' : ''} overflow-visible flex-1 min-w-0`}
+      className={`flex flex-col items-center gap-0.5 ${naked ? 'p-0' : compact ? 'p-1 pt-1.5 rounded-2xl glass-card shadow-md hover:shadow-xl' : 'p-2 pt-3 rounded-2xl glass-card shadow-md hover:shadow-xl'} transition-all ${onClick ? 'cursor-pointer' : ''} overflow-visible flex-1 min-w-0`}
       aria-label={label}
     >
       {titleOverride ? (
