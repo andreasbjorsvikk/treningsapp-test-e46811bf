@@ -87,11 +87,11 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{session ? t('workout.editSession') : t('workout.newSession')}</DialogTitle>
+        <DialogHeader className="items-center">
+          <DialogTitle className="text-center">{session ? t('workout.editSession') : t('workout.newSession')}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="space-y-1.5">
             <Label>{t('workout.type')}</Label>
             <Select value={type} onValueChange={(v) => setType(v as SessionType)}>
@@ -124,17 +124,17 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
             </Select>
           </div>
 
-          <div className="space-y-1.5">
-            <Label>{t('workout.name')} <span className="text-muted-foreground font-normal">({t('workout.optional')})</span></Label>
+          <div className="space-y-1">
+            <Label>{t('workout.name')}</Label>
             <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t('workout.namePlaceholder')} />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <Label>{t('workout.date')}</Label>
             <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full max-w-full" />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <Label>{t('workout.duration')}</Label>
             <div className="flex gap-2 items-center">
               <Input type="number" min="0" value={hours} onChange={e => setHours(e.target.value)} className="w-20" />
@@ -144,23 +144,26 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
             </div>
           </div>
 
-          {fields.distance && (
-            <div className="space-y-1.5">
-              <Label>{t('workout.distanceKm')} <span className="text-muted-foreground font-normal">({t('workout.optional')})</span></Label>
-              <Input type="number" step="0.1" min="0" value={distance} onChange={e => setDistance(e.target.value)} placeholder="0.0" />
+          {(fields.distance || fields.elevation) && (
+            <div className="grid grid-cols-2 gap-3">
+              {fields.distance && (
+                <div className="space-y-1">
+                  <Label>{t('workout.distance')}</Label>
+                  <Input type="number" step="0.1" min="0" value={distance} onChange={e => setDistance(e.target.value)} placeholder="0.0" />
+                </div>
+              )}
+              {fields.elevation && (
+                <div className="space-y-1">
+                  <Label>{t('workout.elevation')}</Label>
+                  <Input type="number" min="0" value={elevationGain} onChange={e => setElevationGain(e.target.value)} placeholder="0" />
+                </div>
+              )}
             </div>
           )}
 
-          {fields.elevation && (
-            <div className="space-y-1.5">
-              <Label>{t('workout.elevation')} <span className="text-muted-foreground font-normal">({t('workout.optional')})</span></Label>
-              <Input type="number" min="0" value={elevationGain} onChange={e => setElevationGain(e.target.value)} placeholder="0" />
-            </div>
-          )}
-
-          <div className="space-y-1.5">
-            <Label>{t('workout.notes')} <span className="text-muted-foreground font-normal">({t('workout.optional')})</span></Label>
-            <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('workout.notesPlaceholder')} rows={3} />
+          <div className="space-y-1">
+            <Label>{t('workout.notes')}</Label>
+            <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('workout.notesPlaceholder')} rows={2} />
           </div>
         </div>
 

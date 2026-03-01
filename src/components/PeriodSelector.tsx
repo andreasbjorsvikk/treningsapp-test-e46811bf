@@ -43,15 +43,15 @@ const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, on
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-1 bg-secondary rounded-lg p-1">
+      <div className="flex justify-center gap-1">
         {periods.map((p) => (
           <button
             key={p.id}
             onClick={() => onPeriodChange(p.id)}
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+            className={`py-1 px-4 rounded-full text-xs font-medium transition-colors ${
               period === p.id
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary/60 text-muted-foreground hover:text-foreground hover:bg-secondary'
             }`}
           >
             {p.label}
