@@ -69,25 +69,15 @@ export function getActiveGoalForDate(periods: PrimaryGoalPeriod[], date: Date): 
 }
 
 /**
- * Get the target for a specific month, using the goal active at month start.
- * Pro-rates the first month if the goal starts mid-month.
+ * Get the target for a specific month, using the latest goal active during that month.
+ * If a new goal starts mid-month, the full month uses the new goal's target (no pro-rata).
  */
 export function getMonthTarget(periods: PrimaryGoalPeriod[], year: number, month: number): number {
-  const monthStart = new Date(year, month, 1);
-  const goal = getActiveGoalForDate(periods, monthStart);
+  const monthEnd = new Date(year, month + 1, 0); // last day of month
+  const goal = getActiveGoalForDate(periods, monthEnd);
   if (!goal) return 0;
 
-  const fullTarget = convertGoalValue(goal.inputTarget, goal.inputPeriod, 'month');
-  const validFrom = new Date(goal.validFrom);
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  // If goal starts in this exact month, pro-rate
-  if (validFrom.getFullYear() === year && validFrom.getMonth() === month && validFrom.getDate() > 1) {
-    const effectiveDays = daysInMonth - validFrom.getDate() + 1;
-    return Math.round((fullTarget * effectiveDays / daysInMonth) * 10) / 10;
-  }
-
-  return fullTarget;
+  return convertGoalValue(goal.inputTarget, goal.inputPeriod, 'month');
 }
 
 /**
