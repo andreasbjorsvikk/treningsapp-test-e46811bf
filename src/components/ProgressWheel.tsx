@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, ReactNode } from 'react';
 
 interface ProgressWheelProps {
   percent: number;
@@ -7,19 +7,15 @@ interface ProgressWheelProps {
   unit: string;
   label?: string;
   title: string;
+  titleOverride?: ReactNode;
   hasGoal: boolean;
   onClick?: () => void;
   expectedFraction?: number;
   paceDiff?: number;
   showPaceLabel?: boolean;
+  compact?: boolean;
 }
 
-const RADIUS = 70;
-const STROKE = 12;
-const PADDING = 18;
-const SIZE = (RADIUS + STROKE) * 2 + PADDING * 2;
-const CENTER = SIZE / 2;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const ANIM_DURATION = 1200;
 
 function getPaceColor(diff: number): { main: string; light: string } {
@@ -43,9 +39,16 @@ function easeOutCubic(t: number): number {
 }
 
 const ProgressWheel = ({
-  percent, current, target, unit, label, title,
-  hasGoal, onClick, expectedFraction, paceDiff, showPaceLabel,
+  percent, current, target, unit, label, title, titleOverride,
+  hasGoal, onClick, expectedFraction, paceDiff, showPaceLabel, compact,
 }: ProgressWheelProps) => {
+  const RADIUS = compact ? 50 : 70;
+  const STROKE = compact ? 9 : 12;
+  const PADDING = compact ? 12 : 18;
+  const SIZE = (RADIUS + STROKE) * 2 + PADDING * 2;
+  const CENTER = SIZE / 2;
+  const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
   const animRef = useRef<number>();
   const [animatedValue, setAnimatedValue] = useState(0);
   const [showAchievement, setShowAchievement] = useState(false);
@@ -102,11 +105,10 @@ const ProgressWheel = ({
 
   const goldColor = '#D4A843';
   const goldGlow = '#F0D060';
-  const safeId = (label || title).replace(/\s+/g, '-');
+  const safeId = (label || title || 'wheel').replace(/\s+/g, '-') + '-' + Math.random().toString(36).slice(2, 6);
   const rotation = `rotate(-90 ${CENTER} ${CENTER})`;
   const markerAngle = expectedFraction != null ? expectedFraction * 360 : null;
 
-  // Marker: a bold line across the ring with a small dot
   const renderMarker = () => {
     if (!hasGoal || markerAngle == null || isGold) return null;
     const rad = ((markerAngle - 90) * Math.PI) / 180;
@@ -122,23 +124,28 @@ const ProgressWheel = ({
     return (
       <g>
         <line x1={x1} y1={y1} x2={x2} y2={y2}
-          stroke="hsl(var(--foreground))" strokeWidth={3} strokeLinecap="round" opacity={0.85} />
-        <circle cx={dx} cy={dy} r={3} fill="hsl(var(--foreground))" opacity={0.85} />
+          stroke="hsl(var(--foreground))" strokeWidth={compact ? 2 : 3} strokeLinecap="round" opacity={0.85} />
+        <circle cx={dx} cy={dy} r={compact ? 2 : 3} fill="hsl(var(--foreground))" opacity={0.85} />
       </g>
     );
   };
 
+  const Wrapper = onClick ? 'button' : 'div';
+
   return (
-    <button
+    <Wrapper
       onClick={onClick}
-      className="flex flex-col items-center gap-0.5 p-2 pt-3 rounded-2xl glass-card shadow-md hover:shadow-xl transition-all cursor-pointer overflow-visible flex-1 min-w-0"
+      className={`flex flex-col items-center gap-0.5 ${compact ? 'p-1 pt-1.5' : 'p-2 pt-3'} rounded-2xl glass-card shadow-md hover:shadow-xl transition-all ${onClick ? 'cursor-pointer' : ''} overflow-visible flex-1 min-w-0`}
       aria-label={label}
     >
-      <span className="text-xl font-bold text-foreground mb-1">{title}</span>
+      {titleOverride ? (
+        <div className="mb-0.5">{titleOverride}</div>
+      ) : title ? (
+        <span className={`${compact ? 'text-sm' : 'text-xl'} font-bold text-foreground mb-1`}>{title}</span>
+      ) : null}
 
       <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} className="overflow-visible">
         <defs>
-          {/* Gradient fill for the progress ring */}
           <linearGradient id={`ring-grad-${safeId}`} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor={paceColors?.light ?? mainColor} />
             <stop offset="100%" stopColor={mainColor} />
@@ -170,14 +177,12 @@ const ProgressWheel = ({
             </filter>
           )}
 
-          {/* Subtle inner shadow on the background track */}
           <filter id={`track-shadow-${safeId}`} x="-10%" y="-10%" width="120%" height="120%">
             <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="shadow" />
             <feOffset dx="0" dy="1" result="offset" />
             <feComposite in="SourceGraphic" in2="offset" operator="over" />
           </filter>
 
-          {/* Glow behind the progress ring */}
           <filter id={`ring-glow-${safeId}`} x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur stdDeviation="2" result="blur" />
             <feMerge>
@@ -187,17 +192,14 @@ const ProgressWheel = ({
           </filter>
         </defs>
 
-        {/* Background track with depth */}
         <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
           stroke="hsl(var(--muted))" strokeWidth={STROKE} opacity={0.2}
           filter={`url(#track-shadow-${safeId})`}
         />
-        {/* Slightly darker inner edge for depth illusion */}
         <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
           stroke="hsl(var(--muted-foreground))" strokeWidth={1} opacity={0.06}
         />
 
-        {/* Achievement pulse */}
         {showAchievement && (
           <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
             stroke="hsl(142, 55%, 45%)" strokeWidth={STROKE + 4} opacity={0}
@@ -206,7 +208,6 @@ const ProgressWheel = ({
           />
         )}
 
-        {/* Progress ring with gradient + glow */}
         <circle
           cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
           stroke={isGold ? `url(#gold-grad-${safeId})` : `url(#ring-grad-${safeId})`}
@@ -218,7 +219,6 @@ const ProgressWheel = ({
           filter={isGold ? `url(#gold-glow-${safeId})` : `url(#ring-glow-${safeId})`}
         />
 
-        {/* Gold overachieve pulse */}
         {isGold && (
           <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
             stroke={goldGlow} strokeWidth={STROKE + 4}
@@ -231,26 +231,24 @@ const ProgressWheel = ({
           />
         )}
 
-        {/* Expected progress marker — triangle pointer */}
         {renderMarker()}
 
-        {/* Center text */}
         {hasGoal ? (
           <text x={CENTER} y={CENTER} textAnchor="middle" dominantBaseline="central"
-            className="font-display font-bold" fontSize="22"
+            className="font-display font-bold" fontSize={compact ? 16 : 22}
             fill={isGold ? goldColor : isComplete ? 'hsl(142, 50%, 48%)' : 'hsl(var(--foreground))'}>
             {displayPercent}%
           </text>
         ) : (
           <text x={CENTER} y={CENTER} textAnchor="middle" dominantBaseline="central"
-            className="font-display font-medium" fontSize="13" fill="hsl(var(--muted-foreground))">
+            className="font-display font-medium" fontSize={compact ? 10 : 13} fill="hsl(var(--muted-foreground))">
             Sett mål
           </text>
         )}
       </svg>
 
       {hasGoal && (
-        <span className="text-base font-bold text-foreground tracking-tight">
+        <span className={`${compact ? 'text-xs' : 'text-base'} font-bold text-foreground tracking-tight`}>
           {current} / {target} {unit}
         </span>
       )}
@@ -264,7 +262,7 @@ const ProgressWheel = ({
       {label && !showPaceLabel && (
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
       )}
-    </button>
+    </Wrapper>
   );
 };
 
