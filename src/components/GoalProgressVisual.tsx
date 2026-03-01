@@ -56,7 +56,6 @@ function MountainShape({ fillPct, color, ghostColor, done, uid }: { fillPct: num
       </defs>
       <path d="M32 6 L58 58 H6 Z" fill={ghostColor} opacity={0.15} strokeLinejoin="round" />
       <path d="M32 6 L58 58 H6 Z" fill={color} opacity={done ? 1 : 0.85} clipPath={`url(#mtn-${uid})`} strokeLinejoin="round" />
-      <path d="M32 6 L39 19 H25 Z" fill={color} opacity={done ? 0.7 : 0.5} />
     </>
   );
 }
