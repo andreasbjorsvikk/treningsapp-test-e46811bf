@@ -118,21 +118,25 @@ const ProgressWheel = ({
   const renderMarker = () => {
     if (!hasGoal || markerAngle == null || isGold) return null;
     const rad = ((markerAngle - 90) * Math.PI) / 180;
-    const innerR = RADIUS - STROKE / 2 - 4;
-    const outerR = RADIUS + STROKE / 2 + 4;
-    const x1 = CENTER + innerR * Math.cos(rad);
-    const y1 = CENTER + innerR * Math.sin(rad);
-    const x2 = CENTER + outerR * Math.cos(rad);
-    const y2 = CENTER + outerR * Math.sin(rad);
-    const dotR = RADIUS + STROKE / 2 + 7;
-    const dx = CENTER + dotR * Math.cos(rad);
-    const dy = CENTER + dotR * Math.sin(rad);
+    // Triangle pointing inward, anchored at outer edge of the wheel
+    const tipR = RADIUS - STROKE / 2 - (compact ? 2 : 3);
+    const baseR = RADIUS + STROKE / 2 + (compact ? 5 : 8);
+    const halfBase = compact ? 3 : 4.5;
+    // Tip point (pointing inward)
+    const tx = CENTER + tipR * Math.cos(rad);
+    const ty = CENTER + tipR * Math.sin(rad);
+    // Base points (perpendicular to radius)
+    const perpRad = rad + Math.PI / 2;
+    const bx1 = CENTER + baseR * Math.cos(rad) + halfBase * Math.cos(perpRad);
+    const by1 = CENTER + baseR * Math.sin(rad) + halfBase * Math.sin(perpRad);
+    const bx2 = CENTER + baseR * Math.cos(rad) - halfBase * Math.cos(perpRad);
+    const by2 = CENTER + baseR * Math.sin(rad) - halfBase * Math.sin(perpRad);
     return (
-      <g>
-        <line x1={x1} y1={y1} x2={x2} y2={y2}
-          stroke="hsl(var(--foreground))" strokeWidth={compact ? 2 : 3} strokeLinecap="round" opacity={0.85} />
-        <circle cx={dx} cy={dy} r={compact ? 2 : 3} fill="hsl(var(--foreground))" opacity={0.85} />
-      </g>
+      <polygon
+        points={`${tx},${ty} ${bx1},${by1} ${bx2},${by2}`}
+        fill="hsl(var(--foreground))"
+        opacity={0.8}
+      />
     );
   };
 
@@ -240,11 +244,18 @@ const ProgressWheel = ({
         {renderMarker()}
 
         {hasGoal ? (
-          <text x={CENTER} y={CENTER} textAnchor="middle" dominantBaseline="central"
-            className="font-display font-bold" fontSize={compact ? 16 : 22}
-            fill={isGold ? goldColor : isComplete ? 'hsl(142, 50%, 48%)' : 'hsl(var(--foreground))'}>
-            {displayPercent}%
-          </text>
+          <>
+            <text x={CENTER} y={CENTER - (compact ? 2 : 4)} textAnchor="middle" dominantBaseline="central"
+              className="font-display font-bold" fontSize={compact ? 14 : 20}
+              fill={isGold ? goldColor : isComplete ? 'hsl(142, 50%, 48%)' : 'hsl(var(--foreground))'}>
+              {current} / {target}
+            </text>
+            <text x={CENTER} y={CENTER + (compact ? 12 : 16)} textAnchor="middle" dominantBaseline="central"
+              className="font-display font-medium" fontSize={compact ? 8 : 10}
+              fill="hsl(var(--muted-foreground))">
+              {unit}
+            </text>
+          </>
         ) : (
           <text x={CENTER} y={CENTER} textAnchor="middle" dominantBaseline="central"
             className="font-display font-medium" fontSize={compact ? 10 : 13} fill="hsl(var(--muted-foreground))">
@@ -252,12 +263,6 @@ const ProgressWheel = ({
           </text>
         )}
       </svg>
-
-      {hasGoal && (
-        <span className={`${compact ? 'text-xs' : 'text-base'} font-bold text-foreground tracking-tight`}>
-          {current} / {target} {unit}
-        </span>
-      )}
 
       {hasGoal && showPaceLabel && expectedFraction != null && (
         <span className="text-xs font-medium" style={{ color: mainColor }}>
