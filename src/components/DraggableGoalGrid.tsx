@@ -116,7 +116,7 @@ const DraggableGoalGrid = ({ goals, sessions, onEdit, onDelete, onToggleHome, on
   return (
     <div
       ref={containerRef}
-      className="grid grid-cols-2 md:grid-cols-3 gap-3"
+      className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"
       onTouchMove={handleTouchMove as any}
       onTouchEnd={handleTouchEnd}
     >

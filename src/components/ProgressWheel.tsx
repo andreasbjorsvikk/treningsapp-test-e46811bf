@@ -118,24 +118,26 @@ const ProgressWheel = ({
   const renderMarker = () => {
     if (!hasGoal || markerAngle == null || isGold) return null;
     const rad = ((markerAngle - 90) * Math.PI) / 180;
-    // Triangle pointing inward, anchored at outer edge of the wheel
-    const tipR = RADIUS - STROKE / 2 - (compact ? 2 : 3);
-    const baseR = RADIUS + STROKE / 2 + (compact ? 5 : 8);
-    const halfBase = compact ? 3 : 4.5;
-    // Tip point (pointing inward)
-    const tx = CENTER + tipR * Math.cos(rad);
-    const ty = CENTER + tipR * Math.sin(rad);
-    // Base points (perpendicular to radius)
+    // Small tick mark sitting on the outer edge, spanning ~half the stroke
+    const tickLen = STROKE * 0.55;
+    const outerR = RADIUS + STROKE / 2 + (compact ? 1 : 2);
+    const innerR = outerR - tickLen;
+    const halfWidth = compact ? 1.8 : 2.5;
     const perpRad = rad + Math.PI / 2;
-    const bx1 = CENTER + baseR * Math.cos(rad) + halfBase * Math.cos(perpRad);
-    const by1 = CENTER + baseR * Math.sin(rad) + halfBase * Math.sin(perpRad);
-    const bx2 = CENTER + baseR * Math.cos(rad) - halfBase * Math.cos(perpRad);
-    const by2 = CENTER + baseR * Math.sin(rad) - halfBase * Math.sin(perpRad);
+    // Outer edge points (wider)
+    const ox1 = CENTER + outerR * Math.cos(rad) + halfWidth * Math.cos(perpRad);
+    const oy1 = CENTER + outerR * Math.sin(rad) + halfWidth * Math.sin(perpRad);
+    const ox2 = CENTER + outerR * Math.cos(rad) - halfWidth * Math.cos(perpRad);
+    const oy2 = CENTER + outerR * Math.sin(rad) - halfWidth * Math.sin(perpRad);
+    // Inner tip (narrower, pointing inward)
+    const ix = CENTER + innerR * Math.cos(rad);
+    const iy = CENTER + innerR * Math.sin(rad);
     return (
       <polygon
-        points={`${tx},${ty} ${bx1},${by1} ${bx2},${by2}`}
+        points={`${ox1},${oy1} ${ix},${iy} ${ox2},${oy2}`}
         fill="hsl(var(--foreground))"
-        opacity={0.8}
+        opacity={0.7}
+        strokeLinejoin="round"
       />
     );
   };
@@ -246,12 +248,12 @@ const ProgressWheel = ({
         {hasGoal ? (
           <>
             <text x={CENTER} y={CENTER - (compact ? 2 : 4)} textAnchor="middle" dominantBaseline="central"
-              className="font-display font-bold" fontSize={compact ? 14 : 20}
+              className="font-display font-bold" fontSize={compact ? 16 : 22}
               fill={isGold ? goldColor : isComplete ? 'hsl(142, 50%, 48%)' : 'hsl(var(--foreground))'}>
               {current} / {target}
             </text>
-            <text x={CENTER} y={CENTER + (compact ? 12 : 16)} textAnchor="middle" dominantBaseline="central"
-              className="font-display font-medium" fontSize={compact ? 8 : 10}
+            <text x={CENTER} y={CENTER + (compact ? 14 : 18)} textAnchor="middle" dominantBaseline="central"
+              className="font-display font-medium" fontSize={compact ? 10 : 12}
               fill="hsl(var(--muted-foreground))">
               {unit}
             </text>
