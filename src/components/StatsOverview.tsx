@@ -1,6 +1,7 @@
 import { Activity, Clock, MapPin, TrendingUp } from 'lucide-react';
 import { WeeklyStats } from '@/types/workout';
 import { formatDuration } from '@/utils/workoutUtils';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface StatsOverviewProps {
   stats: WeeklyStats;
@@ -8,27 +9,29 @@ interface StatsOverviewProps {
 }
 
 const StatsOverview = ({ stats, compact }: StatsOverviewProps) => {
+  const { t } = useTranslation();
+
   const statCards = [
     {
-      label: 'Økter',
+      label: t('stats.sessions'),
       value: stats.totalSessions.toString(),
       icon: Activity,
       accent: 'text-primary',
     },
     {
-      label: 'Tid',
+      label: t('stats.time'),
       value: formatDuration(stats.totalMinutes),
       icon: Clock,
       accent: 'text-accent',
     },
     {
-      label: 'Distanse',
+      label: t('stats.distance'),
       value: `${stats.totalDistance.toFixed(1)} km`,
       icon: MapPin,
       accent: 'text-success',
     },
     {
-      label: 'Høydemeter',
+      label: t('stats.elevation'),
       value: `${Math.round(stats.totalElevation || 0)} m`,
       icon: TrendingUp,
       accent: 'text-warning',

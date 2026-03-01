@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { SessionType } from '@/types/workout';
 import { defaultTypeColors } from '@/utils/workoutUtils';
+import type { Language } from '@/i18n/translations';
 
 export type AppColorTheme = 'white' | 'orange' | 'blue' | 'green' | 'rose';
 export type AccentColor = 'black' | 'orange' | 'blue' | 'green' | 'red' | 'purple' | 'teal' | 'rose' | 'slate' | 'amber' | 'indigo' | 'sage';
@@ -15,6 +16,8 @@ export interface AppSettings {
   unitSystem: UnitSystem;
   defaultSessionType: SessionType;
   sessionTypeColors: Record<SessionType, string>;
+  language: Language;
+  showPrimaryWheelsOnHome: boolean;
 }
 
 interface ThemeColors {
@@ -153,6 +156,8 @@ const defaultSettings: AppSettings = {
   unitSystem: 'metric',
   defaultSessionType: 'styrke',
   sessionTypeColors: { ...defaultTypeColors },
+  language: 'no',
+  showPrimaryWheelsOnHome: true,
 };
 
 interface SettingsContextType {
@@ -178,6 +183,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
           colorTheme: ['white', 'orange', 'blue', 'green', 'rose'].includes(colorTheme) ? colorTheme : 'orange',
           accentColor: ['black', 'orange', 'blue', 'green', 'red', 'purple', 'teal', 'rose', 'slate', 'amber', 'indigo', 'sage'].includes(parsed.accentColor) ? parsed.accentColor : 'black',
           sessionTypeColors: { ...defaultTypeColors, ...(parsed.sessionTypeColors || {}) },
+          language: ['no', 'en'].includes(parsed.language) ? parsed.language : 'no',
+          showPrimaryWheelsOnHome: parsed.showPrimaryWheelsOnHome !== false,
         };
       }
     } catch {}

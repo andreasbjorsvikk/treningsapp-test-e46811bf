@@ -21,10 +21,12 @@ import DraggableGoalGrid from '@/components/DraggableGoalGrid';
 import { Plus, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const Index = () => {
   const { settings, updateSettings } = useSettings();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabId>('hjem');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
@@ -121,7 +123,7 @@ const Index = () => {
                 current={monthData.current}
                 target={monthData.target}
                 unit={monthData.unit}
-                title={new Date().toLocaleString('nb-NO', { month: 'long' }).replace(/^./, c => c.toUpperCase())}
+                title={t(`month.${new Date().getMonth()}`)}
                 hasGoal={!!primaryGoal}
                 expectedFraction={monthData.expectedFraction}
                 paceDiff={monthData.diff}
@@ -143,7 +145,7 @@ const Index = () => {
               <MiniCalendar sessions={allSessions} />
               <div className="glass-card rounded-2xl p-3 flex flex-col">
                 <h2 className="font-display font-semibold text-[10px] text-muted-foreground uppercase tracking-wide mb-2">
-                  Siste 7 dager
+                  {t('home.last7days')}
                 </h2>
                 <WeeklySessionIcons sessions={allSessions} />
                 <div className="mt-auto pt-2">
@@ -160,7 +162,7 @@ const Index = () => {
                   current={monthData.current}
                   target={monthData.target}
                   unit={monthData.unit}
-                  title={new Date().toLocaleString('nb-NO', { month: 'long' }).replace(/^./, c => c.toUpperCase())}
+                  title={t(`month.${new Date().getMonth()}`)}
                   hasGoal={!!primaryGoal}
                   expectedFraction={monthData.expectedFraction}
                   paceDiff={monthData.diff}
@@ -188,7 +190,7 @@ const Index = () => {
             {/* Tablet: Siste 7 dager + stats below */}
             <section className="hidden md:block lg:hidden space-y-3">
               <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                Siste 7 dager
+                {t('home.last7days')}
               </h2>
               <WeeklySessionIcons sessions={allSessions} />
               <StatsOverview stats={stats} />
@@ -203,7 +205,7 @@ const Index = () => {
                   current={monthData.current}
                   target={monthData.target}
                   unit={monthData.unit}
-                  title={new Date().toLocaleString('nb-NO', { month: 'long' }).replace(/^./, c => c.toUpperCase())}
+                  title={t(`month.${new Date().getMonth()}`)}
                   hasGoal={!!primaryGoal}
                   expectedFraction={monthData.expectedFraction}
                   paceDiff={monthData.diff}
@@ -228,7 +230,7 @@ const Index = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <h2 className="font-display font-semibold text-[10px] text-muted-foreground uppercase tracking-wide">
-                    Siste 7 dager
+                    {t('home.last7days')}
                   </h2>
                   <WeeklySessionIcons sessions={allSessions} />
                 </div>
@@ -246,7 +248,7 @@ const Index = () => {
               return (
                 <section>
                   <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">
-                    Mål
+                    {t('home.goals')}
                   </h2>
                   <DraggableGoalGrid
                     goals={homeGoals}
@@ -269,10 +271,10 @@ const Index = () => {
             <section>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                  Siste økter
+                  {t('home.recentSessions')}
                 </h2>
                 <Button size="sm" onClick={() => { setEditSession(undefined); setDialogOpen(true); }}>
-                  <Plus className="w-4 h-4 mr-1" /> Ny økt
+                  <Plus className="w-4 h-4 mr-1" /> {t('home.newSession')}
                 </Button>
               </div>
               <div className="space-y-3">
@@ -316,7 +318,7 @@ const Index = () => {
       <Dialog open={showGoalEditDialog} onOpenChange={(open) => { if (!open) { setShowGoalEditDialog(false); setEditGoal(undefined); } }}>
         <DialogContent className="max-w-[min(calc(100vw-2rem),26rem)] p-4 overflow-hidden">
           <DialogHeader>
-            <DialogTitle>Rediger mål</DialogTitle>
+            <DialogTitle>{t('home.editGoal')}</DialogTitle>
           </DialogHeader>
           {editGoal && (
             <GoalForm

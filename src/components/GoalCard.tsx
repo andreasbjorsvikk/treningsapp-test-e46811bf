@@ -2,40 +2,25 @@ import { useMemo, useState } from 'react';
 import { Pencil, Trash2, Home } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ExtraGoal, WorkoutSession, GoalMetric, GoalPeriod, SessionType } from '@/types/workout';
-import { getSessionsInPeriod, computeProgress, metricLabels, getDaysRemainingInPeriod, getPeriodFractionElapsed } from '@/utils/goalUtils';
+import { getSessionsInPeriod, computeProgress, getDaysRemainingInPeriod, getPeriodFractionElapsed } from '@/utils/goalUtils';
 import GoalProgressVisual from '@/components/GoalProgressVisual';
 import ActivityIcon from '@/components/ActivityIcon';
 import { getActivityColors } from '@/utils/activityColors';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Layers } from 'lucide-react';
-
-const periodLabels: Record<GoalPeriod | 'custom', string> = {
-  week: 'Denne uken',
-  month: 'Denne måneden',
-  year: 'I år',
-  custom: '',
-};
 
 function formatValue(value: number, metric: GoalMetric): string {
   if (metric === 'distance' || metric === 'minutes') return value.toFixed(1);
   return Math.round(value).toString();
 }
 
-function formatCustomDate(isoDate?: string): string {
+function formatCustomDate(isoDate: string | undefined, locale: string): string {
   if (!isoDate) return '';
   const d = new Date(isoDate);
   const day = d.getDate();
-  const months = ['jan', 'feb', 'mar', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'des'];
-  return `${day}. ${months[d.getMonth()]}`;
-}
-
-function getScheduleStatus(current: number, expected: number, done: boolean): { label: string; className: string } {
-  if (done) return { label: '✓ Nådd!', className: 'text-success font-semibold' };
-  const diff = current - expected;
-  const tolerance = expected * 0.05; // 5% tolerance for "i rute"
-  if (Math.abs(diff) <= tolerance && expected > 0) return { label: 'I rute', className: 'text-primary font-medium' };
-  if (current >= expected) return { label: 'Foran skjema', className: 'text-success font-medium' };
-  return { label: 'Bak skjema', className: 'text-warning font-medium' };
+  const monthStr = d.toLocaleString(locale, { month: 'short' });
+  return `${day}. ${monthStr}`;
 }
 
 interface GoalCardProps {
@@ -49,6 +34,7 @@ interface GoalCardProps {
 const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome }: GoalCardProps) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { settings } = useSettings();
+  const { t, locale } = useTranslation();
   const isDark = settings.darkMode;
 
   const periodSessions = useMemo(
@@ -68,14 +54,28 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome }: GoalCardPr
   const colors = getActivityColors(type, isDark);
   const isActivitySpecific = goal.activityType !== 'all';
 
+  const periodLabels: Record<GoalPeriod | 'custom', string> = {
+    week: t('goalCard.thisWeek'),
+    month: t('goalCard.thisMonth'),
+    year: t('goalCard.thisYear'),
+    custom: '',
+  };
+
   const periodLabel = goal.period === 'custom'
-    ? `${formatCustomDate(goal.customStart)} – ${formatCustomDate(goal.customEnd)}`
+    ? `${formatCustomDate(goal.customStart, locale)} – ${formatCustomDate(goal.customEnd, locale)}`
     : periodLabels[goal.period];
+
+  const getScheduleStatus = (cur: number, exp: number, isDone: boolean): { label: string; className: string } => {
+    if (isDone) return { label: t('goalCard.reached'), className: 'text-success font-semibold' };
+    const diff = cur - exp;
+    const tolerance = exp * 0.05;
+    if (Math.abs(diff) <= tolerance && exp > 0) return { label: t('goalCard.onTrack'), className: 'text-primary font-medium' };
+    if (cur >= exp) return { label: t('goalCard.ahead'), className: 'text-success font-medium' };
+    return { label: t('goalCard.behind'), className: 'text-warning font-medium' };
+  };
 
   const schedule = getScheduleStatus(current, expected, done);
 
-  // Subtle tinted background for activity-specific goals
-  // colors.bg is rgb(...) format, so we parse and use rgba
   const parsedRgb = colors.bg.match(/\d+/g);
   const cardBg = isActivitySpecific && parsedRgb
     ? { backgroundColor: `rgba(${parsedRgb[0]}, ${parsedRgb[1]}, ${parsedRgb[2]}, ${isDark ? 0.15 : 0.25})` }
@@ -96,7 +96,7 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome }: GoalCardPr
         </button>
       </div>
 
-      {/* Progress visual - larger */}
+      {/* Progress visual */}
       <div className="w-24 h-24">
         <GoalProgressVisual
           metric={goal.metric}
@@ -120,28 +120,23 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome }: GoalCardPr
         )}
       </div>
 
-      {/* Period */}
       <p className="text-xs text-muted-foreground">{periodLabel}</p>
 
-      {/* Days left */}
       {!done && (
-        <p className="text-xs text-muted-foreground">{daysLeft} dager igjen</p>
+        <p className="text-xs text-muted-foreground">{daysLeft} {t('goalCard.daysLeft')}</p>
       )}
 
-      {/* Progress: current / target */}
       <p className="text-sm font-bold">
         {formatValue(current, goal.metric)} / {formatValue(goal.target, goal.metric)}
-        <span className="text-xs font-normal text-muted-foreground ml-1">{metricLabels[goal.metric]}</span>
+        <span className="text-xs font-normal text-muted-foreground ml-1">{t(`metric.${goal.metric}`)}</span>
       </p>
 
-      {/* Remaining */}
       {!done && (
         <p className="text-xs text-muted-foreground">
-          {formatValue(remaining, goal.metric)} {metricLabels[goal.metric]} igjen
+          {formatValue(remaining, goal.metric)} {t(`metric.${goal.metric}`)} {t('goalCard.remaining')}
         </p>
       )}
 
-      {/* Schedule status */}
       <p className={`text-xs ${schedule.className}`}>{schedule.label}</p>
 
       {/* Home toggle */}
@@ -152,7 +147,7 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome }: GoalCardPr
             ? 'text-primary bg-primary/10'
             : 'text-muted-foreground/40 hover:text-muted-foreground'
         }`}
-        title={goal.showOnHome ? 'Fjern fra hjemskjerm' : 'Vis på hjemskjerm'}
+        title={goal.showOnHome ? t('goals.removeFromHome') : t('goals.showOnHome')}
       >
         <Home className="w-3.5 h-3.5" />
       </button>
@@ -160,15 +155,15 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome }: GoalCardPr
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="max-w-[min(calc(100vw-2rem),20rem)]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Slett mål</AlertDialogTitle>
+            <AlertDialogTitle>{t('goalCard.deleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på at du vil slette dette målet? Denne handlingen kan ikke angres.
+              {t('goalCard.deleteDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={() => onDelete(goal.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Slett
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
