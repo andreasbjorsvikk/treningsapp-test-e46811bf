@@ -1,21 +1,42 @@
-import { PrimaryGoal, GoalPeriod } from '@/types/workout';
+import { PrimaryGoalPeriod, GoalPeriod } from '@/types/workout';
 
-const STORAGE_KEY = 'treningslogg_primary_goal';
+const STORAGE_KEY = 'treningslogg_primary_goal_periods';
+const LEGACY_KEY = 'treningslogg_primary_goal';
 
-function load(): PrimaryGoal | null {
+function loadPeriods(): PrimaryGoalPeriod[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) return JSON.parse(stored);
   } catch { /* ignore */ }
-  return null;
+
+  // Migrate legacy single goal
+  try {
+    const legacy = localStorage.getItem(LEGACY_KEY);
+    if (legacy) {
+      const old = JSON.parse(legacy);
+      const migrated: PrimaryGoalPeriod = {
+        id: old.id || crypto.randomUUID(),
+        inputPeriod: old.inputPeriod,
+        inputTarget: old.inputTarget,
+        validFrom: old.startDate,
+        createdAt: old.createdAt,
+      };
+      savePeriods([migrated]);
+      localStorage.removeItem(LEGACY_KEY);
+      return [migrated];
+    }
+  } catch { /* ignore */ }
+
+  return [];
 }
 
-function save(goal: PrimaryGoal | null): void {
-  if (goal) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(goal));
-  } else {
-    localStorage.removeItem(STORAGE_KEY);
-  }
+function savePeriods(periods: PrimaryGoalPeriod[]): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(periods));
+}
+
+/** Sort periods by validFrom ascending */
+function sorted(periods: PrimaryGoalPeriod[]): PrimaryGoalPeriod[] {
+  return [...periods].sort((a, b) => a.validFrom.localeCompare(b.validFrom));
 }
 
 export function convertGoalValue(value: number, from: GoalPeriod, to: GoalPeriod): number {
@@ -33,65 +54,141 @@ export function convertGoalValue(value: number, from: GoalPeriod, to: GoalPeriod
 }
 
 /**
- * Calculate pro-rated target for a period based on startDate.
- * If the goal starts mid-period, only a fraction of the target applies.
+ * Get the active goal period for a given date.
+ * Returns the latest period whose validFrom <= date.
  */
-export function getProratedTarget(goal: PrimaryGoal, period: GoalPeriod): number {
-  const fullTarget = convertGoalValue(goal.inputTarget, goal.inputPeriod, period);
-  const startDate = new Date(goal.startDate);
-  const now = new Date();
+export function getActiveGoalForDate(periods: PrimaryGoalPeriod[], date: Date): PrimaryGoalPeriod | null {
+  const dateStr = date.toISOString().slice(0, 10);
+  const s = sorted(periods);
+  let active: PrimaryGoalPeriod | null = null;
+  for (const p of s) {
+    if (p.validFrom <= dateStr) active = p;
+    else break;
+  }
+  return active;
+}
 
-  if (period === 'month') {
-    const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const totalDays = periodEnd.getDate();
-    
-    if (startDate > periodEnd) return 0;
-    if (startDate <= periodStart) return fullTarget;
-    
-    const effectiveDays = totalDays - startDate.getDate() + 1;
-    return Math.round((fullTarget * effectiveDays / totalDays) * 10) / 10;
+/**
+ * Get the target for a specific month, using the goal active at month start.
+ * Pro-rates the first month if the goal starts mid-month.
+ */
+export function getMonthTarget(periods: PrimaryGoalPeriod[], year: number, month: number): number {
+  const monthStart = new Date(year, month, 1);
+  const goal = getActiveGoalForDate(periods, monthStart);
+  if (!goal) return 0;
+
+  const fullTarget = convertGoalValue(goal.inputTarget, goal.inputPeriod, 'month');
+  const validFrom = new Date(goal.validFrom);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // If goal starts in this exact month, pro-rate
+  if (validFrom.getFullYear() === year && validFrom.getMonth() === month && validFrom.getDate() > 1) {
+    const effectiveDays = daysInMonth - validFrom.getDate() + 1;
+    return Math.round((fullTarget * effectiveDays / daysInMonth) * 10) / 10;
   }
 
-  if (period === 'year') {
-    const yearStart = new Date(now.getFullYear(), 0, 1);
-    const yearEnd = new Date(now.getFullYear(), 11, 31);
-    const totalDays = 365;
-    
-    if (startDate > yearEnd) return 0;
-    if (startDate <= yearStart) return fullTarget;
-    
-    const dayOfYear = Math.floor((startDate.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24));
-    const effectiveDays = totalDays - dayOfYear;
-    return Math.round((fullTarget * effectiveDays / totalDays) * 10) / 10;
-  }
-
-  // week - just return full target (week is short enough)
   return fullTarget;
 }
 
+/**
+ * Get the year target by summing monthly targets across all 12 months.
+ * Each month uses its own active goal period.
+ */
+export function getYearTarget(periods: PrimaryGoalPeriod[], year: number): number {
+  let total = 0;
+  for (let m = 0; m < 12; m++) {
+    total += getMonthTarget(periods, year, m);
+  }
+  return Math.round(total * 10) / 10;
+}
+
+/**
+ * Get the earliest validFrom date across all periods.
+ */
+export function getEarliestStart(periods: PrimaryGoalPeriod[]): Date | null {
+  if (periods.length === 0) return null;
+  const s = sorted(periods);
+  return new Date(s[0].validFrom);
+}
+
+/**
+ * Get expected year progress up to a reference date, accounting for multiple goal periods.
+ */
+export function getYearExpectedProgress(periods: PrimaryGoalPeriod[], year: number, refDate: Date): { target: number; expected: number; fractionElapsed: number } {
+  const target = getYearTarget(periods, year);
+  if (target === 0) return { target: 0, expected: 0, fractionElapsed: 0 };
+
+  // Sum expected for each completed month + partial current month
+  let expected = 0;
+  for (let m = 0; m < 12; m++) {
+    const mTarget = getMonthTarget(periods, year, m);
+    const monthEnd = new Date(year, m + 1, 0);
+    const monthStart = new Date(year, m, 1);
+
+    if (refDate >= monthEnd) {
+      // Full month elapsed
+      expected += mTarget;
+    } else if (refDate >= monthStart) {
+      // Partial month
+      const daysInMonth = monthEnd.getDate();
+      const dayOfMonth = refDate.getDate();
+      expected += mTarget * (dayOfMonth / daysInMonth);
+    }
+    // Future months: 0
+  }
+
+  const fractionElapsed = target > 0 ? expected / target : 0;
+  return { target, expected, fractionElapsed };
+}
+
+/** For backward compat: get current active goal as a "PrimaryGoal-like" object */
+export function getCurrentGoal(periods: PrimaryGoalPeriod[]): PrimaryGoalPeriod | null {
+  return getActiveGoalForDate(periods, new Date());
+}
+
 export const primaryGoalService = {
-  get(): PrimaryGoal | null {
-    return load();
+  /** Get all goal periods sorted by validFrom */
+  getAll(): PrimaryGoalPeriod[] {
+    return sorted(loadPeriods());
   },
 
-  set(data: Omit<PrimaryGoal, 'id' | 'createdAt'>): PrimaryGoal {
-    const goal: PrimaryGoal = {
-      ...data,
+  /** Get the currently active goal */
+  get(): PrimaryGoalPeriod | null {
+    return getCurrentGoal(loadPeriods());
+  },
+
+  /** Add a new goal period */
+  add(data: { inputPeriod: GoalPeriod; inputTarget: number; validFrom: string }): PrimaryGoalPeriod {
+    const periods = loadPeriods();
+    const newPeriod: PrimaryGoalPeriod = {
       id: crypto.randomUUID(),
+      inputPeriod: data.inputPeriod,
+      inputTarget: data.inputTarget,
+      validFrom: data.validFrom,
       createdAt: new Date().toISOString(),
     };
-    save(goal);
-    return goal;
+    periods.push(newPeriod);
+    savePeriods(periods);
+    return newPeriod;
   },
 
+  /** Delete a specific goal period */
+  delete(id: string): void {
+    const periods = loadPeriods().filter(p => p.id !== id);
+    savePeriods(periods);
+  },
+
+  /** Clear all goal periods */
   clear(): void {
-    save(null);
+    savePeriods([]);
   },
 
-  getTargetForPeriod(period: GoalPeriod): number {
-    const goal = load();
-    if (!goal) return 0;
-    return convertGoalValue(goal.inputTarget, goal.inputPeriod, period);
+  /** Legacy compat: set replaces with a single period (used by form) */
+  set(data: { inputPeriod: GoalPeriod; inputTarget: number; startDate: string }): PrimaryGoalPeriod {
+    return this.add({
+      inputPeriod: data.inputPeriod,
+      inputTarget: data.inputTarget,
+      validFrom: data.startDate,
+    });
   },
 };
