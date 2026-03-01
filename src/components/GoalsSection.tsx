@@ -331,8 +331,40 @@ const GoalsSection = () => {
                   </div>
                 </div>
 
-                {/* Mobile: wheels first, then nav below */}
-                <div className="md:hidden space-y-2">
+                {/* Mobile: nav header first, then wheels below */}
+                <div className="md:hidden space-y-1">
+                  <div className="flex flex-col items-center">
+                    <div className="flex items-center gap-1">
+                      <button onClick={handlePrevMonth} className="p-1.5 rounded-lg hover:bg-secondary/60 transition-colors">
+                        <ChevronLeft className="w-5 h-5 text-muted-foreground" />
+                      </button>
+                      <span className="text-xl font-bold text-foreground min-w-[120px] text-center">
+                        {t(`month.${wheelMonth}`)}
+                      </span>
+                      <button onClick={handleNextMonth} className="p-1.5 rounded-lg hover:bg-secondary/60 transition-colors">
+                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-1 -mt-0.5">
+                      <button onClick={handlePrevYear} className="p-1 rounded-lg hover:bg-secondary/60 transition-colors">
+                        <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground/60" />
+                      </button>
+                      <span className="text-base font-semibold text-muted-foreground min-w-[45px] text-center">
+                        {wheelYear}
+                      </span>
+                      <button onClick={handleNextYear} className="p-1 rounded-lg hover:bg-secondary/60 transition-colors">
+                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60" />
+                      </button>
+                    </div>
+                    <div className="h-5 flex items-center">
+                      {!isToday && (
+                        <button onClick={handleGoToday} className="px-3 py-0.5 rounded-md text-xs font-medium text-primary hover:bg-primary/10 transition-colors">
+                          {t('common.today')}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-1">
                     <ProgressWheel
                       percent={monthData.percent}
@@ -358,38 +390,6 @@ const GoalsSection = () => {
                       naked
                       compact
                     />
-                  </div>
-
-                  <div className="flex flex-col items-center -mt-1">
-                    <div className="flex items-center gap-1">
-                      <button onClick={handlePrevMonth} className="p-1.5 rounded-lg hover:bg-secondary/60 transition-colors">
-                        <ChevronLeft className="w-5 h-5 text-muted-foreground" />
-                      </button>
-                      <span className="text-xl font-bold text-foreground min-w-[120px] text-center">
-                        {t(`month.${wheelMonth}`)}
-                      </span>
-                      <button onClick={handleNextMonth} className="p-1.5 rounded-lg hover:bg-secondary/60 transition-colors">
-                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button onClick={handlePrevYear} className="p-1 rounded-lg hover:bg-secondary/60 transition-colors">
-                        <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground/60" />
-                      </button>
-                      <span className="text-base font-semibold text-muted-foreground min-w-[45px] text-center">
-                        {wheelYear}
-                      </span>
-                      <button onClick={handleNextYear} className="p-1 rounded-lg hover:bg-secondary/60 transition-colors">
-                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60" />
-                      </button>
-                    </div>
-                    <div className="h-5 flex items-center">
-                      {!isToday && (
-                        <button onClick={handleGoToday} className="px-3 py-0.5 rounded-md text-xs font-medium text-primary hover:bg-primary/10 transition-colors">
-                          {t('common.today')}
-                        </button>
-                      )}
-                    </div>
                   </div>
 
                   <div className="flex flex-col items-center text-center pt-2 border-t border-border/30">
