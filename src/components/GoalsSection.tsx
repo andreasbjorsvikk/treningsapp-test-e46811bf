@@ -360,12 +360,12 @@ const GoalsSection = () => {
                     />
                   </div>
 
-                  <div className="flex flex-col items-center pt-2">
+                  <div className="flex flex-col items-center -mt-1">
                     <div className="flex items-center gap-1">
                       <button onClick={handlePrevMonth} className="p-1.5 rounded-lg hover:bg-secondary/60 transition-colors">
                         <ChevronLeft className="w-5 h-5 text-muted-foreground" />
                       </button>
-                      <span className="text-lg font-bold text-foreground min-w-[110px] text-center">
+                      <span className="text-xl font-bold text-foreground min-w-[120px] text-center">
                         {t(`month.${wheelMonth}`)}
                       </span>
                       <button onClick={handleNextMonth} className="p-1.5 rounded-lg hover:bg-secondary/60 transition-colors">
@@ -376,7 +376,7 @@ const GoalsSection = () => {
                       <button onClick={handlePrevYear} className="p-1 rounded-lg hover:bg-secondary/60 transition-colors">
                         <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground/60" />
                       </button>
-                      <span className="text-sm font-semibold text-muted-foreground min-w-[40px] text-center">
+                      <span className="text-base font-semibold text-muted-foreground min-w-[45px] text-center">
                         {wheelYear}
                       </span>
                       <button onClick={handleNextYear} className="p-1 rounded-lg hover:bg-secondary/60 transition-colors">
@@ -394,7 +394,7 @@ const GoalsSection = () => {
 
                   <div className="flex flex-col items-center text-center pt-2 border-t border-border/30">
                     <TargetIcon className="w-5 h-5 mb-1" />
-                    <p className="text-lg font-bold text-foreground">
+                    <p className="text-xl font-bold text-foreground">
                       {viewedGoal ? viewedGoal.inputTarget : currentGoal.inputTarget} {t('goals.sessionsPer')} {viewedGoal ? t(`goals.period.${viewedGoal.inputPeriod}`) : periodLabel}
                     </p>
                     <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
