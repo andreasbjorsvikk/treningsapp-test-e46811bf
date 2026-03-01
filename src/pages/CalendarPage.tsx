@@ -161,34 +161,52 @@ const CalendarPage = () => {
   // We also disable infinite scroll until initial scroll is done, because
   // the infinite scroll handler was firing first (scrollTop=0 < 300) and
   // adding extra months at the top, shifting the target position.
+  // Calculate the target scroll position for the calendar.
+  // On mobile: offset so ~2 rows of previous month are visible above.
+  // On desktop/tablet: current month header at top.
+  const getTargetScroll = useCallback(() => {
+    if (!currentMonthRef.current || !scrollRef.current) return 0;
+    const container = scrollRef.current;
+    const target = currentMonthRef.current;
+    const containerRect = container.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const scrollOffset = targetRect.top - containerRect.top + container.scrollTop;
+    // Mobile: offset back ~120px so 2 rows of previous month visible
+    // Desktop/tablet: no offset, month header at top
+    return Math.max(0, scrollOffset - (isMobile ? 120 : 0));
+  }, [isMobile]);
+
   useEffect(() => {
-    // Always reset scroll first to avoid inheriting scroll from other pages
+    // Set initial scroll immediately (before paint) to avoid visible jump
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0;
     }
-    
-    // Scroll to current month once layout is ready, offset so ~2 rows of
-    // the previous month are visible above the current month header.
-    const timer = setTimeout(() => {
+
+    // Use multiple rAF frames to ensure layout is stable before scrolling
+    let cancelled = false;
+    const doScroll = () => {
+      if (cancelled) return;
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = getTargetScroll();
+      }
+    };
+
+    // Try immediately
+    doScroll();
+    // Then again after layout
+    requestAnimationFrame(() => {
+      doScroll();
       requestAnimationFrame(() => {
-        if (currentMonthRef.current && scrollRef.current) {
-          const container = scrollRef.current;
-          const target = currentMonthRef.current;
-          const containerRect = container.getBoundingClientRect();
-          const targetRect = target.getBoundingClientRect();
-          const scrollOffset = targetRect.top - containerRect.top + container.scrollTop;
-          // Offset back ~120px so 2 rows of previous month are visible
-          container.scrollTop = Math.max(0, scrollOffset - 120);
-        }
-        // Unlock infinite scroll after a brief pause so the position stabilises
+        doScroll();
+        // Unlock infinite scroll after position stabilises
         setTimeout(() => {
           hasScrolledToToday.current = true;
         }, 200);
       });
-    }, 150);
+    });
 
-    return () => clearTimeout(timer);
-  }, []);
+    return () => { cancelled = true; };
+  }, [getTargetScroll]);
 
   // Infinite scroll handler - debounced for performance
   // IMPORTANT: disabled until initial scroll-to-today is complete

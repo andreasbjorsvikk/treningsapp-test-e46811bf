@@ -1,5 +1,5 @@
-import { useMemo, useId } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
+import { useMemo } from 'react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { WorkoutSession, SessionType } from '@/types/workout';
 import { Period } from '@/components/PeriodSelector';
 import { ChartMetric } from '@/components/MetricSelector';
@@ -49,19 +49,12 @@ function lightenColor(hex: string, percent: number): string {
   return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
 }
 
-function darkenColor(hex: string, percent: number): string {
-  const num = parseInt(hex.replace('#', ''), 16);
-  const r = Math.max(0, Math.round((num >> 16) * (1 - percent)));
-  const g = Math.max(0, Math.round(((num >> 8) & 0x00FF) * (1 - percent)));
-  const b = Math.max(0, Math.round((num & 0x0000FF) * (1 - percent)));
-  return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
-}
 
 const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) => {
   const { getTypeColor } = useSettings();
   const isMobile = useIsMobile();
   const suffix = metricSuffix[metric];
-  const uniqueId = useId().replace(/:/g, '');
+  
 
   const typeOrder = useMemo(() => {
     const totals: { type: SessionType; total: number }[] = allSessionTypes.map(type => ({
@@ -149,26 +142,9 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
           <BarChart
             data={hasData ? data : safeData}
             barCategoryGap={isMobile ? '12%' : '20%'}
-            margin={{ top: 28, right: 4, left: -4, bottom: 0 }}
+            margin={{ top: 36, right: 4, left: isMobile ? 2 : 4, bottom: 0 }}
           >
-            <defs>
-              {/* Gradient definitions for each type */}
-              {typeOrder.map(type => {
-                const baseColor = getTypeColor(type);
-                const lightColor = lightenColor(baseColor, 0.25);
-                const darkColor = darkenColor(baseColor, 0.15);
-                return (
-                  <linearGradient key={type} id={`grad-${uniqueId}-${type}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={lightColor} stopOpacity={1} />
-                    <stop offset="100%" stopColor={darkColor} stopOpacity={0.9} />
-                  </linearGradient>
-                );
-              })}
-              {/* Drop shadow filter */}
-              <filter id={`barShadow-${uniqueId}`} x="-20%" y="-10%" width="140%" height="130%">
-                <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.15" />
-              </filter>
-            </defs>
+            <defs />
             <CartesianGrid
               strokeDasharray="3 3"
               stroke="hsl(var(--border))"
@@ -190,12 +166,13 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
               tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontWeight: 500 }}
               tickLine={false}
               axisLine={false}
-              width={isMobile ? 28 : 42}
+              width={isMobile ? 30 : 42}
               tickFormatter={(v) => `${v}`}
               label={{ 
                 value: metricUnitLabel[metric], 
-                position: 'top', 
-                offset: -14,
+                position: 'insideTopLeft', 
+                offset: -28,
+                dy: -8,
                 style: { fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontWeight: 600, textAnchor: 'start' }
               }}
             />
@@ -213,13 +190,8 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
                   dataKey={type}
                   stackId="stack"
                   fill={baseColor}
-                  radius={i === typeOrder.length - 1 ? [8, 8, 0, 0] : [0, 0, 0, 0]}
-                  style={{ filter: `url(#barShadow-${uniqueId})` }}
-                >
-                  {data.map((_, idx) => (
-                    <Cell key={idx} fill={`url(#grad-${uniqueId}-${type})`} />
-                  ))}
-                </Bar>
+                  radius={i === typeOrder.length - 1 ? [6, 6, 0, 0] : [0, 0, 0, 0]}
+                />
               );
             })}
           </BarChart>
