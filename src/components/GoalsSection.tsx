@@ -4,7 +4,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import TargetIcon from '@/components/TargetIcon';
 import { ExtraGoal, PrimaryGoalPeriod } from '@/types/workout';
 import { goalService } from '@/services/goalService';
-import { primaryGoalService, convertGoalValue, getMonthTarget } from '@/services/primaryGoalService';
+import { primaryGoalService, convertGoalValue, getMonthTarget, getActiveGoalForDate } from '@/services/primaryGoalService';
 import { workoutService } from '@/services/workoutService';
 import { Button } from '@/components/ui/button';
 import GoalForm from '@/components/GoalForm';
@@ -40,11 +40,15 @@ const GoalsSection = () => {
   const extraGoals = goalService.getAll();
   const sessions = workoutService.getAll();
 
-  // Current goal display values
-  const weekTarget = currentGoal ? convertGoalValue(currentGoal.inputTarget, currentGoal.inputPeriod, 'week') : 0;
-  const monthTarget = currentGoal ? convertGoalValue(currentGoal.inputTarget, currentGoal.inputPeriod, 'month') : 0;
-  const yearTarget = currentGoal ? convertGoalValue(currentGoal.inputTarget, currentGoal.inputPeriod, 'year') : 0;
-  const periodLabel = currentGoal ? t(`goals.period.${currentGoal.inputPeriod}`) : '';
+  // Get the active goal for the navigated month (latest goal active during that month)
+  const viewedMonthEnd = new Date(wheelYear, wheelMonth + 1, 0);
+  const viewedGoal = useMemo(() => getActiveGoalForDate(allPeriods, viewedMonthEnd), [allPeriods, wheelMonth, wheelYear]);
+
+  // Display values based on the viewed month's active goal
+  const weekTarget = viewedGoal ? convertGoalValue(viewedGoal.inputTarget, viewedGoal.inputPeriod, 'week') : 0;
+  const monthTarget = viewedGoal ? convertGoalValue(viewedGoal.inputTarget, viewedGoal.inputPeriod, 'month') : 0;
+  const yearTarget = viewedGoal ? convertGoalValue(viewedGoal.inputTarget, viewedGoal.inputPeriod, 'year') : 0;
+  const periodLabel = viewedGoal ? t(`goals.period.${viewedGoal.inputPeriod}`) : '';
 
   // Navigable month data using versioned periods
   const monthData = useMemo(() =>
@@ -257,7 +261,7 @@ const GoalsSection = () => {
                     </div>
                     <TargetIcon className="w-5 h-5 mb-1.5" />
                     <p className="text-xl font-bold text-foreground">
-                      {currentGoal.inputTarget} {t('goals.sessionsPer')} {periodLabel}
+                      {viewedGoal ? viewedGoal.inputTarget : currentGoal.inputTarget} {t('goals.sessionsPer')} {viewedGoal ? t(`goals.period.${viewedGoal.inputPeriod}`) : periodLabel}
                     </p>
                     <div className="flex items-center gap-3 text-sm text-muted-foreground mt-2">
                       <span><span className="font-semibold text-foreground text-base">{Math.round(weekTarget * 10) / 10}</span> {t('goals.perWeek')}</span>
@@ -359,7 +363,7 @@ const GoalsSection = () => {
                   <div className="flex flex-col items-center text-center pt-2 border-t border-border/30">
                     <TargetIcon className="w-5 h-5 mb-1" />
                     <p className="text-lg font-bold text-foreground">
-                      {currentGoal.inputTarget} {t('goals.sessionsPer')} {periodLabel}
+                      {viewedGoal ? viewedGoal.inputTarget : currentGoal.inputTarget} {t('goals.sessionsPer')} {viewedGoal ? t(`goals.period.${viewedGoal.inputPeriod}`) : periodLabel}
                     </p>
                     <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                       <span><span className="font-semibold text-foreground text-base">{Math.round(weekTarget * 10) / 10}</span> {t('goals.perWeek')}</span>

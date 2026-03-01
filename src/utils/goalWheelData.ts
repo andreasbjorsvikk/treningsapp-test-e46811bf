@@ -1,5 +1,5 @@
 import { PrimaryGoalPeriod } from '@/types/workout';
-import { getMonthTarget, getYearTarget, getYearExpectedProgress, getEarliestStart } from '@/services/primaryGoalService';
+import { getMonthTarget, getYearExpectedProgress } from '@/services/primaryGoalService';
 import { WorkoutSession } from '@/types/workout';
 
 /**
@@ -14,12 +14,9 @@ export function computeMonthWheelData(
   unitLabel: string
 ) {
   const target = getMonthTarget(periods, year, month);
-  const earliest = getEarliestStart(periods);
   const current = sessions.filter(s => {
     const d = new Date(s.date);
-    if (d.getMonth() !== month || d.getFullYear() !== year) return false;
-    if (earliest && d < earliest) return false;
-    return true;
+    return d.getMonth() === month && d.getFullYear() === year;
   }).length;
   const percent = target === 0 ? 0 : (current / target) * 100;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -40,12 +37,9 @@ export function computeYearWheelData(
   now: Date,
   unitLabel: string
 ) {
-  const earliest = getEarliestStart(periods);
   const current = sessions.filter(s => {
     const d = new Date(s.date);
-    if (d.getFullYear() !== year) return false;
-    if (earliest && d < earliest) return false;
-    return true;
+    return d.getFullYear() === year;
   }).length;
   const refDate = year === now.getFullYear() ? now : new Date(year + 1, 0, 1);
   const { target, expected, fractionElapsed } = getYearExpectedProgress(periods, year, refDate);
