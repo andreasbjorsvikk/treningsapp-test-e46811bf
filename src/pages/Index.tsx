@@ -1,10 +1,9 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { WorkoutSession, ExtraGoal } from '@/types/workout';
-import { workoutService } from '@/services/workoutService';
-import { primaryGoalService } from '@/services/primaryGoalService';
-import { goalService } from '@/services/goalService';
-import { healthEventService } from '@/services/healthEventService';
+import { useAppData } from '@/hooks/useAppData';
 import { computeMonthWheelData, computeYearWheelData } from '@/utils/goalWheelData';
+import { useAuth } from '@/hooks/useAuth';
 
 import BottomNav, { TabId } from '@/components/BottomNav';
 import StatsOverview from '@/components/StatsOverview';
@@ -20,7 +19,7 @@ import ProgressWheel from '@/components/ProgressWheel';
 import WeeklySessionIcons from '@/components/WeeklySessionIcons';
 import MiniCalendar from '@/components/MiniCalendar';
 import DraggableGoalGrid from '@/components/DraggableGoalGrid';
-import { Plus, Sun, Moon, Dumbbell, Ambulance } from 'lucide-react';
+import { Plus, Sun, Moon, Dumbbell, Ambulance, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -31,24 +30,24 @@ import { HealthEvent } from '@/types/workout';
 const Index = () => {
   const { settings, updateSettings } = useSettings();
   const { t } = useTranslation();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const appData = useAppData();
+
   const [activeTab, setActiveTab] = useState<TabId>('hjem');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [healthDialogOpen, setHealthDialogOpen] = useState(false);
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
-  const [, setRefresh] = useState(0);
   const [initialStatPeriod, setInitialStatPeriod] = useState<'month' | 'year' | undefined>();
   const [editGoal, setEditGoal] = useState<ExtraGoal | undefined>();
   const [showGoalEditDialog, setShowGoalEditDialog] = useState(false);
   const [homeStatMode, setHomeStatMode] = useState<'week' | 'month'>('week');
 
-  const weekStats = workoutService.getWeeklyStats();
-  const monthStats = workoutService.getMonthlyStats();
-  const stats = homeStatMode === 'week' ? weekStats : monthStats;
-  const allSessions = workoutService.getAll();
+  const stats = homeStatMode === 'week' ? appData.weekStats : appData.monthStats;
+  const allSessions = appData.sessions;
   const recentSessions = allSessions.slice(0, 5);
-
-  const primaryGoal = primaryGoalService.get();
-  const allPeriods = primaryGoalService.getAll();
+  const primaryGoal = appData.currentPrimaryGoal;
+  const allPeriods = appData.primaryGoals;
 
   const monthData = useMemo(() => {
     const now = new Date();
@@ -60,30 +59,27 @@ const Index = () => {
     return computeYearWheelData(allPeriods, allSessions, now.getFullYear(), now, t('metric.sessions'));
   }, [allSessions, allPeriods, t]);
 
-  const handleDelete = useCallback((id: string) => {
-    workoutService.delete(id);
-    setRefresh(r => r + 1);
-  }, []);
+  const handleDelete = async (id: string) => {
+    await appData.deleteSession(id);
+  };
 
-  const handleEdit = useCallback((session: WorkoutSession) => {
+  const handleEdit = (session: WorkoutSession) => {
     setEditSession(session);
     setDialogOpen(true);
-  }, []);
+  };
 
-  const handleSave = useCallback((data: Omit<WorkoutSession, 'id'>) => {
+  const handleSave = async (data: Omit<WorkoutSession, 'id'>) => {
     if (editSession) {
-      workoutService.update(editSession.id, data);
+      await appData.updateSession(editSession.id, data);
     } else {
-      workoutService.add(data);
+      await appData.addSession(data);
     }
     setEditSession(undefined);
-    setRefresh(r => r + 1);
-  }, [editSession]);
+  };
 
-  const handleHealthSave = useCallback((data: Omit<HealthEvent, 'id'>) => {
-    healthEventService.add(data);
-    setRefresh(r => r + 1);
-  }, []);
+  const handleHealthSave = async (data: Omit<HealthEvent, 'id'>) => {
+    await appData.addHealthEvent(data);
+  };
 
   const navigateToGoals = () => {
     setInitialStatPeriod(undefined);
@@ -141,6 +137,18 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-20 lg:pb-0 lg:pt-16">
 
       <main className="container py-6 space-y-6">
+        {/* Auth banner */}
+        {!user && activeTab === 'hjem' && (
+          <div className="glass-card rounded-xl p-3 flex items-center justify-between gap-3 border-dashed">
+            <p className="text-xs text-muted-foreground">
+              Du bruker appen uten innlogging. Data lagres kun lokalt.
+            </p>
+            <Button size="sm" variant="outline" onClick={() => navigate('/login')} className="shrink-0">
+              <LogIn className="w-3.5 h-3.5 mr-1" /> Logg inn
+            </Button>
+          </div>
+        )}
+
         {activeTab === 'hjem' && (
           <>
             {/* Top-right + button */}
@@ -250,7 +258,7 @@ const Index = () => {
 
             {/* Home-pinned extra goals */}
             {(() => {
-              const homeGoals = goalService.getAll().filter(g => g.showOnHome);
+              const homeGoals = appData.goals.filter(g => g.showOnHome);
               if (homeGoals.length === 0) return null;
               return (
                 <section>
@@ -262,8 +270,8 @@ const Index = () => {
                     sessions={allSessions}
                     onEdit={(g) => { setEditGoal(g); setShowGoalEditDialog(true); }}
                     onDelete={() => {}}
-                    onToggleHome={(id) => { goalService.update(id, { showOnHome: false }); setRefresh(r => r + 1); }}
-                    onReorder={() => setRefresh(r => r + 1)}
+                    onToggleHome={(id) => { appData.updateGoal(id, { showOnHome: false }); }}
+                    onReorder={() => {}}
                   />
                 </section>
               );
@@ -332,10 +340,9 @@ const Index = () => {
               goal={editGoal}
               embedded
               onSave={(data) => {
-                goalService.update(editGoal.id, data);
+                appData.updateGoal(editGoal.id, data);
                 setEditGoal(undefined);
                 setShowGoalEditDialog(false);
-                setRefresh(r => r + 1);
               }}
               onCancel={() => { setShowGoalEditDialog(false); setEditGoal(undefined); }}
             />

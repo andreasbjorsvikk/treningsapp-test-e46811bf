@@ -14,7 +14,171 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      goals: {
+        Row: {
+          activity_type: string
+          created_at: string
+          custom_end: string | null
+          custom_start: string | null
+          id: string
+          metric: string
+          period: string
+          show_on_home: boolean | null
+          sort_order: number | null
+          target: number
+          user_id: string
+        }
+        Insert: {
+          activity_type?: string
+          created_at?: string
+          custom_end?: string | null
+          custom_start?: string | null
+          id?: string
+          metric: string
+          period: string
+          show_on_home?: boolean | null
+          sort_order?: number | null
+          target: number
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          custom_end?: string | null
+          custom_start?: string | null
+          id?: string
+          metric?: string
+          period?: string
+          show_on_home?: boolean | null
+          sort_order?: number | null
+          target?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      health_events: {
+        Row: {
+          created_at: string
+          date_from: string
+          date_to: string | null
+          id: string
+          notes: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date_from: string
+          date_to?: string | null
+          id?: string
+          notes?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date_from?: string
+          date_to?: string | null
+          id?: string
+          notes?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      primary_goal_periods: {
+        Row: {
+          created_at: string
+          id: string
+          input_period: string
+          input_target: number
+          user_id: string
+          valid_from: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          input_period: string
+          input_target: number
+          user_id: string
+          valid_from: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          input_period?: string
+          input_target?: number
+          user_id?: string
+          valid_from?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id: string
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      workout_sessions: {
+        Row: {
+          created_at: string
+          date: string
+          distance: number | null
+          duration_minutes: number
+          elevation_gain: number | null
+          id: string
+          notes: string | null
+          title: string | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          distance?: number | null
+          duration_minutes: number
+          elevation_gain?: number | null
+          id?: string
+          notes?: string | null
+          title?: string | null
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          distance?: number | null
+          duration_minutes?: number
+          elevation_gain?: number | null
+          id?: string
+          notes?: string | null
+          title?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
