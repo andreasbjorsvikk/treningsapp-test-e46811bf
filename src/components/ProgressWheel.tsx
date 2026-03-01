@@ -119,10 +119,10 @@ const ProgressWheel = ({
     if (!hasGoal || markerAngle == null || isGold) return null;
     const rad = ((markerAngle - 90) * Math.PI) / 180;
     // Small tick mark sitting on the outer edge, spanning ~half the stroke
-    const tickLen = STROKE * 0.55;
-    const outerR = RADIUS + STROKE / 2 + (compact ? 1 : 2);
+    const tickLen = STROKE * 0.65;
+    const outerR = RADIUS + STROKE / 2 + (compact ? 2 : 3);
     const innerR = outerR - tickLen;
-    const halfWidth = compact ? 1.8 : 2.5;
+    const halfWidth = compact ? 2.2 : 3;
     const perpRad = rad + Math.PI / 2;
     // Outer edge points (wider)
     const ox1 = CENTER + outerR * Math.cos(rad) + halfWidth * Math.cos(perpRad);
