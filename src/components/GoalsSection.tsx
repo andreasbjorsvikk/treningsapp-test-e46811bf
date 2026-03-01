@@ -151,15 +151,15 @@ const GoalsSection = () => {
     setRefresh(r => r + 1);
   };
 
-  // Navigation header for a wheel
-  const WheelNav = ({ label, onPrev, onNext }: { label: string; onPrev: () => void; onNext: () => void }) => (
-    <div className="flex items-center justify-center gap-1 mb-1">
-      <button onClick={onPrev} className="p-1 rounded hover:bg-secondary transition-colors">
-        <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground" />
+  // Inline nav for wheel titles
+  const WheelTitle = ({ label, onPrev, onNext }: { label: string; onPrev: () => void; onNext: () => void }) => (
+    <div className="flex items-center gap-0.5">
+      <button onClick={(e) => { e.stopPropagation(); onPrev(); }} className="p-0.5 rounded hover:bg-secondary/60 transition-colors">
+        <ChevronLeft className="w-3 h-3 text-muted-foreground" />
       </button>
-      <span className="text-xs font-semibold text-muted-foreground min-w-[5rem] text-center">{label}</span>
-      <button onClick={onNext} className="p-1 rounded hover:bg-secondary transition-colors">
-        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+      <span className="text-[10px] font-semibold text-muted-foreground">{label}</span>
+      <button onClick={(e) => { e.stopPropagation(); onNext(); }} className="p-0.5 rounded hover:bg-secondary/60 transition-colors">
+        <ChevronRight className="w-3 h-3 text-muted-foreground" />
       </button>
     </div>
   );
@@ -179,104 +179,139 @@ const GoalsSection = () => {
             onCancel={() => setShowPrimaryForm(false)}
           />
         ) : primaryGoal ? (
-          <div className="glass-card rounded-lg p-6 space-y-4">
-            <div className="flex flex-col items-center text-center">
-              <TargetIcon className="w-6 h-6 mb-2" />
-              <p className="text-2xl font-bold text-foreground">
-                {primaryGoal.inputTarget} økter per {periodLabel}
-              </p>
-              <div className="flex items-center gap-3 text-sm text-muted-foreground mt-3">
-                <span><span className="font-semibold text-foreground text-base">{Math.round(weekTarget * 10) / 10}</span> /uke</span>
-                <span className="text-border">·</span>
-                <span><span className="font-semibold text-foreground text-base">{Math.round(monthTarget * 10) / 10}</span> /mnd</span>
-                <span className="text-border">·</span>
-                <span><span className="font-semibold text-foreground text-base">{Math.round(yearTarget)}</span> /år</span>
-              </div>
-              <div className="flex gap-2 mt-3">
-                <button onClick={() => setShowPrimaryForm(true)} className="px-3 py-1 rounded-md hover:bg-secondary transition-colors text-xs text-muted-foreground">
-                  Endre
-                </button>
-                <button onClick={() => setShowDeletePrimaryConfirm(true)} className="px-3 py-1 rounded-md hover:bg-destructive/10 transition-colors text-xs text-destructive">
-                  Slett
-                </button>
-              </div>
-            </div>
-
-            {/* Progress wheels inside goal card */}
-            {/* Desktop/Tablet: side by side */}
-            <div className="hidden md:grid md:grid-cols-2 md:gap-4 pt-2 border-t border-border/30">
-              <div>
-                <WheelNav
-                  label={`${monthNames[wheelMonth]} ${wheelYear}`}
-                  onPrev={handlePrevMonth}
-                  onNext={handleNextMonth}
-                />
+          <div className="glass-card rounded-lg p-4 space-y-0">
+            {/* Desktop/Tablet: wheels flanking the text info */}
+            <div className="hidden md:flex md:items-center md:gap-4">
+              {/* Left wheel - month */}
+              <div className="flex-shrink-0 w-36">
                 <ProgressWheel
                   percent={monthData.percent}
                   current={monthData.current}
                   target={monthData.target}
                   unit={monthData.unit}
-                  title={`${monthNames[wheelMonth].slice(0, 3)}`}
+                  title=""
+                  titleOverride={
+                    <WheelTitle
+                      label={`${monthNames[wheelMonth].slice(0, 3)} ${wheelYear}`}
+                      onPrev={handlePrevMonth}
+                      onNext={handleNextMonth}
+                    />
+                  }
                   hasGoal={true}
                   expectedFraction={monthData.expectedFraction}
                   paceDiff={monthData.diff}
-                  showPaceLabel
+                  compact
                 />
               </div>
-              <div>
-                <WheelNav
-                  label={String(wheelYear)}
-                  onPrev={handlePrevYear}
-                  onNext={handleNextYear}
+
+              {/* Center text info */}
+              <div className="flex-1 flex flex-col items-center text-center py-2">
+                <TargetIcon className="w-5 h-5 mb-1.5" />
+                <p className="text-xl font-bold text-foreground">
+                  {primaryGoal.inputTarget} økter per {periodLabel}
+                </p>
+                <div className="flex items-center gap-3 text-sm text-muted-foreground mt-2">
+                  <span><span className="font-semibold text-foreground text-base">{Math.round(weekTarget * 10) / 10}</span> /uke</span>
+                  <span className="text-border">·</span>
+                  <span><span className="font-semibold text-foreground text-base">{Math.round(monthTarget * 10) / 10}</span> /mnd</span>
+                  <span className="text-border">·</span>
+                  <span><span className="font-semibold text-foreground text-base">{Math.round(yearTarget)}</span> /år</span>
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <button onClick={() => setShowPrimaryForm(true)} className="px-3 py-1 rounded-md hover:bg-secondary transition-colors text-xs text-muted-foreground">
+                    Endre
+                  </button>
+                  <button onClick={() => setShowDeletePrimaryConfirm(true)} className="px-3 py-1 rounded-md hover:bg-destructive/10 transition-colors text-xs text-destructive">
+                    Slett
+                  </button>
+                </div>
+              </div>
+
+              {/* Right wheel - year */}
+              <div className="flex-shrink-0 w-36">
+                <ProgressWheel
+                  percent={yearData.percent}
+                  current={yearData.current}
+                  target={yearData.target}
+                  unit={yearData.unit}
+                  title=""
+                  titleOverride={
+                    <WheelTitle
+                      label={String(wheelYear)}
+                      onPrev={handlePrevYear}
+                      onNext={handleNextYear}
+                    />
+                  }
+                  hasGoal={true}
+                  expectedFraction={yearData.expectedFraction}
+                  paceDiff={yearData.diff}
+                  compact
+                />
+              </div>
+            </div>
+
+            {/* Mobile: text info then wheels side-by-side */}
+            <div className="md:hidden space-y-3">
+              <div className="flex flex-col items-center text-center">
+                <TargetIcon className="w-5 h-5 mb-1.5" />
+                <p className="text-xl font-bold text-foreground">
+                  {primaryGoal.inputTarget} økter per {periodLabel}
+                </p>
+                <div className="flex items-center gap-3 text-sm text-muted-foreground mt-2">
+                  <span><span className="font-semibold text-foreground text-base">{Math.round(weekTarget * 10) / 10}</span> /uke</span>
+                  <span className="text-border">·</span>
+                  <span><span className="font-semibold text-foreground text-base">{Math.round(monthTarget * 10) / 10}</span> /mnd</span>
+                  <span className="text-border">·</span>
+                  <span><span className="font-semibold text-foreground text-base">{Math.round(yearTarget)}</span> /år</span>
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <button onClick={() => setShowPrimaryForm(true)} className="px-3 py-1 rounded-md hover:bg-secondary transition-colors text-xs text-muted-foreground">
+                    Endre
+                  </button>
+                  <button onClick={() => setShowDeletePrimaryConfirm(true)} className="px-3 py-1 rounded-md hover:bg-destructive/10 transition-colors text-xs text-destructive">
+                    Slett
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/30">
+                <ProgressWheel
+                  percent={monthData.percent}
+                  current={monthData.current}
+                  target={monthData.target}
+                  unit={monthData.unit}
+                  title=""
+                  titleOverride={
+                    <WheelTitle
+                      label={`${monthNames[wheelMonth].slice(0, 3)} ${wheelYear}`}
+                      onPrev={handlePrevMonth}
+                      onNext={handleNextMonth}
+                    />
+                  }
+                  hasGoal={true}
+                  expectedFraction={monthData.expectedFraction}
+                  paceDiff={monthData.diff}
+                  compact
                 />
                 <ProgressWheel
                   percent={yearData.percent}
                   current={yearData.current}
                   target={yearData.target}
                   unit={yearData.unit}
-                  title={String(wheelYear)}
+                  title=""
+                  titleOverride={
+                    <WheelTitle
+                      label={String(wheelYear)}
+                      onPrev={handlePrevYear}
+                      onNext={handleNextYear}
+                    />
+                  }
                   hasGoal={true}
                   expectedFraction={yearData.expectedFraction}
                   paceDiff={yearData.diff}
-                  showPaceLabel
+                  compact
                 />
               </div>
-            </div>
-
-            {/* Mobile: stacked below */}
-            <div className="md:hidden space-y-3 pt-2 border-t border-border/30">
-              <WheelNav
-                label={`${monthNames[wheelMonth]} ${wheelYear}`}
-                onPrev={handlePrevMonth}
-                onNext={handleNextMonth}
-              />
-              <ProgressWheel
-                percent={monthData.percent}
-                current={monthData.current}
-                target={monthData.target}
-                unit={monthData.unit}
-                title={monthNames[wheelMonth]}
-                hasGoal={true}
-                expectedFraction={monthData.expectedFraction}
-                paceDiff={monthData.diff}
-                showPaceLabel
-              />
-              <WheelNav
-                label={String(wheelYear)}
-                onPrev={handlePrevYear}
-                onNext={handleNextYear}
-              />
-              <ProgressWheel
-                percent={yearData.percent}
-                current={yearData.current}
-                target={yearData.target}
-                unit={yearData.unit}
-                title={String(wheelYear)}
-                hasGoal={true}
-                expectedFraction={yearData.expectedFraction}
-                paceDiff={yearData.diff}
-                showPaceLabel
-              />
             </div>
           </div>
         ) : (

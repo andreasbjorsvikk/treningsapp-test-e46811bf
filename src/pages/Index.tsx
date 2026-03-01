@@ -23,8 +23,6 @@ import { Button } from '@/components/ui/button';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-
-
 const Index = () => {
   const { settings, updateSettings } = useSettings();
   const [activeTab, setActiveTab] = useState<TabId>('hjem');
@@ -116,8 +114,8 @@ const Index = () => {
       <main className="container py-6 space-y-6">
         {activeTab === 'hjem' && (
           <>
-            {/* ===== DESKTOP (lg+): 3-column — month wheel | year wheel | mini calendar ===== */}
-            <section className="hidden lg:grid lg:grid-cols-3 lg:gap-4">
+            {/* ===== DESKTOP (lg+): 4-column — month | year | calendar | last 7 days ===== */}
+            <section className="hidden lg:grid lg:grid-cols-4 lg:gap-3">
               <ProgressWheel
                 percent={monthData.percent}
                 current={monthData.current}
@@ -143,19 +141,19 @@ const Index = () => {
                 onClick={navigateToGoals}
               />
               <MiniCalendar sessions={allSessions} />
+              <div className="glass-card rounded-2xl p-3 flex flex-col">
+                <h2 className="font-display font-semibold text-[10px] text-muted-foreground uppercase tracking-wide mb-2">
+                  Siste 7 dager
+                </h2>
+                <WeeklySessionIcons sessions={allSessions} />
+                <div className="mt-auto pt-2">
+                  <StatsOverview stats={stats} compact />
+                </div>
+              </div>
             </section>
 
-            {/* Desktop: Siste 7 dager + stats below */}
-            <section className="hidden lg:block space-y-3">
-              <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                Siste 7 dager
-              </h2>
-              <WeeklySessionIcons sessions={allSessions} />
-              <StatsOverview stats={stats} />
-            </section>
-
-            {/* ===== TABLET (md, not lg): wheels narrow + calendar right ===== */}
-            <section className="hidden md:grid md:grid-cols-[1fr_1fr_1fr] md:gap-3 lg:hidden">
+            {/* ===== TABLET (md, not lg): 3-col wheels + calendar ===== */}
+            <section className="hidden md:grid md:grid-cols-3 md:gap-3 lg:hidden">
               <div className="px-0">
                 <ProgressWheel
                   percent={monthData.percent}
