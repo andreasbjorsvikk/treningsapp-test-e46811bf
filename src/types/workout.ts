@@ -33,6 +33,7 @@ export interface WeeklyStats {
   totalSessions: number;
   totalMinutes: number;
   totalDistance: number;
+  totalElevation: number;
   sessionsByType: Record<SessionType, number>;
 }
 

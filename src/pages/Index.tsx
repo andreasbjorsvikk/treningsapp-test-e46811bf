@@ -52,7 +52,6 @@ const Index = () => {
       return true;
     }).length;
     const percent = target === 0 ? 0 : (current / target) * 100;
-    // Expected fraction for month
     const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     const expectedFraction = now.getDate() / daysInMonth;
     const expected = target * expectedFraction;
@@ -117,9 +116,89 @@ const Index = () => {
       <main className="container py-6 space-y-6">
         {activeTab === 'hjem' && (
           <>
-            {/* Desktop: 2-column layout with wheels left, stats right */}
-            <section className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-6 lg:space-y-0">
-              {/* Left: Progress wheels */}
+            {/* ===== DESKTOP (lg+): 3-column — month wheel | year wheel | mini calendar ===== */}
+            <section className="hidden lg:grid lg:grid-cols-3 lg:gap-4">
+              <ProgressWheel
+                percent={monthData.percent}
+                current={monthData.current}
+                target={monthData.target}
+                unit={monthData.unit}
+                title={new Date().toLocaleString('nb-NO', { month: 'long' }).replace(/^./, c => c.toUpperCase())}
+                hasGoal={!!primaryGoal}
+                expectedFraction={monthData.expectedFraction}
+                paceDiff={monthData.diff}
+                showPaceLabel
+                onClick={navigateToGoals}
+              />
+              <ProgressWheel
+                percent={yearData.percent}
+                current={yearData.current}
+                target={yearData.target}
+                unit={yearData.unit}
+                title={String(new Date().getFullYear())}
+                hasGoal={!!primaryGoal}
+                expectedFraction={yearData.expectedFraction}
+                paceDiff={yearData.diff}
+                showPaceLabel
+                onClick={navigateToGoals}
+              />
+              <MiniCalendar sessions={allSessions} />
+            </section>
+
+            {/* Desktop: Siste 7 dager + stats below */}
+            <section className="hidden lg:block space-y-3">
+              <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                Siste 7 dager
+              </h2>
+              <WeeklySessionIcons sessions={allSessions} />
+              <StatsOverview stats={stats} />
+            </section>
+
+            {/* ===== TABLET (md, not lg): wheels narrow + calendar right ===== */}
+            <section className="hidden md:grid md:grid-cols-[1fr_1fr_1fr] md:gap-3 lg:hidden">
+              <div className="px-0">
+                <ProgressWheel
+                  percent={monthData.percent}
+                  current={monthData.current}
+                  target={monthData.target}
+                  unit={monthData.unit}
+                  title={new Date().toLocaleString('nb-NO', { month: 'long' }).replace(/^./, c => c.toUpperCase())}
+                  hasGoal={!!primaryGoal}
+                  expectedFraction={monthData.expectedFraction}
+                  paceDiff={monthData.diff}
+                  showPaceLabel
+                  onClick={navigateToGoals}
+                />
+              </div>
+              <div className="px-0">
+                <ProgressWheel
+                  percent={yearData.percent}
+                  current={yearData.current}
+                  target={yearData.target}
+                  unit={yearData.unit}
+                  title={String(new Date().getFullYear())}
+                  hasGoal={!!primaryGoal}
+                  expectedFraction={yearData.expectedFraction}
+                  paceDiff={yearData.diff}
+                  showPaceLabel
+                  onClick={navigateToGoals}
+                />
+              </div>
+              <MiniCalendar sessions={allSessions} />
+            </section>
+
+            {/* Tablet: Siste 7 dager + stats below */}
+            <section className="hidden md:block lg:hidden space-y-3">
+              <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                Siste 7 dager
+              </h2>
+              <WeeklySessionIcons sessions={allSessions} />
+              <StatsOverview stats={stats} />
+            </section>
+
+            {/* ===== MOBILE (below md): wheels, then weekly + calendar side by side ===== */}
+            <section className="md:hidden space-y-4">
+              {/* Wheels */}
               <div className="grid grid-cols-2 gap-3">
                 <ProgressWheel
                   percent={monthData.percent}
@@ -147,23 +226,19 @@ const Index = () => {
                 />
               </div>
 
-              {/* Right: Last 7 days */}
-              <div>
-                <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">
-                  Siste 7 dager
-                </h2>
-                <WeeklySessionIcons sessions={allSessions} />
-                <div className="mt-2">
-                  <StatsOverview stats={stats} />
+              {/* Weekly icons (left) + Mini calendar (right) */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <h2 className="font-display font-semibold text-[10px] text-muted-foreground uppercase tracking-wide">
+                    Siste 7 dager
+                  </h2>
+                  <WeeklySessionIcons sessions={allSessions} />
                 </div>
-              </div>
-            </section>
-
-            {/* Mini calendar - small, right-aligned on desktop */}
-            <section className="lg:flex lg:justify-end">
-              <div className="lg:w-48 w-full max-w-[12rem] mx-auto lg:mx-0">
                 <MiniCalendar sessions={allSessions} />
               </div>
+
+              {/* Stats 2x2 compact */}
+              <StatsOverview stats={stats} compact />
             </section>
 
             {/* Home-pinned extra goals */}

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import TargetIcon from '@/components/TargetIcon';
 import { ExtraGoal, PrimaryGoal } from '@/types/workout';
@@ -10,8 +10,13 @@ import { Button } from '@/components/ui/button';
 import GoalForm from '@/components/GoalForm';
 import PrimaryGoalForm from '@/components/PrimaryGoalForm';
 import DraggableGoalGrid from '@/components/DraggableGoalGrid';
+import ProgressWheel from '@/components/ProgressWheel';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
+const monthNames = [
+  'Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni',
+  'Juli', 'August', 'September', 'Oktober', 'November', 'Desember',
+];
 
 const GoalsSection = () => {
   const [showExtraForm, setShowExtraForm] = useState(false);
@@ -21,10 +26,14 @@ const GoalsSection = () => {
   const [editGoal, setEditGoal] = useState<ExtraGoal | undefined>();
   const [, setRefresh] = useState(0);
 
+  const now = new Date();
+  const [wheelMonth, setWheelMonth] = useState(now.getMonth());
+  const [wheelYear, setWheelYear] = useState(now.getFullYear());
 
   const primaryGoal = primaryGoalService.get();
   const extraGoals = goalService.getAll();
   const sessions = workoutService.getAll();
+  const allSessions = sessions;
 
   const weekTarget = primaryGoal ? getProratedTarget(primaryGoal, 'week') : 0;
   const monthTarget = primaryGoal ? getProratedTarget(primaryGoal, 'month') : 0;
@@ -33,6 +42,60 @@ const GoalsSection = () => {
   const periodLabel = primaryGoal
     ? primaryGoal.inputPeriod === 'week' ? 'uke' : primaryGoal.inputPeriod === 'month' ? 'måned' : 'år'
     : '';
+
+  // Navigable month data
+  const monthData = useMemo(() => {
+    const target = primaryGoal ? getProratedTarget(primaryGoal, 'month') : 0;
+    const goalStart = primaryGoal ? new Date(primaryGoal.startDate) : null;
+    const current = allSessions.filter(s => {
+      const d = new Date(s.date);
+      if (d.getMonth() !== wheelMonth || d.getFullYear() !== wheelYear) return false;
+      if (goalStart && d < goalStart) return false;
+      return true;
+    }).length;
+    const percent = target === 0 ? 0 : (current / target) * 100;
+    const daysInMonth = new Date(wheelYear, wheelMonth + 1, 0).getDate();
+    const isCurrentMonth = wheelMonth === now.getMonth() && wheelYear === now.getFullYear();
+    const expectedFraction = isCurrentMonth ? now.getDate() / daysInMonth : 1;
+    const expected = target * expectedFraction;
+    const diff = current - expected;
+    return { current, target: Math.round(target * 10) / 10, percent, unit: 'økter', expectedFraction, diff };
+  }, [allSessions, primaryGoal, wheelMonth, wheelYear]);
+
+  // Navigable year data
+  const yearData = useMemo(() => {
+    const goalStart = primaryGoal ? new Date(primaryGoal.startDate) : null;
+    const target = primaryGoal ? getProratedTarget(primaryGoal, 'year') : 0;
+    const current = allSessions.filter(s => {
+      const d = new Date(s.date);
+      if (d.getFullYear() !== wheelYear) return false;
+      if (goalStart && d < goalStart) return false;
+      return true;
+    }).length;
+    const effectiveStart = goalStart && goalStart.getFullYear() === wheelYear
+      ? Math.max(goalStart.getTime(), new Date(wheelYear, 0, 1).getTime())
+      : new Date(wheelYear, 0, 1).getTime();
+    const yearEnd = new Date(wheelYear + 1, 0, 1).getTime();
+    const totalSpan = yearEnd - effectiveStart;
+    const refDate = wheelYear === now.getFullYear() ? now : new Date(wheelYear + 1, 0, 1);
+    const elapsedSpan = refDate.getTime() - effectiveStart;
+    const fractionElapsed = totalSpan > 0 ? Math.max(0, elapsedSpan / totalSpan) : 1;
+    const expected = target * fractionElapsed;
+    const diff = current - expected;
+    const percent = target === 0 ? 0 : (current / target) * 100;
+    return { current, target: Math.round(target), diff, expected, unit: 'økter', expectedFraction: fractionElapsed, percent };
+  }, [allSessions, primaryGoal, wheelYear]);
+
+  const handlePrevMonth = () => {
+    if (wheelMonth === 0) { setWheelMonth(11); setWheelYear(y => y - 1); }
+    else setWheelMonth(m => m - 1);
+  };
+  const handleNextMonth = () => {
+    if (wheelMonth === 11) { setWheelMonth(0); setWheelYear(y => y + 1); }
+    else setWheelMonth(m => m + 1);
+  };
+  const handlePrevYear = () => setWheelYear(y => y - 1);
+  const handleNextYear = () => setWheelYear(y => y + 1);
 
   const handleSaveExtra = (data: Omit<ExtraGoal, 'id' | 'createdAt'>) => {
     if (editGoal) {
@@ -88,6 +151,19 @@ const GoalsSection = () => {
     setRefresh(r => r + 1);
   };
 
+  // Navigation header for a wheel
+  const WheelNav = ({ label, onPrev, onNext }: { label: string; onPrev: () => void; onNext: () => void }) => (
+    <div className="flex items-center justify-center gap-1 mb-1">
+      <button onClick={onPrev} className="p-1 rounded hover:bg-secondary transition-colors">
+        <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground" />
+      </button>
+      <span className="text-xs font-semibold text-muted-foreground min-w-[5rem] text-center">{label}</span>
+      <button onClick={onNext} className="p-1 rounded hover:bg-secondary transition-colors">
+        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+      </button>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       {/* Primary Goal */}
@@ -103,7 +179,8 @@ const GoalsSection = () => {
             onCancel={() => setShowPrimaryForm(false)}
           />
         ) : primaryGoal ? (
-          <div className="glass-card rounded-lg p-6 flex flex-col items-center text-center">
+          <div className="glass-card rounded-lg p-6 space-y-4">
+            <div className="flex flex-col items-center text-center">
               <TargetIcon className="w-6 h-6 mb-2" />
               <p className="text-2xl font-bold text-foreground">
                 {primaryGoal.inputTarget} økter per {periodLabel}
@@ -123,6 +200,84 @@ const GoalsSection = () => {
                   Slett
                 </button>
               </div>
+            </div>
+
+            {/* Progress wheels inside goal card */}
+            {/* Desktop/Tablet: side by side */}
+            <div className="hidden md:grid md:grid-cols-2 md:gap-4 pt-2 border-t border-border/30">
+              <div>
+                <WheelNav
+                  label={`${monthNames[wheelMonth]} ${wheelYear}`}
+                  onPrev={handlePrevMonth}
+                  onNext={handleNextMonth}
+                />
+                <ProgressWheel
+                  percent={monthData.percent}
+                  current={monthData.current}
+                  target={monthData.target}
+                  unit={monthData.unit}
+                  title={`${monthNames[wheelMonth].slice(0, 3)}`}
+                  hasGoal={true}
+                  expectedFraction={monthData.expectedFraction}
+                  paceDiff={monthData.diff}
+                  showPaceLabel
+                />
+              </div>
+              <div>
+                <WheelNav
+                  label={String(wheelYear)}
+                  onPrev={handlePrevYear}
+                  onNext={handleNextYear}
+                />
+                <ProgressWheel
+                  percent={yearData.percent}
+                  current={yearData.current}
+                  target={yearData.target}
+                  unit={yearData.unit}
+                  title={String(wheelYear)}
+                  hasGoal={true}
+                  expectedFraction={yearData.expectedFraction}
+                  paceDiff={yearData.diff}
+                  showPaceLabel
+                />
+              </div>
+            </div>
+
+            {/* Mobile: stacked below */}
+            <div className="md:hidden space-y-3 pt-2 border-t border-border/30">
+              <WheelNav
+                label={`${monthNames[wheelMonth]} ${wheelYear}`}
+                onPrev={handlePrevMonth}
+                onNext={handleNextMonth}
+              />
+              <ProgressWheel
+                percent={monthData.percent}
+                current={monthData.current}
+                target={monthData.target}
+                unit={monthData.unit}
+                title={monthNames[wheelMonth]}
+                hasGoal={true}
+                expectedFraction={monthData.expectedFraction}
+                paceDiff={monthData.diff}
+                showPaceLabel
+              />
+              <WheelNav
+                label={String(wheelYear)}
+                onPrev={handlePrevYear}
+                onNext={handleNextYear}
+              />
+              <ProgressWheel
+                percent={yearData.percent}
+                current={yearData.current}
+                target={yearData.target}
+                unit={yearData.unit}
+                title={String(wheelYear)}
+                hasGoal={true}
+                expectedFraction={yearData.expectedFraction}
+                paceDiff={yearData.diff}
+                showPaceLabel
+              />
+            </div>
           </div>
         ) : (
           <Button

@@ -90,6 +90,7 @@ export const workoutService = {
       totalSessions: weekSessions.length,
       totalMinutes: weekSessions.reduce((sum, s) => sum + s.durationMinutes, 0),
       totalDistance: weekSessions.reduce((sum, s) => sum + (s.distance || 0), 0),
+      totalElevation: weekSessions.reduce((sum, s) => sum + (s.elevationGain || 0), 0),
       sessionsByType,
     };
   },
