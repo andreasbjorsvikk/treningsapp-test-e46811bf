@@ -83,7 +83,7 @@ const MiniCalendar = ({ sessions, onClick }: MiniCalendarProps) => {
 
         <div className="grid grid-cols-7 gap-[3px]">
           {weekdays.map((d, i) => (
-            <div key={i} className="text-center text-[7px] font-medium text-muted-foreground/50 pb-0.5">
+            <div key={i} className="text-center text-[7px] font-medium text-muted-foreground pb-0.5">
               {d}
             </div>
           ))}
@@ -110,7 +110,7 @@ const MiniCalendar = ({ sessions, onClick }: MiniCalendarProps) => {
               >
                 {/* No sessions - plain cell */}
                 {count === 0 && (
-                  <span className={`text-[8px] leading-none ${isToday ? 'font-bold text-primary' : 'text-muted-foreground/40'}`}>
+                  <span className={`text-[8px] leading-none ${isToday ? 'font-bold text-primary' : 'text-muted-foreground'}`}>
                     {day}
                   </span>
                 )}
