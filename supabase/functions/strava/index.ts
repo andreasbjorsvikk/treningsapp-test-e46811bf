@@ -166,8 +166,8 @@ Deno.serve(async (req) => {
         page++;
       }
       const { data: existing } = await admin.from("workout_sessions").select("id, strava_activity_id, summary_polyline, average_heartrate").eq("user_id", userId).not("strava_activity_id", "is", null);
-      const existingMap = new Map((existing || []).map((r: any) => [r.strava_activity_id, r]));
-      const newActivities = activities.filter((a) => !existingMap.has(a.id));
+      const existingMap = new Map((existing || []).map((r: any) => [Number(r.strava_activity_id), r]));
+      const newActivities = activities.filter((a) => !existingMap.has(Number(a.id)));
       let updated = 0;
       if (newActivities.length > 0) {
         const rows = newActivities.map((a) => buildActivityRow(a, userId));
@@ -176,7 +176,7 @@ Deno.serve(async (req) => {
       }
       // Update existing sessions missing map/heartrate data where Strava HAS the data
       for (const a of activities) {
-        const existingRow = existingMap.get(a.id);
+        const existingRow = existingMap.get(Number(a.id));
         if (!existingRow) continue;
         const hasNewPolyline = !existingRow.summary_polyline && a.map?.summary_polyline;
         const hasNewHr = !existingRow.average_heartrate && a.average_heartrate;
@@ -211,8 +211,8 @@ Deno.serve(async (req) => {
         page++;
       }
       const { data: existing } = await admin.from("workout_sessions").select("id, strava_activity_id, summary_polyline, average_heartrate").eq("user_id", userId).not("strava_activity_id", "is", null);
-      const existingMap = new Map((existing || []).map((r: any) => [r.strava_activity_id, r]));
-      const newActivities = activities.filter((a) => !existingMap.has(a.id));
+      const existingMap = new Map((existing || []).map((r: any) => [Number(r.strava_activity_id), r]));
+      const newActivities = activities.filter((a) => !existingMap.has(Number(a.id)));
       let updated = 0;
 
       // Insert new activities
@@ -227,7 +227,7 @@ Deno.serve(async (req) => {
 
       // Update existing activities missing map/heartrate data
       for (const a of activities) {
-        const existingRow = existingMap.get(a.id);
+        const existingRow = existingMap.get(Number(a.id));
         if (!existingRow) continue;
         const needsUpdate = !existingRow.summary_polyline && a.map?.summary_polyline
           || !existingRow.average_heartrate && a.average_heartrate;
