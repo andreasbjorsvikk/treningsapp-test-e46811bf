@@ -75,7 +75,7 @@ const DayDrawer = ({ dateKey, sessions, onClose, onRefresh, onNavigateToCalendar
               </p>
             ) : (
               sessions.map(s => (
-                <SessionCard key={s.id} session={s} onClick={setDetailSession} />
+                <SessionCard key={s.id} session={s} onClick={setDetailSession} onEdit={handleEdit} />
               ))
             )}
 

@@ -3,13 +3,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockUsers, mockGroups, ChallengeMetric } from '@/data/mockCommunity';
+import { mockUsers, mockGroups, ChallengeMetric, MockUser } from '@/data/mockCommunity';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import { toast } from 'sonner';
+import { Link2 } from 'lucide-react';
 
 interface ChallengeFormProps {
   open: boolean;
   onClose: () => void;
+  preselectedUser?: MockUser | null;
 }
 
 const periodOptions = [
@@ -26,14 +28,16 @@ const metricOptions: { value: ChallengeMetric; label: string }[] = [
   { value: 'elevation', label: 'Høydemeter (m)' },
 ];
 
-const ChallengeForm = ({ open, onClose }: ChallengeFormProps) => {
+const ChallengeForm = ({ open, onClose, preselectedUser }: ChallengeFormProps) => {
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('');
   const [metric, setMetric] = useState<ChallengeMetric>('sessions');
   const [activityType, setActivityType] = useState('all');
   const [period, setPeriod] = useState('month');
   const [target, setTarget] = useState('');
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>(
+    preselectedUser ? [preselectedUser.id] : []
+  );
 
   const friends = mockUsers.filter(u => u.id !== 'me');
 
@@ -111,6 +115,18 @@ const ChallengeForm = ({ open, onClose }: ChallengeFormProps) => {
           {!target && (
             <p className="text-xs text-muted-foreground">Uten mål: den med mest vinner</p>
           )}
+
+          {/* Invite link */}
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText('https://treningsapp.no/challenge/invite/xyz');
+              toast.success('Invitasjonslenke kopiert!');
+            }}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-secondary/50 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Link2 className="w-3.5 h-3.5" /> Kopier invitasjonslenke
+          </button>
 
           {/* Participant selection */}
           <div>

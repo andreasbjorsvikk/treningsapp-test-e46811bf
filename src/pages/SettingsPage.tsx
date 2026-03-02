@@ -13,7 +13,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { SessionType } from '@/types/workout';
-import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw, Loader2, Check, Pencil, Dumbbell } from 'lucide-react';
+import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw, Loader2, Check, Pencil, Dumbbell, Lock } from 'lucide-react';
 import { getActivityColors, activityColorMap } from '@/utils/activityColors';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
@@ -36,7 +36,7 @@ const COLOR_PRESETS = [
   { labelKey: 'color.mint', light: { bg: 'rgb(210,240,230)', text: 'rgb(35,95,75)', badge: 'rgb(225,248,240)' }, dark: { bg: 'rgb(80,145,120)', text: '#ffffff', badge: '#1a3a2e' } },
 ];
 
-type SettingsView = 'main' | 'appearance' | 'preferences' | 'training' | 'data' | 'account' | 'sync';
+type SettingsView = 'main' | 'appearance' | 'preferences' | 'training' | 'data' | 'account' | 'sync' | 'privacy';
 
 const SettingsPage = () => {
   const { settings, updateSettings, appThemes, accentPresets, getTypeColor } = useSettings();
@@ -388,6 +388,44 @@ const SettingsPage = () => {
     );
   }
 
+  // ========== PRIVACY VIEW ==========
+  if (view === 'privacy') {
+    const privacyOptions = [
+      { key: 'privacyWorkouts' as const, label: 'Treningsøkter', desc: 'Hvem kan se øktene dine i profilen din?' },
+      { key: 'privacyStats' as const, label: 'Statistikk', desc: 'Hvem kan se statistikken din?' },
+      { key: 'privacyGoals' as const, label: 'Mål og progresjon', desc: 'Hvem kan se måned- og årsmålet ditt?' },
+    ];
+    return (
+      <div className="space-y-4">
+        {backButton('Personvern')}
+
+        <div className="glass-card rounded-xl p-4 space-y-1">
+          <p className="text-xs text-muted-foreground mb-3">E-postadressen din er alltid skjult for andre.</p>
+          {privacyOptions.map(opt => (
+            <div key={opt.key} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
+              <div className="min-w-0 flex-1 pr-4">
+                <p className="text-sm font-medium">{opt.label}</p>
+                <p className="text-xs text-muted-foreground">{opt.desc}</p>
+              </div>
+              <Select
+                value={settings[opt.key]}
+                onValueChange={(v) => updateSettings({ [opt.key]: v })}
+              >
+                <SelectTrigger className="w-[120px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="me">Bare meg</SelectItem>
+                  <SelectItem value="friends">Venner</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   // ========== DATA VIEW ==========
   if (view === 'data') {
     return (
@@ -697,6 +735,7 @@ const SettingsPage = () => {
         {menuItem(t('settings.appearance'), <Palette className="w-4 h-4" />, () => setView('appearance'))}
         {menuItem(t('settings.preferences'), <Settings2 className="w-4 h-4" />, () => setView('preferences'))}
         {menuItem(t('settings.training'), <Dumbbell className="w-4 h-4" />, () => setView('training'))}
+        {menuItem('Personvern', <Lock className="w-4 h-4" />, () => setView('privacy'))}
         {menuItem(t('settings.sync'), <RefreshCw className="w-4 h-4" />, () => setView('sync'))}
         {menuItem(t('settings.dangerZone'), <Shield className="w-4 h-4" />, () => setView('data'))}
       </div>
