@@ -20,6 +20,16 @@ export interface WorkoutSession {
   elevationGain?: number;
   notes?: string;
   userId?: string;
+  averageHeartrate?: number;
+  maxHeartrate?: number;
+  summaryPolyline?: string;
+  stravaActivityId?: number;
+}
+
+export interface WorkoutStreams {
+  heartrateData?: { time: number; value: number }[];
+  altitudeData?: { distance: number; value: number }[];
+  latlngData?: [number, number][];
 }
 
 export interface UserProfile {

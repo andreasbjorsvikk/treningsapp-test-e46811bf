@@ -43,6 +43,10 @@ function rowToSession(row: any): WorkoutSession {
     elevationGain: row.elevation_gain || undefined,
     notes: row.notes || undefined,
     userId: row.user_id,
+    averageHeartrate: row.average_heartrate || undefined,
+    maxHeartrate: row.max_heartrate || undefined,
+    summaryPolyline: row.summary_polyline || undefined,
+    stravaActivityId: row.strava_activity_id || undefined,
   };
 }
 

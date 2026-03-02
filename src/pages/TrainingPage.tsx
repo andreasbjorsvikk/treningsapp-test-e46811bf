@@ -6,6 +6,7 @@ import { useAppDataContext } from '@/contexts/AppDataContext';
 import { computeMonthWheelData, computeYearWheelData } from '@/utils/goalWheelData';
 import { allSessionTypes } from '@/utils/workoutUtils';
 import SessionCard from '@/components/SessionCard';
+import WorkoutDetailDrawer from '@/components/WorkoutDetailDrawer';
 import TypeFilter from '@/components/TypeFilter';
 import WorkoutDialog from '@/components/WorkoutDialog';
 import HealthEventDialog from '@/components/HealthEventDialog';
@@ -64,6 +65,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
   }, []);
 
   const [filterType, setFilterType] = useState<SessionType | 'all'>('all');
+  const [detailSession, setDetailSession] = useState<WorkoutSession | null>(null);
   const [healthFilter, setHealthFilter] = useState<'all' | 'sickness' | 'injury'>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
@@ -309,7 +311,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
                     {!isCollapsed && (
                       <div className="px-3 pb-3 space-y-2">
                         {group.sessions.map(s => (
-                          <SessionCard key={s.id} session={s} onEdit={handleEdit} onDelete={handleDelete} />
+                          <SessionCard key={s.id} session={s} onClick={setDetailSession} />
                         ))}
                       </div>
                     )}
@@ -395,6 +397,14 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
       )}
 
       {subTab === 'mål' && <GoalsSection />}
+
+      <WorkoutDetailDrawer
+        session={detailSession}
+        open={!!detailSession}
+        onClose={() => setDetailSession(null)}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
 
       <WorkoutDialog
         open={dialogOpen}
