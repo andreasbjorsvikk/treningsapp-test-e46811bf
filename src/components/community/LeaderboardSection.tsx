@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { mockLeaderboard, metricUnits, LeaderboardEntry } from '@/data/mockCommunity';
+import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import CommunitySubTabs from './CommunitySubTabs';
+import ActivityIcon from '@/components/ActivityIcon';
 import { Trophy } from 'lucide-react';
 
 const periodTabs = [
@@ -12,12 +14,14 @@ const periodTabs = [
 const categoryTabs = [
   { id: 'sessions', label: 'Økter' },
   { id: 'distance', label: 'Distanse' },
+  { id: 'duration', label: 'Total tid' },
   { id: 'elevation', label: 'Høydemeter' },
 ];
 
 const LeaderboardSection = () => {
   const [period, setPeriod] = useState('monthly');
   const [category, setCategory] = useState('sessions');
+  const [selectedType, setSelectedType] = useState<string>('all');
 
   const unit = metricUnits[category as keyof typeof metricUnits] || '';
   const data: LeaderboardEntry[] = mockLeaderboard;
@@ -36,6 +40,30 @@ const LeaderboardSection = () => {
             }`}
           >
             {cat.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Activity type filter */}
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+        <button
+          onClick={() => setSelectedType('all')}
+          className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+            selectedType === 'all' ? 'bg-accent text-accent-foreground' : 'bg-secondary text-muted-foreground'
+          }`}
+        >
+          Alle
+        </button>
+        {allSessionTypes.map(type => (
+          <button
+            key={type}
+            onClick={() => setSelectedType(type)}
+            className={`shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              selectedType === type ? 'bg-accent text-accent-foreground' : 'bg-secondary text-muted-foreground'
+            }`}
+          >
+            <ActivityIcon type={type} className="w-3 h-3" />
+            {sessionTypeConfig[type].label}
           </button>
         ))}
       </div>

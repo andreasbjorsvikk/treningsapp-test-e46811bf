@@ -171,7 +171,7 @@ export const metricLabels: Record<ChallengeMetric, string> = {
 export const metricUnits: Record<ChallengeMetric, string> = {
   sessions: '',
   distance: 'km',
-  duration: 'min',
+  duration: 't',
   elevation: 'm',
 };
 

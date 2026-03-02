@@ -38,7 +38,8 @@ const ChallengeDetail = ({ challenge, open, onClose }: ChallengeDetailProps) => 
             {/* Countdown / status */}
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
-                {metricLabels[challenge.metric]} · Mål: {challenge.target}{unit ? ` ${unit}` : ''}
+                {metricLabels[challenge.metric]}
+                {challenge.target > 0 ? ` · Mål: ${challenge.target}${unit ? ` ${unit}` : ''}` : ' · Ingen satt mål'}
               </span>
               {challenge.status !== 'archived' ? (
                 <span className="text-xs font-medium bg-accent/10 text-accent px-2 py-0.5 rounded-full">
@@ -54,7 +55,10 @@ const ChallengeDetail = ({ challenge, open, onClose }: ChallengeDetailProps) => 
             {/* Ranked participant list */}
             <div className="space-y-1">
               {sorted.map((p, i) => {
-                const pct = Math.min((p.progress / challenge.target) * 100, 100);
+                const maxProgress = Math.max(...challenge.participants.map(pp => pp.progress));
+                const pct = challenge.target > 0
+                  ? Math.min((p.progress / challenge.target) * 100, 100)
+                  : maxProgress > 0 ? (p.progress / maxProgress) * 100 : 0;
                 return (
                   <div key={p.user.id} className="flex items-center gap-3 rounded-lg bg-secondary/50 p-2.5">
                     <span className={`font-display font-bold text-sm w-6 text-center ${i === 0 ? 'text-warning' : 'text-muted-foreground'}`}>

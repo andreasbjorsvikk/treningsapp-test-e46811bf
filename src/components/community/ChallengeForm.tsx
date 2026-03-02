@@ -42,8 +42,8 @@ const ChallengeForm = ({ open, onClose }: ChallengeFormProps) => {
   };
 
   const handleSubmit = () => {
-    if (!name.trim() || !target) {
-      toast.error('Fyll ut navn og mål');
+    if (!name.trim()) {
+      toast.error('Fyll ut navn');
       return;
     }
     toast.success('Utfordring opprettet (mock)');
@@ -104,10 +104,13 @@ const ChallengeForm = ({ open, onClose }: ChallengeFormProps) => {
               </Select>
             </div>
             <div className="w-24">
-              <Label className="text-xs">Mål</Label>
-              <Input type="number" value={target} onChange={e => setTarget(e.target.value)} placeholder="100" />
+              <Label className="text-xs">Mål (valgfritt)</Label>
+              <Input type="number" value={target} onChange={e => setTarget(e.target.value)} placeholder="—" />
             </div>
           </div>
+          {!target && (
+            <p className="text-xs text-muted-foreground">Uten mål: den med mest vinner</p>
+          )}
 
           {/* Participant selection */}
           <div>
