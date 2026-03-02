@@ -200,10 +200,11 @@ const AvatarCropper = ({ open, imageFile, imageUrl, onConfirm, onCancel }: Avata
     }, 'image/png');
   }, [onConfirm, baseW, baseH, clampOffset]);
 
-  // Use CSS transform for zoom to guarantee no aspect ratio distortion
-  // Image is rendered at base "cover" size and scaled via transform
-  const imgLeft = (CIRCLE_SIZE - baseW) / 2 + clamped.x / zoom;
-  const imgTop = (CIRCLE_SIZE - baseH) / 2 + clamped.y / zoom;
+  // Position image using actual scaled dimensions (no CSS transform)
+  const displayW = baseW * zoom;
+  const displayH = baseH * zoom;
+  const imgLeft = (CIRCLE_SIZE - displayW) / 2 + clamped.x;
+  const imgTop = (CIRCLE_SIZE - displayH) / 2 + clamped.y;
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onCancel(); }}>
@@ -228,10 +229,8 @@ const AvatarCropper = ({ open, imageFile, imageUrl, onConfirm, onCancel }: Avata
                 draggable={false}
                 className="pointer-events-none select-none absolute"
                 style={{
-                  width: baseW,
-                  height: baseH,
-                  transformOrigin: '0 0',
-                  transform: `scale(${zoom})`,
+                  width: displayW,
+                  height: displayH,
                   left: imgLeft,
                   top: imgTop,
                 }}
