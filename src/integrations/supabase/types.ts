@@ -137,6 +137,39 @@ export type Database = {
         }
         Relationships: []
       }
+      strava_connections: {
+        Row: {
+          access_token: string
+          created_at: string
+          expires_at: string
+          id: string
+          refresh_token: string
+          strava_athlete_id: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          refresh_token: string
+          strava_athlete_id: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          refresh_token?: string
+          strava_athlete_id?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       workout_sessions: {
         Row: {
           created_at: string
@@ -146,6 +179,7 @@ export type Database = {
           elevation_gain: number | null
           id: string
           notes: string | null
+          strava_activity_id: number | null
           title: string | null
           type: string
           updated_at: string
@@ -159,6 +193,7 @@ export type Database = {
           elevation_gain?: number | null
           id?: string
           notes?: string | null
+          strava_activity_id?: number | null
           title?: string | null
           type: string
           updated_at?: string
@@ -172,6 +207,7 @@ export type Database = {
           elevation_gain?: number | null
           id?: string
           notes?: string | null
+          strava_activity_id?: number | null
           title?: string | null
           type?: string
           updated_at?: string

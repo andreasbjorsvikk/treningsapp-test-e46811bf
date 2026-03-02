@@ -13,10 +13,12 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { SessionType } from '@/types/workout';
-import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw } from 'lucide-react';
+import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw, Loader2, Check } from 'lucide-react';
 import { getActivityColors, activityColorMap } from '@/utils/activityColors';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
+import { stravaService } from '@/services/stravaService';
+import { toast } from 'sonner';
 
 // Predefined color options for activity types
 const COLOR_PRESETS = [
@@ -41,6 +43,7 @@ const SettingsPage = () => {
   const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [view, setView] = useState<SettingsView>('main');
   const [editingType, setEditingType] = useState<SessionType | null>(null);
@@ -51,6 +54,19 @@ const SettingsPage = () => {
   const [uploading, setUploading] = useState(false);
   const [cropFile, setCropFile] = useState<File | null>(null);
   const [showCropper, setShowCropper] = useState(false);
+  const [stravaConnected, setStravaConnected] = useState(false);
+  const [stravaLoading, setStravaLoading] = useState(false);
+  const [stravaSyncing, setStravaSyncing] = useState(false);
+
+  // Check Strava connection on mount & after callback
+  useEffect(() => {
+    if (!user) return;
+    if (searchParams.get('strava') === 'connected') {
+      toast.success(t('settings.stravaConnected'));
+      setView('sync');
+    }
+    stravaService.getStatus().then(s => setStravaConnected(s.connected)).catch(() => {});
+  }, [user]);
   // Load profile
   useEffect(() => {
     if (!user) return;
@@ -346,6 +362,44 @@ const SettingsPage = () => {
 
   // ========== SYNC VIEW ==========
   if (view === 'sync') {
+    const handleStravaConnect = async () => {
+      setStravaLoading(true);
+      try {
+        const url = await stravaService.getAuthUrl();
+        window.location.href = url;
+      } catch (err) {
+        toast.error('Kunne ikke koble til Strava');
+        setStravaLoading(false);
+      }
+    };
+
+    const handleStravaDisconnect = async () => {
+      setStravaLoading(true);
+      try {
+        await stravaService.disconnect();
+        setStravaConnected(false);
+        toast.success(t('settings.stravaNotConnected'));
+      } catch {
+        toast.error('Kunne ikke koble fra Strava');
+      }
+      setStravaLoading(false);
+    };
+
+    const handleStravaSync = async () => {
+      setStravaSyncing(true);
+      try {
+        const result = await stravaService.sync();
+        if (result.synced > 0) {
+          toast.success(`${result.synced} nye økter synkronisert fra Strava!`);
+        } else {
+          toast.info('Ingen nye økter å synkronisere.');
+        }
+      } catch {
+        toast.error('Synkronisering feilet');
+      }
+      setStravaSyncing(false);
+    };
+
     return (
       <div className="space-y-4">
         {backButton(t('settings.sync'))}
@@ -363,11 +417,26 @@ const SettingsPage = () => {
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm">Strava</p>
               <p className="text-xs text-muted-foreground">{t('settings.stravaDesc')}</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">{t('settings.comingSoon')}</p>
+              {stravaConnected && (
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+                  <Check className="w-3 h-3" /> {t('settings.stravaConnected')}
+                </p>
+              )}
             </div>
-            <Button variant="outline" size="sm" disabled className="shrink-0 opacity-60">
-              {t('settings.stravaConnect')}
-            </Button>
+            {!stravaConnected ? (
+              <Button variant="outline" size="sm" onClick={handleStravaConnect} disabled={stravaLoading || !user} className="shrink-0">
+                {stravaLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('settings.stravaConnect')}
+              </Button>
+            ) : (
+              <div className="flex gap-2 shrink-0">
+                <Button variant="outline" size="sm" onClick={handleStravaSync} disabled={stravaSyncing}>
+                  {stravaSyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleStravaDisconnect} disabled={stravaLoading} className="text-destructive hover:text-destructive">
+                  {t('settings.stravaDisconnect')}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
