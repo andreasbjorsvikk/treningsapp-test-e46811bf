@@ -132,7 +132,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
                       <SelectItem key={tp} value={tp}>
                         <span className="flex items-center gap-2">
                           <span
-                            className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 overflow-hidden"
+                            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 overflow-hidden"
                             style={{
                               backgroundColor: actColors.bg,
                               boxShadow: isDark

@@ -7,7 +7,7 @@ import { primaryGoalService, primaryGoalServiceAsync } from '@/services/primaryG
 import { healthEventService, healthEventServiceAsync } from '@/services/healthEventService';
 
 export function useAppData() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const isOnline = !!user;
 
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
@@ -61,6 +61,8 @@ export function useAppData() {
 
   // Load data
   const reload = useCallback(async () => {
+    // Don't load anything until auth state is resolved
+    if (authLoading) return;
     setLoading(true);
     try {
       if (isOnline && user) {
@@ -93,7 +95,7 @@ export function useAppData() {
       }
     }
     setLoading(false);
-  }, [isOnline, user, migrateLocalData]);
+  }, [isOnline, user, authLoading, migrateLocalData]);
 
   useEffect(() => { reload(); }, [reload]);
 
