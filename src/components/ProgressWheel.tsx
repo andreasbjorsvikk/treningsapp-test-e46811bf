@@ -176,13 +176,6 @@ const ProgressWheel = ({
                 <stop offset="65%" stopColor={goldColor} />
                 <stop offset="100%" stopColor={goldGlow} />
               </linearGradient>
-              <linearGradient id={`gold-shimmer-grad-${safeId}`} x1="0%" y1="0%" x2="100%" y2="0%" spreadMethod="repeat" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor={goldShine} stopOpacity="0" />
-                <stop offset="40%" stopColor={goldShine} stopOpacity="0" />
-                <stop offset="50%" stopColor={goldShine} stopOpacity={0.6 + glowIntensity * 0.4} />
-                <stop offset="60%" stopColor={goldShine} stopOpacity="0" />
-                <stop offset="100%" stopColor={goldShine} stopOpacity="0" />
-              </linearGradient>
               <filter id={`gold-glow-${safeId}`} x="-50%" y="-50%" width="200%" height="200%">
                 <feGaussianBlur stdDeviation={3 + glowIntensity * 6} result="blur" />
                 <feMerge>
@@ -255,14 +248,35 @@ const ProgressWheel = ({
                 : 'animate-[gold-pulse_3s_ease-in-out_infinite]'}
               filter={`url(#gold-glow-${safeId})`}
             />
+            {/* Shimmer layer 1 */}
             <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
-              stroke={`url(#gold-shimmer-grad-${safeId})`}
-              strokeWidth={STROKE - 2}
-              strokeDasharray="8 32"
+              stroke={goldShine}
+              strokeWidth={STROKE - 3}
+              strokeDasharray="15 60"
               strokeLinecap="round"
               transform={rotation}
-              opacity={0.7 + glowIntensity * 0.3}
-              className="animate-[gold-shimmer_2s_linear_infinite]"
+              opacity={0}
+              className="animate-[gold-shimmer_3.5s_ease-in-out_infinite]"
+            />
+            {/* Shimmer layer 2 - offset timing */}
+            <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
+              stroke={goldShine}
+              strokeWidth={STROKE - 4}
+              strokeDasharray="10 80"
+              strokeLinecap="round"
+              transform={rotation}
+              opacity={0}
+              className="animate-[gold-shimmer-2_4.2s_ease-in-out_infinite]"
+            />
+            {/* Shimmer layer 3 - different timing again */}
+            <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
+              stroke={goldShine}
+              strokeWidth={STROKE - 3}
+              strokeDasharray="12 70"
+              strokeLinecap="round"
+              transform={rotation}
+              opacity={0}
+              className="animate-[gold-shimmer-3_3.8s_ease-in-out_infinite]"
             />
           </>
         )}

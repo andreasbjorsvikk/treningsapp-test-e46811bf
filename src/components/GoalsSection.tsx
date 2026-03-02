@@ -308,7 +308,7 @@ const GoalsSection = () => {
                         </button>
                       )}
                     </div>
-                    <TargetIcon className="w-5 h-5 mb-1.5" />
+                     <TargetIcon className="w-5 h-5 mb-1.5" />
                     <p className="text-xl font-bold text-foreground">
                       {viewedGoal ? viewedGoal.inputTarget : currentGoal.inputTarget} {t('goals.sessionsPer')} {viewedGoal ? t(`goals.period.${viewedGoal.inputPeriod}`) : periodLabel}
                     </p>
@@ -319,7 +319,11 @@ const GoalsSection = () => {
                       <span className="text-border">·</span>
                       <span><span className="font-semibold text-foreground text-base">{Math.round(yearTarget)}</span> {t('goals.perYear')}</span>
                     </div>
-                    <div className="flex gap-2 mt-2">
+                    {/* Period validity */}
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {formatDate(currentGoal.validFrom)} → {t('goals.ongoing')}
+                    </p>
+                    <div className="flex gap-2 mt-1">
                       <button onClick={() => setShowPrimaryForm(true)} className="px-3 py-1 rounded-md hover:bg-secondary transition-colors text-xs text-muted-foreground">
                         {t('goals.edit')}
                       </button>
@@ -421,6 +425,10 @@ const GoalsSection = () => {
                       <span className="text-border">·</span>
                       <span><span className="font-semibold text-foreground text-base">{Math.round(yearTarget)}</span> {t('goals.perYear')}</span>
                     </div>
+                    {/* Period validity */}
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      {formatDate(currentGoal.validFrom)} → {t('goals.ongoing')}
+                    </p>
                     <div className="flex gap-2 mt-1">
                       <button onClick={() => setShowPrimaryForm(true)} className="px-3 py-1 rounded-md hover:bg-secondary transition-colors text-xs text-muted-foreground">
                         {t('goals.edit')}

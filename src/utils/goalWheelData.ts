@@ -1,9 +1,10 @@
 import { PrimaryGoalPeriod } from '@/types/workout';
-import { getMonthTarget, getYearExpectedProgress } from '@/services/primaryGoalService';
+import { getMonthTarget, getYearExpectedProgress, getActiveGoalForDate, getEarliestStart } from '@/services/primaryGoalService';
 import { WorkoutSession } from '@/types/workout';
 
 /**
  * Compute month wheel data for versioned goal periods.
+ * Only counts sessions from the active goal's validFrom date onwards.
  */
 export function computeMonthWheelData(
   periods: PrimaryGoalPeriod[],
@@ -14,9 +15,17 @@ export function computeMonthWheelData(
   unitLabel: string
 ) {
   const target = getMonthTarget(periods, year, month);
+  const monthEnd = new Date(year, month + 1, 0);
+  const activeGoal = getActiveGoalForDate(periods, monthEnd);
+  const goalStart = activeGoal ? new Date(activeGoal.validFrom) : null;
+  if (goalStart) goalStart.setHours(0, 0, 0, 0);
+
   const current = sessions.filter(s => {
     const d = new Date(s.date);
-    return d.getMonth() === month && d.getFullYear() === year;
+    if (d.getMonth() !== month || d.getFullYear() !== year) return false;
+    // Only count sessions from goal start date onwards
+    if (goalStart && d < goalStart) return false;
+    return true;
   }).length;
   const percent = target === 0 ? 0 : (current / target) * 100;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -29,6 +38,7 @@ export function computeMonthWheelData(
 
 /**
  * Compute year wheel data for versioned goal periods.
+ * Only counts sessions from the earliest goal's validFrom date onwards.
  */
 export function computeYearWheelData(
   periods: PrimaryGoalPeriod[],
@@ -37,9 +47,13 @@ export function computeYearWheelData(
   now: Date,
   unitLabel: string
 ) {
+  const earliestStart = getEarliestStart(periods);
   const current = sessions.filter(s => {
     const d = new Date(s.date);
-    return d.getFullYear() === year;
+    if (d.getFullYear() !== year) return false;
+    // Only count sessions from the earliest goal start date onwards
+    if (earliestStart && d < earliestStart) return false;
+    return true;
   }).length;
   const refDate = year === now.getFullYear() ? now : new Date(year + 1, 0, 1);
   const { target, expected, fractionElapsed } = getYearExpectedProgress(periods, year, refDate);

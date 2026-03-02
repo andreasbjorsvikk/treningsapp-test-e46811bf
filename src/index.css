@@ -157,8 +157,26 @@
 }
 
 @keyframes gold-shimmer {
-  0% { stroke-dashoffset: 0; }
-  100% { stroke-dashoffset: -40; }
+  0% { stroke-dashoffset: 0; opacity: 0; }
+  15% { opacity: 0.4; }
+  35% { opacity: 0; }
+  100% { stroke-dashoffset: -200; opacity: 0; }
+}
+
+@keyframes gold-shimmer-2 {
+  0% { stroke-dashoffset: -80; opacity: 0; }
+  25% { opacity: 0; }
+  40% { opacity: 0.3; }
+  55% { opacity: 0; }
+  100% { stroke-dashoffset: -240; opacity: 0; }
+}
+
+@keyframes gold-shimmer-3 {
+  0% { stroke-dashoffset: -40; opacity: 0; }
+  45% { opacity: 0; }
+  60% { opacity: 0.35; }
+  75% { opacity: 0; }
+  100% { stroke-dashoffset: -180; opacity: 0; }
 }
 
 @layer utilities {
