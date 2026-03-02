@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { GoalPeriod, PrimaryGoalPeriod } from '@/types/workout';
-import { convertGoalValue, primaryGoalService } from '@/services/primaryGoalService';
+import { convertGoalValue } from '@/services/primaryGoalService';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface PrimaryGoalFormProps {
   existing?: PrimaryGoalPeriod | null;
-  onSave: () => void;
+  onSave: (data: { inputPeriod: GoalPeriod; inputTarget: number; validFrom: string }) => void;
   onCancel: () => void;
 }
 
@@ -38,12 +38,11 @@ const PrimaryGoalForm = ({ existing, onSave, onCancel }: PrimaryGoalFormProps) =
     e.preventDefault();
     if (targetNum <= 0) return;
     const fromDate = useToday ? today : validFrom;
-    primaryGoalService.add({
+    onSave({
       inputPeriod: period,
       inputTarget: targetNum,
       validFrom: fromDate,
     });
-    onSave();
   };
 
   return (

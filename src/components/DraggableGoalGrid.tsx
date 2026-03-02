@@ -1,15 +1,14 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { ExtraGoal, WorkoutSession } from '@/types/workout';
-import { goalService } from '@/services/goalService';
 import GoalCard from '@/components/GoalCard';
 
 interface DraggableGoalGridProps {
   goals: ExtraGoal[];
   sessions: WorkoutSession[];
   onEdit: (goal: ExtraGoal) => void;
-  onDelete: (id: string) => void;
-  onToggleHome: (id: string) => void;
-  onReorder: () => void;
+  onDelete: (id: string) => void | Promise<void>;
+  onToggleHome: (id: string) => void | Promise<void>;
+  onReorder: (orderedIds?: string[]) => void | Promise<void>;
 }
 
 const DraggableGoalGrid = ({ goals, sessions, onEdit, onDelete, onToggleHome, onReorder }: DraggableGoalGridProps) => {
@@ -47,10 +46,9 @@ const DraggableGoalGrid = ({ goals, sessions, onEdit, onDelete, onToggleHome, on
     if (fromIdx === -1 || toIdx === -1) return;
     ids.splice(fromIdx, 1);
     ids.splice(toIdx, 0, dragId);
-    goalService.reorder(ids);
     setDragId(null);
     setDragOverId(null);
-    onReorder();
+    onReorder(ids);
   }, [dragId, goals, onReorder]);
 
   // Desktop drag handlers
