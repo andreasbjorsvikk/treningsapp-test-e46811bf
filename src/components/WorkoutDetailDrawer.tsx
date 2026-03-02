@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, Component, ReactNode } from 'react';
+import { useState, useMemo, useEffect, useRef, Component, ReactNode } from 'react';
 import { WorkoutSession, WorkoutStreams } from '@/types/workout';
 import { sessionTypeConfig, formatDuration } from '@/utils/workoutUtils';
 import { getActivityColors } from '@/utils/activityColors';
@@ -15,15 +15,31 @@ import {
 import {
   Clock, MapPin, MountainSnow, Heart, Activity, Pencil, Trash2, ChevronDown, Loader2,
 } from 'lucide-react';
-import { MapContainer, TileLayer, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, Polyline, useMap } from 'react-leaflet';
 import { LatLngBoundsExpression } from 'leaflet';
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 
+// Component to fix Leaflet sizing inside animated drawers
+function MapResizer() {
+  const map = useMap();
+  useEffect(() => {
+    const timer = setTimeout(() => map.invalidateSize(), 100);
+    return () => clearTimeout(timer);
+  }, [map]);
+  return null;
+}
+
 // Error boundary for map to prevent app crash
-class MapErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
-  state = { hasError: false };
-  static getDerivedStateFromError() { return { hasError: true }; }
-  render() { return this.state.hasError ? null : this.props.children; }
+class MapErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: string }> {
+  state = { hasError: false, error: '' };
+  static getDerivedStateFromError(err: Error) { return { hasError: true, error: err.message }; }
+  componentDidCatch(err: Error) { console.error('Map error:', err); }
+  render() {
+    if (this.state.hasError) {
+      return <div className="w-full h-48 flex items-center justify-center bg-secondary/50 rounded-lg text-xs text-muted-foreground">Kartet kunne ikke lastes</div>;
+    }
+    return this.props.children;
+  }
 }
 
 import { stravaService } from '@/services/stravaService';
@@ -134,23 +150,23 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
 
             {/* Map */}
             {routePoints && bounds && mapReady && (
-              <MapErrorBoundary>
-                <div className="w-full h-48 relative" style={{ minHeight: '192px' }}>
+              <MapErrorBoundary key={`boundary-${session.id}`}>
+                <div className="w-full relative" style={{ height: '192px' }}>
                   <MapContainer
-                    key={session.id}
+                    key={`map-${session.id}`}
                     bounds={bounds}
                     scrollWheelZoom={false}
                     dragging={true}
                     zoomControl={false}
                     attributionControl={false}
-                    className="w-full h-full z-0"
-                    style={{ height: '192px', width: '100%' }}
+                    style={{ height: '192px', width: '100%', position: 'absolute', top: 0, left: 0 }}
                   >
                     <TileLayer url={tileUrl} />
                     <Polyline
                       positions={routePoints}
                       pathOptions={{ color: colors.text, weight: 3, opacity: 0.85 }}
                     />
+                    <MapResizer />
                   </MapContainer>
                 </div>
               </MapErrorBoundary>

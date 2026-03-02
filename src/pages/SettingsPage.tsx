@@ -247,7 +247,7 @@ const SettingsPage = () => {
                       <span className="text-sm truncate">{t(`activity.${type}`)}</span>
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-64 p-3" side="right" align="start">
+                  <PopoverContent className="w-64 p-3" side="bottom" align="center" collisionPadding={16}>
                     <p className="text-xs font-semibold mb-2">{t(`activity.${type}`)} – {t('settings.chooseColor')}</p>
                     <div className="grid grid-cols-4 gap-2">
                       {COLOR_PRESETS.map((preset, idx) => {
