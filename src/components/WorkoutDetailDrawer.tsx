@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, Component, ReactNode } from 'react';
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { WorkoutSession, WorkoutStreams } from '@/types/workout';
 import { sessionTypeConfig, formatDuration } from '@/utils/workoutUtils';
 import { getActivityColors } from '@/utils/activityColors';
@@ -15,35 +15,12 @@ import {
 import {
   Clock, MapPin, MountainSnow, Heart, Activity, Pencil, Trash2, ChevronDown, Loader2,
 } from 'lucide-react';
-import { MapContainer, TileLayer, Polyline, useMap } from 'react-leaflet';
-import { LatLngBoundsExpression } from 'leaflet';
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
-
-// Component to fix Leaflet sizing inside animated drawers
-function MapResizer() {
-  const map = useMap();
-  useEffect(() => {
-    const timer = setTimeout(() => map.invalidateSize(), 100);
-    return () => clearTimeout(timer);
-  }, [map]);
-  return null;
-}
-
-// Error boundary for map to prevent app crash
-class MapErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: string }> {
-  state = { hasError: false, error: '' };
-  static getDerivedStateFromError(err: Error) { return { hasError: true, error: err.message }; }
-  componentDidCatch(err: Error) { console.error('Map error:', err); }
-  render() {
-    if (this.state.hasError) {
-      return <div className="w-full h-48 flex items-center justify-center bg-secondary/50 rounded-lg text-xs text-muted-foreground">Kartet kunne ikke lastes</div>;
-    }
-    return this.props.children;
-  }
-}
-
 import { stravaService } from '@/services/stravaService';
 import { toast } from 'sonner';
+
+// Lazy load the map to ensure Leaflet initializes properly
+const RouteMap = lazy(() => import('@/components/RouteMap'));
 
 interface Props {
   session: WorkoutSession | null;
@@ -66,7 +43,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
   useEffect(() => {
     if (open && session?.summaryPolyline) {
       setMapReady(false);
-      const timer = setTimeout(() => setMapReady(true), 350);
+      const timer = setTimeout(() => setMapReady(true), 400);
       return () => clearTimeout(timer);
     } else {
       setMapReady(false);
@@ -84,17 +61,6 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
       return pts.length > 1 ? pts : null;
     } catch { return null; }
   }, [session?.summaryPolyline]);
-
-  // Compute map bounds
-  const bounds = useMemo((): LatLngBoundsExpression | null => {
-    if (!routePoints) return null;
-    const lats = routePoints.map(p => p[0]);
-    const lngs = routePoints.map(p => p[1]);
-    return [
-      [Math.min(...lats) - 0.002, Math.min(...lngs) - 0.005],
-      [Math.max(...lats) + 0.002, Math.max(...lngs) + 0.005],
-    ];
-  }, [routePoints]);
 
   // Tempo calculation (min/km)
   const pace = useMemo(() => {
@@ -149,27 +115,20 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
             </DrawerHeader>
 
             {/* Map */}
-            {routePoints && bounds && mapReady && (
-              <MapErrorBoundary key={`boundary-${session.id}`}>
-                <div className="w-full relative" style={{ height: '192px' }}>
-                  <MapContainer
-                    key={`map-${session.id}`}
-                    bounds={bounds}
-                    scrollWheelZoom={false}
-                    dragging={true}
-                    zoomControl={false}
-                    attributionControl={false}
-                    style={{ height: '192px', width: '100%', position: 'absolute', top: 0, left: 0 }}
-                  >
-                    <TileLayer url={tileUrl} />
-                    <Polyline
-                      positions={routePoints}
-                      pathOptions={{ color: colors.text, weight: 3, opacity: 0.85 }}
-                    />
-                    <MapResizer />
-                  </MapContainer>
+            {routePoints && mapReady && (
+              <Suspense fallback={
+                <div className="w-full flex items-center justify-center bg-secondary/50 text-xs text-muted-foreground" style={{ height: '192px' }}>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" /> Laster kart…
                 </div>
-              </MapErrorBoundary>
+              }>
+                <RouteMap
+                  key={session.id}
+                  routePoints={routePoints}
+                  lineColor={colors.text}
+                  tileUrl={tileUrl}
+                  height={192}
+                />
+              </Suspense>
             )}
 
             {/* Header */}

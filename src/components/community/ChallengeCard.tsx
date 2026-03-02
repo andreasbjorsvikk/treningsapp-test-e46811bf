@@ -38,7 +38,15 @@ const ChallengeCard = ({ challenge, onClick }: ChallengeCardProps) => {
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground mb-2">{periodStr}</p>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs text-muted-foreground">{periodStr}</p>
+        <p className="text-xs font-medium text-accent">
+          {challenge.target > 0
+            ? `Mål: ${challenge.target} ${unit}`
+            : `Mest ${challenge.metric === 'sessions' ? 'økter' : challenge.metric === 'distance' ? 'km' : challenge.metric === 'duration' ? 'timer' : 'm'}`
+          }
+        </p>
+      </div>
 
       {/* Progress bar */}
       <div className="space-y-1 mb-2">

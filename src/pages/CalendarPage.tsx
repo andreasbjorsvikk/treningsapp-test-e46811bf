@@ -605,6 +605,7 @@ const CalendarPage = () => {
         sessions={selectedSessions}
         onClose={() => setSelectedDay(null)}
         onRefresh={triggerRefresh}
+        onNavigateToCalendar={() => setSelectedDay(null)}
       />
 
       {/* Health event edit dialog */}
