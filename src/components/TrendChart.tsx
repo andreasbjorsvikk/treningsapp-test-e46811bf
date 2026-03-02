@@ -31,14 +31,14 @@ const metricSuffix: Record<ChartMetric, string> = {
   sessions: '',
   distance: ' km',
   elevation: ' m',
-  minutes: ' min',
+  minutes: ' t',
 };
 
 const metricUnitLabel: Record<ChartMetric, string> = {
   sessions: 'Økter',
   distance: 'Km',
   elevation: 'Meter',
-  minutes: 'Min',
+  minutes: 'Timer',
 };
 
 const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) => {
@@ -119,7 +119,7 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
                 style={{ backgroundColor: color }}
               />
               <span className="text-muted-foreground">{sessionTypeConfig[item.dataKey as SessionType]?.label}</span>
-              <span className="font-bold ml-auto text-foreground">{item.value}{suffix}</span>
+              <span className="font-bold ml-auto text-foreground">{metric === 'minutes' ? `${Math.round(item.value / 60 * 10) / 10}` : item.value}{suffix}</span>
             </div>
           );
         })}
@@ -167,7 +167,7 @@ const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) 
               tickLine={false}
               axisLine={false}
               width={isMobile ? 32 : 42}
-              tickFormatter={(v) => `${v}`}
+              tickFormatter={(v) => metric === 'minutes' ? `${Math.round(v / 60 * 10) / 10}` : `${v}`}
             />
             {hasData && (
               <Tooltip

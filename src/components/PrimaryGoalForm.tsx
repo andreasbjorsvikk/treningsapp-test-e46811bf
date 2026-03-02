@@ -46,16 +46,16 @@ const PrimaryGoalForm = ({ existing, onSave, onCancel }: PrimaryGoalFormProps) =
   };
 
   return (
-    <form onSubmit={handleSubmit} className="glass-card rounded-lg p-4 space-y-4">
-      <h4 className="font-display font-semibold text-sm">
+    <form onSubmit={handleSubmit} className="glass-card rounded-lg p-5 space-y-5">
+      <h4 className="font-display font-semibold text-base text-center">
         {isEditing ? t('goals.updateGoal') : t('primaryGoal.setGoal')}
       </h4>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-muted-foreground text-center">
         {t('primaryGoal.description')}
       </p>
 
       {/* Period selector */}
-      <div className="flex rounded-lg bg-muted p-1">
+      <div className="flex rounded-lg bg-muted p-1 max-w-[280px] mx-auto">
         {periodOptions.map(p => (
           <button
             key={p.id}
@@ -73,8 +73,8 @@ const PrimaryGoalForm = ({ existing, onSave, onCancel }: PrimaryGoalFormProps) =
       </div>
 
       {/* Target input */}
-      <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+      <div className="space-y-1.5 max-w-[220px] mx-auto text-center">
+        <label className="text-sm font-semibold text-foreground">
           {t('primaryGoal.sessionsPerPeriod')} {t(`goals.period.${period}`)}
         </label>
         <input
@@ -84,17 +84,25 @@ const PrimaryGoalForm = ({ existing, onSave, onCancel }: PrimaryGoalFormProps) =
           value={target}
           onChange={e => setTarget(e.target.value)}
           placeholder={`${t('goalForm.eg')} 12`}
-          className="w-full bg-secondary rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-full bg-secondary rounded-md px-3 py-2.5 text-base text-center font-semibold focus:outline-none focus:ring-2 focus:ring-ring"
           required
         />
+        {/* Equivalents directly under field */}
+        {targetNum > 0 && (
+          <div className="text-sm text-muted-foreground space-y-0.5 pt-1">
+            {equivalents.map(eq => (
+              <p key={eq.label}>= <span className="font-bold text-foreground text-base">{eq.value}</span> {t('primaryGoal.sessionsPerLabel')} {eq.label}</p>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Valid from */}
-      <div className="space-y-2">
-        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+      <div className="space-y-2 text-center">
+        <label className="text-sm font-semibold text-foreground">
           {t('goals.validFrom')}
         </label>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center gap-3">
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input
               type="radio"
@@ -119,22 +127,13 @@ const PrimaryGoalForm = ({ existing, onSave, onCancel }: PrimaryGoalFormProps) =
             type="date"
             value={validFrom}
             onChange={e => setValidFrom(e.target.value)}
-            className="w-full bg-secondary rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full max-w-[220px] mx-auto bg-secondary rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             required
           />
         )}
       </div>
 
-      {/* Equivalents */}
-      {targetNum > 0 && (
-        <div className="text-xs text-muted-foreground space-y-0.5">
-          {equivalents.map(eq => (
-            <p key={eq.label}>= <span className="font-semibold text-foreground">{eq.value}</span> {t('primaryGoal.sessionsPerLabel')} {eq.label}</p>
-          ))}
-        </div>
-      )}
-
-      <div className="flex gap-2">
+      <div className="flex gap-2 pt-1">
         <Button type="button" variant="secondary" className="flex-1" onClick={onCancel}>
           {t('common.cancel')}
         </Button>

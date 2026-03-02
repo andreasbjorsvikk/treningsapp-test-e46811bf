@@ -31,12 +31,16 @@ const ScrollColumn = ({
   const rafRef = useRef<number>();
   const snapTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
+  // Programmatic scroll to selected value
   useEffect(() => {
     const el = containerRef.current;
     if (!el || isUserScrolling.current) return;
     const idx = values.indexOf(selected);
     if (idx >= 0) {
-      el.scrollTop = idx * ITEM_HEIGHT;
+      // Use requestAnimationFrame to ensure layout is ready
+      requestAnimationFrame(() => {
+        el.scrollTop = idx * ITEM_HEIGHT;
+      });
     }
   }, [selected, values]);
 
@@ -82,13 +86,14 @@ const ScrollColumn = ({
         <div
           ref={containerRef}
           onScroll={handleScroll}
-          className="h-full overflow-y-auto scrollbar-hide"
+          className="h-full overflow-y-auto scrollbar-hide touch-pan-y"
           style={{
             scrollSnapType: 'y mandatory',
             WebkitOverflowScrolling: 'touch',
             paddingTop: CENTER_INDEX * ITEM_HEIGHT,
             paddingBottom: CENTER_INDEX * ITEM_HEIGHT,
             overscrollBehavior: 'contain',
+            willChange: 'scroll-position',
           }}
         >
           {values.map((val) => {
