@@ -149,8 +149,8 @@ export const ACCENT_PRESETS: Record<AccentColor, AccentPreset> = {
 };
 
 const defaultSettings: AppSettings = {
-  darkMode: true,
-  colorTheme: 'orange',
+  darkMode: false,
+  colorTheme: 'white',
   accentColor: 'black',
   firstDayOfWeek: 'monday',
   unitSystem: 'metric',

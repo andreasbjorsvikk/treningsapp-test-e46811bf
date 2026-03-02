@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { nb } from 'date-fns/locale';
 import { HealthEvent, HealthEventType } from '@/types/workout';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Ambulance, Cross } from 'lucide-react';
+import { Ambulance, Cross, CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface HealthEventDialogProps {
   open: boolean;
@@ -19,24 +23,25 @@ interface HealthEventDialogProps {
 const HealthEventDialog = ({ open, onClose, onSave, event }: HealthEventDialogProps) => {
   const { t } = useTranslation();
   const [type, setType] = useState<HealthEventType>(event?.type || 'sickness');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
     if (open) {
       setType(event?.type || 'sickness');
-      setDateFrom(event?.dateFrom?.slice(0, 10) || new Date().toISOString().slice(0, 10));
-      setDateTo(event?.dateTo?.slice(0, 10) || '');
+      setDateFrom(event?.dateFrom ? new Date(event.dateFrom) : new Date());
+      setDateTo(event?.dateTo ? new Date(event.dateTo) : undefined);
       setNotes(event?.notes || '');
     }
   }, [open, event]);
 
   const handleSave = () => {
+    if (!dateFrom) return;
     onSave({
       type,
-      dateFrom: new Date(dateFrom + 'T12:00:00').toISOString(),
-      dateTo: dateTo ? new Date(dateTo + 'T12:00:00').toISOString() : undefined,
+      dateFrom: new Date(dateFrom.getFullYear(), dateFrom.getMonth(), dateFrom.getDate(), 12).toISOString(),
+      dateTo: dateTo ? new Date(dateTo.getFullYear(), dateTo.getMonth(), dateTo.getDate(), 12).toISOString() : undefined,
       notes: notes.trim() || undefined,
     });
     onClose();
@@ -82,11 +87,55 @@ const HealthEventDialog = ({ open, onClose, onSave, event }: HealthEventDialogPr
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label>{t('health.dateFrom')}</Label>
-              <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-full" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal h-10",
+                      !dateFrom && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                    {dateFrom ? format(dateFrom, 'd. MMM yyyy', { locale: nb }) : <span>Velg dato</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateFrom}
+                    onSelect={setDateFrom}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-1">
               <Label>{t('health.dateTo')}</Label>
-              <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-full" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal h-10",
+                      !dateTo && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                    {dateTo ? format(dateTo, 'd. MMM yyyy', { locale: nb }) : <span>Valgfritt</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateTo}
+                    onSelect={setDateTo}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 

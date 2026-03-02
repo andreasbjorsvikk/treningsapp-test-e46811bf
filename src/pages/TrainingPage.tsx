@@ -8,11 +8,12 @@ import { allSessionTypes } from '@/utils/workoutUtils';
 import SessionCard from '@/components/SessionCard';
 import TypeFilter from '@/components/TypeFilter';
 import WorkoutDialog from '@/components/WorkoutDialog';
+import HealthEventDialog from '@/components/HealthEventDialog';
 import { Period } from '@/components/PeriodSelector';
 import { ChartMetric } from '@/components/MetricSelector';
 import TrainingSubTabs from '@/components/TrainingSubTabs';
 import { TrainingSubTab } from '@/components/BottomNav';
-import { ChevronRight, Download, Upload, Replace, MoreVertical, Ambulance, Cross } from 'lucide-react';
+import { ChevronRight, Download, Upload, Replace, MoreVertical, Ambulance, Cross, Pencil, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
@@ -65,6 +66,8 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
   const [filterType, setFilterType] = useState<SessionType | 'all'>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
+  const [healthDialogOpen, setHealthDialogOpen] = useState(false);
+  const [editHealthEvent, setEditHealthEvent] = useState<HealthEvent | undefined>();
   const importFileRef = useRef<HTMLInputElement>(null);
   const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge');
 
@@ -339,6 +342,26 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
                     </p>
                     {he.notes && <p className="text-xs text-muted-foreground mt-0.5">{he.notes}</p>}
                   </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => { setEditHealthEvent(he); setHealthDialogOpen(true); }}
+                      className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                      aria-label="Rediger"
+                    >
+                      <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (confirm('Er du sikker på at du vil slette denne hendelsen?')) {
+                          await appData.deleteHealthEvent(he.id);
+                        }
+                      }}
+                      className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"
+                      aria-label="Slett"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -353,6 +376,17 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
         onClose={() => { setDialogOpen(false); setEditSession(undefined); }}
         onSave={handleSave}
         session={editSession}
+      />
+
+      <HealthEventDialog
+        open={healthDialogOpen}
+        onClose={() => { setHealthDialogOpen(false); setEditHealthEvent(undefined); }}
+        onSave={async (data) => {
+          if (editHealthEvent) {
+            await appData.updateHealthEvent(editHealthEvent.id, data);
+          }
+        }}
+        event={editHealthEvent}
       />
     </div>
   );

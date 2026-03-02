@@ -107,7 +107,13 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
                       <span className="flex items-center gap-2">
                         <span
                           className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                          style={{ backgroundColor: actColors.bg }}
+                          style={{
+                            backgroundColor: actColors.bg,
+                            boxShadow: isDark
+                              ? 'inset 0 1px 1px rgba(255,255,255,0.15), 0 2px 6px rgba(0,0,0,0.3)'
+                              : 'inset 0 1px 1px rgba(255,255,255,0.5), 0 1px 4px rgba(0,0,0,0.1)',
+                            backdropFilter: 'blur(4px)',
+                          }}
                         >
                           <ActivityIcon
                             type={tp}
@@ -131,7 +137,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
 
           <div className="space-y-1">
             <Label>{t('workout.date')}</Label>
-            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full max-w-full" />
+            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full max-w-full [&::-webkit-calendar-picker-indicator]:opacity-60" style={{ maxWidth: '100%', boxSizing: 'border-box' }} />
           </div>
 
           <div className="space-y-1">
