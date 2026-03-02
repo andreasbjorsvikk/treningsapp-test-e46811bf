@@ -376,7 +376,10 @@ const SettingsPage = () => {
     <div className="space-y-2">
       {/* Profile header */}
       {user ? (
-        <div className="glass-card rounded-xl p-4 mb-4">
+        <button
+          onClick={() => setView('account')}
+          className="glass-card rounded-xl p-4 mb-4 w-full text-left hover:bg-muted/30 transition-colors"
+        >
           <div className="flex items-center gap-3">
             <Avatar className="w-12 h-12">
               {avatarUrl ? <AvatarImage src={avatarUrl} alt="Avatar" /> : null}
@@ -388,8 +391,9 @@ const SettingsPage = () => {
               <p className="font-semibold truncate">{username || user.email?.split('@')[0]}</p>
               <p className="text-xs text-muted-foreground truncate">{user.email}</p>
             </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground/50 shrink-0" />
           </div>
-        </div>
+        </button>
       ) : (
         <div className="glass-card rounded-xl p-4 mb-4">
           <div className="flex items-center gap-3">
@@ -440,7 +444,6 @@ const SettingsPage = () => {
       <div className="glass-card rounded-xl overflow-hidden divide-y divide-border">
         {menuItem(t('settings.appearance'), <Palette className="w-4 h-4" />, () => setView('appearance'))}
         {menuItem(t('settings.preferences'), <Settings2 className="w-4 h-4" />, () => setView('preferences'))}
-        {user && menuItem(t('settings.account'), <User className="w-4 h-4" />, () => setView('account'))}
         {menuItem(t('settings.dangerZone'), <Shield className="w-4 h-4" />, () => setView('data'))}
       </div>
 

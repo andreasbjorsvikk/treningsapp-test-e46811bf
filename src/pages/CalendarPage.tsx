@@ -456,12 +456,14 @@ const CalendarPage = () => {
 
             const isMulti = sessionCount >= 2;
 
-            return (
-              <button
+              return (
+              <div
                 key={i}
+                role="button"
+                tabIndex={0}
                 onClick={() => setSelectedDay(dateKey)}
                 className={`
-                  relative flex flex-col rounded-lg overflow-hidden transition-all duration-150
+                  relative flex flex-col rounded-lg overflow-hidden transition-all duration-150 cursor-pointer
                   ${isMobile ? 'min-h-[56px]' : 'min-h-[80px] lg:min-h-[100px]'}
                   ${!isMulti && sessionCount === 0
                     ? (cell.isCurrentMonth
@@ -547,7 +549,7 @@ const CalendarPage = () => {
                     </TooltipContent>
                   </Tooltip>
                 )}
-              </button>
+              </div>
             );
           })}
         </div>
