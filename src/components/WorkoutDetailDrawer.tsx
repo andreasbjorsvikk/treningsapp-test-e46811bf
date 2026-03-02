@@ -207,21 +207,39 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
                           </defs>
                           <XAxis
                             dataKey="distance"
-                            tickFormatter={(v) => `${(v / 1000).toFixed(1)}`}
-                            tick={{ fontSize: 10 }}
+                            tickFormatter={(v) => `${Math.round(v / 1000)}`}
+                            tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                             axisLine={false}
                             tickLine={false}
+                            type="number"
+                            domain={['dataMin', 'dataMax']}
+                            ticks={(() => {
+                              const maxDist = streams.altitudeData![streams.altitudeData!.length - 1]?.distance || 0;
+                              const maxKm = Math.floor(maxDist / 1000);
+                              return Array.from({ length: maxKm + 1 }, (_, i) => i * 1000);
+                            })()}
+                            unit=" km"
                           />
                           <YAxis
-                            tick={{ fontSize: 10 }}
+                            tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                             axisLine={false}
                             tickLine={false}
                             domain={['dataMin - 20', 'dataMax + 20']}
                             width={35}
+                            unit=" m"
                           />
                           <Tooltip
-                            formatter={(v: number) => [`${Math.round(v)} m`, 'Høyde']}
-                            labelFormatter={(v) => `${(Number(v) / 1000).toFixed(2)} km`}
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--popover))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px',
+                              padding: '4px 8px',
+                              fontSize: '11px',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            }}
+                            labelStyle={{ display: 'none' }}
+                            formatter={(v: number) => [`${Math.round(v)} m`]}
+                            labelFormatter={() => ''}
                           />
                           <Area
                             type="monotone"
@@ -246,21 +264,46 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
                         <LineChart data={streams.heartrateData}>
                           <XAxis
                             dataKey="time"
-                            tickFormatter={(v) => `${Math.round(v / 60)}'`}
-                            tick={{ fontSize: 10 }}
+                            tickFormatter={(v) => {
+                              const totalMinutes = v / 60;
+                              const maxTime = streams.heartrateData![streams.heartrateData!.length - 1]?.time || 0;
+                              if (maxTime > 7200) {
+                                return `${Math.floor(totalMinutes / 60)}t`;
+                              }
+                              return `${Math.round(totalMinutes)}'`;
+                            }}
+                            tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                             axisLine={false}
                             tickLine={false}
+                            {...(streams.heartrateData && streams.heartrateData[streams.heartrateData.length - 1]?.time > 7200 ? {
+                              type: 'number' as const,
+                              domain: ['dataMin', 'dataMax'],
+                              ticks: (() => {
+                                const maxTime = streams.heartrateData[streams.heartrateData.length - 1]?.time || 0;
+                                const maxHours = Math.floor(maxTime / 3600);
+                                return Array.from({ length: maxHours + 1 }, (_, i) => i * 3600);
+                              })(),
+                            } : {})}
                           />
                           <YAxis
-                            tick={{ fontSize: 10 }}
+                            tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                             axisLine={false}
                             tickLine={false}
                             domain={['dataMin - 10', 'dataMax + 10']}
                             width={35}
                           />
                           <Tooltip
-                            formatter={(v: number) => [`${v} bpm`, 'Puls']}
-                            labelFormatter={(v) => `${Math.round(Number(v) / 60)} min`}
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--popover))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px',
+                              padding: '4px 8px',
+                              fontSize: '11px',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            }}
+                            labelStyle={{ display: 'none' }}
+                            formatter={(v: number) => [`${v} bpm`]}
+                            labelFormatter={() => ''}
                           />
                           <Line
                             type="monotone"
