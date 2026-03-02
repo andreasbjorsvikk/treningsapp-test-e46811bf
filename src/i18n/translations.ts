@@ -202,6 +202,15 @@ const no: Record<string, string> = {
   'settings.language': 'Språk',
   'settings.languageNo': 'Norsk',
   'settings.languageEn': 'English',
+  'settings.account': 'Konto',
+  'settings.username': 'Brukernavn',
+  'settings.usernamePlaceholder': 'Skriv inn brukernavn',
+  'settings.save': 'Lagre',
+  'settings.saved': 'Lagret!',
+  'settings.signOut': 'Logg ut',
+  'settings.signIn': 'Logg inn',
+  'settings.notLoggedIn': 'Du er ikke logget inn. Logg inn for å lagre data permanent.',
+  'settings.loggedInAs': 'Logget inn som',
 
   // Theme labels
   'theme.white': 'Hvit', 'theme.orange': 'Oransje', 'theme.blue': 'Blå', 'theme.green': 'Grønn', 'theme.rose': 'Rosa',
@@ -431,6 +440,15 @@ const en: Record<string, string> = {
   'settings.language': 'Language',
   'settings.languageNo': 'Norsk',
   'settings.languageEn': 'English',
+  'settings.account': 'Account',
+  'settings.username': 'Username',
+  'settings.usernamePlaceholder': 'Enter username',
+  'settings.save': 'Save',
+  'settings.saved': 'Saved!',
+  'settings.signOut': 'Sign out',
+  'settings.signIn': 'Sign in',
+  'settings.notLoggedIn': 'You are not signed in. Sign in to save your data permanently.',
+  'settings.loggedInAs': 'Signed in as',
 
   // Theme labels
   'theme.white': 'White', 'theme.orange': 'Orange', 'theme.blue': 'Blue', 'theme.green': 'Green', 'theme.rose': 'Rose',
