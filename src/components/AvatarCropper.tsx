@@ -180,19 +180,21 @@ const AvatarCropper = ({ open, imageFile, imageUrl, onConfirm, onCancel }: Avata
     ctx.arc(128, 128, 128, 0, Math.PI * 2);
     ctx.clip();
 
-    // Use CSS transform approach: image is positioned at center, then offset + zoomed
+    // Match the CSS rendering: image at base size, centered, then translate + scale from center
     const z = zoomRef.current;
     const off = clampOffset(offsetRef.current.x, offsetRef.current.y, z, baseW, baseH);
-    const displayW = baseW * z;
-    const displayH = baseH * z;
-    const imgLeft = (CIRCLE_SIZE - displayW) / 2 + off.x;
-    const imgTop = (CIRCLE_SIZE - displayH) / 2 + off.y;
+    // The CSS does: position at (centerX - baseW/2, centerY - baseH/2), then translate(off.x, off.y) scale(z) from center
+    // Effective top-left in circle coords:
+    const effectiveLeft = (CIRCLE_SIZE - baseW * z) / 2 + off.x;
+    const effectiveTop = (CIRCLE_SIZE - baseH * z) / 2 + off.y;
+    const effectiveW = baseW * z;
+    const effectiveH = baseH * z;
 
     const scale = 256 / CIRCLE_SIZE;
     ctx.drawImage(
       imgRef.current,
       0, 0, imgRef.current.naturalWidth, imgRef.current.naturalHeight,
-      imgLeft * scale, imgTop * scale, displayW * scale, displayH * scale
+      effectiveLeft * scale, effectiveTop * scale, effectiveW * scale, effectiveH * scale
     );
 
     canvas.toBlob(blob => {
@@ -200,11 +202,9 @@ const AvatarCropper = ({ open, imageFile, imageUrl, onConfirm, onCancel }: Avata
     }, 'image/png');
   }, [onConfirm, baseW, baseH, clampOffset]);
 
-  // Position image using actual scaled dimensions (no CSS transform)
-  const displayW = baseW * zoom;
-  const displayH = baseH * zoom;
-  const imgLeft = (CIRCLE_SIZE - displayW) / 2 + clamped.x;
-  const imgTop = (CIRCLE_SIZE - displayH) / 2 + clamped.y;
+  // Position: center the image at base size, use transform for zoom + offset
+  const imgLeft = (CIRCLE_SIZE - baseW) / 2;
+  const imgTop = (CIRCLE_SIZE - baseH) / 2;
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onCancel(); }}>
@@ -229,10 +229,12 @@ const AvatarCropper = ({ open, imageFile, imageUrl, onConfirm, onCancel }: Avata
                 draggable={false}
                 className="pointer-events-none select-none absolute"
                 style={{
-                  width: displayW,
-                  height: displayH,
+                  width: baseW,
+                  height: baseH,
                   left: imgLeft,
                   top: imgTop,
+                  transformOrigin: 'center center',
+                  transform: `translate(${clamped.x}px, ${clamped.y}px) scale(${zoom})`,
                 }}
               />
             )}
