@@ -1,9 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { WorkoutSession, ExtraGoal } from '@/types/workout';
 import { AppDataProvider, useAppDataContext } from '@/contexts/AppDataContext';
 import { computeMonthWheelData, computeYearWheelData } from '@/utils/goalWheelData';
 import { useAuth } from '@/hooks/useAuth';
+import { stravaService } from '@/services/stravaService';
+import { toast } from 'sonner';
 
 import BottomNav, { TabId } from '@/components/BottomNav';
 import StatsOverview from '@/components/StatsOverview';
@@ -19,7 +21,7 @@ import ProgressWheel from '@/components/ProgressWheel';
 import WeeklySessionIcons from '@/components/WeeklySessionIcons';
 import MiniCalendar from '@/components/MiniCalendar';
 import DraggableGoalGrid from '@/components/DraggableGoalGrid';
-import { Plus, Sun, Moon, Dumbbell, Ambulance, LogIn } from 'lucide-react';
+import { Plus, Sun, Moon, Dumbbell, Ambulance, LogIn, RefreshCw, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -50,6 +52,68 @@ const IndexContent = () => {
   const [editGoal, setEditGoal] = useState<ExtraGoal | undefined>();
   const [showGoalEditDialog, setShowGoalEditDialog] = useState(false);
   const [homeStatMode, setHomeStatMode] = useState<'week' | 'month'>('week');
+  const [stravaSyncing, setStravaSyncing] = useState(false);
+
+  // Auto-sync Strava on app open and when returning from background
+  const lastSyncRef = useRef<number>(0);
+
+  const autoSyncStrava = useCallback(async () => {
+    if (!user) return;
+    const now = Date.now();
+    // Max once per 15 minutes
+    if (now - lastSyncRef.current < 15 * 60 * 1000) return;
+    lastSyncRef.current = now;
+
+    try {
+      const status = await stravaService.getStatus();
+      if (!status.connected) return;
+      const result = await stravaService.sync();
+      if (result.synced > 0) {
+        toast.success(`${result.synced} nye økter synkronisert fra Strava`);
+        appData.reload();
+      }
+    } catch {
+      // Silent fail for auto-sync
+    }
+  }, [user, appData]);
+
+  // Sync on mount
+  useEffect(() => {
+    autoSyncStrava();
+  }, [autoSyncStrava]);
+
+  // Sync when app returns from background
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') autoSyncStrava();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [autoSyncStrava]);
+
+  const handleManualSync = async () => {
+    if (!user) return;
+    setStravaSyncing(true);
+    try {
+      const status = await stravaService.getStatus();
+      if (!status.connected) {
+        toast.info('Strava er ikke tilkoblet. Gå til Innstillinger → Synkronisering.');
+        setStravaSyncing(false);
+        return;
+      }
+      lastSyncRef.current = Date.now();
+      const result = await stravaService.sync();
+      if (result.synced > 0) {
+        toast.success(`${result.synced} nye økter synkronisert fra Strava!`);
+        appData.reload();
+      } else {
+        toast.info('Ingen nye økter å synkronisere.');
+      }
+    } catch {
+      toast.error('Synkronisering feilet');
+    }
+    setStravaSyncing(false);
+  };
 
   const stats = homeStatMode === 'week' ? appData.weekStats : appData.monthStats;
   const allSessions = appData.sessions;
@@ -159,8 +223,19 @@ const IndexContent = () => {
 
         {activeTab === 'hjem' && (
           <>
-            {/* Top-right + button */}
-            <div className="flex justify-end -mb-4">
+            {/* Top-right buttons */}
+            <div className="flex justify-end gap-1 -mb-4">
+              {user && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="rounded-full h-9 w-9"
+                  onClick={handleManualSync}
+                  disabled={stravaSyncing}
+                >
+                  {stravaSyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                </Button>
+              )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="icon" variant="ghost" className="rounded-full h-9 w-9">
