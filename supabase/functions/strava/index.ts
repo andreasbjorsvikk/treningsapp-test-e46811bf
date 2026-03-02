@@ -218,7 +218,8 @@ Deno.serve(async (req) => {
       const accessToken = await ensureFreshToken(conn);
 
       // Fetch last 90 days of activities
-      const after = Math.floor(Date.now() / 1000) - 90 * 86400;
+      const afterParam = url.searchParams.get("after");
+      const after = afterParam ? parseInt(afterParam) : Math.floor(Date.now() / 1000) - 90 * 86400;
       const activities: any[] = [];
       let page = 1;
 
@@ -264,6 +265,84 @@ Deno.serve(async (req) => {
             status: 500,
             headers: corsHeaders,
           });
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ synced: newActivities.length, total: activities.length }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ===== SYNC-ALL: fetch ALL historical activities from Strava =====
+    if (action === "sync-all") {
+      const userId = await getAuthenticatedUser(req);
+      if (!userId) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+
+      const admin = adminClient();
+      const { data: conn } = await admin
+        .from("strava_connections")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+
+      if (!conn) {
+        return new Response(JSON.stringify({ error: "Not connected to Strava" }), { status: 400, headers: corsHeaders });
+      }
+
+      const accessToken = await ensureFreshToken(conn);
+
+      // Fetch from 20 years ago
+      const after = Math.floor(Date.now() / 1000) - 20 * 365 * 86400;
+      const activities: any[] = [];
+      let page = 1;
+
+      while (page <= 50) {
+        const res = await fetch(
+          `https://www.strava.com/api/v3/athlete/activities?after=${after}&per_page=200&page=${page}`,
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+        if (!res.ok) break;
+        const batch = await res.json();
+        if (!batch.length) break;
+        activities.push(...batch);
+        page++;
+      }
+
+      // Get existing strava IDs
+      const { data: existing } = await admin
+        .from("workout_sessions")
+        .select("strava_activity_id")
+        .eq("user_id", userId)
+        .not("strava_activity_id", "is", null);
+
+      const existingIds = new Set((existing || []).map((r: any) => r.strava_activity_id));
+      const newActivities = activities.filter((a) => !existingIds.has(a.id));
+
+      if (newActivities.length > 0) {
+        // Insert in batches of 100
+        for (let i = 0; i < newActivities.length; i += 100) {
+          const batch = newActivities.slice(i, i + 100);
+          const rows = batch.map((a) => ({
+            user_id: userId,
+            strava_activity_id: a.id,
+            type: mapStravaType(a.sport_type || a.type),
+            title: a.name || null,
+            date: a.start_date,
+            duration_minutes: Math.round(a.moving_time / 60),
+            distance: a.distance ? Math.round(a.distance / 10) / 100 : null,
+            elevation_gain: a.total_elevation_gain ? Math.round(a.total_elevation_gain) : null,
+            notes: null,
+          }));
+
+          const { error } = await admin.from("workout_sessions").insert(rows);
+          if (error) {
+            console.error("Insert error:", error);
+            return new Response(JSON.stringify({ error: "Failed to insert activities", synced: i }), {
+              status: 500,
+              headers: corsHeaders,
+            });
+          }
         }
       }
 

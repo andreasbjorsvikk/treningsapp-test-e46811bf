@@ -58,6 +58,7 @@ const SettingsPage = () => {
   const [stravaConnected, setStravaConnected] = useState(false);
   const [stravaLoading, setStravaLoading] = useState(false);
   const [stravaSyncing, setStravaSyncing] = useState(false);
+  const [syncAllLoading, setSyncAllLoading] = useState(false);
 
   // Check Strava connection on mount & after callback
   useEffect(() => {
@@ -402,6 +403,22 @@ const SettingsPage = () => {
       setStravaSyncing(false);
     };
 
+
+    const handleStravaSyncAll = async () => {
+      setSyncAllLoading(true);
+      try {
+        const result = await stravaService.syncAll();
+        if (result.synced > 0) {
+          toast.success(`${result.synced} økter synkronisert fra hele Strava-historikken!`);
+        } else {
+          toast.info('Ingen nye økter å synkronisere.');
+        }
+      } catch {
+        toast.error('Full synkronisering feilet');
+      }
+      setSyncAllLoading(false);
+    };
+
     return (
       <div className="space-y-4">
         {backButton(t('settings.sync'))}
@@ -431,7 +448,7 @@ const SettingsPage = () => {
               </Button>
             ) : (
               <div className="flex gap-2 shrink-0">
-                <Button variant="outline" size="sm" onClick={handleStravaSync} disabled={stravaSyncing}>
+                <Button variant="outline" size="sm" onClick={handleStravaSync} disabled={stravaSyncing || syncAllLoading}>
                   {stravaSyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={handleStravaDisconnect} disabled={stravaLoading} className="text-destructive hover:text-destructive">
@@ -440,6 +457,22 @@ const SettingsPage = () => {
               </div>
             )}
           </div>
+
+          {/* Sync all history button */}
+          {stravaConnected && (
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleStravaSyncAll}
+              disabled={syncAllLoading || stravaSyncing}
+            >
+              {syncAllLoading ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Synkroniserer all historikk...</>
+              ) : (
+                <><RefreshCw className="w-4 h-4 mr-2" /> Synkroniser alle tidligere økter fra Strava</>
+              )}
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -532,7 +565,6 @@ const SettingsPage = () => {
             </Avatar>
             <div className="min-w-0 flex-1">
               <p className="font-semibold truncate">{username || user.email?.split('@')[0]}</p>
-              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
             </div>
             <ChevronRight className="w-4 h-4 text-muted-foreground/50 shrink-0" />
           </div>

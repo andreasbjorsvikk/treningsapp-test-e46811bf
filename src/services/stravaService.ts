@@ -39,4 +39,11 @@ export const stravaService = {
     if (!res.ok) throw new Error('Failed to sync');
     return res.json();
   },
+
+  async syncAll(): Promise<{ synced: number; total: number }> {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${FUNCTION_URL}?action=sync-all`, { method: 'POST', headers });
+    if (!res.ok) throw new Error('Failed to sync all');
+    return res.json();
+  },
 };
