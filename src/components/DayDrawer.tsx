@@ -13,9 +13,10 @@ interface DayDrawerProps {
   sessions: WorkoutSession[];
   onClose: () => void;
   onRefresh: () => void;
+  onNavigateToCalendar?: () => void;
 }
 
-const DayDrawer = ({ dateKey, sessions, onClose, onRefresh }: DayDrawerProps) => {
+const DayDrawer = ({ dateKey, sessions, onClose, onRefresh, onNavigateToCalendar }: DayDrawerProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
   const [detailSession, setDetailSession] = useState<WorkoutSession | null>(null);
@@ -47,7 +48,12 @@ const DayDrawer = ({ dateKey, sessions, onClose, onRefresh }: DayDrawerProps) =>
     }
     setEditSession(undefined);
     onRefresh();
-  }, [editSession, appData, onRefresh]);
+    // Navigate to calendar after creating a new workout
+    if (!editSession && onNavigateToCalendar) {
+      onClose();
+      onNavigateToCalendar();
+    }
+  }, [editSession, appData, onRefresh, onNavigateToCalendar, onClose]);
 
   const handleAddNew = () => {
     setEditSession(undefined);
