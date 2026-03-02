@@ -158,23 +158,29 @@
 
 @keyframes gold-shimmer {
   0% { stroke-dashoffset: 0; opacity: 0; }
-  15% { opacity: 0.4; }
-  35% { opacity: 0; }
+  10% { opacity: 0.15; }
+  25% { opacity: 0.3; }
+  40% { opacity: 0.15; }
+  50% { opacity: 0; }
   100% { stroke-dashoffset: -200; opacity: 0; }
 }
 
 @keyframes gold-shimmer-2 {
   0% { stroke-dashoffset: -80; opacity: 0; }
   25% { opacity: 0; }
-  40% { opacity: 0.3; }
-  55% { opacity: 0; }
+  35% { opacity: 0.12; }
+  45% { opacity: 0.22; }
+  55% { opacity: 0.12; }
+  65% { opacity: 0; }
   100% { stroke-dashoffset: -240; opacity: 0; }
 }
 
 @keyframes gold-shimmer-3 {
   0% { stroke-dashoffset: -40; opacity: 0; }
   45% { opacity: 0; }
-  60% { opacity: 0.35; }
+  52% { opacity: 0.1; }
+  60% { opacity: 0.2; }
+  68% { opacity: 0.1; }
   75% { opacity: 0; }
   100% { stroke-dashoffset: -180; opacity: 0; }
 }

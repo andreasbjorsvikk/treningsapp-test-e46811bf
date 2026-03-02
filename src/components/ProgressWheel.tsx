@@ -185,6 +185,11 @@ const ProgressWheel = ({
               </filter>
             </>
           )}
+          {isGold && (
+            <filter id={`shimmer-blur-${safeId}`} x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="3" />
+            </filter>
+          )}
           {showAchievement && (
             <filter id={`achieve-glow-${safeId}`} x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="8" result="blur" />
@@ -251,31 +256,34 @@ const ProgressWheel = ({
             {/* Shimmer layer 1 */}
             <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
               stroke={goldShine}
-              strokeWidth={STROKE - 3}
-              strokeDasharray="15 60"
+              strokeWidth={STROKE - 2}
+              strokeDasharray="20 80"
               strokeLinecap="round"
               transform={rotation}
               opacity={0}
+              filter={`url(#shimmer-blur-${safeId})`}
               className="animate-[gold-shimmer_3.5s_ease-in-out_infinite]"
             />
             {/* Shimmer layer 2 - offset timing */}
             <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
               stroke={goldShine}
-              strokeWidth={STROKE - 4}
-              strokeDasharray="10 80"
+              strokeWidth={STROKE - 2}
+              strokeDasharray="18 100"
               strokeLinecap="round"
               transform={rotation}
               opacity={0}
+              filter={`url(#shimmer-blur-${safeId})`}
               className="animate-[gold-shimmer-2_4.2s_ease-in-out_infinite]"
             />
             {/* Shimmer layer 3 - different timing again */}
             <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
               stroke={goldShine}
-              strokeWidth={STROKE - 3}
-              strokeDasharray="12 70"
+              strokeWidth={STROKE - 2}
+              strokeDasharray="16 90"
               strokeLinecap="round"
               transform={rotation}
               opacity={0}
+              filter={`url(#shimmer-blur-${safeId})`}
               className="animate-[gold-shimmer-3_3.8s_ease-in-out_infinite]"
             />
           </>
