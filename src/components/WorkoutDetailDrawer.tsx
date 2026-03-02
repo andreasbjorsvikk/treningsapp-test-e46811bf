@@ -1,4 +1,4 @@
-import { useState, useMemo, Component, ReactNode } from 'react';
+import { useState, useMemo, useEffect, Component, ReactNode } from 'react';
 import { WorkoutSession, WorkoutStreams } from '@/types/workout';
 import { sessionTypeConfig, formatDuration } from '@/utils/workoutUtils';
 import { getActivityColors } from '@/utils/activityColors';
@@ -44,6 +44,18 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
   const [loadingStreams, setLoadingStreams] = useState(false);
   const [streamsLoaded, setStreamsLoaded] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
+
+  // Delay map render until drawer animation completes
+  useEffect(() => {
+    if (open && session?.summaryPolyline) {
+      setMapReady(false);
+      const timer = setTimeout(() => setMapReady(true), 350);
+      return () => clearTimeout(timer);
+    } else {
+      setMapReady(false);
+    }
+  }, [open, session?.id]);
 
   const config = session ? sessionTypeConfig[session.type] : null;
   const colors = session ? getActivityColors(session.type, isDark) : null;
@@ -121,16 +133,18 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
             </DrawerHeader>
 
             {/* Map */}
-            {routePoints && bounds && (
+            {routePoints && bounds && mapReady && (
               <MapErrorBoundary>
-                <div className="w-full h-48 relative">
+                <div className="w-full h-48 relative" style={{ minHeight: '192px' }}>
                   <MapContainer
+                    key={session.id}
                     bounds={bounds}
                     scrollWheelZoom={false}
                     dragging={true}
                     zoomControl={false}
                     attributionControl={false}
                     className="w-full h-full z-0"
+                    style={{ height: '192px', width: '100%' }}
                   >
                     <TileLayer url={tileUrl} />
                     <Polyline
