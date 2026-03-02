@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import { WorkoutSession, SessionType } from '@/types/workout';
@@ -19,6 +19,7 @@ import { CalendarIcon, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DurationPicker from '@/components/DurationPicker';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAppDataContext } from '@/contexts/AppDataContext';
 
 interface WorkoutDialogProps {
   open: boolean;
@@ -33,6 +34,7 @@ function getVisibleFields(type: SessionType) {
     case 'styrke':
     case 'yoga':
     case 'tennis':
+    case 'fotball':
       return { distance: false, elevation: false };
     case 'svømming':
       return { distance: true, elevation: false };
@@ -50,6 +52,14 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
   const { settings, getTypeColor } = useSettings();
   const { t } = useTranslation();
   const isMobile = useIsMobile();
+  const appData = useAppDataContext();
+  const sortedTypes = useMemo(() => {
+    const disabled = settings.disabledSessionTypes || [];
+    const active = allSessionTypes.filter(t => !disabled.includes(t));
+    const counts = new Map<SessionType, number>();
+    appData.sessions.forEach(s => counts.set(s.type, (counts.get(s.type) || 0) + 1));
+    return [...active].sort((a, b) => (counts.get(b) || 0) - (counts.get(a) || 0));
+  }, [appData.sessions, settings.disabledSessionTypes]);
   const [type, setType] = useState<SessionType>(session?.type || settings.defaultSessionType);
   const [title, setTitle] = useState(session?.title || '');
   const [date, setDate] = useState<Date | undefined>();
@@ -115,14 +125,14 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                {allSessionTypes.map(tp => {
+                {sortedTypes.map(tp => {
                     const isDark = settings.darkMode;
                     const actColors = getActivityColors(tp, isDark);
                     return (
                       <SelectItem key={tp} value={tp}>
                         <span className="flex items-center gap-2">
                           <span
-                            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                            className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
                             style={{
                               backgroundColor: actColors.bg,
                               boxShadow: isDark
@@ -133,7 +143,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
                           >
                             <ActivityIcon
                               type={tp}
-                              className="w-5 h-5"
+                              className="w-4 h-4"
                               colorOverride={!isDark ? actColors.text : undefined}
                             />
                           </span>

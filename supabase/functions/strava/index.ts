@@ -28,6 +28,7 @@ function mapStravaType(sportType: string): string {
     WeightTraining: "styrke",
     Yoga: "yoga",
     Tennis: "tennis",
+    Soccer: "fotball",
     Workout: "annet",
   };
   return map[sportType] || "annet";

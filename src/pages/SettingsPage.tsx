@@ -13,7 +13,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { SessionType } from '@/types/workout';
-import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw, Loader2, Check, Pencil } from 'lucide-react';
+import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw, Loader2, Check, Pencil, Dumbbell } from 'lucide-react';
 import { getActivityColors, activityColorMap } from '@/utils/activityColors';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
@@ -36,7 +36,7 @@ const COLOR_PRESETS = [
   { labelKey: 'color.mint', light: { bg: 'rgb(210,240,230)', text: 'rgb(35,95,75)', badge: 'rgb(225,248,240)' }, dark: { bg: 'rgb(80,145,120)', text: '#ffffff', badge: '#1a3a2e' } },
 ];
 
-type SettingsView = 'main' | 'appearance' | 'preferences' | 'data' | 'account' | 'sync';
+type SettingsView = 'main' | 'appearance' | 'preferences' | 'training' | 'data' | 'account' | 'sync';
 
 const SettingsPage = () => {
   const { settings, updateSettings, appThemes, accentPresets, getTypeColor } = useSettings();
@@ -346,6 +346,48 @@ const SettingsPage = () => {
     );
   }
 
+  // ========== TRAINING VIEW ==========
+  if (view === 'training') {
+    const disabledTypes = settings.disabledSessionTypes || [];
+    return (
+      <div className="space-y-4">
+        {backButton(t('settings.training'))}
+        <div className="glass-card rounded-xl p-4 space-y-3">
+          <Label className="text-sm font-semibold">{t('settings.activeSessionTypes')}</Label>
+          <p className="text-xs text-muted-foreground">{t('settings.activeSessionTypesDesc')}</p>
+          <div className="space-y-1">
+            {allSessionTypes.filter(tp => tp !== 'annet').map(tp => {
+              const colors = getActivityColors(tp, settings.darkMode);
+              const isActive = !disabledTypes.includes(tp);
+              return (
+                <div key={tp} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-muted/30 transition-colors">
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: colors.bg, opacity: isActive ? 1 : 0.4 }}
+                  >
+                    <ActivityIcon type={tp} className="w-5 h-5" colorOverride={!settings.darkMode ? colors.text : undefined} />
+                  </div>
+                  <span className={`flex-1 text-sm font-medium ${!isActive ? 'text-muted-foreground' : ''}`}>{t(`activity.${tp}`)}</span>
+                  <Switch
+                    checked={isActive}
+                    onCheckedChange={(checked) => {
+                      const current = [...(settings.disabledSessionTypes || [])];
+                      if (checked) {
+                        updateSettings({ disabledSessionTypes: current.filter(x => x !== tp) });
+                      } else {
+                        updateSettings({ disabledSessionTypes: [...current, tp] });
+                      }
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ========== DATA VIEW ==========
   if (view === 'data') {
     return (
@@ -619,6 +661,7 @@ const SettingsPage = () => {
       <div className="glass-card rounded-xl overflow-hidden divide-y divide-border">
         {menuItem(t('settings.appearance'), <Palette className="w-4 h-4" />, () => setView('appearance'))}
         {menuItem(t('settings.preferences'), <Settings2 className="w-4 h-4" />, () => setView('preferences'))}
+        {menuItem(t('settings.training'), <Dumbbell className="w-4 h-4" />, () => setView('training'))}
         {menuItem(t('settings.sync'), <RefreshCw className="w-4 h-4" />, () => setView('sync'))}
         {menuItem(t('settings.dangerZone'), <Shield className="w-4 h-4" />, () => setView('data'))}
       </div>

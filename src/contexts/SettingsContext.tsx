@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { SessionType } from '@/types/workout';
-import { defaultTypeColors } from '@/utils/workoutUtils';
+import { defaultTypeColors, allSessionTypes } from '@/utils/workoutUtils';
 import type { Language } from '@/i18n/translations';
 
 export type AppColorTheme = 'white' | 'orange' | 'blue' | 'green' | 'rose';
@@ -18,6 +18,7 @@ export interface AppSettings {
   sessionTypeColors: Record<SessionType, string>;
   language: Language;
   showPrimaryWheelsOnHome: boolean;
+  disabledSessionTypes: SessionType[];
 }
 
 interface ThemeColors {
@@ -158,6 +159,7 @@ const defaultSettings: AppSettings = {
   sessionTypeColors: { ...defaultTypeColors },
   language: 'no',
   showPrimaryWheelsOnHome: true,
+  disabledSessionTypes: [],
 };
 
 interface SettingsContextType {
@@ -185,6 +187,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
           sessionTypeColors: { ...defaultTypeColors, ...(parsed.sessionTypeColors || {}) },
           language: ['no', 'en'].includes(parsed.language) ? parsed.language : 'no',
           showPrimaryWheelsOnHome: parsed.showPrimaryWheelsOnHome !== false,
+          disabledSessionTypes: Array.isArray(parsed.disabledSessionTypes) ? parsed.disabledSessionTypes : [],
         };
       }
     } catch {}

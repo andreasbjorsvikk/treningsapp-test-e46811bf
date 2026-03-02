@@ -12,15 +12,17 @@ interface ActivityTypeFilterProps {
 const ActivityTypeFilter = ({ selected, onToggle }: ActivityTypeFilterProps) => {
   const { settings } = useSettings();
   const isDark = settings.darkMode;
-  const allSelected = selected.length === allSessionTypes.length;
+  const disabledTypes = settings.disabledSessionTypes || [];
+  const filteredTypes = allSessionTypes.filter(t => !disabledTypes.includes(t));
+  const allSelected = selected.length === filteredTypes.length;
 
   const handleToggleAll = () => {
     if (allSelected) {
-      allSessionTypes.forEach((t) => {
+      filteredTypes.forEach((t) => {
         if (selected.includes(t)) onToggle(t);
       });
     } else {
-      allSessionTypes.forEach((t) => {
+      filteredTypes.forEach((t) => {
         if (!selected.includes(t)) onToggle(t);
       });
     }
@@ -38,7 +40,7 @@ const ActivityTypeFilter = ({ selected, onToggle }: ActivityTypeFilterProps) => 
       >
         Alle
       </button>
-      {allSessionTypes.map((type) => {
+      {filteredTypes.map((type) => {
         const config = sessionTypeConfig[type];
         const isActive = selected.includes(type);
         const colors = getActivityColors(type, isDark);

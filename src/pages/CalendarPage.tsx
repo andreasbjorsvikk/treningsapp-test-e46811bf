@@ -435,7 +435,7 @@ const CalendarPage = () => {
         </div>
 
         {/* Calendar grid */}
-        <div className="grid grid-cols-7 gap-[3px] lg:gap-1">
+        <div className="grid grid-cols-7 gap-[3px] lg:gap-1 px-[2px]">
           {grid.map((cell, i) => {
             if (cell.isEmpty) {
               return <div key={i} className={`${isMobile ? 'min-h-[56px]' : 'min-h-[80px] lg:min-h-[100px]'}`} />;

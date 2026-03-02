@@ -79,7 +79,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
   const [selectedTypes, setSelectedTypes] = useState<SessionType[]>([...allSessionTypes]);
   const [chartMetric, setChartMetric] = useState<ChartMetric>('minutes');
   const [historyYear, setHistoryYear] = useState<string>(String(now.getFullYear()));
-  const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
+  const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set([`${now.getFullYear()}-${now.getMonth()}`]));
 
   const allSessions = appData.sessions;
   const healthEvents = appData.healthEvents;
@@ -125,7 +125,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
   }, [healthEvents, historyYear, healthFilter]);
 
   const toggleMonth = useCallback((monthKey: string) => {
-    setCollapsedMonths(prev => {
+    setExpandedMonths(prev => {
       const next = new Set(prev);
       if (next.has(monthKey)) next.delete(monthKey);
       else next.add(monthKey);
@@ -291,7 +291,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
             ) : (
               historyByMonth.map(group => {
                 const monthKey = `${historyYear}-${group.month}`;
-                const isCollapsed = collapsedMonths.has(monthKey);
+                const isCollapsed = !expandedMonths.has(monthKey);
                 return (
                   <div key={monthKey} className="rounded-xl border border-border/60 bg-card/50 overflow-hidden">
                     <button

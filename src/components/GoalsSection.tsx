@@ -273,7 +273,7 @@ const GoalsSection = () => {
                   </div>
                   <div className="h-5 flex items-center">
                     {!isToday && (
-                      <button onClick={handleGoToday} className="px-4 py-1 rounded-full text-xs font-semibold text-primary-foreground bg-primary hover:bg-primary/90 transition-colors shadow-sm">
+                      <button onClick={handleGoToday} className="text-xs font-semibold text-primary hover:underline transition-colors">
                         {t('common.today')}
                       </button>
                     )}
@@ -339,7 +339,7 @@ const GoalsSection = () => {
                     </div>
                     <div className="h-5 flex items-center">
                       {!isToday && (
-                         <button onClick={handleGoToday} className="px-4 py-1 rounded-full text-xs font-semibold text-primary-foreground bg-primary hover:bg-primary/90 transition-colors shadow-sm">
+                         <button onClick={handleGoToday} className="text-xs font-semibold text-primary hover:underline transition-colors">
                           {t('common.today')}
                         </button>
                       )}
