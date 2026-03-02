@@ -434,10 +434,13 @@ const SettingsPage = () => {
       setStravaSyncing(true);
       try {
         const result = await stravaService.sync();
-        if (result.synced > 0) {
-          toast.success(`${result.synced} nye økter synkronisert fra Strava!`);
+        const parts: string[] = [];
+        if (result.synced > 0) parts.push(`${result.synced} nye`);
+        if ((result as any).updated > 0) parts.push(`${(result as any).updated} oppdatert`);
+        if (parts.length > 0) {
+          toast.success(`${parts.join(', ')} økter fra Strava!`);
         } else {
-          toast.info('Ingen nye økter å synkronisere.');
+          toast.info('Alt er allerede oppdatert.');
         }
       } catch {
         toast.error('Synkronisering feilet');
@@ -450,15 +453,38 @@ const SettingsPage = () => {
       setSyncAllLoading(true);
       try {
         const result = await stravaService.syncAll();
-        if (result.synced > 0) {
-          toast.success(`${result.synced} økter synkronisert fra hele Strava-historikken!`);
+        const parts: string[] = [];
+        if (result.synced > 0) parts.push(`${result.synced} nye`);
+        if ((result as any).updated > 0) parts.push(`${(result as any).updated} oppdatert`);
+        if (parts.length > 0) {
+          toast.success(`${parts.join(', ')} økter fra Strava!`);
         } else {
-          toast.info('Ingen nye økter å synkronisere.');
+          toast.info('Alt er allerede oppdatert.');
         }
       } catch {
         toast.error('Full synkronisering feilet');
       }
       setSyncAllLoading(false);
+    };
+
+    const handleStravaDeleteAll = async () => {
+      if (!confirm('Er du sikker på at du vil slette alle økter importert fra Strava? Dette kan ikke angres.')) return;
+      try {
+        const headers: Record<string, string> = {};
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+          headers['Content-Type'] = 'application/json';
+        }
+        const res = await fetch(`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/strava?action=delete-all`, {
+          method: 'POST', headers,
+        });
+        if (!res.ok) throw new Error();
+        const result = await res.json();
+        toast.success(`${result.deleted} Strava-økter slettet.`);
+      } catch {
+        toast.error('Sletting feilet');
+      }
     };
 
     return (
@@ -502,18 +528,27 @@ const SettingsPage = () => {
 
           {/* Sync all history button */}
           {stravaConnected && (
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleStravaSyncAll}
-              disabled={syncAllLoading || stravaSyncing}
-            >
-              {syncAllLoading ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Synkroniserer all historikk...</>
-              ) : (
-                <><RefreshCw className="w-4 h-4 mr-2" /> Synkroniser alle tidligere økter fra Strava</>
-              )}
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleStravaSyncAll}
+                disabled={syncAllLoading || stravaSyncing}
+              >
+                {syncAllLoading ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Synkroniserer all historikk...</>
+                ) : (
+                  <><RefreshCw className="w-4 h-4 mr-2" /> Synkroniser alle tidligere økter fra Strava</>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full text-destructive hover:text-destructive"
+                onClick={handleStravaDeleteAll}
+              >
+                <Trash2 className="w-4 h-4 mr-2" /> Slett alle økter importert fra Strava
+              </Button>
+            </>
           )}
         </div>
       </div>

@@ -132,7 +132,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
                       <SelectItem key={tp} value={tp}>
                         <span className="flex items-center gap-2">
                           <span
-                            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 overflow-hidden"
+                            className="w-5 h-5 rounded-md flex items-center justify-center shrink-0 overflow-hidden"
                             style={{
                               backgroundColor: actColors.bg,
                               boxShadow: isDark
@@ -143,7 +143,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
                           >
                             <ActivityIcon
                               type={tp}
-                              className="w-4 h-4"
+                              className="w-3.5 h-3.5"
                               colorOverride={!isDark ? actColors.text : undefined}
                             />
                           </span>

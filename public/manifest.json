@@ -3,9 +3,15 @@
   "short_name": "Trening",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f5f7fa",
+  "background_color": "#1a1a1a",
   "theme_color": "#262626",
   "icons": [
+    {
+      "src": "/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
     {
       "src": "/favicon.ico",
       "sizes": "64x64",
