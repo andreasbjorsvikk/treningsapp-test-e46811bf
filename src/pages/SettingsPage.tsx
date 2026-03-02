@@ -13,7 +13,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { SessionType } from '@/types/workout';
-import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw, Loader2, Check } from 'lucide-react';
+import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw, Loader2, Check, Pencil } from 'lucide-react';
 import { getActivityColors, activityColorMap } from '@/utils/activityColors';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
@@ -53,6 +53,7 @@ const SettingsPage = () => {
   const [usernameSaved, setUsernameSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [cropFile, setCropFile] = useState<File | null>(null);
+  const [cropUrl, setCropUrl] = useState<string | null>(null);
   const [showCropper, setShowCropper] = useState(false);
   const [stravaConnected, setStravaConnected] = useState(false);
   const [stravaLoading, setStravaLoading] = useState(false);
@@ -99,6 +100,7 @@ const SettingsPage = () => {
     if (!user) return;
     setShowCropper(false);
     setCropFile(null);
+    setCropUrl(null);
     setUploading(true);
     const path = `${user.id}/avatar.png`;
     const file = new File([blob], 'avatar.png', { type: 'image/png' });
@@ -468,12 +470,22 @@ const SettingsPage = () => {
               >
                 <Camera className="w-3.5 h-3.5" />
               </button>
+              {avatarUrl && (
+                <button
+                  onClick={() => { setCropFile(null); setCropUrl(avatarUrl); setShowCropper(true); }}
+                  disabled={uploading}
+                  className="absolute -bottom-1 -left-1 w-7 h-7 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              )}
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarSelect} />
               <AvatarCropper
                 open={showCropper}
                 imageFile={cropFile}
+                imageUrl={cropUrl}
                 onConfirm={handleCroppedUpload}
-                onCancel={() => { setShowCropper(false); setCropFile(null); }}
+                onCancel={() => { setShowCropper(false); setCropFile(null); setCropUrl(null); }}
               />
             </div>
             <div className="min-w-0">
