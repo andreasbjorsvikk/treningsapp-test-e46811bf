@@ -11,7 +11,7 @@ interface DurationPickerProps {
   onConfirm: (hours: number, minutes: number) => void;
 }
 
-const ITEM_HEIGHT = 44;
+const ITEM_HEIGHT = 48;
 const VISIBLE_ITEMS = 5;
 const CENTER_INDEX = Math.floor(VISIBLE_ITEMS / 2);
 
@@ -27,55 +27,58 @@ const ScrollColumn = ({
   label: string;
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const isScrollingRef = useRef(false);
-  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const isUserScrolling = useRef(false);
+  const rafRef = useRef<number>();
+  const snapTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
-  // Scroll to the selected value on mount and when selected changes externally
   useEffect(() => {
     const el = containerRef.current;
-    if (!el || isScrollingRef.current) return;
+    if (!el || isUserScrolling.current) return;
     const idx = values.indexOf(selected);
     if (idx >= 0) {
       el.scrollTop = idx * ITEM_HEIGHT;
     }
   }, [selected, values]);
 
-  const handleScroll = useCallback(() => {
-    isScrollingRef.current = true;
-    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-    scrollTimeoutRef.current = setTimeout(() => {
-      const el = containerRef.current;
-      if (!el) return;
-      const idx = Math.round(el.scrollTop / ITEM_HEIGHT);
-      const clampedIdx = Math.max(0, Math.min(values.length - 1, idx));
-      // Snap scroll
-      el.scrollTo({ top: clampedIdx * ITEM_HEIGHT, behavior: 'smooth' });
-      onChange(values[clampedIdx]);
-      setTimeout(() => { isScrollingRef.current = false; }, 100);
-    }, 80);
+  const snapToNearest = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const idx = Math.round(el.scrollTop / ITEM_HEIGHT);
+    const clampedIdx = Math.max(0, Math.min(values.length - 1, idx));
+    el.scrollTo({ top: clampedIdx * ITEM_HEIGHT, behavior: 'smooth' });
+    onChange(values[clampedIdx]);
+    setTimeout(() => { isUserScrolling.current = false; }, 150);
   }, [values, onChange]);
+
+  const handleScroll = useCallback(() => {
+    isUserScrolling.current = true;
+    if (snapTimeoutRef.current) clearTimeout(snapTimeoutRef.current);
+    snapTimeoutRef.current = setTimeout(snapToNearest, 60);
+  }, [snapToNearest]);
 
   const handleItemClick = (val: number) => {
     const idx = values.indexOf(val);
     const el = containerRef.current;
     if (el && idx >= 0) {
+      isUserScrolling.current = true;
       el.scrollTo({ top: idx * ITEM_HEIGHT, behavior: 'smooth' });
       onChange(val);
+      setTimeout(() => { isUserScrolling.current = false; }, 200);
     }
   };
 
   return (
-    <div className="flex flex-col items-center flex-1">
+    <div className="flex flex-col items-center flex-1 min-w-0">
       <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{label}</span>
-      <div className="relative" style={{ height: ITEM_HEIGHT * VISIBLE_ITEMS }}>
+      <div className="relative w-full" style={{ height: ITEM_HEIGHT * VISIBLE_ITEMS }}>
         {/* Selection highlight */}
         <div
-          className="absolute left-0 right-0 rounded-lg bg-primary/10 border border-primary/20 pointer-events-none z-10"
+          className="absolute left-1 right-1 rounded-xl bg-primary/10 border border-primary/20 pointer-events-none z-10"
           style={{ top: CENTER_INDEX * ITEM_HEIGHT, height: ITEM_HEIGHT }}
         />
         {/* Fade overlays */}
-        <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-background to-transparent pointer-events-none z-20" />
-        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background to-transparent pointer-events-none z-20" />
+        <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-background to-transparent pointer-events-none z-20" />
+        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background to-transparent pointer-events-none z-20" />
         <div
           ref={containerRef}
           onScroll={handleScroll}
@@ -85,6 +88,7 @@ const ScrollColumn = ({
             WebkitOverflowScrolling: 'touch',
             paddingTop: CENTER_INDEX * ITEM_HEIGHT,
             paddingBottom: CENTER_INDEX * ITEM_HEIGHT,
+            overscrollBehavior: 'contain',
           }}
         >
           {values.map((val) => {
@@ -94,8 +98,8 @@ const ScrollColumn = ({
                 key={val}
                 onClick={() => handleItemClick(val)}
                 className={`
-                  flex items-center justify-center cursor-pointer transition-all duration-150 select-none
-                  ${isSelected ? 'text-foreground font-bold text-2xl' : 'text-muted-foreground/60 text-lg'}
+                  flex items-center justify-center cursor-pointer select-none transition-colors duration-100
+                  ${isSelected ? 'text-foreground font-bold text-3xl' : 'text-muted-foreground/50 text-xl'}
                 `}
                 style={{
                   height: ITEM_HEIGHT,
@@ -129,13 +133,13 @@ const DurationPicker = ({ open, onClose, hours, minutes, onConfirm }: DurationPi
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[280px] sm:max-w-[320px]">
+      <DialogContent className="max-w-[320px] sm:max-w-[360px]">
         <DialogHeader className="items-center">
           <DialogTitle className="text-center">{t('workout.duration')}</DialogTitle>
         </DialogHeader>
-        <div className="flex items-center gap-2 py-2">
+        <div className="flex items-center gap-4 py-2 px-2">
           <ScrollColumn values={hourValues} selected={h} onChange={setH} label={t('workout.h')} />
-          <span className="text-2xl font-bold text-muted-foreground mt-6">:</span>
+          <span className="text-3xl font-bold text-muted-foreground mt-6">:</span>
           <ScrollColumn values={minuteValues} selected={m} onChange={setM} label={t('workout.min')} />
         </div>
         <DialogFooter>

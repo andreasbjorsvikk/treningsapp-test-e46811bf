@@ -154,31 +154,43 @@ const SettingsPage = () => {
 
         {/* Accent color */}
         <div className="glass-card rounded-xl p-4 space-y-3">
-          <Label className="text-sm font-semibold">{t('settings.accentColor')}</Label>
-          <div className="grid grid-cols-3 gap-2">
-            {(Object.entries(accentPresets) as [AccentColor, typeof accentPresets[AccentColor]][]).map(
-              ([key, preset]) => {
-                const isActive = settings.accentColor === key;
-                return (
-                  <button
-                    key={key}
-                    onClick={() => updateSettings({ accentColor: key })}
-                    className={`
-                      flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all text-left
-                      ${isActive
-                        ? 'bg-foreground/10 ring-2 ring-foreground/30 shadow-sm'
-                        : 'hover:bg-foreground/5'}
-                    `}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full shrink-0 shadow-sm transition-transform ${isActive ? 'scale-110' : ''}`}
-                      style={{ backgroundColor: preset.swatch }}
-                    />
-                    <span className="text-xs font-medium text-foreground/80 truncate">{t(`accent.${key}`)}</span>
-                  </button>
-                );
-              }
-            )}
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-semibold">{t('settings.accentColor')}</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-foreground/5 transition-colors">
+                  <div
+                    className="w-6 h-6 rounded-full shadow-sm ring-2 ring-foreground/20"
+                    style={{ backgroundColor: accentPresets[settings.accentColor]?.swatch }}
+                  />
+                  <span className="text-xs font-medium text-muted-foreground">{t(`accent.${settings.accentColor}`)}</span>
+                  <ChevronRight className="w-3 h-3 text-muted-foreground/50" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-3" align="end">
+                <div className="grid grid-cols-4 gap-2">
+                  {(Object.entries(accentPresets) as [AccentColor, typeof accentPresets[AccentColor]][]).map(
+                    ([key, preset]) => {
+                      const isActive = settings.accentColor === key;
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => updateSettings({ accentColor: key })}
+                          className="flex flex-col items-center gap-1 p-1.5 rounded-lg hover:bg-foreground/5 transition-all"
+                          title={t(`accent.${key}`)}
+                        >
+                          <div
+                            className={`w-7 h-7 rounded-full shadow-sm transition-transform ${isActive ? 'scale-110 ring-2 ring-foreground/40' : ''}`}
+                            style={{ backgroundColor: preset.swatch }}
+                          />
+                          <span className="text-[9px] text-muted-foreground truncate w-full text-center">{t(`accent.${key}`)}</span>
+                        </button>
+                      );
+                    }
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
@@ -186,48 +198,50 @@ const SettingsPage = () => {
         <div className="glass-card rounded-xl p-4 space-y-3">
           <Label className="text-sm font-semibold">{t('settings.sessionColors')}</Label>
           <p className="text-xs text-muted-foreground">{t('settings.tapToChange')}</p>
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
             {allSessionTypes.map((type) => {
               const colors = getActivityColors(type, settings.darkMode);
               return (
-                <div key={type} className="flex items-center gap-3">
-                  <Popover open={editingType === type} onOpenChange={(open) => setEditingType(open ? type : null)}>
-                    <PopoverTrigger asChild>
-                      <button
-                        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 cursor-pointer hover:scale-110 transition-transform"
+                <Popover key={type} open={editingType === type} onOpenChange={(open) => setEditingType(open ? type : null)}>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-foreground/5 transition-all"
+                    >
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 hover:scale-110 transition-transform"
                         style={{ backgroundColor: colors.bg }}
                       >
-                        <ActivityIcon type={type} className="w-6 h-6" colorOverride={!settings.darkMode ? colors.text : undefined} />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-64 p-3" side="right" align="start">
-                      <p className="text-xs font-semibold mb-2">{t(`activity.${type}`)} – {t('settings.chooseColor')}</p>
-                      <div className="grid grid-cols-4 gap-2">
-                        {COLOR_PRESETS.map((preset, idx) => {
-                          const previewColors = settings.darkMode ? preset.dark : preset.light;
-                          return (
-                            <button
-                              key={idx}
-                              onClick={() => {
-                                (activityColorMap as any)[type] = { light: preset.light, dark: preset.dark };
-                                updateSettings({
-                                  sessionTypeColors: { ...settings.sessionTypeColors, [type]: preset.light.bg },
-                                });
-                                setEditingType(null);
-                              }}
-                              className="w-12 h-12 rounded-lg flex items-center justify-center hover:scale-110 transition-transform border border-border/50"
-                              style={{ backgroundColor: previewColors.bg }}
-                              title={t(preset.labelKey)}
-                            >
-                              <ActivityIcon type={type} className="w-6 h-6" colorOverride={!settings.darkMode ? previewColors.text : undefined} />
-                            </button>
-                          );
-                        })}
+                        <ActivityIcon type={type} className="w-5 h-5" colorOverride={!settings.darkMode ? colors.text : undefined} />
                       </div>
-                    </PopoverContent>
-                  </Popover>
-                  <Label className="text-sm">{t(`activity.${type}`)}</Label>
-                </div>
+                      <span className="text-sm truncate">{t(`activity.${type}`)}</span>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-3" side="right" align="start">
+                    <p className="text-xs font-semibold mb-2">{t(`activity.${type}`)} – {t('settings.chooseColor')}</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {COLOR_PRESETS.map((preset, idx) => {
+                        const previewColors = settings.darkMode ? preset.dark : preset.light;
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              (activityColorMap as any)[type] = { light: preset.light, dark: preset.dark };
+                              updateSettings({
+                                sessionTypeColors: { ...settings.sessionTypeColors, [type]: preset.light.bg },
+                              });
+                              setEditingType(null);
+                            }}
+                            className="w-12 h-12 rounded-lg flex items-center justify-center hover:scale-110 transition-transform border border-border/50"
+                            style={{ backgroundColor: previewColors.bg }}
+                            title={t(preset.labelKey)}
+                          >
+                            <ActivityIcon type={type} className="w-6 h-6" colorOverride={!settings.darkMode ? previewColors.text : undefined} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               );
             })}
           </div>
