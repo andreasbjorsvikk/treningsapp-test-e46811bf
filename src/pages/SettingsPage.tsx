@@ -357,20 +357,6 @@ const SettingsPage = () => {
               {t('settings.stravaConnect')}
             </Button>
           </div>
-
-          {/* Garmin placeholder */}
-          <div className="flex items-center gap-4 p-4 rounded-xl bg-secondary/50">
-            <div className="w-10 h-10 rounded-lg bg-[#007CC3] flex items-center justify-center shrink-0">
-              <span className="text-white font-bold text-xs">G</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm">Garmin Connect</p>
-              <p className="text-xs text-muted-foreground/60">{t('settings.comingSoon')}</p>
-            </div>
-            <Button variant="outline" size="sm" disabled className="shrink-0 opacity-60">
-              {t('settings.stravaConnect')}
-            </Button>
-          </div>
         </div>
       </div>
     );

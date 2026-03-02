@@ -147,13 +147,18 @@
 }
 
 @keyframes gold-pulse {
-  0%, 100% { opacity: 0; }
-  50% { opacity: 0.2; }
+  0%, 100% { opacity: 0.05; }
+  50% { opacity: 0.3; }
 }
 
 @keyframes gold-pulse-strong {
-  0%, 100% { opacity: 0.05; }
-  50% { opacity: 0.35; }
+  0%, 100% { opacity: 0.1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes gold-shimmer {
+  0% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -40; }
 }
 
 @layer utilities {
