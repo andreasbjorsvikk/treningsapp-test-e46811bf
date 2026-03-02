@@ -179,6 +179,7 @@ const no: Record<string, string> = {
   'workout.notesPlaceholder': 'Skriv notater her...',
   'workout.h': 't',
   'workout.min': 'min',
+  'workout.confirm': 'Bekreft',
 
   // Settings
   'settings.title': 'Innstillinger',
@@ -417,6 +418,7 @@ const en: Record<string, string> = {
   'workout.notesPlaceholder': 'Write notes here...',
   'workout.h': 'h',
   'workout.min': 'min',
+  'workout.confirm': 'Confirm',
 
   // Settings
   'settings.title': 'Settings',
