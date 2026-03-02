@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { WorkoutSession } from '@/types/workout';
-import { workoutService } from '@/services/workoutService';
+import { useAppDataContext } from '@/contexts/AppDataContext';
 import SessionCard from '@/components/SessionCard';
 import WorkoutDialog from '@/components/WorkoutDialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -17,6 +17,7 @@ interface DayDrawerProps {
 const DayDrawer = ({ dateKey, sessions, onClose, onRefresh }: DayDrawerProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
+  const appData = useAppDataContext();
 
   const dateLabel = dateKey
     ? new Date(dateKey + 'T00:00:00').toLocaleDateString('nb-NO', {
@@ -26,25 +27,25 @@ const DayDrawer = ({ dateKey, sessions, onClose, onRefresh }: DayDrawerProps) =>
       })
     : '';
 
-  const handleDelete = useCallback((id: string) => {
-    workoutService.delete(id);
+  const handleDelete = useCallback(async (id: string) => {
+    await appData.deleteSession(id);
     onRefresh();
-  }, [onRefresh]);
+  }, [appData, onRefresh]);
 
   const handleEdit = useCallback((session: WorkoutSession) => {
     setEditSession(session);
     setDialogOpen(true);
   }, []);
 
-  const handleSave = useCallback((data: Omit<WorkoutSession, 'id'>) => {
+  const handleSave = useCallback(async (data: Omit<WorkoutSession, 'id'>) => {
     if (editSession) {
-      workoutService.update(editSession.id, data);
+      await appData.updateSession(editSession.id, data);
     } else {
-      workoutService.add(data);
+      await appData.addSession(data);
     }
     setEditSession(undefined);
     onRefresh();
-  }, [editSession, onRefresh]);
+  }, [editSession, appData, onRefresh]);
 
   const handleAddNew = () => {
     setEditSession(undefined);

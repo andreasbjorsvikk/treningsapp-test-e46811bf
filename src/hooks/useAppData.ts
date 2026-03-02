@@ -16,11 +16,57 @@ export function useAppData() {
   const [healthEvents, setHealthEvents] = useState<HealthEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Migrate localStorage data to database on first login
+  const migrateLocalData = useCallback(async (userId: string) => {
+    const MIGRATED_KEY = 'treningslogg_migrated';
+    if (localStorage.getItem(MIGRATED_KEY)) return;
+
+    const localSessions = workoutService.getAll();
+    const localGoals = goalService.getAll();
+    const localPrimaryGoals = primaryGoalService.getAll();
+    const localHealthEvents = healthEventService.getAll();
+
+    // Check if there's any real local data (not just mock defaults with ids 1-25)
+    const hasRealLocalData = localSessions.some(s => !['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25'].includes(s.id));
+    
+    if (hasRealLocalData || localGoals.length > 0 || localPrimaryGoals.length > 0 || localHealthEvents.length > 0) {
+      console.log('Migrating localStorage data to database...');
+      try {
+        // Migrate sessions (skip mock data)
+        const realSessions = localSessions.filter(s => !['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25'].includes(s.id));
+        for (const s of realSessions) {
+          const { id, ...data } = s;
+          await workoutServiceAsync.add(userId, data);
+        }
+        for (const g of localGoals) {
+          const { id, createdAt, ...data } = g;
+          await goalServiceAsync.add(userId, data);
+        }
+        for (const pg of localPrimaryGoals) {
+          const { id, createdAt, ...data } = pg;
+          await primaryGoalServiceAsync.add(userId, data);
+        }
+        for (const he of localHealthEvents) {
+          const { id, ...data } = he;
+          await healthEventServiceAsync.add(userId, data);
+        }
+        console.log('Migration complete!');
+      } catch (err) {
+        console.error('Migration failed:', err);
+      }
+    }
+
+    localStorage.setItem(MIGRATED_KEY, 'true');
+  }, []);
+
   // Load data
   const reload = useCallback(async () => {
     setLoading(true);
     try {
       if (isOnline && user) {
+        // Check if migration needed
+        await migrateLocalData(user.id);
+        
         const [s, g, pg, he] = await Promise.all([
           workoutServiceAsync.getAll(user.id),
           goalServiceAsync.getAll(user.id),
@@ -39,7 +85,6 @@ export function useAppData() {
       }
     } catch (err) {
       console.error('Failed to load data:', err);
-      // Only fallback to local if NOT logged in
       if (!isOnline) {
         setSessions(workoutService.getAll());
         setGoals(goalService.getAll());
@@ -48,7 +93,7 @@ export function useAppData() {
       }
     }
     setLoading(false);
-  }, [isOnline, user]);
+  }, [isOnline, user, migrateLocalData]);
 
   useEffect(() => { reload(); }, [reload]);
 

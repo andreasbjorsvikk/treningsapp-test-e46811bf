@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { WorkoutSession, ExtraGoal } from '@/types/workout';
-import { useAppData } from '@/hooks/useAppData';
+import { AppDataProvider, useAppDataContext } from '@/contexts/AppDataContext';
 import { computeMonthWheelData, computeYearWheelData } from '@/utils/goalWheelData';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -28,11 +28,19 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { HealthEvent } from '@/types/workout';
 
 const Index = () => {
+  return (
+    <AppDataProvider>
+      <IndexContent />
+    </AppDataProvider>
+  );
+};
+
+const IndexContent = () => {
   const { settings, updateSettings } = useSettings();
   const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const appData = useAppData();
+  const appData = useAppDataContext();
 
   const [activeTab, setActiveTab] = useState<TabId>('hjem');
   const [dialogOpen, setDialogOpen] = useState(false);
