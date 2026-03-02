@@ -91,6 +91,20 @@ const GoalsSection = () => {
   });
 
   const isToday = wheelMonth === now.getMonth() && wheelYear === now.getFullYear();
+  const isPastMonth = wheelYear < now.getFullYear() || (wheelYear === now.getFullYear() && wheelMonth < now.getMonth());
+
+  // For past months, compute a fixed color based on completion percentage
+  const getCompletionColor = (pct: number): { main: string; light: string } | undefined => {
+    if (!isPastMonth) return undefined;
+    if (pct > 100) return { main: '#D4A843', light: '#F0D060' }; // Gold
+    if (pct >= 100) return { main: 'hsl(142, 55%, 42%)', light: 'hsl(142, 60%, 55%)' }; // Green
+    if (pct >= 75) return { main: 'hsl(142, 45%, 55%)', light: 'hsl(142, 50%, 68%)' }; // Light green
+    if (pct >= 50) return { main: 'hsl(48, 85%, 48%)', light: 'hsl(48, 90%, 60%)' }; // Yellow
+    if (pct >= 25) return { main: 'hsl(25, 85%, 48%)', light: 'hsl(28, 90%, 60%)' }; // Orange
+    return { main: 'hsl(0, 65%, 48%)', light: 'hsl(0, 70%, 60%)' }; // Red
+  };
+
+  const monthWheelColor = getCompletionColor(monthData.percent);
 
   // --- Extra goals handlers (use context) ---
   const handleSaveExtra = async (data: Omit<ExtraGoal, 'id' | 'createdAt'>) => {
@@ -256,10 +270,11 @@ const GoalsSection = () => {
                       unit={monthData.unit}
                       title=""
                       hasGoal={true}
-                      expectedFraction={monthData.expectedFraction}
-                      paceDiff={monthData.diff}
+                      expectedFraction={isPastMonth ? undefined : monthData.expectedFraction}
+                      paceDiff={isPastMonth ? undefined : monthData.diff}
                       naked
                       disableAchievement
+                      fixedRingColor={monthWheelColor}
                     />
                   </div>
 
@@ -372,11 +387,12 @@ const GoalsSection = () => {
                       unit={monthData.unit}
                       title=""
                       hasGoal={true}
-                      expectedFraction={monthData.expectedFraction}
-                      paceDiff={monthData.diff}
+                      expectedFraction={isPastMonth ? undefined : monthData.expectedFraction}
+                      paceDiff={isPastMonth ? undefined : monthData.diff}
                       naked
                       compact
                       disableAchievement
+                      fixedRingColor={monthWheelColor}
                     />
                     <ProgressWheel
                       percent={yearData.percent}
@@ -433,24 +449,24 @@ const GoalsSection = () => {
                   <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${historyOpen ? '' : '-rotate-90'}`} />
                   {t('goals.previousGoals')}
                 </button>
-                {historyOpen && (
-                  <div className="mt-2 space-y-1">
+            {historyOpen && (
+                  <div className="mt-3 space-y-2">
                     {historyItems.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between text-xs bg-secondary/40 rounded-md px-3 py-2">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="font-medium text-foreground">{periodTypeLabel(item)}</span>
-                          <span className="text-muted-foreground">
+                      <div key={item.id} className="flex items-center justify-between bg-secondary/50 rounded-xl px-4 py-3">
+                        <div className="flex flex-col gap-1">
+                          <span className="font-semibold text-sm text-foreground">{periodTypeLabel(item)}</span>
+                          <span className="text-xs text-muted-foreground">
                             {formatDate(item.validFrom)}
                             {item.toDate ? ` → ${formatDate(item.toDate)}` : ` → ${t('goals.ongoing')}`}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => openEditPeriod(item)}
-                            className="text-muted-foreground/60 hover:text-foreground p-1 rounded hover:bg-secondary transition-colors"
+                            className="text-muted-foreground/60 hover:text-foreground p-1.5 rounded-lg hover:bg-secondary transition-colors"
                             title={t('common.edit')}
                           >
-                            <Pencil className="w-3 h-3" />
+                            <Pencil className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => {
@@ -460,10 +476,10 @@ const GoalsSection = () => {
                                 handleDeletePeriod(item.id);
                               }
                             }}
-                            className="text-destructive/60 hover:text-destructive p-1 rounded hover:bg-destructive/10 transition-colors"
+                            className="text-destructive/60 hover:text-destructive p-1.5 rounded-lg hover:bg-destructive/10 transition-colors"
                             title={t('common.delete')}
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>

@@ -13,7 +13,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { SessionType } from '@/types/workout';
-import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2 } from 'lucide-react';
+import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw } from 'lucide-react';
 import { getActivityColors, activityColorMap } from '@/utils/activityColors';
 import { useNavigate } from 'react-router-dom';
 
@@ -33,7 +33,7 @@ const COLOR_PRESETS = [
   { labelKey: 'color.mint', light: { bg: 'rgb(210,240,230)', text: 'rgb(35,95,75)', badge: 'rgb(225,248,240)' }, dark: { bg: 'rgb(80,145,120)', text: '#ffffff', badge: '#1a3a2e' } },
 ];
 
-type SettingsView = 'main' | 'appearance' | 'preferences' | 'data' | 'account';
+type SettingsView = 'main' | 'appearance' | 'preferences' | 'data' | 'account' | 'sync';
 
 const SettingsPage = () => {
   const { settings, updateSettings, appThemes, accentPresets, getTypeColor } = useSettings();
@@ -332,6 +332,50 @@ const SettingsPage = () => {
     );
   }
 
+  // ========== SYNC VIEW ==========
+  if (view === 'sync') {
+    return (
+      <div className="space-y-4">
+        {backButton(t('settings.sync'))}
+
+        <div className="glass-card rounded-xl p-4 space-y-4">
+          <p className="text-sm text-muted-foreground">{t('settings.syncDesc')}</p>
+
+          {/* Strava */}
+          <div className="flex items-center gap-4 p-4 rounded-xl bg-secondary/50">
+            <div className="w-10 h-10 rounded-lg bg-[#FC4C02] flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="currentColor">
+                <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm">Strava</p>
+              <p className="text-xs text-muted-foreground">{t('settings.stravaDesc')}</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">{t('settings.comingSoon')}</p>
+            </div>
+            <Button variant="outline" size="sm" disabled className="shrink-0 opacity-60">
+              {t('settings.stravaConnect')}
+            </Button>
+          </div>
+
+          {/* Garmin placeholder */}
+          <div className="flex items-center gap-4 p-4 rounded-xl bg-secondary/50">
+            <div className="w-10 h-10 rounded-lg bg-[#007CC3] flex items-center justify-center shrink-0">
+              <span className="text-white font-bold text-xs">G</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm">Garmin Connect</p>
+              <p className="text-xs text-muted-foreground/60">{t('settings.comingSoon')}</p>
+            </div>
+            <Button variant="outline" size="sm" disabled className="shrink-0 opacity-60">
+              {t('settings.stravaConnect')}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ========== ACCOUNT VIEW ==========
   if (view === 'account' && user) {
     return (
@@ -458,6 +502,7 @@ const SettingsPage = () => {
       <div className="glass-card rounded-xl overflow-hidden divide-y divide-border">
         {menuItem(t('settings.appearance'), <Palette className="w-4 h-4" />, () => setView('appearance'))}
         {menuItem(t('settings.preferences'), <Settings2 className="w-4 h-4" />, () => setView('preferences'))}
+        {menuItem(t('settings.sync'), <RefreshCw className="w-4 h-4" />, () => setView('sync'))}
         {menuItem(t('settings.dangerZone'), <Shield className="w-4 h-4" />, () => setView('data'))}
       </div>
 

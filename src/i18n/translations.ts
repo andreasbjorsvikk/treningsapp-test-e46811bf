@@ -212,6 +212,14 @@ const no: Record<string, string> = {
   'settings.signIn': 'Logg inn',
   'settings.notLoggedIn': 'Du er ikke logget inn. Logg inn for å lagre data permanent.',
   'settings.loggedInAs': 'Logget inn som',
+  'settings.sync': 'Synkronisering',
+  'settings.syncDesc': 'Koble til treningsapper for å automatisk importere økter.',
+  'settings.stravaConnect': 'Koble til Strava',
+  'settings.stravaConnected': 'Koblet til Strava',
+  'settings.stravaDisconnect': 'Koble fra',
+  'settings.stravaDesc': 'Synkroniser øktene dine automatisk fra Strava.',
+  'settings.stravaNotConnected': 'Ikke tilkoblet',
+  'settings.comingSoon': 'Kommer snart',
 
   // Theme labels
   'theme.white': 'Hvit', 'theme.orange': 'Oransje', 'theme.blue': 'Blå', 'theme.green': 'Grønn', 'theme.rose': 'Rosa',
@@ -451,6 +459,14 @@ const en: Record<string, string> = {
   'settings.signIn': 'Sign in',
   'settings.notLoggedIn': 'You are not signed in. Sign in to save your data permanently.',
   'settings.loggedInAs': 'Signed in as',
+  'settings.sync': 'Sync',
+  'settings.syncDesc': 'Connect training apps to automatically import sessions.',
+  'settings.stravaConnect': 'Connect Strava',
+  'settings.stravaConnected': 'Connected to Strava',
+  'settings.stravaDisconnect': 'Disconnect',
+  'settings.stravaDesc': 'Automatically sync your sessions from Strava.',
+  'settings.stravaNotConnected': 'Not connected',
+  'settings.comingSoon': 'Coming soon',
 
   // Theme labels
   'theme.white': 'White', 'theme.orange': 'Orange', 'theme.blue': 'Blue', 'theme.green': 'Green', 'theme.rose': 'Rose',
