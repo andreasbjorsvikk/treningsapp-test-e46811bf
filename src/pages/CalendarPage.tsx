@@ -9,7 +9,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Route, Mountain, Clock, Ambulance, Cross } from 'lucide-react';
 import DayDrawer from '@/components/DayDrawer';
 import HealthEventDialog from '@/components/HealthEventDialog';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+// Tooltips for health events use native DOM for reliability inside memoized renders
 
 const WEEKDAYS_MON = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'];
 const WEEKDAYS_SUN = ['Søn', 'Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør'];
@@ -526,28 +526,42 @@ const CalendarPage = () => {
                 )}
                 {/* Health event indicator */}
                 {hasHealth && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div
-                        className="absolute top-0.5 right-0.5 z-20 cursor-pointer hover:scale-125 transition-transform"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditHealthEvent(dayHealthEvents[0]);
-                          setHealthDialogOpen(true);
-                        }}
-                      >
-                        {dayHealthEvents[0].type === 'sickness' ? (
-                          <Ambulance className="w-3 h-3 text-destructive" />
-                        ) : (
-                          <Cross className="w-3 h-3 text-destructive" />
-                        )}
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="text-xs">
-                      {dayHealthEvents[0].type === 'sickness' ? 'Sykdom' : 'Skade'}
-                      {dayHealthEvents[0].notes ? `: ${dayHealthEvents[0].notes}` : ''}
-                    </TooltipContent>
-                  </Tooltip>
+                  <div
+                    className="absolute top-0 right-0 z-20 cursor-pointer p-1 group"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditHealthEvent(dayHealthEvents[0]);
+                      setHealthDialogOpen(true);
+                    }}
+                    onMouseEnter={(e) => {
+                      const target = e.currentTarget;
+                      // Remove any existing tooltip
+                      const existing = document.getElementById('health-tooltip');
+                      if (existing) existing.remove();
+                      
+                      const tooltip = document.createElement('div');
+                      tooltip.id = 'health-tooltip';
+                      tooltip.className = 'fixed z-[9999] px-3 py-1.5 text-xs rounded-md border bg-popover text-popover-foreground shadow-md pointer-events-none';
+                      const label = dayHealthEvents[0].type === 'sickness' ? 'Sykdom' : 'Skade';
+                      const notes = dayHealthEvents[0].notes ? `: ${dayHealthEvents[0].notes}` : '';
+                      tooltip.textContent = label + notes;
+                      document.body.appendChild(tooltip);
+                      
+                      const rect = target.getBoundingClientRect();
+                      tooltip.style.left = `${rect.left + rect.width / 2 - tooltip.offsetWidth / 2}px`;
+                      tooltip.style.top = `${rect.top - tooltip.offsetHeight - 4}px`;
+                    }}
+                    onMouseLeave={() => {
+                      const existing = document.getElementById('health-tooltip');
+                      if (existing) existing.remove();
+                    }}
+                  >
+                    {dayHealthEvents[0].type === 'sickness' ? (
+                      <Ambulance className="w-3 h-3 text-destructive hover:scale-125 transition-transform" />
+                    ) : (
+                      <Cross className="w-3 h-3 text-destructive hover:scale-125 transition-transform" />
+                    )}
+                  </div>
                 )}
               </div>
             );
