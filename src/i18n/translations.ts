@@ -196,7 +196,7 @@ const no: Record<string, string> = {
   'settings.sunday': 'Søndag',
   'settings.units': 'Enheter',
   'settings.defaultSessionType': 'Standard økt-type',
-  'settings.dangerZone': 'Faresone',
+  'settings.dangerZone': 'Slett data',
   'settings.deleteAllData': 'Slett all data',
   'settings.deleteAllDataDesc': 'Slett all treningsdata og mål fra denne enheten.',
   'settings.deleteAllDataConfirm': 'Er du sikker på at du vil slette all data? Dette kan ikke angres.',
@@ -220,6 +220,8 @@ const no: Record<string, string> = {
   'settings.stravaDesc': 'Synkroniser øktene dine automatisk fra Strava.',
   'settings.stravaNotConnected': 'Ikke tilkoblet',
   'settings.comingSoon': 'Kommer snart',
+  'settings.positionImage': 'Plasser bildet',
+  'settings.dragToPosition': 'Dra for å plassere bildet i sirkelen',
 
   // Theme labels
   'theme.white': 'Hvit', 'theme.orange': 'Oransje', 'theme.blue': 'Blå', 'theme.green': 'Grønn', 'theme.rose': 'Rosa',
@@ -443,7 +445,7 @@ const en: Record<string, string> = {
   'settings.sunday': 'Sunday',
   'settings.units': 'Units',
   'settings.defaultSessionType': 'Default session type',
-  'settings.dangerZone': 'Danger zone',
+  'settings.dangerZone': 'Delete data',
   'settings.deleteAllData': 'Delete all data',
   'settings.deleteAllDataDesc': 'Delete all training data and goals from this device.',
   'settings.deleteAllDataConfirm': 'Are you sure you want to delete all data? This cannot be undone.',
@@ -467,6 +469,8 @@ const en: Record<string, string> = {
   'settings.stravaDesc': 'Automatically sync your sessions from Strava.',
   'settings.stravaNotConnected': 'Not connected',
   'settings.comingSoon': 'Coming soon',
+  'settings.positionImage': 'Position image',
+  'settings.dragToPosition': 'Drag to position the image in the circle',
 
   // Theme labels
   'theme.white': 'White', 'theme.orange': 'Orange', 'theme.blue': 'Blue', 'theme.green': 'Green', 'theme.rose': 'Rose',

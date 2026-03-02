@@ -16,6 +16,7 @@ import { SessionType } from '@/types/workout';
 import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw } from 'lucide-react';
 import { getActivityColors, activityColorMap } from '@/utils/activityColors';
 import { useNavigate } from 'react-router-dom';
+import AvatarCropper from '@/components/AvatarCropper';
 
 // Predefined color options for activity types
 const COLOR_PRESETS = [
@@ -48,7 +49,8 @@ const SettingsPage = () => {
   const [usernameLoading, setUsernameLoading] = useState(false);
   const [usernameSaved, setUsernameSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
-
+  const [cropFile, setCropFile] = useState<File | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
   // Load profile
   useEffect(() => {
     if (!user) return;
@@ -68,12 +70,22 @@ const SettingsPage = () => {
     setTimeout(() => setUsernameSaved(false), 2000);
   };
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+    setCropFile(file);
+    setShowCropper(true);
+    // Reset file input so same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleCroppedUpload = async (blob: Blob) => {
+    if (!user) return;
+    setShowCropper(false);
+    setCropFile(null);
     setUploading(true);
-    const ext = file.name.split('.').pop();
-    const path = `${user.id}/avatar.${ext}`;
+    const path = `${user.id}/avatar.png`;
+    const file = new File([blob], 'avatar.png', { type: 'image/png' });
     const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
     if (!error) {
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
@@ -387,7 +399,13 @@ const SettingsPage = () => {
               >
                 <Camera className="w-3.5 h-3.5" />
               </button>
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarSelect} />
+              <AvatarCropper
+                open={showCropper}
+                imageFile={cropFile}
+                onConfirm={handleCroppedUpload}
+                onCancel={() => { setShowCropper(false); setCropFile(null); }}
+              />
             </div>
             <div className="min-w-0">
               <p className="font-semibold truncate">{username || user.email?.split('@')[0]}</p>
