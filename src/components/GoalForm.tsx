@@ -9,7 +9,7 @@ import { Hash, Clock, MapPin, Mountain, Layers } from 'lucide-react';
 
 interface GoalFormProps {
   goal?: ExtraGoal;
-  onSave: (data: Omit<ExtraGoal, 'id' | 'createdAt'>) => void;
+  onSave: (data: Omit<ExtraGoal, 'id' | 'createdAt'>) => void | Promise<void>;
   onCancel: () => void;
   embedded?: boolean;
 }

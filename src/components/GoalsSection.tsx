@@ -4,9 +4,7 @@ import { Plus, ChevronLeft, ChevronRight, ChevronDown, Home, Pencil, Trash2 } fr
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import TargetIcon from '@/components/TargetIcon';
 import { ExtraGoal, PrimaryGoalPeriod, GoalPeriod } from '@/types/workout';
-import { goalService } from '@/services/goalService';
-import { primaryGoalService, convertGoalValue, getMonthTarget, getActiveGoalForDate } from '@/services/primaryGoalService';
-import { workoutService } from '@/services/workoutService';
+import { convertGoalValue, getActiveGoalForDate } from '@/services/primaryGoalService';
 import { Button } from '@/components/ui/button';
 import GoalForm from '@/components/GoalForm';
 import PrimaryGoalForm from '@/components/PrimaryGoalForm';
@@ -16,16 +14,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/i18n/useTranslation';
 import { computeMonthWheelData, computeYearWheelData } from '@/utils/goalWheelData';
+import { useAppDataContext } from '@/contexts/AppDataContext';
 
 const GoalsSection = () => {
   const { settings, updateSettings } = useSettings();
   const { t } = useTranslation();
+  const appData = useAppDataContext();
+
   const [showExtraForm, setShowExtraForm] = useState(false);
   const [showPrimaryForm, setShowPrimaryForm] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeletePrimaryConfirm, setShowDeletePrimaryConfirm] = useState(false);
   const [editGoal, setEditGoal] = useState<ExtraGoal | undefined>();
-  const [, setRefresh] = useState(0);
   const [historyOpen, setHistoryOpen] = useState(false);
 
   // Edit period dialog state
@@ -45,10 +45,11 @@ const GoalsSection = () => {
   const [wheelMonth, setWheelMonth] = useState(now.getMonth());
   const [wheelYear, setWheelYear] = useState(now.getFullYear());
 
-  const allPeriods = primaryGoalService.getAll();
-  const currentGoal = primaryGoalService.get();
-  const extraGoals = goalService.getAll();
-  const sessions = workoutService.getAll();
+  // Use context data instead of localStorage
+  const allPeriods = appData.primaryGoals;
+  const currentGoal = appData.currentPrimaryGoal;
+  const extraGoals = appData.goals;
+  const sessions = appData.sessions;
 
   // Get the active goal for the navigated month
   const viewedMonthEnd = new Date(wheelYear, wheelMonth + 1, 0);
@@ -91,13 +92,12 @@ const GoalsSection = () => {
 
   const isToday = wheelMonth === now.getMonth() && wheelYear === now.getFullYear();
 
-  // --- Extra goals handlers ---
-  const handleSaveExtra = (data: Omit<ExtraGoal, 'id' | 'createdAt'>) => {
-    if (editGoal) goalService.update(editGoal.id, data);
-    else goalService.add(data);
+  // --- Extra goals handlers (use context) ---
+  const handleSaveExtra = async (data: Omit<ExtraGoal, 'id' | 'createdAt'>) => {
+    if (editGoal) await appData.updateGoal(editGoal.id, data);
+    else await appData.addGoal(data);
     setEditGoal(undefined);
     setShowExtraForm(false);
-    setRefresh(r => r + 1);
   };
 
   const handleEditExtra = (goal: ExtraGoal) => {
@@ -105,16 +105,14 @@ const GoalsSection = () => {
     setShowEditDialog(true);
   };
 
-  const handleDeleteExtra = (id: string) => {
-    goalService.delete(id);
-    setRefresh(r => r + 1);
+  const handleDeleteExtra = async (id: string) => {
+    await appData.deleteGoal(id);
   };
 
-  const handleToggleHome = (id: string) => {
+  const handleToggleHome = async (id: string) => {
     const goal = extraGoals.find(g => g.id === id);
     if (goal) {
-      goalService.update(id, { showOnHome: !goal.showOnHome });
-      setRefresh(r => r + 1);
+      await appData.updateGoal(id, { showOnHome: !goal.showOnHome });
     }
   };
 
@@ -124,46 +122,40 @@ const GoalsSection = () => {
     setShowEditDialog(false);
   };
 
-  const handleEditSave = (data: Omit<ExtraGoal, 'id' | 'createdAt'>) => {
-    if (editGoal) goalService.update(editGoal.id, data);
+  const handleEditSave = async (data: Omit<ExtraGoal, 'id' | 'createdAt'>) => {
+    if (editGoal) await appData.updateGoal(editGoal.id, data);
     setEditGoal(undefined);
     setShowEditDialog(false);
-    setRefresh(r => r + 1);
   };
 
-  const handleSavePrimary = () => {
+  // --- Primary goal handlers (use context) ---
+  const handleSavePrimary = async (data: { inputPeriod: GoalPeriod; inputTarget: number; validFrom: string }) => {
+    await appData.addPrimaryGoal(data);
     setShowPrimaryForm(false);
-    setRefresh(r => r + 1);
   };
 
-  // Delete a specific period - smart: extend previous period to fill gap
-  const handleDeletePeriod = (id: string) => {
-    primaryGoalService.delete(id);
-    setRefresh(r => r + 1);
+  // Delete a specific period
+  const handleDeletePeriod = async (id: string) => {
+    await appData.deletePrimaryGoal(id);
   };
 
   // Handle deleting the current (active) goal
   const handleDeleteCurrentGoal = () => {
     if (allPeriods.length <= 1) {
-      // No previous goal to fall back to
       setDeleteCurrentMode('confirm-only');
     } else {
       setDeleteCurrentMode('ask');
     }
   };
 
-  const handleConfirmDeleteCurrent = (action: 'revert' | 'new' | 'delete') => {
+  const handleConfirmDeleteCurrent = async (action: 'revert' | 'new' | 'delete') => {
     if (action === 'revert' && currentGoal) {
-      // Just delete the current period, previous one becomes active
-      primaryGoalService.delete(currentGoal.id);
-      setRefresh(r => r + 1);
+      await appData.deletePrimaryGoal(currentGoal.id);
     } else if (action === 'new' && currentGoal) {
-      primaryGoalService.delete(currentGoal.id);
-      setRefresh(r => r + 1);
+      await appData.deletePrimaryGoal(currentGoal.id);
       setShowPrimaryForm(true);
     } else if (action === 'delete' && currentGoal) {
-      primaryGoalService.delete(currentGoal.id);
-      setRefresh(r => r + 1);
+      await appData.deletePrimaryGoal(currentGoal.id);
     }
     setDeleteCurrentMode(null);
   };
@@ -180,17 +172,16 @@ const GoalsSection = () => {
     setEditPeriodFrom(item.validFrom);
   };
 
-  const saveEditPeriod = () => {
+  const saveEditPeriod = async () => {
     if (!editingPeriod) return;
     const targetNum = parseFloat(editPeriodTarget);
     if (!targetNum || targetNum <= 0) return;
-    primaryGoalService.update(editingPeriod.id, {
+    await appData.updatePrimaryGoal(editingPeriod.id, {
       inputTarget: targetNum,
       inputPeriod: editPeriodType,
       validFrom: editPeriodFrom,
     });
     setEditingPeriod(null);
-    setRefresh(r => r + 1);
   };
 
   // Build history list with derived "to" dates
@@ -464,7 +455,6 @@ const GoalsSection = () => {
                           <button
                             onClick={() => {
                               if (!item.toDate) {
-                                // This is the current goal
                                 handleDeleteCurrentGoal();
                               } else {
                                 handleDeletePeriod(item.id);
@@ -512,7 +502,7 @@ const GoalsSection = () => {
                 onEdit={handleEditExtra}
                 onDelete={handleDeleteExtra}
                 onToggleHome={handleToggleHome}
-                onReorder={() => setRefresh(r => r + 1)}
+                onReorder={(orderedIds) => appData.reorderGoals(orderedIds)}
               />
             )}
           </>
@@ -636,7 +626,7 @@ const GoalsSection = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Legacy delete confirm - no longer used but kept for safety */}
+      {/* Legacy delete confirm */}
       <AlertDialog open={showDeletePrimaryConfirm} onOpenChange={setShowDeletePrimaryConfirm}>
         <AlertDialogContent className="max-w-[min(calc(100vw-2rem),20rem)]">
           <AlertDialogHeader>
@@ -645,7 +635,7 @@ const GoalsSection = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => { primaryGoalService.clear(); setRefresh(r => r + 1); setShowDeletePrimaryConfirm(false); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={async () => { await appData.clearPrimaryGoals(); setShowDeletePrimaryConfirm(false); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
