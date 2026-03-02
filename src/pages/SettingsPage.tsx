@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { SessionType } from '@/types/workout';
-import { Moon, Globe, LogOut, User } from 'lucide-react';
+import { Moon, Globe, LogOut, LogIn, User } from 'lucide-react';
 import { getActivityColors, activityColorMap, ActivityColorSet } from '@/utils/activityColors';
 import { useNavigate } from 'react-router-dom';
 
@@ -308,43 +308,51 @@ const SettingsPage = () => {
 
       {/* Account / Profile section */}
       {user ? (
-        <div className="glass-card rounded-lg p-4 space-y-4">
-          <h3 className="font-display font-semibold text-sm">{t('settings.account') || 'Konto'}</h3>
-          <p className="text-xs text-muted-foreground">{user.email}</p>
+        <div className="glass-card rounded-lg p-4 space-y-5">
+          <div className="flex items-center justify-between">
+            <h3 className="font-display font-semibold text-sm">{t('settings.account')}</h3>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <User className="w-5 h-5 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium truncate">{username || user.email?.split('@')[0]}</p>
+              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+            </div>
+          </div>
 
           {/* Username */}
-          <div className="space-y-2">
-            <Label className="text-sm flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5" />
-              {t('settings.username') || 'Brukernavn'}
-            </Label>
+          <div className="space-y-1.5">
+            <Label className="text-sm">{t('settings.username')}</Label>
             <div className="flex gap-2">
               <Input
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder={t('settings.usernamePlaceholder') || 'Skriv inn brukernavn'}
+                onChange={(e) => { setUsername(e.target.value); setUsernameSaved(false); }}
+                placeholder={t('settings.usernamePlaceholder')}
                 className="flex-1"
               />
-              <Button size="sm" onClick={handleSaveUsername} disabled={usernameLoading}>
-                {usernameSaved ? '✓' : (t('settings.save') || 'Lagre')}
+              <Button size="sm" variant={usernameSaved ? 'ghost' : 'default'} onClick={handleSaveUsername} disabled={usernameLoading || usernameSaved}>
+                {usernameSaved ? t('settings.saved') : t('settings.save')}
               </Button>
             </div>
           </div>
 
-          {/* Sign out */}
-          <Button variant="outline" className="w-full" onClick={handleSignOut}>
-            <LogOut className="w-4 h-4 mr-2" />
-            {t('settings.signOut') || 'Logg ut'}
-          </Button>
+          <div className="pt-1">
+            <Button variant="outline" className="w-full" onClick={handleSignOut}>
+              <LogOut className="w-4 h-4 mr-2" />
+              {t('settings.signOut')}
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="glass-card rounded-lg p-4 space-y-3">
-          <h3 className="font-display font-semibold text-sm">{t('settings.account') || 'Konto'}</h3>
-          <p className="text-xs text-muted-foreground">
-            {t('settings.notLoggedIn') || 'Du er ikke logget inn. Logg inn for å lagre data permanent.'}
-          </p>
+          <h3 className="font-display font-semibold text-sm">{t('settings.account')}</h3>
+          <p className="text-xs text-muted-foreground">{t('settings.notLoggedIn')}</p>
           <Button variant="outline" onClick={() => navigate('/login')}>
-            {t('settings.signIn') || 'Logg inn'}
+            <LogIn className="w-4 h-4 mr-2" />
+            {t('settings.signIn')}
           </Button>
         </div>
       )}
