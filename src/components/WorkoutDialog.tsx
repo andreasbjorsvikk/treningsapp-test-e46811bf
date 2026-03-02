@@ -86,7 +86,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader className="items-center">
           <DialogTitle className="text-center">{session ? t('workout.editSession') : t('workout.newSession')}</DialogTitle>
         </DialogHeader>
@@ -137,7 +137,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
 
           <div className="space-y-1">
             <Label>{t('workout.date')}</Label>
-            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full max-w-full [&::-webkit-calendar-picker-indicator]:opacity-60" style={{ maxWidth: '100%', boxSizing: 'border-box' }} />
+            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full min-w-0 [&::-webkit-calendar-picker-indicator]:opacity-60 [&::-webkit-date-and-time-value]:text-left" style={{ maxWidth: '100%', boxSizing: 'border-box', overflow: 'hidden' }} />
           </div>
 
           <div className="space-y-1">

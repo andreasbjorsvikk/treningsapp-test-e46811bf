@@ -9,7 +9,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Route, Mountain, Clock, Ambulance, Cross } from 'lucide-react';
 import DayDrawer from '@/components/DayDrawer';
 import HealthEventDialog from '@/components/HealthEventDialog';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const WEEKDAYS_MON = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'];
 const WEEKDAYS_SUN = ['Søn', 'Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør'];
@@ -524,30 +524,28 @@ const CalendarPage = () => {
                 )}
                 {/* Health event indicator */}
                 {hasHealth && (
-                  <TooltipProvider delayDuration={200}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div
-                          className="absolute top-0.5 right-0.5 z-20 cursor-pointer hover:scale-125 transition-transform"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditHealthEvent(dayHealthEvents[0]);
-                            setHealthDialogOpen(true);
-                          }}
-                        >
-                          {dayHealthEvents[0].type === 'sickness' ? (
-                            <Ambulance className="w-3 h-3 text-destructive" />
-                          ) : (
-                            <Cross className="w-3 h-3 text-destructive" />
-                          )}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="text-xs">
-                        {dayHealthEvents[0].type === 'sickness' ? 'Sykdom' : 'Skade'}
-                        {dayHealthEvents[0].notes ? `: ${dayHealthEvents[0].notes}` : ''}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        className="absolute top-0.5 right-0.5 z-20 cursor-pointer hover:scale-125 transition-transform"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditHealthEvent(dayHealthEvents[0]);
+                          setHealthDialogOpen(true);
+                        }}
+                      >
+                        {dayHealthEvents[0].type === 'sickness' ? (
+                          <Ambulance className="w-3 h-3 text-destructive" />
+                        ) : (
+                          <Cross className="w-3 h-3 text-destructive" />
+                        )}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      {dayHealthEvents[0].type === 'sickness' ? 'Sykdom' : 'Skade'}
+                      {dayHealthEvents[0].notes ? `: ${dayHealthEvents[0].notes}` : ''}
+                    </TooltipContent>
+                  </Tooltip>
                 )}
               </button>
             );

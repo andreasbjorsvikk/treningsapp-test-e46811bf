@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSettings, AppColorTheme, AccentColor } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,11 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { SessionType } from '@/types/workout';
-import { Moon, Globe, LogOut, LogIn, User } from 'lucide-react';
-import { getActivityColors, activityColorMap, ActivityColorSet } from '@/utils/activityColors';
+import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2 } from 'lucide-react';
+import { getActivityColors, activityColorMap } from '@/utils/activityColors';
 import { useNavigate } from 'react-router-dom';
 
 // Predefined color options for activity types
@@ -32,22 +33,29 @@ const COLOR_PRESETS = [
   { labelKey: 'color.mint', light: { bg: 'rgb(210,240,230)', text: 'rgb(35,95,75)', badge: 'rgb(225,248,240)' }, dark: { bg: 'rgb(80,145,120)', text: '#ffffff', badge: '#1a3a2e' } },
 ];
 
+type SettingsView = 'main' | 'appearance' | 'preferences' | 'data' | 'account';
+
 const SettingsPage = () => {
   const { settings, updateSettings, appThemes, accentPresets, getTypeColor } = useSettings();
   const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [view, setView] = useState<SettingsView>('main');
   const [editingType, setEditingType] = useState<SessionType | null>(null);
   const [username, setUsername] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [usernameLoading, setUsernameLoading] = useState(false);
   const [usernameSaved, setUsernameSaved] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
-  // Load username from profile
+  // Load profile
   useEffect(() => {
     if (!user) return;
-    supabase.from('profiles').select('username').eq('id', user.id).single()
+    supabase.from('profiles').select('username, avatar_url').eq('id', user.id).single()
       .then(({ data }) => {
         if (data?.username) setUsername(data.username);
+        if (data?.avatar_url) setAvatarUrl(data.avatar_url);
       });
   }, [user]);
 
@@ -58,6 +66,22 @@ const SettingsPage = () => {
     setUsernameLoading(false);
     setUsernameSaved(true);
     setTimeout(() => setUsernameSaved(false), 2000);
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploading(true);
+    const ext = file.name.split('.').pop();
+    const path = `${user.id}/avatar.${ext}`;
+    const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
+    if (!error) {
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
+      const url = `${publicUrl}?t=${Date.now()}`;
+      await supabase.from('profiles').update({ avatar_url: url }).eq('id', user.id);
+      setAvatarUrl(url);
+    }
+    setUploading(false);
   };
 
   const handleSignOut = async () => {
@@ -73,54 +97,40 @@ const SettingsPage = () => {
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-        {t('settings.title')}
-      </h2>
+  const menuItem = (label: string, icon: React.ReactNode, onClick: () => void, extra?: React.ReactNode) => (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors rounded-lg text-left"
+    >
+      <span className="text-muted-foreground">{icon}</span>
+      <span className="flex-1 text-sm font-medium">{label}</span>
+      {extra || <ChevronRight className="w-4 h-4 text-muted-foreground/50" />}
+    </button>
+  );
 
-      {/* Theme section */}
-      <div className="glass-card rounded-lg p-4 space-y-5">
-        <h3 className="font-display font-semibold text-sm">{t('settings.appearance')}</h3>
+  const sectionHeader = (title: string) => (
+    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 pt-4 pb-1">{title}</h3>
+  );
 
-        {/* Dark mode toggle */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Moon className="w-4 h-4 text-muted-foreground" />
-            <Label htmlFor="dark-mode" className="text-sm">
-              {t('settings.darkMode')}
-            </Label>
-          </div>
-          <Switch
-            id="dark-mode"
-            checked={settings.darkMode}
-            onCheckedChange={(checked) => updateSettings({ darkMode: checked })}
-          />
-        </div>
+  const backButton = (title: string) => (
+    <button
+      onClick={() => setView('main')}
+      className="flex items-center gap-2 mb-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
+    >
+      <ChevronLeft className="w-4 h-4" />
+      <span className="font-medium">{title}</span>
+    </button>
+  );
 
-        {/* Language */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Globe className="w-4 h-4 text-muted-foreground" />
-            <Label className="text-sm">{t('settings.language')}</Label>
-          </div>
-          <Select
-            value={settings.language}
-            onValueChange={(v) => updateSettings({ language: v as 'no' | 'en' })}
-          >
-            <SelectTrigger className="w-[130px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="no">{t('settings.languageNo')}</SelectItem>
-              <SelectItem value="en">{t('settings.languageEn')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+  // ========== APPEARANCE VIEW ==========
+  if (view === 'appearance') {
+    return (
+      <div className="space-y-4">
+        {backButton(t('settings.appearance'))}
 
         {/* Color theme */}
-        <div className="space-y-2">
-          <Label className="text-sm">{t('settings.colorTheme')}</Label>
+        <div className="glass-card rounded-xl p-4 space-y-3">
+          <Label className="text-sm font-semibold">{t('settings.colorTheme')}</Label>
           <div className="flex gap-3 flex-wrap">
             {(Object.entries(appThemes) as [AppColorTheme, typeof appThemes[AppColorTheme]][]).map(
               ([key, theme]) => {
@@ -130,7 +140,7 @@ const SettingsPage = () => {
                     key={key}
                     onClick={() => updateSettings({ colorTheme: key })}
                     className={`
-                      w-9 h-9 rounded-full transition-all border-2
+                      w-10 h-10 rounded-full transition-all border-2
                       ${settings.colorTheme === key ? 'border-foreground scale-110 shadow-lg' : 'border-border hover:scale-105'}
                     `}
                     style={{ backgroundColor: previewColor }}
@@ -143,8 +153,8 @@ const SettingsPage = () => {
         </div>
 
         {/* Accent color */}
-        <div className="space-y-3">
-          <Label className="text-sm">{t('settings.accentColor')}</Label>
+        <div className="glass-card rounded-xl p-4 space-y-3">
+          <Label className="text-sm font-semibold">{t('settings.accentColor')}</Label>
           <div className="grid grid-cols-3 gap-2">
             {(Object.entries(accentPresets) as [AccentColor, typeof accentPresets[AccentColor]][]).map(
               ([key, preset]) => {
@@ -171,154 +181,172 @@ const SettingsPage = () => {
             )}
           </div>
         </div>
-      </div>
 
-      {/* Session type colors */}
-      <div className="glass-card rounded-lg p-4 space-y-4">
-        <h3 className="font-display font-semibold text-sm">{t('settings.sessionColors')}</h3>
-        <p className="text-xs text-muted-foreground">{t('settings.tapToChange')}</p>
-        <div className="space-y-3">
-          {allSessionTypes.map((type) => {
-            const colors = getActivityColors(type, settings.darkMode);
-            return (
-              <div key={type} className="flex items-center gap-3">
-                <Popover open={editingType === type} onOpenChange={(open) => setEditingType(open ? type : null)}>
-                  <PopoverTrigger asChild>
-                    <button
-                      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 cursor-pointer hover:scale-110 transition-transform"
-                      style={{ backgroundColor: colors.bg }}
-                    >
-                      <ActivityIcon
-                        type={type}
-                        className="w-6 h-6"
-                        colorOverride={!settings.darkMode ? colors.text : undefined}
-                      />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-64 p-3" side="right" align="start">
-                    <p className="text-xs font-semibold mb-2">{t(`activity.${type}`)} – {t('settings.chooseColor')}</p>
-                    <div className="grid grid-cols-4 gap-2">
-                      {COLOR_PRESETS.map((preset, idx) => {
-                        const previewColors = settings.darkMode ? preset.dark : preset.light;
-                        return (
-                          <button
-                            key={idx}
-                            onClick={() => {
-                              (activityColorMap as any)[type] = { light: preset.light, dark: preset.dark };
-                              updateSettings({
-                                sessionTypeColors: {
-                                  ...settings.sessionTypeColors,
-                                  [type]: preset.light.bg,
-                                },
-                              });
-                              setEditingType(null);
-                            }}
-                            className="w-12 h-12 rounded-lg flex items-center justify-center hover:scale-110 transition-transform border border-border/50"
-                            style={{ backgroundColor: previewColors.bg }}
-                            title={t(preset.labelKey)}
-                          >
-                            <ActivityIcon
-                              type={type}
-                              className="w-6 h-6"
-                              colorOverride={!settings.darkMode ? previewColors.text : undefined}
-                            />
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-                <Label className="text-sm">{t(`activity.${type}`)}</Label>
-              </div>
-            );
-          })}
+        {/* Session type colors */}
+        <div className="glass-card rounded-xl p-4 space-y-3">
+          <Label className="text-sm font-semibold">{t('settings.sessionColors')}</Label>
+          <p className="text-xs text-muted-foreground">{t('settings.tapToChange')}</p>
+          <div className="space-y-2">
+            {allSessionTypes.map((type) => {
+              const colors = getActivityColors(type, settings.darkMode);
+              return (
+                <div key={type} className="flex items-center gap-3">
+                  <Popover open={editingType === type} onOpenChange={(open) => setEditingType(open ? type : null)}>
+                    <PopoverTrigger asChild>
+                      <button
+                        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 cursor-pointer hover:scale-110 transition-transform"
+                        style={{ backgroundColor: colors.bg }}
+                      >
+                        <ActivityIcon type={type} className="w-6 h-6" colorOverride={!settings.darkMode ? colors.text : undefined} />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-3" side="right" align="start">
+                      <p className="text-xs font-semibold mb-2">{t(`activity.${type}`)} – {t('settings.chooseColor')}</p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {COLOR_PRESETS.map((preset, idx) => {
+                          const previewColors = settings.darkMode ? preset.dark : preset.light;
+                          return (
+                            <button
+                              key={idx}
+                              onClick={() => {
+                                (activityColorMap as any)[type] = { light: preset.light, dark: preset.dark };
+                                updateSettings({
+                                  sessionTypeColors: { ...settings.sessionTypeColors, [type]: preset.light.bg },
+                                });
+                                setEditingType(null);
+                              }}
+                              className="w-12 h-12 rounded-lg flex items-center justify-center hover:scale-110 transition-transform border border-border/50"
+                              style={{ backgroundColor: previewColors.bg }}
+                              title={t(preset.labelKey)}
+                            >
+                              <ActivityIcon type={type} className="w-6 h-6" colorOverride={!settings.darkMode ? previewColors.text : undefined} />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  <Label className="text-sm">{t(`activity.${type}`)}</Label>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Preferences section */}
-      <div className="glass-card rounded-lg p-4 space-y-5">
-        <h3 className="font-display font-semibold text-sm">{t('settings.preferences')}</h3>
+  // ========== PREFERENCES VIEW ==========
+  if (view === 'preferences') {
+    return (
+      <div className="space-y-4">
+        {backButton(t('settings.preferences'))}
 
-        {/* First day of week */}
-        <div className="flex items-center justify-between">
-          <Label className="text-sm">{t('settings.firstDayOfWeek')}</Label>
-          <Select
-            value={settings.firstDayOfWeek}
-            onValueChange={(v) => updateSettings({ firstDayOfWeek: v as 'monday' | 'sunday' })}
-          >
-            <SelectTrigger className="w-[130px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="monday">{t('settings.monday')}</SelectItem>
-              <SelectItem value="sunday">{t('settings.sunday')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Units */}
-        <div className="flex items-center justify-between">
-          <Label className="text-sm">{t('settings.units')}</Label>
-          <Select
-            value={settings.unitSystem}
-            onValueChange={(v) => updateSettings({ unitSystem: v as 'metric' | 'imperial' })}
-          >
-            <SelectTrigger className="w-[130px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="metric">km / meter</SelectItem>
-              <SelectItem value="imperial">mi / feet</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Default session type */}
-        <div className="flex items-center justify-between">
-          <Label className="text-sm">{t('settings.defaultSessionType')}</Label>
-          <Select
-            value={settings.defaultSessionType}
-            onValueChange={(v) => updateSettings({ defaultSessionType: v as any })}
-          >
-            <SelectTrigger className="w-[130px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {allSessionTypes.map((tp) => (
-                <SelectItem key={tp} value={tp}>
-                  {t(`activity.${tp}`)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Danger zone */}
-      <div className="glass-card rounded-lg p-4 space-y-3">
-        <h3 className="font-display font-semibold text-sm text-destructive">{t('settings.dangerZone')}</h3>
-        <p className="text-xs text-muted-foreground">{t('settings.deleteAllDataDesc')}</p>
-        <button
-          onClick={handleClearData}
-          className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition-colors"
-        >
-          {t('settings.deleteAllData')}
-        </button>
-      </div>
-
-      {/* Account / Profile section */}
-      {user ? (
-        <div className="glass-card rounded-lg p-4 space-y-5">
+        <div className="glass-card rounded-xl p-4 space-y-5">
+          {/* First day of week */}
           <div className="flex items-center justify-between">
-            <h3 className="font-display font-semibold text-sm">{t('settings.account')}</h3>
+            <Label className="text-sm">{t('settings.firstDayOfWeek')}</Label>
+            <Select
+              value={settings.firstDayOfWeek}
+              onValueChange={(v) => updateSettings({ firstDayOfWeek: v as 'monday' | 'sunday' })}
+            >
+              <SelectTrigger className="w-[130px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="monday">{t('settings.monday')}</SelectItem>
+                <SelectItem value="sunday">{t('settings.sunday')}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="w-5 h-5 text-primary" />
+          {/* Units */}
+          <div className="flex items-center justify-between">
+            <Label className="text-sm">{t('settings.units')}</Label>
+            <Select
+              value={settings.unitSystem}
+              onValueChange={(v) => updateSettings({ unitSystem: v as 'metric' | 'imperial' })}
+            >
+              <SelectTrigger className="w-[130px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="metric">km / meter</SelectItem>
+                <SelectItem value="imperial">mi / feet</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Default session type */}
+          <div className="flex items-center justify-between">
+            <Label className="text-sm">{t('settings.defaultSessionType')}</Label>
+            <Select
+              value={settings.defaultSessionType}
+              onValueChange={(v) => updateSettings({ defaultSessionType: v as any })}
+            >
+              <SelectTrigger className="w-[130px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {allSessionTypes.map((tp) => (
+                  <SelectItem key={tp} value={tp}>
+                    {t(`activity.${tp}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ========== DATA VIEW ==========
+  if (view === 'data') {
+    return (
+      <div className="space-y-4">
+        {backButton(t('settings.dangerZone'))}
+
+        <div className="glass-card rounded-xl p-4 space-y-3">
+          <p className="text-sm text-muted-foreground">{t('settings.deleteAllDataDesc')}</p>
+          <Button variant="destructive" onClick={handleClearData} className="w-full">
+            <Trash2 className="w-4 h-4 mr-2" />
+            {t('settings.deleteAllData')}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // ========== ACCOUNT VIEW ==========
+  if (view === 'account' && user) {
+    return (
+      <div className="space-y-4">
+        {backButton(t('settings.account'))}
+
+        <div className="glass-card rounded-xl p-4 space-y-5">
+          {/* Avatar & name */}
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Avatar className="w-16 h-16">
+                {avatarUrl ? (
+                  <AvatarImage src={avatarUrl} alt="Avatar" />
+                ) : null}
+                <AvatarFallback className="text-lg font-bold">
+                  {(username || user.email?.charAt(0) || 'U').charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+              >
+                <Camera className="w-3.5 h-3.5" />
+              </button>
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium truncate">{username || user.email?.split('@')[0]}</p>
+              <p className="font-semibold truncate">{username || user.email?.split('@')[0]}</p>
               <p className="text-xs text-muted-foreground truncate">{user.email}</p>
             </div>
           </div>
@@ -338,21 +366,90 @@ const SettingsPage = () => {
               </Button>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
 
-          <div className="pt-1">
-            <Button variant="outline" className="w-full" onClick={handleSignOut}>
-              <LogOut className="w-4 h-4 mr-2" />
-              {t('settings.signOut')}
-            </Button>
+  // ========== MAIN MENU ==========
+  return (
+    <div className="space-y-2">
+      {/* Profile header */}
+      {user ? (
+        <div className="glass-card rounded-xl p-4 mb-4">
+          <div className="flex items-center gap-3">
+            <Avatar className="w-12 h-12">
+              {avatarUrl ? <AvatarImage src={avatarUrl} alt="Avatar" /> : null}
+              <AvatarFallback className="text-base font-bold">
+                {(username || user.email?.charAt(0) || 'U').charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold truncate">{username || user.email?.split('@')[0]}</p>
+              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+            </div>
           </div>
         </div>
       ) : (
-        <div className="glass-card rounded-lg p-4 space-y-3">
-          <h3 className="font-display font-semibold text-sm">{t('settings.account')}</h3>
-          <p className="text-xs text-muted-foreground">{t('settings.notLoggedIn')}</p>
-          <Button variant="outline" onClick={() => navigate('/login')}>
+        <div className="glass-card rounded-xl p-4 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+              <User className="w-6 h-6 text-muted-foreground" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground">{t('settings.notLoggedIn')}</p>
+            </div>
+          </div>
+          <Button variant="outline" className="w-full mt-3" onClick={() => navigate('/login')}>
             <LogIn className="w-4 h-4 mr-2" />
             {t('settings.signIn')}
+          </Button>
+        </div>
+      )}
+
+      {/* Quick toggles */}
+      <div className="glass-card rounded-xl overflow-hidden divide-y divide-border">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <Moon className="w-4 h-4 text-muted-foreground" />
+          <Label htmlFor="dark-mode-main" className="flex-1 text-sm font-medium">{t('settings.darkMode')}</Label>
+          <Switch
+            id="dark-mode-main"
+            checked={settings.darkMode}
+            onCheckedChange={(checked) => updateSettings({ darkMode: checked })}
+          />
+        </div>
+        <div className="flex items-center gap-3 px-4 py-3">
+          <Globe className="w-4 h-4 text-muted-foreground" />
+          <Label className="flex-1 text-sm font-medium">{t('settings.language')}</Label>
+          <Select
+            value={settings.language}
+            onValueChange={(v) => updateSettings({ language: v as 'no' | 'en' })}
+          >
+            <SelectTrigger className="w-[110px] h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="no">{t('settings.languageNo')}</SelectItem>
+              <SelectItem value="en">{t('settings.languageEn')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Menu items */}
+      <div className="glass-card rounded-xl overflow-hidden divide-y divide-border">
+        {menuItem(t('settings.appearance'), <Palette className="w-4 h-4" />, () => setView('appearance'))}
+        {menuItem(t('settings.preferences'), <Settings2 className="w-4 h-4" />, () => setView('preferences'))}
+        {user && menuItem(t('settings.account'), <User className="w-4 h-4" />, () => setView('account'))}
+        {menuItem(t('settings.dangerZone'), <Shield className="w-4 h-4" />, () => setView('data'))}
+      </div>
+
+      {/* Sign out */}
+      {user && (
+        <div className="pt-4">
+          <Button variant="outline" className="w-full text-destructive hover:text-destructive" onClick={handleSignOut}>
+            <LogOut className="w-4 h-4 mr-2" />
+            {t('settings.signOut')}
           </Button>
         </div>
       )}
