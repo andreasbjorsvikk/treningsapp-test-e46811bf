@@ -245,6 +245,42 @@ const GoalsSection = () => {
                 onSave={handleSavePrimary}
                 onCancel={() => setShowPrimaryForm(false)}
               />
+            ) : !viewedGoal && isPastMonth ? (
+              <div className="glass-card rounded-lg p-6 relative text-center" {...goalSwipe}>
+                {/* Month/year navigation for past months with no goal */}
+                <div className="flex flex-col items-center mb-4">
+                  <div className="flex items-center gap-1">
+                    <button onClick={handlePrevMonth} className="p-1.5 rounded-lg hover:bg-secondary/60 transition-colors">
+                      <ChevronLeft className="w-5 h-5 text-muted-foreground" />
+                    </button>
+                    <span className="text-xl font-bold text-foreground min-w-[120px] text-center">
+                      {t(`month.${wheelMonth}`)}
+                    </span>
+                    <button onClick={handleNextMonth} className="p-1.5 rounded-lg hover:bg-secondary/60 transition-colors">
+                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-1 -mt-0.5">
+                    <button onClick={handlePrevYear} className="p-1 rounded-lg hover:bg-secondary/60 transition-colors">
+                      <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground/60" />
+                    </button>
+                    <span className="text-base font-semibold text-muted-foreground min-w-[45px] text-center">
+                      {wheelYear}
+                    </span>
+                    <button onClick={handleNextYear} className="p-1 rounded-lg hover:bg-secondary/60 transition-colors">
+                      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60" />
+                    </button>
+                  </div>
+                  <div className="h-5 flex items-center">
+                    {!isToday && (
+                      <button onClick={handleGoToday} className="px-4 py-1 rounded-full text-xs font-semibold text-primary-foreground bg-primary hover:bg-primary/90 transition-colors shadow-sm">
+                        {t('common.today')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="text-muted-foreground font-medium">{t('goals.noGoalSet')}</p>
+              </div>
             ) : currentGoal ? (
               <div className="glass-card rounded-lg p-4 relative" {...goalSwipe}>
                 {/* Pin-to-home button */}
@@ -303,7 +339,7 @@ const GoalsSection = () => {
                     </div>
                     <div className="h-5 flex items-center">
                       {!isToday && (
-                        <button onClick={handleGoToday} className="px-3 py-0.5 rounded-md text-xs font-medium text-primary hover:bg-primary/10 transition-colors">
+                         <button onClick={handleGoToday} className="px-4 py-1 rounded-full text-xs font-semibold text-primary-foreground bg-primary hover:bg-primary/90 transition-colors shadow-sm">
                           {t('common.today')}
                         </button>
                       )}
@@ -376,7 +412,7 @@ const GoalsSection = () => {
                     </div>
                     <div className="h-5 flex items-center">
                       {!isToday && (
-                        <button onClick={handleGoToday} className="px-3 py-0.5 rounded-md text-xs font-medium text-primary hover:bg-primary/10 transition-colors">
+                         <button onClick={handleGoToday} className="px-4 py-1 rounded-full text-xs font-semibold text-primary-foreground bg-primary hover:bg-primary/90 transition-colors shadow-sm">
                           {t('common.today')}
                         </button>
                       )}
@@ -394,7 +430,6 @@ const GoalsSection = () => {
                       expectedFraction={isPastMonth ? undefined : monthData.expectedFraction}
                       paceDiff={isPastMonth ? undefined : monthData.diff}
                       naked
-                      compact
                       disableAchievement
                       fixedRingColor={monthWheelColor}
                     />
@@ -408,7 +443,6 @@ const GoalsSection = () => {
                       expectedFraction={yearData.expectedFraction}
                       paceDiff={yearData.diff}
                       naked
-                      compact
                       disableAchievement
                     />
                   </div>
@@ -454,8 +488,8 @@ const GoalsSection = () => {
                   onClick={() => setHistoryOpen(o => !o)}
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${historyOpen ? '' : '-rotate-90'}`} />
-                  {t('goals.previousGoals')}
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${historyOpen ? '' : '-rotate-90'}`} />
+                  <span className="text-sm font-semibold">{t('goals.previousGoals')}</span>
                 </button>
             {historyOpen && (
                   <div className="mt-3 space-y-2">

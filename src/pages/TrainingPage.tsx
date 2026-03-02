@@ -64,6 +64,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
   }, []);
 
   const [filterType, setFilterType] = useState<SessionType | 'all'>('all');
+  const [healthFilter, setHealthFilter] = useState<'all' | 'sickness' | 'injury'>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
   const [healthDialogOpen, setHealthDialogOpen] = useState(false);
@@ -119,8 +120,9 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
     const yearNum = parseInt(historyYear);
     return healthEvents
       .filter(he => new Date(he.dateFrom).getFullYear() === yearNum)
+      .filter(he => healthFilter === 'all' || he.type === healthFilter)
       .sort((a, b) => new Date(b.dateFrom).getTime() - new Date(a.dateFrom).getTime());
-  }, [healthEvents, historyYear]);
+  }, [healthEvents, historyYear, healthFilter]);
 
   const toggleMonth = useCallback((monthKey: string) => {
     setCollapsedMonths(prev => {
@@ -318,12 +320,35 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
           </div>
 
           {/* Health events history */}
-          {yearHealthEvents.length > 0 && (
+          {healthEvents.filter(he => new Date(he.dateFrom).getFullYear() === parseInt(historyYear)).length > 0 && (
             <div className="space-y-2 mt-6">
-              <h3 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+              <h3 className="font-display font-semibold text-base text-foreground">
                 Helsehendelser
               </h3>
-              {yearHealthEvents.map(he => (
+              <div className="flex gap-2">
+                {(['all', 'sickness', 'injury'] as const).map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setHealthFilter(f)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                      healthFilter === f
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {f === 'all' ? (
+                      'Alle'
+                    ) : f === 'sickness' ? (
+                      <><Ambulance className="w-3.5 h-3.5" /> Sykdom</>
+                    ) : (
+                      <><Cross className="w-3.5 h-3.5" /> Skade</>
+                    )}
+                  </button>
+                ))}
+              </div>
+              {yearHealthEvents.length === 0 ? (
+                <p className="text-center py-4 text-sm text-muted-foreground">Ingen hendelser funnet.</p>
+              ) : yearHealthEvents.map(he => (
                 <div key={he.id} className="glass-card rounded-xl p-3 flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
                     {he.type === 'sickness' ? (

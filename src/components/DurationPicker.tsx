@@ -57,7 +57,7 @@ const ScrollColumn = ({
   const handleScroll = useCallback(() => {
     isUserScrolling.current = true;
     if (snapTimeoutRef.current) clearTimeout(snapTimeoutRef.current);
-    snapTimeoutRef.current = setTimeout(snapToNearest, 60);
+    snapTimeoutRef.current = setTimeout(snapToNearest, 200);
   }, [snapToNearest]);
 
   const handleItemClick = (val: number) => {
@@ -88,7 +88,7 @@ const ScrollColumn = ({
           onScroll={handleScroll}
           className="h-full overflow-y-auto scrollbar-hide touch-pan-y"
           style={{
-            scrollSnapType: 'y mandatory',
+            scrollSnapType: 'y proximity',
             WebkitOverflowScrolling: 'touch',
             paddingTop: CENTER_INDEX * ITEM_HEIGHT,
             paddingBottom: CENTER_INDEX * ITEM_HEIGHT,

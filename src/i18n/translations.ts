@@ -67,6 +67,7 @@ const no: Record<string, string> = {
   'goals.deleteCurrentDesc': 'Dette er ditt nåværende mål. Vil du gå tilbake til ditt forrige mål eller sette et nytt?',
   'goals.revertToPrevious': 'Gå tilbake til forrige mål',
   'goals.setNewGoal': 'Sett et nytt mål',
+  'goals.noGoalSet': 'Ingen mål satt',
 
   // Goal card
   'goalCard.thisWeek': 'Denne uken',
@@ -316,6 +317,7 @@ const en: Record<string, string> = {
   'goals.deleteCurrentDesc': 'This is your current goal. Do you want to revert to your previous goal or set a new one?',
   'goals.revertToPrevious': 'Revert to previous goal',
   'goals.setNewGoal': 'Set a new goal',
+  'goals.noGoalSet': 'No goal set',
 
   // Goal card
   'goalCard.thisWeek': 'This week',

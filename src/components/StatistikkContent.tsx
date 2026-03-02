@@ -65,7 +65,7 @@ const StatistikkContent = ({
   });
 
   return (
-    <div className="space-y-4" {...swipeHandlers}>
+    <div className="space-y-4" style={{ touchAction: 'pan-y' }} {...swipeHandlers}>
       {/* Desktop: wheels left, chart+stats right */}
       <div className="lg:grid lg:grid-cols-[auto_1fr] lg:gap-6 space-y-4 lg:space-y-0">
         {/* Left column: wheels stacked - desktop only */}
