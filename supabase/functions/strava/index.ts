@@ -154,7 +154,7 @@ Deno.serve(async (req) => {
       if (!userId) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
       const { accessToken, admin } = await getConnectionAndToken(userId);
       const afterParam = url.searchParams.get("after");
-      const after = afterParam ? parseInt(afterParam) : Math.floor(Date.now() / 1000) - 90 * 86400;
+      const after = afterParam ? parseInt(afterParam) : Math.floor(Date.now() / 1000) - 180 * 86400;
       const activities: any[] = [];
       let page = 1;
       while (page <= 5) {
@@ -165,15 +165,33 @@ Deno.serve(async (req) => {
         activities.push(...batch);
         page++;
       }
-      const { data: existing } = await admin.from("workout_sessions").select("strava_activity_id").eq("user_id", userId).not("strava_activity_id", "is", null);
-      const existingIds = new Set((existing || []).map((r: any) => r.strava_activity_id));
-      const newActivities = activities.filter((a) => !existingIds.has(a.id));
+      const { data: existing } = await admin.from("workout_sessions").select("id, strava_activity_id, summary_polyline, average_heartrate").eq("user_id", userId).not("strava_activity_id", "is", null);
+      const existingMap = new Map((existing || []).map((r: any) => [r.strava_activity_id, r]));
+      const newActivities = activities.filter((a) => !existingMap.has(a.id));
+      let updated = 0;
       if (newActivities.length > 0) {
         const rows = newActivities.map((a) => buildActivityRow(a, userId));
         const { error } = await admin.from("workout_sessions").insert(rows);
         if (error) { console.error("Insert error:", error); return new Response(JSON.stringify({ error: "Failed to insert activities" }), { status: 500, headers: corsHeaders }); }
       }
-      return new Response(JSON.stringify({ synced: newActivities.length, total: activities.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      // Update existing sessions missing map/heartrate data where Strava HAS the data
+      for (const a of activities) {
+        const existingRow = existingMap.get(a.id);
+        if (!existingRow) continue;
+        const hasNewPolyline = !existingRow.summary_polyline && a.map?.summary_polyline;
+        const hasNewHr = !existingRow.average_heartrate && a.average_heartrate;
+        if (hasNewPolyline || hasNewHr) {
+          const updateObj: any = {};
+          if (hasNewPolyline) updateObj.summary_polyline = a.map.summary_polyline;
+          if (hasNewHr) {
+            updateObj.average_heartrate = Math.round(a.average_heartrate);
+            updateObj.max_heartrate = a.max_heartrate ? Math.round(a.max_heartrate) : null;
+          }
+          await admin.from("workout_sessions").update(updateObj).eq("id", existingRow.id);
+          updated++;
+        }
+      }
+      return new Response(JSON.stringify({ synced: newActivities.length, updated, total: activities.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ===== SYNC-ALL =====
@@ -290,6 +308,22 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ heartrateData: heartrateData, altitudeData: altitudeData, latlngData: latlngData }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // ===== DELETE-ALL: delete all Strava-imported sessions =====
+    if (action === "delete-all") {
+      const userId = await getAuthenticatedUser(req);
+      if (!userId) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+      const admin = adminClient();
+      // First delete cached streams for strava sessions
+      const { data: stravaSessions } = await admin.from("workout_sessions").select("id").eq("user_id", userId).not("strava_activity_id", "is", null);
+      if (stravaSessions && stravaSessions.length > 0) {
+        const ids = stravaSessions.map((s: any) => s.id);
+        await admin.from("workout_streams").delete().in("session_id", ids);
+      }
+      const { data, error } = await admin.from("workout_sessions").delete().eq("user_id", userId).not("strava_activity_id", "is", null).select("id");
+      if (error) return new Response(JSON.stringify({ error: "Delete failed" }), { status: 500, headers: corsHeaders });
+      return new Response(JSON.stringify({ deleted: data?.length || 0 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     return new Response(JSON.stringify({ error: "Unknown action" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
