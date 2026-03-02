@@ -93,9 +93,10 @@ const ProgressWheel = ({
   const fillFraction = Math.min(animatedValue, 100) / 100;
   const fillOffset = CIRCUMFERENCE * (1 - fillFraction);
 
-  const isGold = clampedPercent > 100;
+  const isGoldFromFixed = fixedRingColor && fixedRingColor.main === '#D4A843';
+  const isGold = clampedPercent > 100 || isGoldFromFixed;
   const isComplete = clampedPercent >= 100;
-  const glowIntensity = isGold ? Math.min((clampedPercent - 100) / 50, 1) : 0;
+  const glowIntensity = isGoldFromFixed ? Math.min(clampedPercent / 100, 1) : (isGold ? Math.min((clampedPercent - 100) / 50, 1) : 0);
 
   const diff = paceDiff ?? 0;
   const paceColors = fixedRingColor ? fixedRingColor : (hasGoal && expectedFraction != null ? getPaceColor(diff) : null);
@@ -104,6 +105,7 @@ const ProgressWheel = ({
 
   const goldColor = '#D4A843';
   const goldGlow = '#F0D060';
+  const goldShine = '#FFF8DC';
   const safeId = (label || title || 'wheel').replace(/\s+/g, '-') + '-' + Math.random().toString(36).slice(2, 6);
   const rotation = `rotate(-90 ${CENTER} ${CENTER})`;
   const markerAngle = expectedFraction != null ? expectedFraction * 360 : null;
@@ -169,11 +171,20 @@ const ProgressWheel = ({
             <>
               <linearGradient id={`gold-grad-${safeId}`} x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor={goldGlow} />
-                <stop offset="50%" stopColor={goldColor} />
+                <stop offset="35%" stopColor={goldColor} />
+                <stop offset="50%" stopColor={goldShine} />
+                <stop offset="65%" stopColor={goldColor} />
                 <stop offset="100%" stopColor={goldGlow} />
               </linearGradient>
+              <linearGradient id={`gold-shimmer-grad-${safeId}`} x1="0%" y1="0%" x2="100%" y2="0%" spreadMethod="repeat" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor={goldShine} stopOpacity="0" />
+                <stop offset="40%" stopColor={goldShine} stopOpacity="0" />
+                <stop offset="50%" stopColor={goldShine} stopOpacity={0.6 + glowIntensity * 0.4} />
+                <stop offset="60%" stopColor={goldShine} stopOpacity="0" />
+                <stop offset="100%" stopColor={goldShine} stopOpacity="0" />
+              </linearGradient>
               <filter id={`gold-glow-${safeId}`} x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation={2 + glowIntensity * 5} result="blur" />
+                <feGaussianBlur stdDeviation={3 + glowIntensity * 6} result="blur" />
                 <feMerge>
                   <feMergeNode in="blur" />
                   <feMergeNode in="SourceGraphic" />
@@ -234,15 +245,26 @@ const ProgressWheel = ({
         />
 
         {isGold && (
-          <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
-            stroke={goldGlow} strokeWidth={STROKE + 4}
-            strokeDasharray={CIRCUMFERENCE} strokeDashoffset={0}
-            transform={rotation} opacity={0}
-            className={glowIntensity > 0.5
-              ? 'animate-[gold-pulse-strong_2s_ease-in-out_infinite]'
-              : 'animate-[gold-pulse_3s_ease-in-out_infinite]'}
-            filter={`url(#gold-glow-${safeId})`}
-          />
+          <>
+            <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
+              stroke={goldGlow} strokeWidth={STROKE + 4}
+              strokeDasharray={CIRCUMFERENCE} strokeDashoffset={0}
+              transform={rotation} opacity={0}
+              className={glowIntensity > 0.5
+                ? 'animate-[gold-pulse-strong_2s_ease-in-out_infinite]'
+                : 'animate-[gold-pulse_3s_ease-in-out_infinite]'}
+              filter={`url(#gold-glow-${safeId})`}
+            />
+            <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
+              stroke={`url(#gold-shimmer-grad-${safeId})`}
+              strokeWidth={STROKE - 2}
+              strokeDasharray="8 32"
+              strokeLinecap="round"
+              transform={rotation}
+              opacity={0.7 + glowIntensity * 0.3}
+              className="animate-[gold-shimmer_2s_linear_infinite]"
+            />
+          </>
         )}
 
         {renderMarker()}
