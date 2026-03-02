@@ -9,6 +9,7 @@ import syklingIcon from '@/assets/icons/sykling.svg';
 import gaIcon from '@/assets/icons/ga.svg';
 import tennisIcon from '@/assets/icons/tennis.svg';
 import yogaIcon from '@/assets/icons/yoga.svg';
+import fotballIcon from '@/assets/icons/fotball.svg';
 
 const iconMap: Record<string, string> = {
   styrke: styrkeIcon,
@@ -19,6 +20,7 @@ const iconMap: Record<string, string> = {
   gå: gaIcon,
   tennis: tennisIcon,
   yoga: yogaIcon,
+  fotball: fotballIcon,
 };
 
 interface ActivityIconProps {

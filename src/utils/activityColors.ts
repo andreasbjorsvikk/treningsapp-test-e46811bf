@@ -44,6 +44,10 @@ export const activityColorMap: Partial<Record<SessionType, ActivityColors>> = {
     light: { bg: 'rgb(241,217,252)', text: 'rgb(121,11,150)', badge: 'rgb(245,230,255)' },
     dark:  { bg: 'rgb(141,105,149)',  text: '#ffffff',          badge: '#3e0f50' },
   },
+  fotball: {
+    light: { bg: 'rgb(220,240,200)', text: 'rgb(55,100,40)', badge: 'rgb(232,248,215)' },
+    dark:  { bg: 'rgb(90,140,70)',   text: '#ffffff',         badge: '#2a4a1f' },
+  },
   annet: {
     light: { bg: 'rgb(220,220,224)', text: '#444444',        badge: 'rgb(232,232,236)' },
     dark:  { bg: 'rgb(90,90,94)',    text: '#ffffff',         badge: '#2a2a2e' },

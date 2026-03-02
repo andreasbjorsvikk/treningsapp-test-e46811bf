@@ -12,7 +12,9 @@ interface TypeFilterProps {
 const TypeFilter = ({ selected, onSelect }: TypeFilterProps) => {
   const { settings } = useSettings();
   const isDark = settings.darkMode;
-  const types = Object.entries(sessionTypeConfig) as [SessionType, typeof sessionTypeConfig[SessionType]][];
+  const disabledTypes = settings.disabledSessionTypes || [];
+  const types = (Object.entries(sessionTypeConfig) as [SessionType, typeof sessionTypeConfig[SessionType]][])
+    .filter(([type]) => !disabledTypes.includes(type));
 
   return (
     <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">

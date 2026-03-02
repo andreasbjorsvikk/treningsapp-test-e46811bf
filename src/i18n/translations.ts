@@ -23,7 +23,7 @@ const no: Record<string, string> = {
   // Activity types
   'activity.styrke': 'Styrke', 'activity.løping': 'Løping', 'activity.fjelltur': 'Fjelltur',
   'activity.svømming': 'Svømming', 'activity.sykling': 'Sykling', 'activity.gå': 'Gå',
-  'activity.tennis': 'Tennis', 'activity.yoga': 'Yoga', 'activity.annet': 'Annet',
+  'activity.tennis': 'Tennis', 'activity.yoga': 'Yoga', 'activity.fotball': 'Fotball', 'activity.annet': 'Annet',
 
   // Metrics
   'metric.sessions': 'økter', 'metric.minutes': 'timer', 'metric.distance': 'km', 'metric.elevation': 'm',
@@ -223,6 +223,9 @@ const no: Record<string, string> = {
   'settings.comingSoon': 'Kommer snart',
   'settings.positionImage': 'Plasser bildet',
   'settings.dragToPosition': 'Dra for å plassere bildet i sirkelen',
+  'settings.training': 'Trening',
+  'settings.activeSessionTypes': 'Aktive økttyper',
+  'settings.activeSessionTypesDesc': 'Velg hvilke aktivitetstyper som skal vises i appen. Data for deaktiverte typer beholdes.',
 
   // Theme labels
   'theme.white': 'Hvit', 'theme.orange': 'Oransje', 'theme.blue': 'Blå', 'theme.green': 'Grønn', 'theme.rose': 'Rosa',
@@ -273,7 +276,7 @@ const en: Record<string, string> = {
   // Activity types
   'activity.styrke': 'Strength', 'activity.løping': 'Running', 'activity.fjelltur': 'Hiking',
   'activity.svømming': 'Swimming', 'activity.sykling': 'Cycling', 'activity.gå': 'Walking',
-  'activity.tennis': 'Tennis', 'activity.yoga': 'Yoga', 'activity.annet': 'Other',
+  'activity.tennis': 'Tennis', 'activity.yoga': 'Yoga', 'activity.fotball': 'Football', 'activity.annet': 'Other',
 
   // Metrics
   'metric.sessions': 'sessions', 'metric.minutes': 'hours', 'metric.distance': 'km', 'metric.elevation': 'm',
@@ -473,6 +476,9 @@ const en: Record<string, string> = {
   'settings.comingSoon': 'Coming soon',
   'settings.positionImage': 'Position image',
   'settings.dragToPosition': 'Drag to position the image in the circle',
+  'settings.training': 'Training',
+  'settings.activeSessionTypes': 'Active session types',
+  'settings.activeSessionTypesDesc': 'Choose which activity types are shown in the app. Data for disabled types is preserved.',
 
   // Theme labels
   'theme.white': 'White', 'theme.orange': 'Orange', 'theme.blue': 'Blue', 'theme.green': 'Green', 'theme.rose': 'Rose',
