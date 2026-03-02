@@ -1,58 +1,112 @@
 
 
-## Plan: Økt-detaljvisning med kart, puls og høydeprofil
+## Plan
 
-### Oversikt
+### 1. Kart i øktdetaljer (bug-fix)
 
-Bygge en "Workout Detail Drawer" som åpnes når man trykker på en økt. Viser et pent kort med kartrute, nøkkelstatistikk, og valgfritt puls/høydeprofil via en "Last detaljer"-knapp.
+Kartdata finnes i databasen (bekreftet via SQL-spørring). Koden i `WorkoutDetailDrawer.tsx` ser korrekt ut -- den sjekker `session.summaryPolyline`, dekoder polyline, og rendrer et Leaflet-kart. Mulige årsaker til at du ikke ser kartet:
 
-### Steg 1: Database-migrering
+- **Leaflet container-høyde:** Kartet rendres i en `div` med `h-48`, men Leaflet krever at containeren har en eksplisitt størrelse når den mountes. Inne i en Drawer som animerer inn, kan dette feile stille.
+- **MapErrorBoundary svelger feilen:** Error boundary returnerer `null` ved feil, så kartet forsvinner uten noen synlig feilmelding.
 
-Legge til kolonner i `workout_sessions`:
-- `average_heartrate` (integer, nullable)
-- `max_heartrate` (integer, nullable)  
-- `summary_polyline` (text, nullable)
+**Fix:** Legge til en `key` på `MapContainer` basert på session-id for å tvinge re-mount, og legge til en liten delay/`whenReady`-callback. Eventuelt fjerne `MapErrorBoundary` midlertidig for å se den faktiske feilen i konsollen.
 
-Ny tabell `workout_streams`:
-- `id` (uuid, PK)
-- `session_id` (uuid, FK til workout_sessions, unique)
-- `user_id` (uuid)
-- `heartrate_data` (jsonb) -- array med tidspunkt/puls
-- `altitude_data` (jsonb) -- array med distanse/høyde
-- `latlng_data` (jsonb) -- array med lat/lng-punkter
-- `created_at` (timestamptz)
-- RLS: brukere ser kun egne data
+### 2. Fellesskap-seksjonen (ny feature)
 
-### Steg 2: Oppdater Strava sync (edge function)
+Bygges med mock-data. Ingen database-tabeller ennå.
 
-Under vanlig synk: lagre `average_heartrate`, `max_heartrate`, `summary_polyline` fra Strava-aktiviteten (allerede tilgjengelig, ingen ekstra API-kall).
+#### Filstruktur
 
-Ny action `fetch-streams`: henter detaljerte streams for én økt (1 API-kall), decoder og lagrer i `workout_streams`.
+```text
+src/pages/CommunityPage.tsx          -- Hovedside (erstatter placeholder)
+src/components/community/
+  CommunitySubTabs.tsx               -- Segmentert kontroll (Utfordringer | Ledertavle)
+  ChallengeCard.tsx                   -- Kort for én utfordring
+  ChallengeDetail.tsx                 -- Detaljside (drawer) for utfordring
+  ChallengeForm.tsx                   -- Opprett/rediger utfordring (dialog)
+  LeaderboardSection.tsx              -- Ledertavle med periode/kategori-filter
+  LeaderboardRow.tsx                  -- Én rad i ledertavle
+  NotificationBell.tsx                -- Bjelle-ikon med badge
+  NotificationSheet.tsx               -- Liste over notifikasjoner (sheet)
+  FriendsGroupSheet.tsx               -- Venner & grupper (sheet)
+src/data/mockCommunity.ts             -- All mock-data
+```
 
-### Steg 3: Installer Leaflet
+#### A. Hovedside (`CommunityPage.tsx`)
 
-Legge til `leaflet` og `react-leaflet` for kartvisning. Gratis med OpenStreetMap-tiles, lett interaktivt (zoom/pan).
+- Header med tittel "Fellesskap" + NotificationBell øverst til høyre
+- `CommunitySubTabs`: **Utfordringer** | **Ledertavle**
+- Når "Utfordringer" er valgt: viser utfordrings-seksjonen
+- Når "Ledertavle" er valgt: viser ledertavle-seksjonen
 
-### Steg 4: Ny komponent `WorkoutDetailDrawer`
+#### B. Utfordringer
 
-Drawer fra bunnen med:
-- **Kartseksjon** (øverst): Decoder polyline, viser ruten på et lite Leaflet-kart. Skjules for økter uten GPS.
-- **Header**: Økt-ikon, tittel, dato, varighet
-- **Stat-tiles**: Distanse, høydemeter, snitt-tempo i et grid
-- **Puls-tiles**: Snittpuls, makspuls (vises hvis data finnes)
-- **"Last detaljer"-knapp**: Henter streams fra edge function, viser:
-  - Høydeprofil-chart (Recharts AreaChart, distanse på x-akse, høyde på y-akse)
-  - Pulsdiagram (Recharts LineChart, tid/distanse på x-akse, puls på y-akse)
-- **Notater** nederst
-- **Rediger/Slett-knapper** i footer
+**Segmentert kontroll** (inne i utfordringer): Aktive | Mine | Arkiv
 
-### Steg 5: Koble SessionCard
+- **Aktive:** Kort-liste med `ChallengeCard` for utfordringer brukeren deltar i
+- **Mine:** Utfordringer brukeren har opprettet, med redigeringsknapp
+- **Arkiv:** Avsluttede utfordringer med sluttresultat
 
-Trykk på SessionCard åpner WorkoutDetailDrawer i stedet for å bare vise inline-info.
+**ChallengeCard viser:**
+- Emoji + navn
+- Periode (f.eks. "1.--30. april")
+- Metrikk-type (ikon)
+- Progress bar med begge brukernes progresjon
+- Plassering + antall deltakere
+- Avatarer for deltakere (maks 4)
 
-### Tekniske detaljer
+**ChallengeDetail (Drawer):**
+- Rangert deltakerliste
+- Nedtelling ("6 dager igjen")
+- "Forlat utfordring"-knapp
+- "Rediger"-knapp (krever godkjenning fra andre)
 
-- Polyline-decoding: liten utility-funksjon (~30 linjer) for å decode Googles encoded polyline-format
-- Leaflet CSS importeres i index.css
-- Recharts allerede installert, brukes for puls- og høydeprofil-charts
-- Streams caches i `workout_streams` -- hentes bare én gang per økt
+**ChallengeForm (Dialog):**
+- Navn, emoji (valgfritt)
+- Metrikk: Økter / Distanse / Varighet / Høydemeter
+- Aktivitetstype: Alle + alle eksisterende typer
+- Periode: Denne uken / Denne måneden / Dette året / Egendefinert
+- Målverdi (tall)
+- Velg deltakere fra venneliste/gruppe
+
+#### C. Ledertavle
+
+- Periode-segment: Ukentlig | Månedlig | Årlig
+- Kategori-valg: Økter | Distanse | Høydemeter
+- Aktivitetstype-filter (samme som statistikksiden)
+- Rangert liste med plassering + tall
+- Fallback-tekst hvis ingen venner: "Inviter venner for å starte konkurranse"
+
+#### D. Notifikasjoner (bjelle)
+
+- Bjelle-ikon med rød badge (antall uleste)
+- Åpner et Sheet med liste over notifikasjoner:
+  - Invitasjon til utfordring
+  - Endring krever godkjenning
+  - Utfordring avsluttet
+- Kun visuell mock, ingen backend
+
+#### E. Venner & Grupper
+
+- Enkel liste over venner (mock)
+- Grupper: navn + emoji, ingen chat
+- Brukes for å velge deltakere i utfordringer
+
+#### F. Mock-data (`mockCommunity.ts`)
+
+Inneholder:
+- 3-4 mock-utfordringer (aktive, mine, arkiverte)
+- 5-6 mock-venner med avatar og brukernavn
+- 1-2 mock-grupper
+- 3-4 mock-notifikasjoner
+- Mock-ledertavle-data
+
+#### Designprinsipper
+
+- Samme `glass-card`, `rounded-lg`, font-stiler som resten av appen
+- Segmentert kontroll: identisk stil som `TrainingSubTabs`
+- Progress bars: `bg-secondary` bakgrunn, fargede indikatorer
+- Kort-layout: kompakt, sportslig, minimalistisk
+- Ingen feed, ingen kommentarer, ingen bilder
+- Støtter dark mode via eksisterende CSS-variabler
+
