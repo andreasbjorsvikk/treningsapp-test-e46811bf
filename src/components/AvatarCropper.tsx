@@ -12,7 +12,6 @@ interface AvatarCropperProps {
 }
 
 const CIRCLE_SIZE = 240;
-const MIN_ZOOM = 1;
 const MAX_ZOOM = 5;
 
 const AvatarCropper = ({ open, imageFile, imageUrl, onConfirm, onCancel }: AvatarCropperProps) => {
@@ -52,12 +51,16 @@ const AvatarCropper = ({ open, imageFile, imageUrl, onConfirm, onCancel }: Avata
   const baseW = imgNatural.w * baseScale;
   const baseH = imgNatural.h * baseScale;
 
-  // Clamp offset so image always covers circle
+  // Allow zooming out: MIN_ZOOM lets image be smaller than circle (shows background)
+  const MIN_ZOOM = Math.max(0.3, CIRCLE_SIZE / Math.max(baseW, baseH) * 0.5);
+
+  // Clamp offset so image stays reasonably positioned
   const clampOffset = useCallback((ox: number, oy: number, z: number, bw: number, bh: number) => {
     const scaledW = bw * z;
     const scaledH = bh * z;
-    const maxX = Math.max(0, (scaledW - CIRCLE_SIZE) / 2);
-    const maxY = Math.max(0, (scaledH - CIRCLE_SIZE) / 2);
+    // If image is larger than circle, keep it covering; if smaller, keep it centered-ish
+    const maxX = Math.max(0, (scaledW - CIRCLE_SIZE) / 2) + Math.max(0, (CIRCLE_SIZE - scaledW) / 2);
+    const maxY = Math.max(0, (scaledH - CIRCLE_SIZE) / 2) + Math.max(0, (CIRCLE_SIZE - scaledH) / 2);
     return {
       x: Math.max(-maxX, Math.min(maxX, ox)),
       y: Math.max(-maxY, Math.min(maxY, oy)),
