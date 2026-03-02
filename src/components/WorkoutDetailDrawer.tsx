@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Component, ReactNode } from 'react';
 import { WorkoutSession, WorkoutStreams } from '@/types/workout';
 import { sessionTypeConfig, formatDuration } from '@/utils/workoutUtils';
 import { getActivityColors } from '@/utils/activityColors';
@@ -18,6 +18,14 @@ import {
 import { MapContainer, TileLayer, Polyline } from 'react-leaflet';
 import { LatLngBoundsExpression } from 'leaflet';
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+
+// Error boundary for map to prevent app crash
+class MapErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() { return this.state.hasError ? null : this.props.children; }
+}
+
 import { stravaService } from '@/services/stravaService';
 import { toast } from 'sonner';
 
@@ -114,22 +122,24 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
 
             {/* Map */}
             {routePoints && bounds && (
-              <div className="w-full h-48 relative">
-                <MapContainer
-                  bounds={bounds}
-                  scrollWheelZoom={false}
-                  dragging={true}
-                  zoomControl={false}
-                  attributionControl={false}
-                  className="w-full h-full z-0"
-                >
-                  <TileLayer url={tileUrl} />
-                  <Polyline
-                    positions={routePoints}
-                    pathOptions={{ color: colors.text, weight: 3, opacity: 0.85 }}
-                  />
-                </MapContainer>
-              </div>
+              <MapErrorBoundary>
+                <div className="w-full h-48 relative">
+                  <MapContainer
+                    bounds={bounds}
+                    scrollWheelZoom={false}
+                    dragging={true}
+                    zoomControl={false}
+                    attributionControl={false}
+                    className="w-full h-full z-0"
+                  >
+                    <TileLayer url={tileUrl} />
+                    <Polyline
+                      positions={routePoints}
+                      pathOptions={{ color: colors.text, weight: 3, opacity: 0.85 }}
+                    />
+                  </MapContainer>
+                </div>
+              </MapErrorBoundary>
             )}
 
             {/* Header */}
