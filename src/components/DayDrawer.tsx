@@ -3,6 +3,7 @@ import { WorkoutSession } from '@/types/workout';
 import { useAppDataContext } from '@/contexts/AppDataContext';
 import SessionCard from '@/components/SessionCard';
 import WorkoutDialog from '@/components/WorkoutDialog';
+import WorkoutDetailDrawer from '@/components/WorkoutDetailDrawer';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -17,6 +18,7 @@ interface DayDrawerProps {
 const DayDrawer = ({ dateKey, sessions, onClose, onRefresh }: DayDrawerProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
+  const [detailSession, setDetailSession] = useState<WorkoutSession | null>(null);
   const appData = useAppDataContext();
 
   const dateLabel = dateKey
@@ -67,7 +69,7 @@ const DayDrawer = ({ dateKey, sessions, onClose, onRefresh }: DayDrawerProps) =>
               </p>
             ) : (
               sessions.map(s => (
-                <SessionCard key={s.id} session={s} onEdit={handleEdit} onDelete={handleDelete} />
+                <SessionCard key={s.id} session={s} onClick={setDetailSession} />
               ))
             )}
 
@@ -77,6 +79,14 @@ const DayDrawer = ({ dateKey, sessions, onClose, onRefresh }: DayDrawerProps) =>
           </div>
         </SheetContent>
       </Sheet>
+
+      <WorkoutDetailDrawer
+        session={detailSession}
+        open={!!detailSession}
+        onClose={() => setDetailSession(null)}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
 
       <WorkoutDialog
         open={dialogOpen}

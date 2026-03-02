@@ -172,48 +172,95 @@ export type Database = {
       }
       workout_sessions: {
         Row: {
+          average_heartrate: number | null
           created_at: string
           date: string
           distance: number | null
           duration_minutes: number
           elevation_gain: number | null
           id: string
+          max_heartrate: number | null
           notes: string | null
           strava_activity_id: number | null
+          summary_polyline: string | null
           title: string | null
           type: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          average_heartrate?: number | null
           created_at?: string
           date: string
           distance?: number | null
           duration_minutes: number
           elevation_gain?: number | null
           id?: string
+          max_heartrate?: number | null
           notes?: string | null
           strava_activity_id?: number | null
+          summary_polyline?: string | null
           title?: string | null
           type: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          average_heartrate?: number | null
           created_at?: string
           date?: string
           distance?: number | null
           duration_minutes?: number
           elevation_gain?: number | null
           id?: string
+          max_heartrate?: number | null
           notes?: string | null
           strava_activity_id?: number | null
+          summary_polyline?: string | null
           title?: string | null
           type?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      workout_streams: {
+        Row: {
+          altitude_data: Json | null
+          created_at: string
+          heartrate_data: Json | null
+          id: string
+          latlng_data: Json | null
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          altitude_data?: Json | null
+          created_at?: string
+          heartrate_data?: Json | null
+          id?: string
+          latlng_data?: Json | null
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          altitude_data?: Json | null
+          created_at?: string
+          heartrate_data?: Json | null
+          id?: string
+          latlng_data?: Json | null
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_streams_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "workout_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

@@ -11,6 +11,7 @@ import BottomNav, { TabId } from '@/components/BottomNav';
 import StatsOverview from '@/components/StatsOverview';
 import SessionCard from '@/components/SessionCard';
 import WorkoutDialog from '@/components/WorkoutDialog';
+import WorkoutDetailDrawer from '@/components/WorkoutDetailDrawer';
 import HealthEventDialog from '@/components/HealthEventDialog';
 import GoalForm from '@/components/GoalForm';
 import CalendarPage from '@/pages/CalendarPage';
@@ -53,6 +54,7 @@ const IndexContent = () => {
   const [showGoalEditDialog, setShowGoalEditDialog] = useState(false);
   const [homeStatMode, setHomeStatMode] = useState<'week' | 'month'>('week');
   const [stravaSyncing, setStravaSyncing] = useState(false);
+  const [detailSession, setDetailSession] = useState<WorkoutSession | null>(null);
 
   // Auto-sync Strava on app open and when returning from background
   const lastSyncRef = useRef<number>(0);
@@ -371,7 +373,7 @@ const IndexContent = () => {
               </div>
               <div className="space-y-3">
                 {recentSessions.map(s => (
-                  <SessionCard key={s.id} session={s} onEdit={handleEdit} onDelete={handleDelete} />
+                  <SessionCard key={s.id} session={s} onClick={setDetailSession} />
                 ))}
               </div>
             </section>
@@ -404,6 +406,14 @@ const IndexContent = () => {
         onClose={() => { setDialogOpen(false); setEditSession(undefined); }}
         onSave={handleSave}
         session={editSession}
+      />
+
+      <WorkoutDetailDrawer
+        session={detailSession}
+        open={!!detailSession}
+        onClose={() => setDetailSession(null)}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
       />
 
       <HealthEventDialog

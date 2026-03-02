@@ -56,4 +56,3 @@ Trykk på SessionCard åpner WorkoutDetailDrawer i stedet for å bare vise inlin
 - Leaflet CSS importeres i index.css
 - Recharts allerede installert, brukes for puls- og høydeprofil-charts
 - Streams caches i `workout_streams` -- hentes bare én gang per økt
-
