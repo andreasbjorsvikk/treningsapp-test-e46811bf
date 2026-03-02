@@ -17,12 +17,13 @@ const AvatarCropper = ({ open, imageFile, onConfirm, onCancel }: AvatarCropperPr
   const imgRef = useRef<HTMLImageElement | null>(null);
   const [imgSrc, setImgSrc] = useState('');
   const [imgNatural, setImgNatural] = useState({ w: 0, h: 0 });
-  // baseScale = scale that fits the smallest dimension to the circle
   const [baseScale, setBaseScale] = useState(1);
-  // zoom is a multiplier on top of baseScale (1 = fit, 2 = 2x zoom)
   const [zoom, setZoom] = useState(1);
-  // offset in display pixels from centered position
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+
+  // Touch/pointer tracking
+  const pointers = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const gestureStart = useRef<{ dist: number; zoom: number; ox: number; oy: number; cx: number; cy: number } | null>(null);
   const dragStart = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
 
   useEffect(() => {
@@ -41,30 +42,74 @@ const AvatarCropper = ({ open, imageFile, onConfirm, onCancel }: AvatarCropperPr
     return () => URL.revokeObjectURL(url);
   }, [imageFile]);
 
-  const displayScale = baseScale * zoom;
-  const displayW = imgNatural.w * displayScale;
-  const displayH = imgNatural.h * displayScale;
-  // Centered position + user offset
-  const imgLeft = (CIRCLE_SIZE - displayW) / 2 + offset.x;
-  const imgTop = (CIRCLE_SIZE - displayH) / 2 + offset.y;
+  // Use transform instead of width/height to avoid distortion
+  const fitW = imgNatural.w * baseScale;
+  const fitH = imgNatural.h * baseScale;
+  const imgLeft = (CIRCLE_SIZE - fitW) / 2 + offset.x;
+  const imgTop = (CIRCLE_SIZE - fitH) / 2 + offset.y;
+
+  const getTouchDist = (pts: { x: number; y: number }[]) => {
+    const dx = pts[1].x - pts[0].x;
+    const dy = pts[1].y - pts[0].y;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    dragStart.current = { x: e.clientX, y: e.clientY, ox: offset.x, oy: offset.y };
-  }, [offset]);
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pointers.current.size === 2) {
+      const pts = Array.from(pointers.current.values());
+      gestureStart.current = {
+        dist: getTouchDist(pts),
+        zoom,
+        ox: offset.x,
+        oy: offset.y,
+        cx: (pts[0].x + pts[1].x) / 2,
+        cy: (pts[0].y + pts[1].y) / 2,
+      };
+      dragStart.current = null;
+    } else if (pointers.current.size === 1) {
+      dragStart.current = { x: e.clientX, y: e.clientY, ox: offset.x, oy: offset.y };
+      gestureStart.current = null;
+    }
+  }, [offset, zoom]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!dragStart.current) return;
-    setOffset({
-      x: dragStart.current.ox + (e.clientX - dragStart.current.x),
-      y: dragStart.current.oy + (e.clientY - dragStart.current.y),
-    });
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pointers.current.size === 2 && gestureStart.current) {
+      const pts = Array.from(pointers.current.values());
+      const newDist = getTouchDist(pts);
+      const scaleFactor = newDist / gestureStart.current.dist;
+      const newZoom = Math.max(0.5, Math.min(5, gestureStart.current.zoom * scaleFactor));
+      setZoom(newZoom);
+
+      // Pan with two fingers
+      const cx = (pts[0].x + pts[1].x) / 2;
+      const cy = (pts[0].y + pts[1].y) / 2;
+      setOffset({
+        x: gestureStart.current.ox + (cx - gestureStart.current.cx),
+        y: gestureStart.current.oy + (cy - gestureStart.current.cy),
+      });
+    } else if (pointers.current.size === 1 && dragStart.current) {
+      setOffset({
+        x: dragStart.current.ox + (e.clientX - dragStart.current.x),
+        y: dragStart.current.oy + (e.clientY - dragStart.current.y),
+      });
+    }
   }, []);
 
-  const handlePointerUp = useCallback(() => {
-    dragStart.current = null;
-  }, []);
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    pointers.current.delete(e.pointerId);
+    if (pointers.current.size < 2) gestureStart.current = null;
+    if (pointers.current.size === 0) dragStart.current = null;
+    // If one finger remains after pinch, start a new drag from current position
+    if (pointers.current.size === 1) {
+      const remaining = Array.from(pointers.current.values())[0];
+      dragStart.current = { x: remaining.x, y: remaining.y, ox: offset.x, oy: offset.y };
+    }
+  }, [offset]);
 
   const handleConfirm = useCallback(() => {
     if (!imgRef.current) return;
@@ -78,18 +123,19 @@ const AvatarCropper = ({ open, imageFile, onConfirm, onCancel }: AvatarCropperPr
     ctx.clip();
 
     const outScale = 256 / CIRCLE_SIZE;
+    // Draw using the same dimensions as CSS display
     ctx.drawImage(
       imgRef.current,
       imgLeft * outScale,
       imgTop * outScale,
-      displayW * outScale,
-      displayH * outScale,
+      fitW * zoom * outScale,
+      fitH * zoom * outScale,
     );
 
     canvas.toBlob(blob => {
       if (blob) onConfirm(blob);
     }, 'image/png');
-  }, [imgLeft, imgTop, displayW, displayH, onConfirm]);
+  }, [imgLeft, imgTop, fitW, fitH, zoom, onConfirm]);
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onCancel(); }}>
@@ -107,18 +153,20 @@ const AvatarCropper = ({ open, imageFile, onConfirm, onCancel }: AvatarCropperPr
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
           >
             {imgSrc && (
               <img
                 src={imgSrc}
                 alt=""
                 draggable={false}
-                className="pointer-events-none select-none absolute"
+                className="pointer-events-none select-none absolute origin-top-left"
                 style={{
                   left: imgLeft,
                   top: imgTop,
-                  width: displayW,
-                  height: displayH,
+                  width: fitW,
+                  height: fitH,
+                  transform: `scale(${zoom})`,
                 }}
               />
             )}
@@ -128,7 +176,7 @@ const AvatarCropper = ({ open, imageFile, onConfirm, onCancel }: AvatarCropperPr
           <span className="text-xs text-muted-foreground">−</span>
           <input
             type="range"
-            min={1}
+            min={0.5}
             max={4}
             step={0.02}
             value={zoom}
