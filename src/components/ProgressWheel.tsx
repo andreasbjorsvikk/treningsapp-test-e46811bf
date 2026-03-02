@@ -17,6 +17,7 @@ interface ProgressWheelProps {
   compact?: boolean;
   naked?: boolean;
   disableAchievement?: boolean;
+  fixedRingColor?: { main: string; light: string };
 }
 
 const ANIM_DURATION = 1200;
@@ -36,7 +37,7 @@ function easeOutCubic(t: number): number {
 
 const ProgressWheel = ({
   percent, current, target, unit, label, title, titleOverride,
-  hasGoal, onClick, expectedFraction, paceDiff, showPaceLabel, compact, naked, disableAchievement,
+  hasGoal, onClick, expectedFraction, paceDiff, showPaceLabel, compact, naked, disableAchievement, fixedRingColor,
 }: ProgressWheelProps) => {
   const { t } = useTranslation();
 
@@ -97,7 +98,7 @@ const ProgressWheel = ({
   const glowIntensity = isGold ? Math.min((clampedPercent - 100) / 50, 1) : 0;
 
   const diff = paceDiff ?? 0;
-  const paceColors = hasGoal && expectedFraction != null ? getPaceColor(diff) : null;
+  const paceColors = fixedRingColor ? fixedRingColor : (hasGoal && expectedFraction != null ? getPaceColor(diff) : null);
   const defaultColor = isComplete ? 'hsl(142, 50%, 48%)' : 'hsl(var(--primary))';
   const mainColor = paceColors?.main ?? defaultColor;
 
