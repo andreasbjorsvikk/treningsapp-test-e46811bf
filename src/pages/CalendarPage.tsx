@@ -1,12 +1,12 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { WorkoutSession } from '@/types/workout';
-import { workoutService } from '@/services/workoutService';
+import { WorkoutSession, HealthEvent } from '@/types/workout';
 import { sessionTypeConfig, formatDuration } from '@/utils/workoutUtils';
 import { getActivityColors } from '@/utils/activityColors';
 import ActivityIcon from '@/components/ActivityIcon';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useAppDataContext } from '@/contexts/AppDataContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Route, Mountain, Clock } from 'lucide-react';
+import { Route, Mountain, Clock, Ambulance, Cross } from 'lucide-react';
 import DayDrawer from '@/components/DayDrawer';
 
 const WEEKDAYS_MON = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'];
@@ -114,6 +114,7 @@ const SessionBadge = ({ session, size = 'md', isDark }: {
 const CalendarPage = () => {
   const { settings } = useSettings();
   const isMobile = useIsMobile();
+  const appData = useAppDataContext();
   const sundayStart = settings.firstDayOfWeek === 'sunday';
   const weekdays = sundayStart ? WEEKDAYS_SUN : WEEKDAYS_MON;
   const now = new Date();
@@ -131,7 +132,8 @@ const CalendarPage = () => {
   const currentMonthRef = useRef<HTMLDivElement>(null);
   const hasScrolledToToday = useRef(false);
 
-  const allSessions = workoutService.getAll();
+  const allSessions = appData.sessions;
+  const healthEvents = appData.healthEvents;
 
   const sessionsByDate = useMemo(() => {
     const map = new Map<string, WorkoutSession[]>();
@@ -142,6 +144,21 @@ const CalendarPage = () => {
     });
     return map;
   }, [allSessions]);
+
+  // Build a set of dates that have health events
+  const healthEventDates = useMemo(() => {
+    const map = new Map<string, HealthEvent[]>();
+    healthEvents.forEach(he => {
+      const from = new Date(he.dateFrom);
+      const to = he.dateTo ? new Date(he.dateTo) : from;
+      for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
+        const key = d.toISOString().slice(0, 10);
+        if (!map.has(key)) map.set(key, []);
+        map.get(key)!.push(he);
+      }
+    });
+    return map;
+  }, [healthEvents]);
 
   const months = useMemo(
     () => getMonthRange(rangeStart.year, rangeStart.month, rangeEnd.year, rangeEnd.month),
@@ -421,9 +438,11 @@ const CalendarPage = () => {
             }
             const dateKey = toDateKey(cell.year, cell.month, cell.day);
             const daySessions = sessionsByDate.get(dateKey) || [];
+            const dayHealthEvents = healthEventDates.get(dateKey) || [];
             const isToday = dateKey === todayKey;
             const isSelected = dateKey === selectedDay;
             const sessionCount = daySessions.length;
+            const hasHealth = dayHealthEvents.length > 0;
 
             let cellStyle: React.CSSProperties = {};
             if (sessionCount === 1) {
@@ -498,6 +517,16 @@ const CalendarPage = () => {
                       </>
                     )}
                   </>
+                )}
+                {/* Health event indicator */}
+                {hasHealth && (
+                  <div className="absolute top-0.5 right-0.5 z-20">
+                    {dayHealthEvents[0].type === 'sickness' ? (
+                      <Ambulance className="w-3 h-3 text-destructive" />
+                    ) : (
+                      <Cross className="w-3 h-3 text-destructive" />
+                    )}
+                  </div>
                 )}
               </button>
             );

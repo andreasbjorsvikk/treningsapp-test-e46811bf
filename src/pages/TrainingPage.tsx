@@ -1,9 +1,8 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { SessionType, WorkoutSession } from '@/types/workout';
+import { SessionType, WorkoutSession, HealthEvent } from '@/types/workout';
 import GoalsSection from '@/components/GoalsSection';
 import StatistikkContent from '@/components/StatistikkContent';
-import { workoutService } from '@/services/workoutService';
-import { primaryGoalService } from '@/services/primaryGoalService';
+import { useAppDataContext } from '@/contexts/AppDataContext';
 import { computeMonthWheelData, computeYearWheelData } from '@/utils/goalWheelData';
 import { allSessionTypes } from '@/utils/workoutUtils';
 import SessionCard from '@/components/SessionCard';
@@ -13,10 +12,11 @@ import { Period } from '@/components/PeriodSelector';
 import { ChartMetric } from '@/components/MetricSelector';
 import TrainingSubTabs from '@/components/TrainingSubTabs';
 import { TrainingSubTab } from '@/components/BottomNav';
-import { ChevronRight, Download, Upload, Replace, MoreVertical } from 'lucide-react';
+import { ChevronRight, Download, Upload, Replace, MoreVertical, Ambulance, Cross } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TrainingPageProps {
   initialStatPeriod?: 'month' | 'year';
@@ -29,6 +29,8 @@ const monthNames = [
 
 const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
   const [subTab, setSubTab] = useState<TrainingSubTab>('statistikk');
+  const { t } = useTranslation();
+  const appData = useAppDataContext();
 
   // Listen for navigation to goals tab from home page
   useEffect(() => {
@@ -37,7 +39,6 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
     return () => window.removeEventListener('navigate-to-goals', handler);
   }, []);
 
-  // Navigate to goals on initial mount if triggered
   useEffect(() => {
     const pending = (window as any).__navigateToGoals;
     if (pending) {
@@ -45,10 +46,25 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
       delete (window as any).__navigateToGoals;
     }
   }, []);
+
+  // Listen for navigation to history tab
+  useEffect(() => {
+    const handler = () => setSubTab('historikk');
+    window.addEventListener('navigate-to-history', handler);
+    return () => window.removeEventListener('navigate-to-history', handler);
+  }, []);
+
+  useEffect(() => {
+    const pending = (window as any).__navigateToHistory;
+    if (pending) {
+      setSubTab('historikk');
+      delete (window as any).__navigateToHistory;
+    }
+  }, []);
+
   const [filterType, setFilterType] = useState<SessionType | 'all'>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
-  const [, setRefresh] = useState(0);
   const importFileRef = useRef<HTMLInputElement>(null);
   const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge');
 
@@ -61,10 +77,11 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
   const [historyYear, setHistoryYear] = useState<string>(String(now.getFullYear()));
   const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
 
-  const allSessions = workoutService.getAll();
+  const allSessions = appData.sessions;
+  const healthEvents = appData.healthEvents;
   const filtered = filterType === 'all' ? allSessions : allSessions.filter(s => s.type === filterType);
 
-  const primaryGoal = primaryGoalService.get();
+  const currentPrimaryGoal = appData.currentPrimaryGoal;
 
   // Available years from sessions
   const availableYears = useMemo(() => {
@@ -94,6 +111,14 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
       }));
   }, [filtered, historyYear]);
 
+  // Health events for selected year
+  const yearHealthEvents = useMemo(() => {
+    const yearNum = parseInt(historyYear);
+    return healthEvents
+      .filter(he => new Date(he.dateFrom).getFullYear() === yearNum)
+      .sort((a, b) => new Date(b.dateFrom).getTime() - new Date(a.dateFrom).getTime());
+  }, [healthEvents, historyYear]);
+
   const toggleMonth = useCallback((monthKey: string) => {
     setCollapsedMonths(prev => {
       const next = new Set(prev);
@@ -104,7 +129,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
   }, []);
 
   // Progress wheel data driven by versioned goal periods
-  const allPeriods = primaryGoalService.getAll();
+  const allPeriods = appData.primaryGoals;
 
   const monthData = useMemo(() =>
     computeMonthWheelData(allPeriods, allSessions, statMonth, statYear, now, 'økter'),
@@ -135,29 +160,26 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
     );
   }, []);
 
-  const handleDelete = useCallback((id: string) => {
-    workoutService.delete(id);
-    setRefresh(r => r + 1);
-  }, []);
+  const handleDelete = useCallback(async (id: string) => {
+    await appData.deleteSession(id);
+  }, [appData]);
 
   const handleEdit = useCallback((session: WorkoutSession) => {
     setEditSession(session);
     setDialogOpen(true);
   }, []);
 
-  const handleSave = useCallback((data: Omit<WorkoutSession, 'id'>) => {
+  const handleSave = useCallback(async (data: Omit<WorkoutSession, 'id'>) => {
     if (editSession) {
-      workoutService.update(editSession.id, data);
+      await appData.updateSession(editSession.id, data);
     } else {
-      workoutService.add(data);
+      await appData.addSession(data);
     }
     setEditSession(undefined);
-    setRefresh(r => r + 1);
-  }, [editSession]);
+  }, [editSession, appData]);
 
   const handleExport = useCallback(() => {
-    const data = workoutService.exportAll();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(allSessions, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -165,31 +187,28 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
     a.click();
     URL.revokeObjectURL(url);
     toast.success('Økter eksportert!');
-  }, []);
+  }, [allSessions]);
 
   const handleImportFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       try {
         const data = JSON.parse(ev.target?.result as string);
         if (!Array.isArray(data)) throw new Error('Invalid format');
-        if (importMode === 'replace') {
-          workoutService.importReplace(data);
-          toast.success(`Alle økter erstattet med ${data.length} økter.`);
-        } else {
-          const added = workoutService.importMerge(data);
-          toast.success(`${added} nye økter lagt til (duplikater hoppet over).`);
+        for (const session of data) {
+          const { id, ...rest } = session;
+          await appData.addSession(rest);
         }
-        setRefresh(r => r + 1);
+        toast.success(`${data.length} økter importert.`);
       } catch {
         toast.error('Kunne ikke lese filen. Sjekk at det er en gyldig JSON-fil.');
       }
     };
     reader.readAsText(file);
     e.target.value = '';
-  }, [importMode]);
+  }, [importMode, appData]);
 
   const handleImportMerge = useCallback(() => {
     setImportMode('merge');
@@ -216,7 +235,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
           selectedTypes={selectedTypes} handleToggleType={handleToggleType}
           chartMetric={chartMetric} setChartMetric={setChartMetric}
           monthData={monthData} yearData={yearData}
-          monthNames={monthNames} primaryGoal={primaryGoal}
+          monthNames={monthNames} primaryGoal={currentPrimaryGoal}
           onGoToGoals={() => setSubTab('mål')}
         />
       )}
@@ -294,6 +313,36 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
               })
             )}
           </div>
+
+          {/* Health events history */}
+          {yearHealthEvents.length > 0 && (
+            <div className="space-y-2 mt-6">
+              <h3 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                Helsehendelser
+              </h3>
+              {yearHealthEvents.map(he => (
+                <div key={he.id} className="glass-card rounded-xl p-3 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                    {he.type === 'sickness' ? (
+                      <Ambulance className="w-4 h-4 text-destructive" />
+                    ) : (
+                      <Cross className="w-4 h-4 text-destructive" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">
+                      {he.type === 'sickness' ? 'Sykdom' : 'Skade'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(he.dateFrom).toLocaleDateString('nb-NO', { day: 'numeric', month: 'short' })}
+                      {he.dateTo && ` – ${new Date(he.dateTo).toLocaleDateString('nb-NO', { day: 'numeric', month: 'short' })}`}
+                    </p>
+                    {he.notes && <p className="text-xs text-muted-foreground mt-0.5">{he.notes}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
