@@ -174,10 +174,10 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
                   <StatTile icon={<Activity className="w-4 h-4" />} value={`${pace} /km`} label="Tempo" />
                 )}
                 {session.averageHeartrate != null && (
-                  <StatTile icon={<Heart className="w-4 h-4" />} value={`${session.averageHeartrate}`} label="Snitt puls" accent />
+                  <StatTile icon={<Heart className="w-4 h-4" />} value={`${session.averageHeartrate}`} label="Snittpuls" accent />
                 )}
                 {session.maxHeartrate != null && (
-                  <StatTile icon={<Heart className="w-4 h-4" />} value={`${session.maxHeartrate}`} label="Maks puls" accent />
+                  <StatTile icon={<Heart className="w-4 h-4" />} value={`${session.maxHeartrate}`} label="Makspuls" accent />
                 )}
               </div>
             </div>
