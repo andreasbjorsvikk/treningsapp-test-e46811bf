@@ -21,13 +21,18 @@ function clampOffset(
 ): { x: number; y: number } {
   const scaledW = fitW * zoom;
   const scaledH = fitH * zoom;
-  // How far from center the image can move before exposing background
   const maxX = Math.max(0, (scaledW - CIRCLE_SIZE) / 2);
   const maxY = Math.max(0, (scaledH - CIRCLE_SIZE) / 2);
   return {
     x: Math.max(-maxX, Math.min(maxX, ox)),
     y: Math.max(-maxY, Math.min(maxY, oy)),
   };
+}
+
+function getTouchDist(t1: React.Touch, t2: React.Touch) {
+  const dx = t2.clientX - t1.clientX;
+  const dy = t2.clientY - t1.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
 }
 
 const AvatarCropper = ({ open, imageFile, onConfirm, onCancel }: AvatarCropperProps) => {
@@ -39,7 +44,12 @@ const AvatarCropper = ({ open, imageFile, onConfirm, onCancel }: AvatarCropperPr
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
-  const pointers = useRef<Map<number, { x: number; y: number }>>(new Map());
+  // Use refs for gesture state so touch handlers always have fresh values
+  const zoomRef = useRef(zoom);
+  const offsetRef = useRef(offset);
+  useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+  useEffect(() => { offsetRef.current = offset; }, [offset]);
+
   const gestureStart = useRef<{ dist: number; zoom: number; ox: number; oy: number; cx: number; cy: number } | null>(null);
   const dragStart = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
 
@@ -62,74 +72,116 @@ const AvatarCropper = ({ open, imageFile, onConfirm, onCancel }: AvatarCropperPr
   const fitW = imgNatural.w * baseScale;
   const fitH = imgNatural.h * baseScale;
 
-  // Compute clamped position for display
   const clamped = clampOffset(offset.x, offset.y, zoom, fitW, fitH);
   const scaledW = fitW * zoom;
   const scaledH = fitH * zoom;
   const imgLeft = (CIRCLE_SIZE - scaledW) / 2 + clamped.x;
   const imgTop = (CIRCLE_SIZE - scaledH) / 2 + clamped.y;
 
-  const getTouchDist = (pts: { x: number; y: number }[]) => {
-    const dx = pts[1].x - pts[0].x;
-    const dy = pts[1].y - pts[0].y;
-    return Math.sqrt(dx * dx + dy * dy);
-  };
+  // Use native touch events to handle multi-touch correctly (all touches in one event)
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const onTouchStart = (e: TouchEvent) => {
+      e.preventDefault();
+      if (e.touches.length === 2) {
+        const dist = getTouchDist(e.touches[0], e.touches[1]);
+        gestureStart.current = {
+          dist,
+          zoom: zoomRef.current,
+          ox: offsetRef.current.x,
+          oy: offsetRef.current.y,
+          cx: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+          cy: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+        };
+        dragStart.current = null;
+      } else if (e.touches.length === 1) {
+        dragStart.current = {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY,
+          ox: offsetRef.current.x,
+          oy: offsetRef.current.y,
+        };
+        gestureStart.current = null;
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+      // Need current fitW/fitH — read from DOM closure isn't reliable, compute from refs
+      // We'll use a workaround: store fitW/fitH in a ref
+      const curFitW = el.dataset.fitw ? parseFloat(el.dataset.fitw) : 0;
+      const curFitH = el.dataset.fith ? parseFloat(el.dataset.fith) : 0;
+
+      if (e.touches.length === 2 && gestureStart.current) {
+        const dist = getTouchDist(e.touches[0], e.touches[1]);
+        const scaleFactor = dist / gestureStart.current.dist;
+        const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, gestureStart.current.zoom * scaleFactor));
+
+        const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        const rawX = gestureStart.current.ox + (cx - gestureStart.current.cx);
+        const rawY = gestureStart.current.oy + (cy - gestureStart.current.cy);
+        const newOffset = clampOffset(rawX, rawY, newZoom, curFitW, curFitH);
+
+        setZoom(newZoom);
+        setOffset(newOffset);
+      } else if (e.touches.length === 1 && dragStart.current) {
+        const rawX = dragStart.current.ox + (e.touches[0].clientX - dragStart.current.x);
+        const rawY = dragStart.current.oy + (e.touches[0].clientY - dragStart.current.y);
+        setOffset(clampOffset(rawX, rawY, zoomRef.current, curFitW, curFitH));
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) gestureStart.current = null;
+      if (e.touches.length === 0) dragStart.current = null;
+      if (e.touches.length === 1) {
+        dragStart.current = {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY,
+          ox: offsetRef.current.x,
+          oy: offsetRef.current.y,
+        };
+      }
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: false });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd);
+    el.addEventListener('touchcancel', onTouchEnd);
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, []);
+
+  // Also support mouse drag for desktop
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    dragStart.current = { x: e.clientX, y: e.clientY, ox: offset.x, oy: offset.y };
 
-    if (pointers.current.size === 2) {
-      const pts = Array.from(pointers.current.values());
-      gestureStart.current = {
-        dist: getTouchDist(pts),
-        zoom,
-        ox: offset.x,
-        oy: offset.y,
-        cx: (pts[0].x + pts[1].x) / 2,
-        cy: (pts[0].y + pts[1].y) / 2,
-      };
+    const onMouseMove = (me: MouseEvent) => {
+      if (!dragStart.current) return;
+      const rawX = dragStart.current.ox + (me.clientX - dragStart.current.x);
+      const rawY = dragStart.current.oy + (me.clientY - dragStart.current.y);
+      setOffset(clampOffset(rawX, rawY, zoomRef.current, fitW, fitH));
+    };
+    const onMouseUp = () => {
       dragStart.current = null;
-    } else if (pointers.current.size === 1) {
-      dragStart.current = { x: e.clientX, y: e.clientY, ox: offset.x, oy: offset.y };
-      gestureStart.current = null;
-    }
-  }, [offset, zoom]);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  }, [offset, fitW, fitH]);
 
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-    if (pointers.current.size === 2 && gestureStart.current) {
-      const pts = Array.from(pointers.current.values());
-      const newDist = getTouchDist(pts);
-      const scaleFactor = newDist / gestureStart.current.dist;
-      const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, gestureStart.current.zoom * scaleFactor));
-      setZoom(newZoom);
-
-      const cx = (pts[0].x + pts[1].x) / 2;
-      const cy = (pts[0].y + pts[1].y) / 2;
-      const rawX = gestureStart.current.ox + (cx - gestureStart.current.cx);
-      const rawY = gestureStart.current.oy + (cy - gestureStart.current.cy);
-      setOffset(clampOffset(rawX, rawY, newZoom, fitW, fitH));
-    } else if (pointers.current.size === 1 && dragStart.current) {
-      const rawX = dragStart.current.ox + (e.clientX - dragStart.current.x);
-      const rawY = dragStart.current.oy + (e.clientY - dragStart.current.y);
-      setOffset(clampOffset(rawX, rawY, zoom, fitW, fitH));
-    }
-  }, [zoom, fitW, fitH]);
-
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    pointers.current.delete(e.pointerId);
-    if (pointers.current.size < 2) gestureStart.current = null;
-    if (pointers.current.size === 0) dragStart.current = null;
-    if (pointers.current.size === 1) {
-      const remaining = Array.from(pointers.current.values())[0];
-      dragStart.current = { x: remaining.x, y: remaining.y, ox: offset.x, oy: offset.y };
-    }
-  }, [offset]);
-
-  // When zoom changes via slider, also clamp offset
   const handleZoomChange = useCallback((newZoom: number) => {
     setZoom(newZoom);
     setOffset(prev => clampOffset(prev.x, prev.y, newZoom, fitW, fitH));
@@ -146,14 +198,14 @@ const AvatarCropper = ({ open, imageFile, onConfirm, onCancel }: AvatarCropperPr
     ctx.arc(128, 128, 128, 0, Math.PI * 2);
     ctx.clip();
 
+    // Map from circle-space to canvas-space
     const outScale = 256 / CIRCLE_SIZE;
-    ctx.drawImage(
-      imgRef.current,
-      imgLeft * outScale,
-      imgTop * outScale,
-      scaledW * outScale,
-      scaledH * outScale,
-    );
+    const dx = imgLeft * outScale;
+    const dy = imgTop * outScale;
+    const dw = scaledW * outScale;
+    const dh = scaledH * outScale;
+
+    ctx.drawImage(imgRef.current, 0, 0, imgRef.current.naturalWidth, imgRef.current.naturalHeight, dx, dy, dw, dh);
 
     canvas.toBlob(blob => {
       if (blob) onConfirm(blob);
@@ -171,12 +223,12 @@ const AvatarCropper = ({ open, imageFile, onConfirm, onCancel }: AvatarCropperPr
         </p>
         <div className="flex justify-center">
           <div
+            ref={containerRef}
+            data-fitw={fitW}
+            data-fith={fitH}
             className="relative overflow-hidden rounded-full border-2 border-primary cursor-grab active:cursor-grabbing bg-muted"
             style={{ width: CIRCLE_SIZE, height: CIRCLE_SIZE, touchAction: 'none' }}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
+            onMouseDown={handleMouseDown}
           >
             {imgSrc && (
               <img
