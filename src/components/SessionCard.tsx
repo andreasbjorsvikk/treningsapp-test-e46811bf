@@ -1,16 +1,17 @@
 import { WorkoutSession } from '@/types/workout';
 import { sessionTypeConfig, formatDuration, formatDate } from '@/utils/workoutUtils';
 import { useSettings } from '@/contexts/SettingsContext';
-import { Clock, MapPin, MountainSnow } from 'lucide-react';
+import { Clock, MapPin, MountainSnow, Pencil } from 'lucide-react';
 import ActivityIcon from '@/components/ActivityIcon';
 import { getActivityColors } from '@/utils/activityColors';
 
 interface SessionCardProps {
   session: WorkoutSession;
   onClick?: (session: WorkoutSession) => void;
+  onEdit?: (session: WorkoutSession) => void;
 }
 
-const SessionCard = ({ session, onClick }: SessionCardProps) => {
+const SessionCard = ({ session, onClick, onEdit }: SessionCardProps) => {
   const config = sessionTypeConfig[session.type];
   const { settings } = useSettings();
   const isDark = settings.darkMode;
@@ -39,6 +40,14 @@ const SessionCard = ({ session, onClick }: SessionCardProps) => {
                 {formatDate(session.date)}
               </p>
             </div>
+            {onEdit && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onEdit(session); }}
+                className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-3 mt-1 flex-wrap">

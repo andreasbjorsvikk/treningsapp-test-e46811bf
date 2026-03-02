@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { WorkoutSession, WorkoutStreams } from '@/types/workout';
 import { sessionTypeConfig, formatDuration } from '@/utils/workoutUtils';
 import { getActivityColors } from '@/utils/activityColors';
@@ -18,9 +18,7 @@ import {
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { stravaService } from '@/services/stravaService';
 import { toast } from 'sonner';
-
-// Lazy load the map to ensure Leaflet initializes properly
-const RouteMap = lazy(() => import('@/components/RouteMap'));
+import RouteMap from '@/components/RouteMap';
 
 interface Props {
   session: WorkoutSession | null;
@@ -116,19 +114,13 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
 
             {/* Map */}
             {routePoints && mapReady && (
-              <Suspense fallback={
-                <div className="w-full flex items-center justify-center bg-secondary/50 text-xs text-muted-foreground" style={{ height: '192px' }}>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" /> Laster kart…
-                </div>
-              }>
-                <RouteMap
-                  key={session.id}
-                  routePoints={routePoints}
-                  lineColor={colors.text}
-                  tileUrl={tileUrl}
-                  height={192}
-                />
-              </Suspense>
+              <RouteMap
+                key={session.id}
+                routePoints={routePoints}
+                lineColor={colors.text}
+                tileUrl={tileUrl}
+                height={192}
+              />
             )}
 
             {/* Header */}

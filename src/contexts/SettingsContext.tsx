@@ -8,6 +8,8 @@ export type AccentColor = 'black' | 'orange' | 'blue' | 'green' | 'red' | 'purpl
 export type FirstDayOfWeek = 'monday' | 'sunday';
 export type UnitSystem = 'metric' | 'imperial';
 
+export type PrivacyLevel = 'me' | 'friends';
+
 export interface AppSettings {
   darkMode: boolean;
   colorTheme: AppColorTheme;
@@ -19,6 +21,9 @@ export interface AppSettings {
   language: Language;
   showPrimaryWheelsOnHome: boolean;
   disabledSessionTypes: SessionType[];
+  privacyWorkouts: PrivacyLevel;
+  privacyStats: PrivacyLevel;
+  privacyGoals: PrivacyLevel;
 }
 
 interface ThemeColors {
@@ -160,6 +165,9 @@ const defaultSettings: AppSettings = {
   language: 'no',
   showPrimaryWheelsOnHome: true,
   disabledSessionTypes: [],
+  privacyWorkouts: 'me',
+  privacyStats: 'me',
+  privacyGoals: 'me',
 };
 
 interface SettingsContextType {

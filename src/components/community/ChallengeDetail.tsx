@@ -2,7 +2,8 @@ import { Challenge, metricUnits, metricLabels } from '@/data/mockCommunity';
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter,
 } from '@/components/ui/drawer';
-import { Trophy } from 'lucide-react';
+import { Trophy, Link2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ChallengeDetailProps {
   challenge: Challenge | null;
@@ -85,6 +86,15 @@ const ChallengeDetail = ({ challenge, open, onClose }: ChallengeDetailProps) => 
           <DrawerFooter className="flex-row gap-2 pt-4">
             {challenge.status !== 'archived' && (
               <>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`https://treningsapp.no/challenge/${challenge.id}/invite`);
+                    toast.success('Invitasjonslenke kopiert!');
+                  }}
+                  className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-secondary text-sm font-medium hover:bg-secondary/80 transition-colors"
+                >
+                  <Link2 className="w-4 h-4" />
+                </button>
                 {challenge.createdBy === 'me' && (
                   <button className="flex-1 py-2.5 rounded-lg bg-secondary text-sm font-medium hover:bg-secondary/80 transition-colors">
                     Rediger
