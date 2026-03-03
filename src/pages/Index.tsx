@@ -27,7 +27,7 @@ import MiniCalendar from '@/components/MiniCalendar';
 import DraggableGoalGrid from '@/components/DraggableGoalGrid';
 import ChallengeCard from '@/components/community/ChallengeCard';
 import ChallengeDetail from '@/components/community/ChallengeDetail';
-import { Plus, Sun, Moon, Dumbbell, Ambulance, LogIn, RefreshCw, Loader2, GripVertical, Check, User } from 'lucide-react';
+import { Plus, Sun, Moon, Dumbbell, Ambulance, LogIn, RefreshCw, Loader2, GripVertical, Check, User, TrendingUp, Flame, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -99,10 +99,13 @@ const IndexContent = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOrder, setDragOrder] = useState<string[]>([]);
-  const lastOverId = useRef<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressStartPos = useRef<{ x: number; y: number } | null>(null);
+  // Track the initial order snapshot to implement stable swaps
+  const initialOrderRef = useRef<string[]>([]);
+  // Prevent touch move from firing swaps on the same frame as activation
+  const dragJustActivated = useRef(false);
 
   const reorderableIds = isMobile ? MOBILE_REORDERABLE_IDS : DESKTOP_REORDERABLE_IDS;
   const sectionOrder = settings.homeSectionOrder?.length === reorderableIds.length
@@ -194,8 +197,8 @@ const IndexContent = () => {
   }, [allSessions, allPeriods, t]);
 
   const homeGoals = appData.goals.filter(g => g.showOnHome);
-  const pinnedChallenges: ChallengeWithParticipants[] = []; // TODO: load from DB
-  const unreadNotifications = 0; // TODO: load from DB
+  const pinnedChallenges: ChallengeWithParticipants[] = [];
+  const unreadNotifications = 0;
 
   const handleDelete = async (id: string) => { await appData.deleteSession(id); };
   const handleEdit = (session: WorkoutSession) => { setEditSession(session); setDialogOpen(true); };
@@ -235,20 +238,19 @@ const IndexContent = () => {
   // === Direct drag handlers ===
   const startDrag = (id: string) => {
     const order = [...sectionOrder];
+    initialOrderRef.current = [...order];
     setDragOrder(order);
     setDragId(id);
-    lastOverId.current = null;
+    dragJustActivated.current = true;
     setIsDragging(true);
     if (navigator.vibrate) navigator.vibrate(30);
-    if (isMobile) {
-      setTimeout(() => {
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-      }, 100);
-    }
+    // Reset flag after a frame so touch move doesn't fire immediately
+    requestAnimationFrame(() => {
+      dragJustActivated.current = false;
+    });
   };
 
   const handleLongPressStart = (id: string, e?: React.PointerEvent | React.TouchEvent) => {
-    // Record start position to detect scroll
     if (e && 'clientX' in e) {
       longPressStartPos.current = { x: e.clientX, y: e.clientY };
     } else if (e && 'touches' in e && e.touches.length > 0) {
@@ -270,8 +272,8 @@ const IndexContent = () => {
     else return;
     const dx = Math.abs(cx - longPressStartPos.current.x);
     const dy = Math.abs(cy - longPressStartPos.current.y);
+    // Cancel on ANY movement (horizontal or vertical) > 8px
     if (dx > 8 || dy > 8) {
-      // User is scrolling, cancel long press
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
       longPressStartPos.current = null;
@@ -287,13 +289,14 @@ const IndexContent = () => {
   const handleDragOver = (e: React.DragEvent, overId: string) => {
     e.preventDefault();
     if (dragId && dragId !== overId) {
+      // Use initial order for stable swap: find where dragId and overId were originally
       setDragOrder(prev => {
         const next = [...prev];
         const fromIdx = next.indexOf(dragId!);
         const toIdx = next.indexOf(overId);
-        if (fromIdx !== -1 && toIdx !== -1) {
-          // Swap only dragged and target
-          next[fromIdx] = next[toIdx];
+        if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+          // Simple adjacent swap
+          next[fromIdx] = overId;
           next[toIdx] = dragId!;
         }
         return next;
@@ -301,7 +304,6 @@ const IndexContent = () => {
     }
   };
   const handleDragEnd = () => {
-    // Don't save on drop - save only on "Ferdig" button click
     setDragId(null);
   };
 
@@ -310,7 +312,26 @@ const IndexContent = () => {
     handleLongPressStart(id, e);
   };
 
+  // Streak / motivational data
+  const currentStreak = useMemo(() => {
+    if (allSessions.length === 0) return 0;
+    let streak = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dayMs = 86400000;
+    for (let d = 0; d < 365; d++) {
+      const checkDate = new Date(today.getTime() - d * dayMs);
+      const dateStr = checkDate.toISOString().split('T')[0];
+      if (allSessions.some(s => s.date === dateStr)) {
+        streak++;
+      } else if (d > 0) {
+        break;
+      }
+    }
+    return streak;
+  }, [allSessions]);
 
+  const totalThisWeek = appData.weekStats.totalSessions;
 
   const StatModeToggle = () => (
     <div className="flex items-center gap-1 mb-1">
@@ -393,7 +414,7 @@ const IndexContent = () => {
         return (
           <>
             <div className="flex items-center justify-end mb-3 -mt-1">
-              <Button size="sm" onClick={() => { setEditSession(undefined); setDialogOpen(true); }}>
+              <Button size="sm" onClick={() => { setEditSession(undefined); setDialogOpen(true); }} className="gradient-energy text-primary-foreground border-0 shadow-md">
                 <Plus className="w-4 h-4 mr-1" /> {t('home.newSession')}
               </Button>
             </div>
@@ -415,50 +436,90 @@ const IndexContent = () => {
   const ProfileButton = ({ className }: { className?: string }) => (
     <button
       onClick={() => { setActiveTab('settings'); setTimeout(() => window.dispatchEvent(new CustomEvent('navigate-to-profile')), 50); }}
-      className={`rounded-full transition-all hover:ring-2 hover:ring-primary/30 ${className || ''}`}
+      className={`rounded-full transition-all hover:ring-2 hover:ring-energy/30 ${className || ''}`}
     >
-      <Avatar className="w-8 h-8">
+      <Avatar className="w-9 h-9 ring-2 ring-energy/40">
         {avatarUrl ? <AvatarImage src={avatarUrl} alt="Profil" /> : null}
-        <AvatarFallback className="text-xs font-bold">
+        <AvatarFallback className="text-xs font-bold bg-energy/20 text-foreground">
           {(username || user?.email?.charAt(0) || 'U').charAt(0).toUpperCase()}
         </AvatarFallback>
       </Avatar>
     </button>
   );
 
+  // Greeting based on time of day
+  const greeting = useMemo(() => {
+    const h = new Date().getHours();
+    if (h < 6) return 'God natt';
+    if (h < 12) return 'God morgen';
+    if (h < 18) return 'Hei';
+    return 'God kveld';
+  }, []);
+  const displayName = username || user?.email?.split('@')[0] || '';
+
   return (
     <div className="min-h-screen bg-background pb-20 lg:pb-0 lg:pt-16">
-      <main className="container py-6 space-y-6">
+      <main className="container py-4 space-y-5">
         {activeTab === 'hjem' && (
           <>
-            {/* Top header row with profile + actions */}
-            <div className="flex items-center justify-between -mb-4">
-              {/* Left: profile (mobile only) */}
-              <div className="lg:hidden">
-                {user && <ProfileButton />}
-              </div>
-              {/* Right: actions */}
-              <div className="flex items-center gap-1 ml-auto">
-                {user && (
-                  <Button size="icon" variant="ghost" className="rounded-full h-9 w-9" onClick={handleManualSync} disabled={stravaSyncing}>
-                    {stravaSyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                  </Button>
-                )}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button size="icon" variant="ghost" className="rounded-full h-9 w-9">
-                      <Plus className="w-5 h-5" />
+            {/* ===== HERO HEADER ===== */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-energy/10 via-background to-accent/5 border border-border/30 px-5 py-5">
+              {/* Decorative shapes */}
+              <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-energy/10 blur-2xl" />
+              <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-accent/10 blur-2xl" />
+              
+              <div className="relative flex items-center justify-between">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  {user && <ProfileButton />}
+                  <div className="min-w-0">
+                    <p className="text-xs text-muted-foreground font-medium">{greeting}</p>
+                    <h1 className="font-display font-bold text-lg text-foreground truncate">{displayName}</h1>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  {currentStreak > 0 && (
+                    <div className="flex items-center gap-1 bg-energy/15 text-energy rounded-full px-2.5 py-1 mr-1">
+                      <Flame className="w-3.5 h-3.5" />
+                      <span className="text-xs font-bold">{currentStreak}</span>
+                    </div>
+                  )}
+                  {user && (
+                    <Button size="icon" variant="ghost" className="rounded-full h-9 w-9" onClick={handleManualSync} disabled={stravaSyncing}>
+                      {stravaSyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                     </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => { setEditSession(undefined); setDialogOpen(true); }}>
-                      <Dumbbell className="w-4 h-4 mr-2" /> {t('home.newSession')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setHealthDialogOpen(true)}>
-                      <Ambulance className="w-4 h-4 mr-2" /> {t('health.newEvent')}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="icon" variant="ghost" className="rounded-full h-9 w-9">
+                        <Plus className="w-5 h-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => { setEditSession(undefined); setDialogOpen(true); }}>
+                        <Dumbbell className="w-4 h-4 mr-2" /> {t('home.newSession')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setHealthDialogOpen(true)}>
+                        <Ambulance className="w-4 h-4 mr-2" /> {t('health.newEvent')}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+
+              {/* Quick stats bar */}
+              <div className="relative flex items-center gap-4 mt-4 pt-3 border-t border-border/30">
+                <div className="flex items-center gap-1.5">
+                  <Target className="w-3.5 h-3.5 text-energy" />
+                  <span className="text-xs text-muted-foreground">Denne uken</span>
+                  <span className="text-sm font-bold text-foreground">{totalThisWeek} økter</span>
+                </div>
+                {primaryGoal && (
+                  <div className="flex items-center gap-1.5">
+                    <TrendingUp className="w-3.5 h-3.5 text-accent" />
+                    <span className="text-xs text-muted-foreground">Mål</span>
+                    <span className="text-sm font-bold text-foreground">{monthData.current}/{monthData.target}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -467,21 +528,18 @@ const IndexContent = () => {
               {/* Desktop: 4-column layout */}
               {!isMobile && (
                 <div className="grid grid-cols-4 gap-3 items-stretch">
-                  {/* Col 1: Month wheel */}
                   <ProgressWheel
                     percent={monthData.percent} current={monthData.current} target={monthData.target}
                     unit={monthData.unit} title={t(`month.${new Date().getMonth()}`)}
                     hasGoal={!!primaryGoal} expectedFraction={monthData.expectedFraction}
                     paceDiff={monthData.diff} showPaceLabel onClick={navigateToGoals}
                   />
-                  {/* Col 2: Year wheel */}
                   <ProgressWheel
                     percent={yearData.percent} current={yearData.current} target={yearData.target}
                     unit={yearData.unit} title={String(new Date().getFullYear())}
                     hasGoal={!!primaryGoal} expectedFraction={yearData.expectedFraction}
                     paceDiff={yearData.diff} showPaceLabel onClick={navigateToGoals}
                   />
-                  {/* Col 3: Stats + Last 7 days stacked */}
                   <div className="space-y-3">
                     <div>
                       <StatModeToggle />
@@ -494,7 +552,6 @@ const IndexContent = () => {
                       <WeeklySessionIcons sessions={allSessions} onClick={navigateToHistory} />
                     </div>
                   </div>
-                  {/* Col 4: Mini calendar */}
                   <div>
                     <MiniCalendar sessions={allSessions} onClick={navigateToCalendar} />
                   </div>
@@ -509,6 +566,8 @@ const IndexContent = () => {
               style={isDragging ? { touchAction: 'none', overflowX: 'hidden' } : undefined}
               onTouchMove={(e) => {
                 if (isDragging && dragId) {
+                  // Skip if drag just activated this frame
+                  if (dragJustActivated.current) return;
                   e.preventDefault();
                   e.stopPropagation();
                   const touch = e.touches[0];
@@ -516,17 +575,15 @@ const IndexContent = () => {
                   const target = el?.closest('[data-section-id]');
                   if (target) {
                     const overId = target.getAttribute('data-section-id');
-                    if (overId && overId !== dragId && overId !== lastOverId.current) {
-                      lastOverId.current = overId;
+                    if (overId && overId !== dragId) {
                       setDragOrder(prev => {
+                        const fromIdx = prev.indexOf(dragId!);
+                        const toIdx = prev.indexOf(overId);
+                        if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return prev;
+                        // Simple swap: only the two items exchange
                         const next = [...prev];
-                        const fromIdx = next.indexOf(dragId!);
-                        const toIdx = next.indexOf(overId);
-                        if (fromIdx !== -1 && toIdx !== -1) {
-                          // Swap: only the dragged item and the target swap positions
-                          next[fromIdx] = next[toIdx];
-                          next[toIdx] = dragId!;
-                        }
+                        next[fromIdx] = overId;
+                        next[toIdx] = dragId!;
                         return next;
                       });
                       if (navigator.vibrate) navigator.vibrate(10);
@@ -538,7 +595,6 @@ const IndexContent = () => {
                 handleLongPressEnd();
                 if (isDragging) {
                   setDragId(null);
-                  lastOverId.current = null;
                 }
               }}
             >
@@ -561,17 +617,17 @@ const IndexContent = () => {
                     onDragEnd={handleDragEnd}
                     className={`transition-all duration-200 ease-in-out ${
                       isDragging
-                        ? `rounded-xl px-3 py-3 mx-0 ${dragId === id ? 'bg-primary/10 scale-[1.02] shadow-md ring-2 ring-primary/30' : 'bg-secondary/30'}`
+                        ? `rounded-xl px-3 py-3 mx-0 ${dragId === id ? 'bg-energy/10 scale-[1.02] shadow-md ring-2 ring-energy/30' : 'bg-secondary/30'}`
                         : ''
                     }`}
                   >
                     <div
                       className="flex items-center gap-2 select-none"
-                      onPointerDown={(e) => handleLongPressStart(id, e)}
+                      onPointerDown={(e) => { if (!isDragging) handleLongPressStart(id, e); }}
                       onPointerMove={handleLongPressMove}
                       onPointerUp={handleLongPressEnd}
                       onPointerLeave={handleLongPressEnd}
-                      onTouchStart={(e) => handleTouchStart(id, e)}
+                      onTouchStart={(e) => { if (!isDragging) handleTouchStart(id, e); }}
                       onTouchMove={(te) => { handleLongPressMove(te); }}
                     >
                       {isDragging && <GripVertical className="w-4 h-4 text-muted-foreground shrink-0" />}
@@ -584,7 +640,7 @@ const IndexContent = () => {
                 );
               })}
               {isDragging && (
-                <Button onClick={() => { updateSettings({ homeSectionOrder: dragOrder }); setDragId(null); setIsDragging(false); }} className="w-full" size="sm">
+                <Button onClick={() => { updateSettings({ homeSectionOrder: dragOrder }); setDragId(null); setIsDragging(false); }} className="w-full gradient-energy text-primary-foreground border-0" size="sm">
                   <Check className="w-4 h-4 mr-1" /> Ferdig
                 </Button>
               )}
@@ -609,7 +665,6 @@ const IndexContent = () => {
         active={activeTab}
         onNavigate={(tab) => {
           setInitialStatPeriod(undefined);
-          // Reset reorder mode when navigating away
           if (isDragging) {
             setIsDragging(false);
             setDragId(null);

@@ -10,12 +10,10 @@ interface MapboxRouteMapProps {
   isDark: boolean;
 }
 
-// Encode polyline in Google's format for Mapbox Static API
 function encodePolylineForMapbox(points: [number, number][]): string {
   let encoded = '';
   let prevLat = 0;
   let prevLng = 0;
-
   for (const [lat, lng] of points) {
     const dLat = Math.round((lat - prevLat) * 1e5);
     const dLng = Math.round((lng - prevLng) * 1e5);
@@ -48,11 +46,12 @@ function simplifyPoints(points: [number, number][], maxPoints: number): [number,
 }
 
 function getStaticMapUrl(routePoints: [number, number][], lineColor: string, width: number, height: number, isDark: boolean): string {
-  const style = isDark ? 'dark-v11' : 'light-v11';
-  const simplified = simplifyPoints(routePoints, 150);
+  // Use outdoors for light, navigation-night for dark
+  const style = isDark ? 'navigation-night-v1' : 'outdoors-v12';
+  const simplified = simplifyPoints(routePoints, 120);
   const encoded = encodePolylineForMapbox(simplified);
   const color = lineColor.replace('#', '');
-  const overlay = `path-4+${color}-1(${encodeURIComponent(encoded)})`;
+  const overlay = `path-4+${color}-0.95(${encodeURIComponent(encoded)})`;
   const retina = window.devicePixelRatio >= 2 ? '@2x' : '';
   return `https://api.mapbox.com/styles/v1/mapbox/${style}/static/${overlay}/auto/${width}x${height}${retina}?padding=40&access_token=${MAPBOX_TOKEN}`;
 }
@@ -69,14 +68,12 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
     return getStaticMapUrl(routePoints, lineColor, 600, Math.round(height * 1.5), isDark);
   }, [routePoints, lineColor, height, isDark]);
 
-  // Lazy-load Leaflet only when interactive mode is activated
   const initInteractiveMap = useCallback(async () => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
-    
+
     const L = (await import('leaflet')).default;
     await import('leaflet/dist/leaflet.css');
-    
-    // Fix default icon
+
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
       iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -91,7 +88,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
       [Math.max(...lats) + 0.002, Math.max(...lngs) + 0.005],
     ];
 
-    const tileStyle = isDark ? 'dark-v11' : 'light-v11';
+    const tileStyle = isDark ? 'navigation-night-v1' : 'outdoors-v12';
     const tileUrl = `https://api.mapbox.com/styles/v1/mapbox/${tileStyle}/tiles/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`;
 
     const map = L.map(mapContainerRef.current, {
@@ -102,12 +99,11 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
     });
 
     L.tileLayer(tileUrl, { tileSize: 512, zoomOffset: -1 }).addTo(map);
-    L.polyline(routePoints, { color: lineColor, weight: 4, opacity: 0.9 }).addTo(map);
+    L.polyline(routePoints, { color: lineColor, weight: 4, opacity: 0.95 }).addTo(map);
 
     map.fitBounds(bounds);
     mapInstanceRef.current = map;
 
-    // Invalidate size after render
     setTimeout(() => map.invalidateSize(), 50);
     setTimeout(() => map.invalidateSize(), 200);
     setTimeout(() => map.invalidateSize(), 500);
@@ -125,7 +121,6 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
     };
   }, [interactive, initInteractiveMap]);
 
-  // Also init if imgError forces interactive
   useEffect(() => {
     if (imgError) {
       initInteractiveMap();
