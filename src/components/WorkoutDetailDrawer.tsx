@@ -5,7 +5,7 @@ import { getActivityColors } from '@/utils/activityColors';
 import { decodePolyline } from '@/utils/polyline';
 import { useSettings } from '@/contexts/SettingsContext';
 import ActivityIcon from '@/components/ActivityIcon';
-import RouteMapSVG from '@/components/RouteMapSVG';
+import MapboxRouteMap from '@/components/MapboxRouteMap';
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter,
 } from '@/components/ui/drawer';
@@ -96,9 +96,9 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
               <DrawerDescription>Øktdetaljer</DrawerDescription>
             </DrawerHeader>
 
-            {/* SVG Route Map - no external dependencies, always works */}
+            {/* Mapbox Route Map */}
             {routePoints && (
-              <RouteMapSVG
+              <MapboxRouteMap
                 routePoints={routePoints}
                 lineColor={colors.text}
                 height={192}

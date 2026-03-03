@@ -5,7 +5,8 @@ import { AppDataProvider, useAppDataContext } from '@/contexts/AppDataContext';
 import { computeMonthWheelData, computeYearWheelData } from '@/utils/goalWheelData';
 import { useAuth } from '@/hooks/useAuth';
 import { stravaService } from '@/services/stravaService';
-import { mockChallenges, Challenge, mockNotifications } from '@/data/mockCommunity';
+import { getChallenges, getChallengeParticipants, getChallengeProgress, getUnreadNotificationCount, ChallengeRow } from '@/services/communityService';
+import { ChallengeWithParticipants } from '@/pages/CommunityPage';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -79,7 +80,7 @@ const IndexContent = () => {
   const [homeStatMode, setHomeStatMode] = useState<'week' | 'month'>('week');
   const [stravaSyncing, setStravaSyncing] = useState(false);
   const [detailSession, setDetailSession] = useState<WorkoutSession | null>(null);
-  const [challengeDetail, setChallengeDetail] = useState<Challenge | null>(null);
+  const [challengeDetail, setChallengeDetail] = useState<ChallengeWithParticipants | null>(null);
 
   // Profile info
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -192,10 +193,8 @@ const IndexContent = () => {
   }, [allSessions, allPeriods, t]);
 
   const homeGoals = appData.goals.filter(g => g.showOnHome);
-  const pinnedChallenges = mockChallenges.filter(c => settings.pinnedChallengeIds?.includes(c.id));
-
-  // Notification count for community tab
-  const unreadNotifications = mockNotifications.filter(n => !n.read).length;
+  const pinnedChallenges: ChallengeWithParticipants[] = []; // TODO: load from DB
+  const unreadNotifications = 0; // TODO: load from DB
 
   const handleDelete = async (id: string) => { await appData.deleteSession(id); };
   const handleEdit = (session: WorkoutSession) => { setEditSession(session); setDialogOpen(true); };
@@ -255,7 +254,7 @@ const IndexContent = () => {
     } else {
       longPressStartPos.current = null;
     }
-    longPressTimer.current = setTimeout(() => startDrag(id), 500);
+    longPressTimer.current = setTimeout(() => startDrag(id), 700);
   };
   const handleLongPressEnd = () => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
@@ -371,7 +370,7 @@ const IndexContent = () => {
         return (
           <div className="space-y-2">
             {pinnedChallenges.map(c => (
-              <ChallengeCard key={c.id} challenge={c} onClick={setChallengeDetail} />
+              <ChallengeCard key={c.challenge.id} challenge={c} onClick={() => setChallengeDetail(c)} />
             ))}
           </div>
         );
@@ -427,18 +426,6 @@ const IndexContent = () => {
   return (
     <div className="min-h-screen bg-background pb-20 lg:pb-0 lg:pt-16">
       <main className="container py-6 space-y-6">
-        {/* Auth banner */}
-        {!user && activeTab === 'hjem' && (
-          <div className="glass-card rounded-xl p-3 flex items-center justify-between gap-3 border-dashed">
-            <p className="text-xs text-muted-foreground">
-              Du bruker appen uten innlogging. Data lagres kun lokalt.
-            </p>
-            <Button size="sm" variant="outline" onClick={() => navigate('/login')} className="shrink-0">
-              <LogIn className="w-3.5 h-3.5 mr-1" /> Logg inn
-            </Button>
-          </div>
-        )}
-
         {activeTab === 'hjem' && (
           <>
             {/* Top header row with profile + actions */}
@@ -567,7 +554,7 @@ const IndexContent = () => {
                     onDragEnd={handleDragEnd}
                     className={`transition-all duration-200 ease-in-out ${
                       isDragging
-                        ? `rounded-xl px-2.5 py-2.5 mx-1 ${dragId === id ? 'bg-primary/10 scale-[1.02] shadow-md ring-2 ring-primary/30' : 'bg-secondary/30'}`
+                        ? `rounded-xl px-3 py-3 mx-0 ${dragId === id ? 'bg-primary/10 scale-[1.02] shadow-md ring-2 ring-primary/30' : 'bg-secondary/30'}`
                         : ''
                     }`}
                   >

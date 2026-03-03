@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import CommunitySubTabs from '@/components/community/CommunitySubTabs';
 import ChallengeCard from '@/components/community/ChallengeCard';
 import ChallengeDetail from '@/components/community/ChallengeDetail';
@@ -8,8 +8,10 @@ import FriendsSection from '@/components/community/FriendsSection';
 import UserProfileDrawer from '@/components/community/UserProfileDrawer';
 import NotificationBell from '@/components/community/NotificationBell';
 import NotificationSheet from '@/components/community/NotificationSheet';
-import { mockChallenges, Challenge, MockUser } from '@/data/mockCommunity';
-import { Plus } from 'lucide-react';
+import { getChallenges, getChallengeParticipants, getChallengeProgress, getNotifications, getUnreadNotificationCount, ChallengeRow, Friend } from '@/services/communityService';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { Plus, Loader2 } from 'lucide-react';
 
 const mainTabs = [
   { id: 'challenges', label: 'Utfordringer' },
@@ -23,30 +25,91 @@ const challengeFilterTabs = [
   { id: 'archived', label: 'Arkiv' },
 ];
 
+export interface ChallengeWithParticipants {
+  challenge: ChallengeRow;
+  participants: { userId: string; username: string; avatarUrl: string | null; progress: number; rank: number; status: string }[];
+}
+
 const CommunityPage = () => {
+  const { user } = useAuth();
   const [mainTab, setMainTab] = useState('challenges');
   const [challengeFilter, setChallengeFilter] = useState('active');
-  const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
+  const [selectedChallenge, setSelectedChallenge] = useState<ChallengeWithParticipants | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [profileUser, setProfileUser] = useState<MockUser | null>(null);
-  const [preselectedUser, setPreselectedUser] = useState<MockUser | null>(null);
+  const [profileUser, setProfileUser] = useState<Friend | null>(null);
+  const [preselectedUser, setPreselectedUser] = useState<Friend | null>(null);
+  const [challenges, setChallenges] = useState<ChallengeWithParticipants[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  const filteredChallenges = mockChallenges.filter(c => {
-    if (challengeFilter === 'active') return c.status === 'active';
-    if (challengeFilter === 'mine') return c.status === 'mine' || c.createdBy === 'me';
-    if (challengeFilter === 'archived') return c.status === 'archived';
+  const loadChallenges = useCallback(async () => {
+    setLoading(true);
+    const raw = await getChallenges();
+    const enriched: ChallengeWithParticipants[] = [];
+
+    for (const c of raw) {
+      const parts = await getChallengeParticipants(c.id);
+      const acceptedParts = parts.filter(p => p.status === 'accepted');
+      const userIds = acceptedParts.map(p => p.user_id);
+
+      // Get profiles
+      const { data: profiles } = await supabase.from('profiles').select('id, username, avatar_url').in('id', userIds);
+      const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+
+      // Get progress
+      const progress = userIds.length > 0 ? await getChallengeProgress(c, userIds) : {};
+
+      const participantData = acceptedParts.map(p => {
+        const profile = profileMap.get(p.user_id);
+        return {
+          userId: p.user_id,
+          username: profile?.username || 'Ukjent',
+          avatarUrl: profile?.avatar_url || null,
+          progress: progress[p.user_id] || 0,
+          rank: 0,
+          status: p.status,
+        };
+      }).sort((a, b) => b.progress - a.progress);
+
+      participantData.forEach((p, i) => { p.rank = i + 1; });
+
+      enriched.push({ challenge: c, participants: participantData });
+    }
+
+    setChallenges(enriched);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { loadChallenges(); }, [loadChallenges]);
+
+  useEffect(() => {
+    getUnreadNotificationCount().then(setUnreadCount);
+  }, []);
+
+  const filteredChallenges = challenges.filter(c => {
+    const now = new Date().toISOString().split('T')[0];
+    const isEnded = c.challenge.period_end < now;
+    const isMine = c.challenge.created_by === user?.id;
+
+    if (challengeFilter === 'active') return !isEnded;
+    if (challengeFilter === 'mine') return isMine && !isEnded;
+    if (challengeFilter === 'archived') return isEnded;
     return true;
   });
 
-  const handleInviteToChallenge = (user: MockUser) => {
+  const handleInviteToChallenge = (friend: Friend) => {
     setProfileUser(null);
-    setPreselectedUser(user);
+    setPreselectedUser(friend);
     setTimeout(() => setShowForm(true), 200);
   };
 
   const handleNavigateToFriends = () => {
     setMainTab('friends');
+  };
+
+  const handleSelectChallenge = (cWithP: ChallengeWithParticipants) => {
+    setSelectedChallenge(cWithP);
   };
 
   return (
@@ -56,7 +119,7 @@ const CommunityPage = () => {
         <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">
           Fellesskap
         </h2>
-        <NotificationBell onClick={() => setShowNotifications(true)} />
+        <NotificationBell onClick={() => setShowNotifications(true)} count={unreadCount} />
       </div>
 
       {/* Main tabs */}
@@ -85,17 +148,25 @@ const CommunityPage = () => {
             <Plus className="w-4 h-4" /> Ny utfordring
           </button>
 
-          <div className="space-y-2">
-            {filteredChallenges.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <p className="text-sm">Ingen utfordringer her ennå</p>
-              </div>
-            ) : (
-              filteredChallenges.map(c => (
-                <ChallengeCard key={c.id} challenge={c} onClick={setSelectedChallenge} />
-              ))
-            )}
-          </div>
+          {loading ? (
+            <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+          ) : (
+            <div className="space-y-2">
+              {filteredChallenges.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p className="text-sm">Ingen utfordringer her ennå</p>
+                </div>
+              ) : (
+                filteredChallenges.map(c => (
+                  <ChallengeCard
+                    key={c.challenge.id}
+                    challenge={c}
+                    onClick={() => handleSelectChallenge(c)}
+                  />
+                ))
+              )}
+            </div>
+          )}
         </>
       )}
 
@@ -115,10 +186,11 @@ const CommunityPage = () => {
         open={showForm}
         onClose={() => { setShowForm(false); setPreselectedUser(null); }}
         preselectedUser={preselectedUser}
+        onCreated={loadChallenges}
       />
       <NotificationSheet
         open={showNotifications}
-        onClose={() => setShowNotifications(false)}
+        onClose={() => { setShowNotifications(false); getUnreadNotificationCount().then(setUnreadCount); }}
         onNavigateToFriends={handleNavigateToFriends}
       />
       <UserProfileDrawer

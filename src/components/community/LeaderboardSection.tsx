@@ -1,35 +1,32 @@
-import { useState } from 'react';
-import { mockLeaderboard, metricUnits, LeaderboardEntry, MockUser } from '@/data/mockCommunity';
+import { useState, useEffect } from 'react';
+import { getLeaderboard, Friend } from '@/services/communityService';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import { getActivityColors } from '@/utils/activityColors';
 import { useSettings } from '@/contexts/SettingsContext';
 import ActivityIcon from '@/components/ActivityIcon';
 import UserProfileDrawer from '@/components/community/UserProfileDrawer';
-import { Trophy } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Trophy, Loader2 } from 'lucide-react';
 
 const periodTabs = [
-  { id: 'weekly', label: 'Ukentlig' },
-  { id: 'monthly', label: 'Månedlig' },
-  { id: 'yearly', label: 'Årlig' },
-];
-
-const categoryTabs = [
-  { id: 'sessions', label: 'Økter' },
-  { id: 'distance', label: 'Distanse' },
-  { id: 'duration', label: 'Total tid' },
-  { id: 'elevation', label: 'Høydemeter' },
+  { id: 'week' as const, label: 'Ukentlig' },
+  { id: 'month' as const, label: 'Månedlig' },
+  { id: 'all' as const, label: 'Totalt' },
 ];
 
 const LeaderboardSection = () => {
   const { settings } = useSettings();
   const isDark = settings.darkMode;
-  const [period, setPeriod] = useState('monthly');
-  const [category, setCategory] = useState('sessions');
+  const [period, setPeriod] = useState<'week' | 'month' | 'all'>('month');
   const [selectedType, setSelectedType] = useState<string>('all');
-  const [profileUser, setProfileUser] = useState<MockUser | null>(null);
+  const [profileUser, setProfileUser] = useState<Friend | null>(null);
+  const [data, setData] = useState<{ user: Friend; value: number; rank: number }[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const unit = metricUnits[category as keyof typeof metricUnits] || '';
-  const data: LeaderboardEntry[] = mockLeaderboard;
+  useEffect(() => {
+    setLoading(true);
+    getLeaderboard(period).then(d => { setData(d); setLoading(false); });
+  }, [period]);
 
   return (
     <div className="space-y-3">
@@ -43,20 +40,6 @@ const LeaderboardSection = () => {
             }`}
           >
             {tab.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex gap-1 mb-3">
-        {categoryTabs.map(cat => (
-          <button
-            key={cat.id}
-            onClick={() => setCategory(cat.id)}
-            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
-              category === cat.id ? 'bg-accent text-accent-foreground' : 'bg-secondary text-muted-foreground'
-            }`}
-          >
-            {cat.label}
           </button>
         ))}
       </div>
@@ -92,28 +75,31 @@ const LeaderboardSection = () => {
         })}
       </div>
 
-      {data.length === 0 ? (
+      {loading ? (
+        <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+      ) : data.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
-          <p className="text-sm">Inviter venner for å starte konkurranse</p>
+          <p className="text-sm">Legg til venner for å se ledertavlen</p>
         </div>
       ) : (
         <div className="space-y-1">
           {data.map((entry, i) => (
             <button
               key={entry.user.id}
-              onClick={() => entry.user.id !== 'me' && setProfileUser(entry.user)}
+              onClick={() => entry.user.username !== 'Meg' && setProfileUser(entry.user)}
               className={`w-full flex items-center gap-3 rounded-lg bg-secondary/50 p-2.5 text-left ${
-                entry.user.id !== 'me' ? 'hover:bg-secondary/70 cursor-pointer' : ''
+                entry.user.username !== 'Meg' ? 'hover:bg-secondary/70 cursor-pointer' : ''
               } transition-colors`}
             >
               <span className={`font-display font-bold text-sm w-6 text-center ${i === 0 ? 'text-warning' : 'text-muted-foreground'}`}>
                 {i === 0 ? <Trophy className="w-4 h-4 inline text-warning" /> : `#${entry.rank}`}
               </span>
-              <div className="w-6 h-6 rounded-full bg-secondary border border-background flex items-center justify-center shrink-0">
-                <span className="text-[10px] font-medium">{entry.user.username[0]}</span>
-              </div>
+              <Avatar className="w-6 h-6">
+                {entry.user.avatarUrl ? <AvatarImage src={entry.user.avatarUrl} /> : null}
+                <AvatarFallback className="text-[10px] font-medium">{(entry.user.username || '?')[0]}</AvatarFallback>
+              </Avatar>
               <span className="flex-1 text-sm font-medium truncate">{entry.user.username}</span>
-              <span className="text-sm font-display font-bold">{entry.value}{unit ? ` ${unit}` : ''}</span>
+              <span className="text-sm font-display font-bold">{entry.value}</span>
             </button>
           ))}
         </div>
