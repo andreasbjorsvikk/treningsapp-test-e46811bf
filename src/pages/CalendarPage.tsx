@@ -601,6 +601,7 @@ const CalendarPage = () => {
       <DayDrawer
         dateKey={selectedDay}
         sessions={selectedSessions}
+        healthEvents={selectedDay ? (healthEventDates.get(selectedDay) || []) : []}
         onClose={() => setSelectedDay(null)}
         onRefresh={triggerRefresh}
         onNavigateToCalendar={() => setSelectedDay(null)}

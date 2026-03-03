@@ -832,10 +832,16 @@ const SettingsPage = () => {
              <h3 className="font-display font-semibold text-base">{t('help.trainingGoals')}</h3>
            </div>
            <div className="bg-secondary/50 rounded-xl p-4 space-y-2">
-             <div className="flex gap-3 items-center">
-               <div className="w-16 h-16 rounded-full border-4 border-success/30 flex items-center justify-center shrink-0">
-                 <span className="text-xs font-bold text-[hsl(var(--success))]">75%</span>
-               </div>
+              <div className="flex gap-3 items-center">
+                <div className="w-16 h-16 rounded-full relative flex items-center justify-center shrink-0">
+                  <svg width="64" height="64" viewBox="0 0 64 64" className="absolute inset-0">
+                    <circle cx="32" cy="32" r="28" fill="none" stroke="hsl(var(--muted))" strokeWidth="4" opacity="0.2" />
+                    <circle cx="32" cy="32" r="28" fill="none" stroke="hsl(142, 50%, 48%)" strokeWidth="4"
+                      strokeLinecap="round" strokeDasharray={`${2 * Math.PI * 28 * 0.75} ${2 * Math.PI * 28 * 0.25}`}
+                      transform="rotate(-90 32 32)" />
+                  </svg>
+                  <span className="text-xs font-bold text-[hsl(var(--success))] relative z-10">75%</span>
+                </div>
                <div className="text-xs text-muted-foreground space-y-1">
                  <p><strong>{t('help.monthYearWheel')}</strong> {t('help.wheelDesc')}</p>
                  <p>{t('help.wheelColors')}</p>
@@ -942,11 +948,7 @@ const SettingsPage = () => {
            </div>
         </div>
 
-        <div className="glass-card rounded-xl p-4 text-center">
-          <p className="text-xs text-muted-foreground">
-            {t('help.footer')}
-          </p>
-        </div>
+        {/* Footer removed */}
       </div>
     );
   }

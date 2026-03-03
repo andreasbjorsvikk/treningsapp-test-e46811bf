@@ -333,9 +333,9 @@ const RecordsSection = () => {
                       <p className="text-xs text-muted-foreground">
                         {h.entries.length} {h.entries.length === 1 ? t('records.registration') : t('records.registrations')}
                         {best && ` · ${t('records.best')}: ${best.time}`}
-                        {h.elevation && ` · ${h.elevation} m.o.h`}
+                        {h.elevation && ` · ${h.elevation} ${t('records.elevationUnit')}`}
                         {h.distance && ` · ${h.distance} km`}
-                        {h.elevationGain && ` · ${h.elevationGain} hm`}
+                        {h.elevationGain && ` · ${h.elevationGain} ${t('records.elevationGainUnit')}`}
                       </p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -404,7 +404,7 @@ const RecordsSection = () => {
                     <div className="flex gap-2">
                       {selectedHike.elevation != null && (
                         <div className="flex-1 rounded-lg bg-secondary/50 p-2.5 text-center">
-                          <p className="text-[10px] text-muted-foreground mb-0.5">M.o.h</p>
+                          <p className="text-[10px] text-muted-foreground mb-0.5">{t('records.elevationLabel')}</p>
                           <p className="font-display font-bold text-sm">{selectedHike.elevation} m</p>
                         </div>
                       )}

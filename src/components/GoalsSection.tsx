@@ -283,10 +283,10 @@ const GoalsSection = () => {
               </div>
             ) : currentGoal ? (
               <div className="glass-card rounded-lg p-4 relative" {...goalSwipe}>
-                {/* Pin-to-home button */}
+                {/* Pin-to-home button - desktop only */}
                 <button
                   onClick={handleTogglePrimaryWheelsHome}
-                  className={`absolute bottom-2 left-2 p-1 rounded-md transition-colors z-10 ${
+                  className={`absolute bottom-2 left-2 p-1 rounded-md transition-colors z-10 hidden md:block ${
                     settings.showPrimaryWheelsOnHome
                       ? 'text-primary bg-primary/10'
                       : 'text-muted-foreground/40 hover:text-muted-foreground'

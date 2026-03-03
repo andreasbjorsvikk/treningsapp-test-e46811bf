@@ -5,19 +5,14 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter,
 } from '@/components/ui/drawer';
-import { Trophy, Link2, Home } from 'lucide-react';
+import { Trophy, Link2, Home, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/hooks/useAuth';
 import UserProfileDrawer from '@/components/community/UserProfileDrawer';
 import { useTranslation } from '@/i18n/useTranslation';
 
-const metricLabels: Record<string, string> = {
-  sessions: 'Økter',
-  distance: 'Distanse (km)',
-  duration: 'Varighet (min)',
-  elevation: 'Høydemeter (m)',
-};
+// metricLabels now use translation keys
 const metricUnits: Record<string, string> = {
   sessions: '',
   distance: 'km',
@@ -29,9 +24,10 @@ interface ChallengeDetailProps {
   challenge: ChallengeWithParticipants | null;
   open: boolean;
   onClose: () => void;
+  onEdit?: (challenge: ChallengeWithParticipants) => void;
 }
 
-const ChallengeDetail = ({ challenge, open, onClose }: ChallengeDetailProps) => {
+const ChallengeDetail = ({ challenge, open, onClose, onEdit }: ChallengeDetailProps) => {
   const { settings, updateSettings } = useSettings();
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -84,8 +80,8 @@ const ChallengeDetail = ({ challenge, open, onClose }: ChallengeDetailProps) => 
             <div className="px-4 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-base text-muted-foreground">
-                  {metricLabels[c.metric] || c.metric}
-                  {c.target > 0 ? ` · ${t('challengeCard.target')}: ${c.target}${unit ? ` ${unit}` : ''}` : ` · ${t('common.noGoalSet')}`}
+                  {t(`challenge.metric${c.metric.charAt(0).toUpperCase() + c.metric.slice(1)}`)}
+                  {c.target > 0 ? ` · ${t('challengeCard.target')}: ${c.target}${unit ? ` ${unit}` : ''}` : ` · ${t(`challenge.noTarget.${c.metric}`)}`}
                 </span>
                 {!isEnded ? (
                   <span className="text-sm font-medium bg-accent/10 text-accent px-2.5 py-1 rounded-full">
@@ -136,6 +132,14 @@ const ChallengeDetail = ({ challenge, open, onClose }: ChallengeDetailProps) => 
             </div>
 
             <DrawerFooter className="flex-row gap-2 pt-4">
+              {onEdit && c.created_by === user?.id && (
+                <button
+                  onClick={() => { onEdit(challenge); onClose(); }}
+                  className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-secondary text-sm font-medium hover:bg-secondary/80 transition-colors"
+                >
+                  <Pencil className="w-4 h-4" /> {t('common.edit')}
+                </button>
+              )}
               {!isEnded && (
                 <>
                   <button

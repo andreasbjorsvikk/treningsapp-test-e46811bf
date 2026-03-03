@@ -670,11 +670,9 @@ const IndexContent = () => {
                   >
                     <div
                       className={`flex items-center gap-2 select-none ${isDragging ? 'cursor-grab active:cursor-grabbing' : 'cursor-grab'}`}
-                      draggable={!isDragging}
+                      draggable
                       onDragStart={(e) => {
-                        if (!isDragging) {
-                          handleDragStart(e, id);
-                        }
+                        handleDragStart(e, id);
                       }}
                       onTouchStart={(e) => {
                         if (isDragging) {

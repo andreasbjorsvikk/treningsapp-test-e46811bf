@@ -1,26 +1,30 @@
 import { useState, useCallback } from 'react';
-import { WorkoutSession } from '@/types/workout';
+import { WorkoutSession, HealthEvent } from '@/types/workout';
 import { useAppDataContext } from '@/contexts/AppDataContext';
 import SessionCard from '@/components/SessionCard';
 import WorkoutDialog from '@/components/WorkoutDialog';
 import WorkoutDetailDrawer from '@/components/WorkoutDetailDrawer';
+import HealthEventDialog from '@/components/HealthEventDialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Ambulance, Cross } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface DayDrawerProps {
   dateKey: string | null;
   sessions: WorkoutSession[];
+  healthEvents?: HealthEvent[];
   onClose: () => void;
   onRefresh: () => void;
   onNavigateToCalendar?: () => void;
 }
 
-const DayDrawer = ({ dateKey, sessions, onClose, onRefresh, onNavigateToCalendar }: DayDrawerProps) => {
+const DayDrawer = ({ dateKey, sessions, healthEvents = [], onClose, onRefresh, onNavigateToCalendar }: DayDrawerProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
   const [detailSession, setDetailSession] = useState<WorkoutSession | null>(null);
+  const [healthDialogOpen, setHealthDialogOpen] = useState(false);
+  const [editHealthEvent, setEditHealthEvent] = useState<HealthEvent | undefined>();
   const appData = useAppDataContext();
   const { t, locale } = useTranslation();
 
@@ -61,6 +65,19 @@ const DayDrawer = ({ dateKey, sessions, onClose, onRefresh, onNavigateToCalendar
     setDialogOpen(true);
   };
 
+  const handleHealthSave = async (data: Omit<HealthEvent, 'id'>) => {
+    if (editHealthEvent) {
+      await appData.updateHealthEvent(editHealthEvent.id, data);
+    } else {
+      await appData.addHealthEvent(data);
+    }
+    setEditHealthEvent(undefined);
+    onRefresh();
+  };
+
+  // Health events for this specific day
+  const dayHealthEvents = healthEvents;
+
   return (
     <>
       <Sheet open={!!dateKey} onOpenChange={(open) => { if (!open) onClose(); }}>
@@ -70,7 +87,30 @@ const DayDrawer = ({ dateKey, sessions, onClose, onRefresh, onNavigateToCalendar
           </SheetHeader>
 
           <div className="space-y-3 pb-4">
-            {sessions.length === 0 ? (
+            {/* Health events for this day */}
+            {dayHealthEvents.map(he => (
+              <div key={he.id} className="glass-card rounded-xl p-3 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                  {he.type === 'sickness' ? (
+                    <Ambulance className="w-4 h-4 text-destructive" />
+                  ) : (
+                    <Cross className="w-4 h-4 text-destructive" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">
+                    {he.type === 'sickness' ? t('health.sickness') : t('health.injury')}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(he.dateFrom).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}
+                    {he.dateTo && ` – ${new Date(he.dateTo).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}`}
+                  </p>
+                  {he.notes && <p className="text-xs text-muted-foreground mt-0.5">{he.notes}</p>}
+                </div>
+              </div>
+            ))}
+
+            {sessions.length === 0 && dayHealthEvents.length === 0 ? (
               <p className="text-center py-8 text-muted-foreground text-sm">
                 {t('common.noSessions')}
               </p>
@@ -80,9 +120,14 @@ const DayDrawer = ({ dateKey, sessions, onClose, onRefresh, onNavigateToCalendar
               ))
             )}
 
-            <Button onClick={handleAddNew} className="w-full" variant="outline">
-              <Plus className="w-4 h-4 mr-2" /> {t('common.addSession')}
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handleAddNew} className="flex-1" variant="outline">
+                <Plus className="w-4 h-4 mr-2" /> {t('common.addSession')}
+              </Button>
+              <Button onClick={() => { setEditHealthEvent(undefined); setHealthDialogOpen(true); }} variant="outline" className="flex-1">
+                <Ambulance className="w-4 h-4 mr-2" /> {t('health.newEvent')}
+              </Button>
+            </div>
           </div>
         </SheetContent>
       </Sheet>
@@ -101,6 +146,13 @@ const DayDrawer = ({ dateKey, sessions, onClose, onRefresh, onNavigateToCalendar
         onSave={handleSave}
         session={editSession}
         defaultDate={dateKey || undefined}
+      />
+
+      <HealthEventDialog
+        open={healthDialogOpen}
+        onClose={() => { setHealthDialogOpen(false); setEditHealthEvent(undefined); }}
+        onSave={handleHealthSave}
+        event={editHealthEvent}
       />
     </>
   );
