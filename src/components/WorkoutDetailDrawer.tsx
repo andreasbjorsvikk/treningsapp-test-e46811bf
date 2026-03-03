@@ -34,22 +34,16 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
   const [loadingStreams, setLoadingStreams] = useState(false);
   const [streamsLoaded, setStreamsLoaded] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [mapError, setMapError] = useState(false);
-  const [MapComponent, setMapComponent] = useState<React.ComponentType<any> | null>(null);
+  const [showMap, setShowMap] = useState(false);
 
-  // Dynamically load RouteMap after drawer opens to avoid Leaflet SSR issues
+  // Delay map render until drawer animation is done
   useEffect(() => {
     if (open && session?.summaryPolyline) {
-      setMapError(false);
-      setMapComponent(null);
-      const timer = setTimeout(() => {
-        import('@/components/RouteMap')
-          .then(mod => setMapComponent(() => mod.default))
-          .catch(() => setMapError(true));
-      }, 300);
+      setShowMap(false);
+      const timer = setTimeout(() => setShowMap(true), 400);
       return () => clearTimeout(timer);
     } else {
-      setMapComponent(null);
+      setShowMap(false);
     }
   }, [open, session?.id]);
 
@@ -104,6 +98,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
     setStreams(null);
     setStreamsLoaded(false);
     setLoadingStreams(false);
+    setShowMap(false);
     onClose();
   };
 
@@ -118,18 +113,17 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
             </DrawerHeader>
 
             {/* Map */}
-            {routePoints && MapComponent && !mapError && (
-              <MapComponent
-                key={session.id}
+            {routePoints && showMap && (
+              <MapSection
                 routePoints={routePoints}
                 lineColor={colors.text}
                 tileUrl={tileUrl}
-                height={192}
+                sessionId={session.id}
               />
             )}
-            {routePoints && mapError && (
-              <div className="w-full h-32 flex items-center justify-center bg-secondary/30 text-muted-foreground text-sm">
-                Kartet kunne ikke lastes
+            {routePoints && !showMap && (
+              <div className="w-full h-48 flex items-center justify-center bg-secondary/30">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               </div>
             )}
 
@@ -193,7 +187,6 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
             {/* Stream charts */}
             {streamsLoaded && streams && (
               <div className="px-4 space-y-4 pb-2">
-                {/* Elevation profile */}
                 {streams.altitudeData && streams.altitudeData.length > 0 && (
                   <div>
                     <p className="text-xs font-medium text-muted-foreground mb-1">Høydeprofil</p>
@@ -206,113 +199,26 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
                               <stop offset="95%" stopColor="hsl(var(--success))" stopOpacity={0} />
                             </linearGradient>
                           </defs>
-                          <XAxis
-                            dataKey="distance"
-                            tickFormatter={(v) => `${Math.round(v / 1000)}`}
-                            tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                            axisLine={false}
-                            tickLine={false}
-                            type="number"
-                            domain={['dataMin', 'dataMax']}
-                            ticks={(() => {
-                              const maxDist = streams.altitudeData![streams.altitudeData!.length - 1]?.distance || 0;
-                              const maxKm = Math.floor(maxDist / 1000);
-                              return Array.from({ length: maxKm + 1 }, (_, i) => i * 1000);
-                            })()}
-                            unit=" km"
-                          />
-                          <YAxis
-                            tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                            axisLine={false}
-                            tickLine={false}
-                            domain={['dataMin - 20', 'dataMax + 20']}
-                            width={35}
-                            unit=" m"
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: 'hsl(var(--popover))',
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '8px',
-                              padding: '4px 8px',
-                              fontSize: '11px',
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                            }}
-                            labelStyle={{ display: 'none' }}
-                            formatter={(v: number) => [`${Math.round(v)} m`]}
-                            labelFormatter={() => ''}
-                          />
-                          <Area
-                            type="monotone"
-                            dataKey="value"
-                            stroke="hsl(var(--success))"
-                            fill="url(#elevGrad)"
-                            strokeWidth={1.5}
-                            dot={false}
-                          />
+                          <XAxis dataKey="distance" tickFormatter={(v) => `${Math.round(v / 1000)}`} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} type="number" domain={['dataMin', 'dataMax']} ticks={(() => { const maxDist = streams.altitudeData![streams.altitudeData!.length - 1]?.distance || 0; const maxKm = Math.floor(maxDist / 1000); return Array.from({ length: maxKm + 1 }, (_, i) => i * 1000); })()} unit=" km" />
+                          <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} domain={['dataMin - 20', 'dataMax + 20']} width={35} unit=" m" />
+                          <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '8px', padding: '4px 8px', fontSize: '11px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }} labelStyle={{ display: 'none' }} formatter={(v: number) => [`${Math.round(v)} m`]} labelFormatter={() => ''} />
+                          <Area type="monotone" dataKey="value" stroke="hsl(var(--success))" fill="url(#elevGrad)" strokeWidth={1.5} dot={false} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
                 )}
 
-                {/* Heart rate chart */}
                 {streams.heartrateData && streams.heartrateData.length > 0 && (
                   <div>
                     <p className="text-xs font-medium text-muted-foreground mb-1">Puls</p>
                     <div className="h-32 w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={streams.heartrateData}>
-                          <XAxis
-                            dataKey="time"
-                            tickFormatter={(v) => {
-                              const totalMinutes = v / 60;
-                              const maxTime = streams.heartrateData![streams.heartrateData!.length - 1]?.time || 0;
-                              if (maxTime > 7200) {
-                                return `${Math.floor(totalMinutes / 60)}t`;
-                              }
-                              return `${Math.round(totalMinutes)}'`;
-                            }}
-                            tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                            axisLine={false}
-                            tickLine={false}
-                            {...(streams.heartrateData && streams.heartrateData[streams.heartrateData.length - 1]?.time > 7200 ? {
-                              type: 'number' as const,
-                              domain: ['dataMin', 'dataMax'],
-                              ticks: (() => {
-                                const maxTime = streams.heartrateData[streams.heartrateData.length - 1]?.time || 0;
-                                const maxHours = Math.floor(maxTime / 3600);
-                                return Array.from({ length: maxHours + 1 }, (_, i) => i * 3600);
-                              })(),
-                            } : {})}
-                          />
-                          <YAxis
-                            tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                            axisLine={false}
-                            tickLine={false}
-                            domain={['dataMin - 10', 'dataMax + 10']}
-                            width={35}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: 'hsl(var(--popover))',
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '8px',
-                              padding: '4px 8px',
-                              fontSize: '11px',
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                            }}
-                            labelStyle={{ display: 'none' }}
-                            formatter={(v: number) => [`${v} bpm`]}
-                            labelFormatter={() => ''}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="value"
-                            stroke="hsl(var(--destructive))"
-                            strokeWidth={1.5}
-                            dot={false}
-                          />
+                          <XAxis dataKey="time" tickFormatter={(v) => { const totalMinutes = v / 60; const maxTime = streams.heartrateData![streams.heartrateData!.length - 1]?.time || 0; if (maxTime > 7200) return `${Math.floor(totalMinutes / 60)}t`; return `${Math.round(totalMinutes)}'`; }} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                          <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} domain={['dataMin - 10', 'dataMax + 10']} width={35} />
+                          <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '8px', padding: '4px 8px', fontSize: '11px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }} labelStyle={{ display: 'none' }} formatter={(v: number) => [`${v} bpm`]} labelFormatter={() => ''} />
+                          <Line type="monotone" dataKey="value" stroke="hsl(var(--destructive))" strokeWidth={1.5} dot={false} />
                         </LineChart>
                       </ResponsiveContainer>
                     </div>
@@ -374,6 +280,51 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
     </>
   );
 };
+
+// Separate component to isolate Leaflet rendering
+function MapSection({ routePoints, lineColor, tileUrl, sessionId }: {
+  routePoints: [number, number][];
+  lineColor: string;
+  tileUrl: string;
+  sessionId: string;
+}) {
+  const [error, setError] = useState(false);
+  const [RouteMap, setRouteMap] = useState<React.ComponentType<any> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    import('@/components/RouteMap')
+      .then(mod => { if (!cancelled) setRouteMap(() => mod.default); })
+      .catch(() => { if (!cancelled) setError(true); });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (error) {
+    return (
+      <div className="w-full h-32 flex items-center justify-center bg-secondary/30 text-muted-foreground text-sm">
+        Kartet kunne ikke lastes
+      </div>
+    );
+  }
+
+  if (!RouteMap) {
+    return (
+      <div className="w-full h-48 flex items-center justify-center bg-secondary/30">
+        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <RouteMap
+      key={sessionId}
+      routePoints={routePoints}
+      lineColor={lineColor}
+      tileUrl={tileUrl}
+      height={192}
+    />
+  );
+}
 
 function StatTile({ icon, value, label, accent }: { icon: React.ReactNode; value: string; label: string; accent?: boolean }) {
   return (

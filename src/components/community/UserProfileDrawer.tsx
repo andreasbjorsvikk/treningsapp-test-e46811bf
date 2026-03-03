@@ -154,7 +154,7 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                     <div className="rounded-lg bg-secondary/50 p-2 text-center">
                       <MountainSnow className="w-3.5 h-3.5 mx-auto mb-0.5 text-muted-foreground" />
                       <p className="font-display font-bold text-sm">{profile.last7d.elevation} m</p>
-                      <p className="text-[10px] text-muted-foreground">Høyde</p>
+                      <p className="text-[10px] text-muted-foreground">Høydemeter</p>
                     </div>
                   </div>
                 </div>
@@ -180,7 +180,7 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                     <div className="rounded-lg bg-secondary/50 p-2 text-center">
                       <MountainSnow className="w-3.5 h-3.5 mx-auto mb-0.5 text-muted-foreground" />
                       <p className="font-display font-bold text-sm">{profile.last30d.elevation} m</p>
-                      <p className="text-[10px] text-muted-foreground">Høyde</p>
+                      <p className="text-[10px] text-muted-foreground">Høydemeter</p>
                     </div>
                   </div>
                 </div>
@@ -223,6 +223,16 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                   Felles utfordringer
                 </p>
                 <div className="space-y-1">
+                  {/* Column header */}
+                  <div className="flex items-center gap-3 px-2.5 pb-1">
+                    <span className="flex-1" />
+                    <div className="flex items-center gap-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      <span className="w-14 text-right">Meg</span>
+                      <span className="w-4" />
+                      <span className="w-14 text-right">{user.username}</span>
+                    </div>
+                    <span className="w-3.5" />
+                  </div>
                   {sharedChallenges.map(c => {
                     const myProgress = c.participants.find(p => p.user.id === 'me');
                     const theirProgress = c.participants.find(p => p.user.id === user.id);
@@ -233,11 +243,11 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                         {c.emoji && <span>{c.emoji}</span>}
                         <span className="text-sm font-medium flex-1 truncate">{c.name}</span>
                         <div className="flex items-center gap-2 text-xs">
-                          <span className={iWon ? 'text-accent font-semibold' : 'text-muted-foreground'}>
+                          <span className={`w-14 text-right ${iWon ? 'text-accent font-semibold' : 'text-muted-foreground'}`}>
                             {myProgress?.progress}{unit ? ` ${unit}` : ''}
                           </span>
                           <span className="text-muted-foreground">vs</span>
-                          <span className={!iWon ? 'text-accent font-semibold' : 'text-muted-foreground'}>
+                          <span className={`w-14 text-right ${!iWon ? 'text-accent font-semibold' : 'text-muted-foreground'}`}>
                             {theirProgress?.progress}{unit ? ` ${unit}` : ''}
                           </span>
                         </div>

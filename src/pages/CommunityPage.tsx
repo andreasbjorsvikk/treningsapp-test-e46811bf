@@ -60,7 +60,19 @@ const CommunityPage = () => {
 
       {mainTab === 'challenges' && (
         <>
-          <CommunitySubTabs tabs={challengeFilterTabs} active={challengeFilter} onChange={setChallengeFilter} />
+          <div className="flex gap-1 mb-3">
+            {challengeFilterTabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setChallengeFilter(tab.id)}
+                className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  challengeFilter === tab.id ? 'bg-accent text-accent-foreground' : 'bg-secondary text-muted-foreground'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
           <button
             onClick={() => { setPreselectedUser(null); setShowForm(true); }}

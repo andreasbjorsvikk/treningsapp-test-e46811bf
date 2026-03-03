@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { mockLeaderboard, metricUnits, LeaderboardEntry } from '@/data/mockCommunity';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
-import CommunitySubTabs from './CommunitySubTabs';
+import { getActivityColors } from '@/utils/activityColors';
+import { useSettings } from '@/contexts/SettingsContext';
 import ActivityIcon from '@/components/ActivityIcon';
 import { Trophy } from 'lucide-react';
 
@@ -19,6 +20,8 @@ const categoryTabs = [
 ];
 
 const LeaderboardSection = () => {
+  const { settings } = useSettings();
+  const isDark = settings.darkMode;
   const [period, setPeriod] = useState('monthly');
   const [category, setCategory] = useState('sessions');
   const [selectedType, setSelectedType] = useState<string>('all');
@@ -28,7 +31,19 @@ const LeaderboardSection = () => {
 
   return (
     <div className="space-y-3">
-      <CommunitySubTabs tabs={periodTabs} active={period} onChange={setPeriod} />
+      <div className="flex gap-1 mb-1">
+        {periodTabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setPeriod(tab.id)}
+            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              period === tab.id ? 'bg-accent text-accent-foreground' : 'bg-secondary text-muted-foreground'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
       <div className="flex gap-1 mb-3">
         {categoryTabs.map(cat => (
@@ -54,18 +69,23 @@ const LeaderboardSection = () => {
         >
           Alle
         </button>
-        {allSessionTypes.map(type => (
-          <button
-            key={type}
-            onClick={() => setSelectedType(type)}
-            className={`shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-              selectedType === type ? 'bg-accent text-accent-foreground' : 'bg-secondary text-muted-foreground'
-            }`}
-          >
-            <ActivityIcon type={type} className="w-3 h-3" />
-            {sessionTypeConfig[type].label}
-          </button>
-        ))}
+        {allSessionTypes.map(type => {
+          const colors = getActivityColors(type, isDark);
+          const isSelected = selectedType === type;
+          return (
+            <button
+              key={type}
+              onClick={() => setSelectedType(type)}
+              className={`shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                !isSelected ? 'bg-secondary text-muted-foreground' : ''
+              }`}
+              style={isSelected ? { backgroundColor: colors.bg, color: colors.text } : undefined}
+            >
+              <ActivityIcon type={type} className="w-3 h-3" colorOverride={isSelected ? colors.text : undefined} />
+              {sessionTypeConfig[type].label}
+            </button>
+          );
+        })}
       </div>
 
       {data.length === 0 ? (
