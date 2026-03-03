@@ -658,8 +658,16 @@ const IndexContent = () => {
                     }`}
                   >
                     <div
-                      className="flex items-center gap-2 select-none"
-                      onTouchStart={(e) => { if (!isDragging) handleLongPressStart(id, e); }}
+                      className={`flex items-center gap-2 select-none ${isDragging ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                      onTouchStart={(e) => {
+                        if (isDragging) {
+                          // In reorder mode: pick up this section for dragging
+                          setDragId(id);
+                          if (navigator.vibrate) navigator.vibrate(15);
+                        } else {
+                          handleLongPressStart(id, e);
+                        }
+                      }}
                       onTouchMove={handleLongPressMove}
                       onTouchEnd={handleLongPressEnd}
                     >
