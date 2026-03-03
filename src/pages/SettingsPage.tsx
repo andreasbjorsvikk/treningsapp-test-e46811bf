@@ -404,17 +404,17 @@ const SettingsPage = () => {
   // ========== PRIVACY VIEW ==========
   if (view === 'privacy') {
     const privacyOptions = [
-      { key: 'privacyWorkouts' as const, label: 'Treningsøkter', desc: 'Hvem kan se øktene dine i profilen din?' },
-      { key: 'privacyStats' as const, label: 'Statistikk', desc: 'Hvem kan se statistikken din?' },
-      { key: 'privacyGoals' as const, label: 'Mål og progresjon', desc: 'Hvem kan se måned- og årsmålet ditt?' },
+      { key: 'privacyWorkouts' as const, label: t('privacy.workouts'), desc: t('privacy.workoutsDesc') },
+      { key: 'privacyStats' as const, label: t('privacy.stats'), desc: t('privacy.statsDesc') },
+      { key: 'privacyGoals' as const, label: t('privacy.goals'), desc: t('privacy.goalsDesc') },
     ];
     const friends = mockUsers.filter(u => u.id !== 'me');
     return (
       <div className="space-y-4">
-        {backButton('Personvern')}
+        {backButton(t('privacy.title'))}
 
         <div className="glass-card rounded-xl p-4 space-y-1">
-          <p className="text-xs text-muted-foreground mb-3">E-postadressen din er alltid skjult for andre.</p>
+          <p className="text-xs text-muted-foreground mb-3">{t('privacy.emailHidden')}</p>
           {privacyOptions.map(opt => {
             const selectedFriendsForKey = (settings as any)[`${opt.key}Friends`] as string[] | undefined;
             const friendNames = selectedFriendsForKey?.length
@@ -444,14 +444,14 @@ const SettingsPage = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="me">Bare meg</SelectItem>
-                    <SelectItem value="friends">Venner</SelectItem>
-                    <SelectItem value="selected">Valgte venner</SelectItem>
+                     <SelectItem value="me">{t('privacy.onlyMe')}</SelectItem>
+                     <SelectItem value="friends">{t('privacy.friends')}</SelectItem>
+                     <SelectItem value="selected">{t('privacy.selectedFriends')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               {settings[opt.key] === 'selected' && friendNames && (
-                <p className="text-xs text-muted-foreground mt-1 text-right">{friendNames} kan se dette</p>
+                <p className="text-xs text-muted-foreground mt-1 text-right">{friendNames} {t('privacy.canSeeThis')}</p>
               )}
             </div>
             );
@@ -461,7 +461,7 @@ const SettingsPage = () => {
         <Dialog open={showFriendPicker} onOpenChange={setShowFriendPicker}>
           <DialogContent className="max-w-[min(calc(100vw-2rem),22rem)]">
             <DialogHeader>
-              <DialogTitle>Velg venner</DialogTitle>
+              <DialogTitle>{t('privacy.selectFriends')}</DialogTitle>
             </DialogHeader>
             <div className="space-y-1 max-h-[50vh] overflow-y-auto">
               {friends.map(u => (
@@ -486,9 +486,9 @@ const SettingsPage = () => {
                 updateSettings({ [`${selectedPrivacyKey}Friends`]: selectedFriendIds } as any);
               }
               setShowFriendPicker(false);
-              toast.success('Venner oppdatert');
-            }} className="w-full">
-              Ferdig
+               toast.success(t('privacy.friendsUpdated'));
+             }} className="w-full">
+               {t('common.done')}
             </Button>
           </DialogContent>
         </Dialog>
@@ -521,7 +521,7 @@ const SettingsPage = () => {
         const url = await stravaService.getAuthUrl();
         window.location.href = url;
       } catch (err) {
-        toast.error('Kunne ikke koble til Strava');
+        toast.error(t('sync.connectFailed'));
         setStravaLoading(false);
       }
     };
@@ -533,7 +533,7 @@ const SettingsPage = () => {
         setStravaConnected(false);
         toast.success(t('settings.stravaNotConnected'));
       } catch {
-        toast.error('Kunne ikke koble fra Strava');
+        toast.error(t('sync.disconnectFailed'));
       }
       setStravaLoading(false);
     };
@@ -546,12 +546,12 @@ const SettingsPage = () => {
         if (result.synced > 0) parts.push(`${result.synced} nye`);
         if ((result as any).updated > 0) parts.push(`${(result as any).updated} oppdatert`);
         if (parts.length > 0) {
-          toast.success(`${parts.join(', ')} økter fra Strava!`);
-        } else {
-          toast.info('Alt er allerede oppdatert.');
+           toast.success(`${parts.join(', ')} ${t('home.sessions')} Strava!`);
+         } else {
+           toast.info(t('sync.allUpToDate'));
         }
       } catch {
-        toast.error('Synkronisering feilet');
+        toast.error(t('sync.failed'));
       }
       setStravaSyncing(false);
     };
@@ -565,18 +565,18 @@ const SettingsPage = () => {
         if (result.synced > 0) parts.push(`${result.synced} nye`);
         if ((result as any).updated > 0) parts.push(`${(result as any).updated} oppdatert`);
         if (parts.length > 0) {
-          toast.success(`${parts.join(', ')} økter fra Strava!`);
-        } else {
-          toast.info('Alt er allerede oppdatert.');
+           toast.success(`${parts.join(', ')} ${t('home.sessions')} Strava!`);
+         } else {
+           toast.info(t('sync.allUpToDate'));
         }
       } catch {
-        toast.error('Full synkronisering feilet');
+        toast.error(t('sync.fullSyncFailed'));
       }
       setSyncAllLoading(false);
     };
 
     const handleStravaDeleteAll = async () => {
-      if (!confirm('Er du sikker på at du vil slette alle økter importert fra Strava? Dette kan ikke angres.')) return;
+      if (!confirm(t('sync.deleteConfirm'))) return;
       try {
         const headers: Record<string, string> = {};
         const { data: { session } } = await supabase.auth.getSession();
@@ -589,9 +589,9 @@ const SettingsPage = () => {
         });
         if (!res.ok) throw new Error();
         const result = await res.json();
-        toast.success(`${result.deleted} Strava-økter slettet.`);
-      } catch {
-        toast.error('Sletting feilet');
+         toast.success(t('sync.deletedCount', { n: result.deleted }));
+       } catch {
+         toast.error(t('sync.deleteFailed'));
       }
     };
 
@@ -644,17 +644,17 @@ const SettingsPage = () => {
                 disabled={syncAllLoading || stravaSyncing}
               >
                 {syncAllLoading ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Synkroniserer all historikk...</>
-                ) : (
-                  <><RefreshCw className="w-4 h-4 mr-2" /> Synkroniser alle tidligere økter fra Strava</>
-                )}
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('sync.syncingAll')}</>
+                 ) : (
+                   <><RefreshCw className="w-4 h-4 mr-2" /> {t('sync.syncAllPrevious')}</>
+                 )}
               </Button>
               <Button
                 variant="outline"
                 className="w-full text-destructive hover:text-destructive"
                 onClick={handleStravaDeleteAll}
               >
-                <Trash2 className="w-4 h-4 mr-2" /> Slett alle økter importert fra Strava
+                <Trash2 className="w-4 h-4 mr-2" /> {t('sync.deleteAllStrava')}
               </Button>
             </>
           )}
@@ -736,7 +736,7 @@ const SettingsPage = () => {
   if (view === 'profile' && user) {
     return (
       <div className="space-y-4">
-        {backButton('Profil')}
+        {backButton(t('profile.title'))}
 
         <div className="glass-card rounded-xl p-4 space-y-5">
           {/* Avatar & name */}
@@ -789,8 +789,8 @@ const SettingsPage = () => {
 
         {/* Change password */}
         <div className="glass-card rounded-xl p-4 space-y-3">
-          <Label className="text-sm font-semibold">Endre passord</Label>
-          <p className="text-xs text-muted-foreground">Vi sender en lenke til e-posten din for å tilbakestille passordet.</p>
+           <Label className="text-sm font-semibold">{t('profile.changePassword')}</Label>
+           <p className="text-xs text-muted-foreground">{t('profile.changePasswordDesc')}</p>
           <Button
             variant="outline"
             className="w-full"
@@ -799,11 +799,11 @@ const SettingsPage = () => {
               const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
                 redirectTo: `${window.location.origin}/reset-password`,
               });
-              if (error) toast.error('Kunne ikke sende e-post');
-              else toast.success('E-post for passordendring sendt!');
+               if (error) toast.error(t('profile.emailSendFailed'));
+               else toast.success(t('profile.passwordEmailSent'));
             }}
           >
-            <Lock className="w-4 h-4 mr-2" /> Send passordlenke
+            <Lock className="w-4 h-4 mr-2" /> {t('profile.sendPasswordLink')}
           </Button>
         </div>
       </div>
@@ -814,14 +814,13 @@ const SettingsPage = () => {
   if (view === 'help') {
     return (
       <div className="space-y-4">
-        {backButton('Hjelp')}
+        {backButton(t('help.title'))}
 
         <div className="glass-card rounded-xl p-5 space-y-3">
-          <h3 className="font-display font-bold text-lg">Velkommen til Treningslogg 👋</h3>
-          <p className="text-sm text-muted-foreground">
-            Treningslogg hjelper deg med å holde oversikt over treningen din, sette mål, og følge fremgangen din over tid.
-            Her er en guide for å komme i gang!
-          </p>
+           <h3 className="font-display font-bold text-lg">{t('help.welcome')}</h3>
+           <p className="text-sm text-muted-foreground">
+             {t('help.welcomeDesc')}
+           </p>
         </div>
 
         {/* Treningsmål */}
@@ -830,25 +829,25 @@ const SettingsPage = () => {
             <div className="rounded-lg bg-success/10 p-2">
               <Target className="w-5 h-5 text-[hsl(var(--success))]" />
             </div>
-            <h3 className="font-display font-semibold text-base">Treningsmål</h3>
-          </div>
-          <div className="bg-secondary/50 rounded-xl p-4 space-y-2">
-            <div className="flex gap-3 items-center">
-              <div className="w-16 h-16 rounded-full border-4 border-success/30 flex items-center justify-center shrink-0">
-                <span className="text-xs font-bold text-[hsl(var(--success))]">75%</span>
-              </div>
-              <div className="text-xs text-muted-foreground space-y-1">
-                <p><strong>Måned- og årshjul</strong> viser fremgangen din mot hovedmålet.</p>
-                <p>Grønn = foran skjema, rød = bak skjema.</p>
-              </div>
-            </div>
-          </div>
-          <div className="text-sm text-muted-foreground space-y-2">
-            <p>📌 <strong>Sett et hovedmål:</strong> Gå til Trening → Mål og opprett ditt overordnede treningsmål (f.eks. antall økter per uke).</p>
-            <p>📌 <strong>Detaljerte mål:</strong> Du kan også sette mål for spesifikke aktiviteter, som «løp 100 km per måned» eller «3 styrkeøkter per uke».</p>
-            <p>📌 <strong>Fest til forsiden:</strong> Aktiver «Vis på forsiden» på dine mål for å se de på hjemskjermen.</p>
-            <p>📌 <strong>Oppdater mål:</strong> Mål kan endres når som helst. Historikken din beholdes.</p>
-          </div>
+             <h3 className="font-display font-semibold text-base">{t('help.trainingGoals')}</h3>
+           </div>
+           <div className="bg-secondary/50 rounded-xl p-4 space-y-2">
+             <div className="flex gap-3 items-center">
+               <div className="w-16 h-16 rounded-full border-4 border-success/30 flex items-center justify-center shrink-0">
+                 <span className="text-xs font-bold text-[hsl(var(--success))]">75%</span>
+               </div>
+               <div className="text-xs text-muted-foreground space-y-1">
+                 <p><strong>{t('help.monthYearWheel')}</strong> {t('help.wheelDesc')}</p>
+                 <p>{t('help.wheelColors')}</p>
+               </div>
+             </div>
+           </div>
+           <div className="text-sm text-muted-foreground space-y-2">
+             <p dangerouslySetInnerHTML={{ __html: t('help.trainingGoalsP1') }} />
+             <p dangerouslySetInnerHTML={{ __html: t('help.trainingGoalsP2') }} />
+             <p dangerouslySetInnerHTML={{ __html: t('help.trainingGoalsP3') }} />
+             <p dangerouslySetInnerHTML={{ __html: t('help.trainingGoalsP4') }} />
+           </div>
         </div>
 
         {/* Registrere økter */}
@@ -857,13 +856,13 @@ const SettingsPage = () => {
             <div className="rounded-lg bg-accent/10 p-2">
               <Dumbbell className="w-5 h-5 text-accent" />
             </div>
-            <h3 className="font-display font-semibold text-base">Registrere økter</h3>
-          </div>
-          <div className="text-sm text-muted-foreground space-y-2">
-            <p>📝 <strong>Manuelt:</strong> Trykk på «+»-knappen på forsiden og velg «Ny økt». Fyll inn type, varighet, distanse og andre detaljer.</p>
-            <p>📝 <strong>Automatisk med Strava:</strong> Koble til Strava under Innstillinger → Synkronisering, og øktene dine importeres automatisk med kart, puls og andre data.</p>
-            <p>📝 <strong>Økttyper:</strong> Velg mellom løping, sykling, svømming, styrke, yoga, fjelltur, fotball, tennis og gå-tur.</p>
-          </div>
+             <h3 className="font-display font-semibold text-base">{t('help.registerSessions')}</h3>
+           </div>
+           <div className="text-sm text-muted-foreground space-y-2">
+             <p dangerouslySetInnerHTML={{ __html: t('help.registerSessionsP1') }} />
+             <p dangerouslySetInnerHTML={{ __html: t('help.registerSessionsP2') }} />
+             <p dangerouslySetInnerHTML={{ __html: t('help.registerSessionsP3') }} />
+           </div>
         </div>
 
         {/* Strava */}
@@ -872,14 +871,14 @@ const SettingsPage = () => {
             <div className="rounded-lg bg-warning/10 p-2">
               <Zap className="w-5 h-5 text-[hsl(var(--warning))]" />
             </div>
-            <h3 className="font-display font-semibold text-base">Strava-synkronisering</h3>
-          </div>
-          <div className="text-sm text-muted-foreground space-y-2">
-            <p>🔗 <strong>Koble til:</strong> Gå til Innstillinger → Synkronisering og trykk «Koble til Strava».</p>
-            <p>🔗 <strong>Automatisk sync:</strong> Nye økter fra Strava importeres automatisk når du åpner appen.</p>
-            <p>🔗 <strong>Manuell sync:</strong> Trykk på synk-ikonet (🔄) på forsiden for å hente nye økter umiddelbart.</p>
-            <p>🔗 <strong>Detaljerte data:</strong> Trykk «Mer detaljer» på en økt for å se puls- og høydeprofil fra Strava.</p>
-          </div>
+             <h3 className="font-display font-semibold text-base">{t('help.stravaSync')}</h3>
+           </div>
+           <div className="text-sm text-muted-foreground space-y-2">
+             <p dangerouslySetInnerHTML={{ __html: t('help.stravaSyncP1') }} />
+             <p dangerouslySetInnerHTML={{ __html: t('help.stravaSyncP2') }} />
+             <p dangerouslySetInnerHTML={{ __html: t('help.stravaSyncP3') }} />
+             <p dangerouslySetInnerHTML={{ __html: t('help.stravaSyncP4') }} />
+           </div>
         </div>
 
         {/* Statistikk */}
@@ -888,13 +887,13 @@ const SettingsPage = () => {
             <div className="rounded-lg bg-accent/10 p-2">
               <BarChart3 className="w-5 h-5 text-accent" />
             </div>
-            <h3 className="font-display font-semibold text-base">Statistikk og rekorder</h3>
-          </div>
-          <div className="text-sm text-muted-foreground space-y-2">
-            <p>📊 <strong>Statistikk:</strong> Under Trening-fanen finner du detaljert statistikk med grafer, trender og oversikt over treningen din.</p>
-            <p>📊 <strong>Rekorder:</strong> Dine personlige rekorder (lengste løpetur, raskeste tempo, osv.) oppdateres automatisk.</p>
-            <p>📊 <strong>Filtrering:</strong> Filtrer statistikken etter aktivitetstype og tidsperiode.</p>
-          </div>
+             <h3 className="font-display font-semibold text-base">{t('help.statsAndRecords')}</h3>
+           </div>
+           <div className="text-sm text-muted-foreground space-y-2">
+             <p dangerouslySetInnerHTML={{ __html: t('help.statsAndRecordsP1') }} />
+             <p dangerouslySetInnerHTML={{ __html: t('help.statsAndRecordsP2') }} />
+             <p dangerouslySetInnerHTML={{ __html: t('help.statsAndRecordsP3') }} />
+           </div>
         </div>
 
         {/* Kalender */}
@@ -903,13 +902,13 @@ const SettingsPage = () => {
             <div className="rounded-lg bg-success/10 p-2">
               <Calendar className="w-5 h-5 text-[hsl(var(--success))]" />
             </div>
-            <h3 className="font-display font-semibold text-base">Kalender</h3>
-          </div>
-          <div className="text-sm text-muted-foreground space-y-2">
-            <p>📅 <strong>Oversikt:</strong> Kalenderen gir deg en visuell oversikt over alle treningsøktene dine.</p>
-            <p>📅 <strong>Trykk på en dag:</strong> Se detaljene for øktene du har gjort den dagen.</p>
-            <p>📅 <strong>Helsehendelser:</strong> Registrer sykdom eller skade via «+»-menyen, og de vises som markører i kalenderen.</p>
-          </div>
+             <h3 className="font-display font-semibold text-base">{t('help.calendar')}</h3>
+           </div>
+           <div className="text-sm text-muted-foreground space-y-2">
+             <p dangerouslySetInnerHTML={{ __html: t('help.calendarP1') }} />
+             <p dangerouslySetInnerHTML={{ __html: t('help.calendarP2') }} />
+             <p dangerouslySetInnerHTML={{ __html: t('help.calendarP3') }} />
+           </div>
         </div>
 
         {/* Fellesskap */}
@@ -918,13 +917,13 @@ const SettingsPage = () => {
             <div className="rounded-lg bg-accent/10 p-2">
               <Users className="w-5 h-5 text-accent" />
             </div>
-            <h3 className="font-display font-semibold text-base">Fellesskap</h3>
-          </div>
-          <div className="text-sm text-muted-foreground space-y-2">
-            <p>👥 <strong>Venner:</strong> Søk etter brukernavn og legg til venner. Se deres statistikk og sammenlign treningen.</p>
-            <p>👥 <strong>Utfordringer:</strong> Opprett utfordringer med venner – hvem klarer flest km løping denne måneden?</p>
-            <p>👥 <strong>Ledertavle:</strong> Se hvor du ligger an sammenlignet med vennene dine.</p>
-          </div>
+             <h3 className="font-display font-semibold text-base">{t('help.community')}</h3>
+           </div>
+           <div className="text-sm text-muted-foreground space-y-2">
+             <p dangerouslySetInnerHTML={{ __html: t('help.communityP1') }} />
+             <p dangerouslySetInnerHTML={{ __html: t('help.communityP2') }} />
+             <p dangerouslySetInnerHTML={{ __html: t('help.communityP3') }} />
+           </div>
         </div>
 
         {/* Tilpasning */}
@@ -933,19 +932,19 @@ const SettingsPage = () => {
             <div className="rounded-lg bg-warning/10 p-2">
               <Palette className="w-5 h-5 text-[hsl(var(--warning))]" />
             </div>
-            <h3 className="font-display font-semibold text-base">Tilpasning</h3>
-          </div>
-          <div className="text-sm text-muted-foreground space-y-2">
-            <p>🎨 <strong>Fargetema:</strong> Velg mellom ulike fargetemaer under Utseende.</p>
-            <p>🎨 <strong>Aktivitetsfarger:</strong> Tilpass fargene for hver aktivitetstype.</p>
-            <p>🎨 <strong>Mørk modus:</strong> Bytt mellom lys og mørk modus med knappen nede til høyre.</p>
-            <p>🎨 <strong>Forsiden:</strong> Hold inne på en overskrift på forsiden for å endre rekkefølgen på seksjonene.</p>
-          </div>
+             <h3 className="font-display font-semibold text-base">{t('help.customization')}</h3>
+           </div>
+           <div className="text-sm text-muted-foreground space-y-2">
+             <p dangerouslySetInnerHTML={{ __html: t('help.customizationP1') }} />
+             <p dangerouslySetInnerHTML={{ __html: t('help.customizationP2') }} />
+             <p dangerouslySetInnerHTML={{ __html: t('help.customizationP3') }} />
+             <p dangerouslySetInnerHTML={{ __html: t('help.customizationP4') }} />
+           </div>
         </div>
 
         <div className="glass-card rounded-xl p-4 text-center">
           <p className="text-xs text-muted-foreground">
-            Spørsmål eller tilbakemeldinger? Vi jobber stadig med å forbedre appen! 💪
+            {t('help.footer')}
           </p>
         </div>
       </div>
@@ -1025,9 +1024,9 @@ const SettingsPage = () => {
         {menuItem(t('settings.appearance'), <Palette className="w-4 h-4" />, () => setView('appearance'))}
         {menuItem(t('settings.preferences'), <Settings2 className="w-4 h-4" />, () => setView('preferences'))}
         {menuItem(t('settings.training'), <Dumbbell className="w-4 h-4" />, () => setView('training'))}
-        {menuItem('Personvern', <Lock className="w-4 h-4" />, () => setView('privacy'))}
-        {menuItem(t('settings.sync'), <RefreshCw className="w-4 h-4" />, () => setView('sync'))}
-        {menuItem('Hjelp', <HelpCircle className="w-4 h-4" />, () => setView('help'))}
+         {menuItem(t('privacy.title'), <Lock className="w-4 h-4" />, () => setView('privacy'))}
+         {menuItem(t('settings.sync'), <RefreshCw className="w-4 h-4" />, () => setView('sync'))}
+         {menuItem(t('help.title'), <HelpCircle className="w-4 h-4" />, () => setView('help'))}
         {menuItem(t('settings.dangerZone'), <Shield className="w-4 h-4" />, () => setView('data'))}
       </div>
 
