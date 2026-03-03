@@ -1,24 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockUsers, mockGroups, ChallengeMetric, MockUser } from '@/data/mockCommunity';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
+import { getFriends, createChallenge, Friend } from '@/services/communityService';
 import { toast } from 'sonner';
-import { Link2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 interface ChallengeFormProps {
   open: boolean;
   onClose: () => void;
-  preselectedUser?: MockUser | null;
+  preselectedUser?: Friend | null;
+  onCreated?: () => void;
 }
+
+type ChallengeMetric = 'sessions' | 'distance' | 'duration' | 'elevation';
 
 const periodOptions = [
   { value: 'week', label: 'Denne uken' },
   { value: 'month', label: 'Denne måneden' },
   { value: 'year', label: 'Dette året' },
-  { value: 'custom', label: 'Egendefinert' },
 ];
 
 const metricOptions: { value: ChallengeMetric; label: string }[] = [
@@ -28,31 +31,72 @@ const metricOptions: { value: ChallengeMetric; label: string }[] = [
   { value: 'elevation', label: 'Høydemeter (m)' },
 ];
 
-const ChallengeForm = ({ open, onClose, preselectedUser }: ChallengeFormProps) => {
+function getPeriodDates(period: string): { start: string; end: string } {
+  const now = new Date();
+  if (period === 'week') {
+    const day = now.getDay() || 7;
+    const start = new Date(now);
+    start.setDate(now.getDate() - day + 1);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
+  }
+  if (period === 'month') {
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
+  }
+  // year
+  return { start: `${now.getFullYear()}-01-01`, end: `${now.getFullYear()}-12-31` };
+}
+
+const ChallengeForm = ({ open, onClose, preselectedUser, onCreated }: ChallengeFormProps) => {
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('');
   const [metric, setMetric] = useState<ChallengeMetric>('sessions');
   const [activityType, setActivityType] = useState('all');
   const [period, setPeriod] = useState('month');
   const [target, setTarget] = useState('');
-  const [selectedUsers, setSelectedUsers] = useState<string[]>(
-    preselectedUser ? [preselectedUser.id] : []
-  );
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const friends = mockUsers.filter(u => u.id !== 'me');
+  useEffect(() => {
+    if (open) {
+      setLoading(true);
+      getFriends().then(f => { setFriends(f); setLoading(false); });
+      if (preselectedUser) setSelectedUsers([preselectedUser.id]);
+    }
+  }, [open, preselectedUser]);
 
   const toggleUser = (id: string) => {
     setSelectedUsers(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
-  const handleSubmit = () => {
-    if (!name.trim()) {
-      toast.error('Fyll ut navn');
-      return;
+  const handleSubmit = async () => {
+    if (!name.trim()) { toast.error('Fyll ut navn'); return; }
+    setSubmitting(true);
+    try {
+      const dates = getPeriodDates(period);
+      await createChallenge({
+        name,
+        emoji: emoji || undefined,
+        metric,
+        activityType,
+        target: parseFloat(target) || 0,
+        periodStart: dates.start,
+        periodEnd: dates.end,
+        invitedUserIds: selectedUsers,
+      });
+      toast.success('Utfordring opprettet!');
+      onCreated?.();
+      onClose();
+      setName(''); setEmoji(''); setTarget(''); setSelectedUsers([]);
+    } catch {
+      toast.error('Kunne ikke opprette utfordring');
     }
-    toast.success('Utfordring opprettet (mock)');
-    onClose();
-    setName(''); setEmoji(''); setTarget(''); setSelectedUsers([]);
+    setSubmitting(false);
   };
 
   return (
@@ -112,60 +156,30 @@ const ChallengeForm = ({ open, onClose, preselectedUser }: ChallengeFormProps) =
               <Input type="number" value={target} onChange={e => setTarget(e.target.value)} placeholder="—" />
             </div>
           </div>
-          {!target && (
-            <p className="text-xs text-muted-foreground">Uten mål: den med mest vinner</p>
-          )}
-
-          {/* Invite link */}
-          <button
-            type="button"
-            onClick={() => {
-              navigator.clipboard.writeText('https://treningsapp.no/challenge/invite/xyz');
-              toast.success('Invitasjonslenke kopiert!');
-            }}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-secondary/50 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Link2 className="w-3.5 h-3.5" /> Kopier invitasjonslenke
-          </button>
+          {!target && <p className="text-xs text-muted-foreground">Uten mål: den med mest vinner</p>}
 
           {/* Participant selection */}
           <div>
             <Label className="text-xs mb-2 block">Deltakere</Label>
-            <div className="space-y-1">
-              {friends.map(u => (
-                <button
-                  key={u.id}
-                  onClick={() => toggleUser(u.id)}
-                  className={`w-full flex items-center gap-2 p-2 rounded-lg text-sm transition-colors ${
-                    selectedUsers.includes(u.id) ? 'bg-accent/10 text-accent' : 'bg-secondary/50 text-foreground'
-                  }`}
-                >
-                  <div className="w-6 h-6 rounded-full bg-secondary border border-background flex items-center justify-center">
-                    <span className="text-[10px] font-medium">{u.username[0]}</span>
-                  </div>
-                  {u.username}
-                </button>
-              ))}
-            </div>
-
-            {mockGroups.length > 0 && (
-              <div className="mt-3">
-                <p className="text-xs text-muted-foreground mb-1">Grupper</p>
-                {mockGroups.map(g => (
+            {loading ? (
+              <div className="flex justify-center py-4"><Loader2 className="w-4 h-4 animate-spin" /></div>
+            ) : friends.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-2">Legg til venner først for å invitere dem</p>
+            ) : (
+              <div className="space-y-1">
+                {friends.map(u => (
                   <button
-                    key={g.id}
-                    onClick={() => {
-                      const memberIds = g.members.filter(m => m.id !== 'me').map(m => m.id);
-                      setSelectedUsers(prev => {
-                        const all = new Set([...prev, ...memberIds]);
-                        return Array.from(all);
-                      });
-                    }}
-                    className="w-full flex items-center gap-2 p-2 rounded-lg text-sm bg-secondary/50 hover:bg-secondary/80 transition-colors mb-1"
+                    key={u.id}
+                    onClick={() => toggleUser(u.id)}
+                    className={`w-full flex items-center gap-2 p-2 rounded-lg text-sm transition-colors ${
+                      selectedUsers.includes(u.id) ? 'bg-accent/10 text-accent' : 'bg-secondary/50 text-foreground'
+                    }`}
                   >
-                    <span>{g.emoji}</span>
-                    {g.name}
-                    <span className="text-xs text-muted-foreground ml-auto">{g.members.length} medl.</span>
+                    <Avatar className="w-6 h-6">
+                      {u.avatarUrl ? <AvatarImage src={u.avatarUrl} /> : null}
+                      <AvatarFallback className="text-[10px]">{(u.username || '?')[0]}</AvatarFallback>
+                    </Avatar>
+                    {u.username || 'Ukjent'}
                   </button>
                 ))}
               </div>
@@ -176,9 +190,10 @@ const ChallengeForm = ({ open, onClose, preselectedUser }: ChallengeFormProps) =
         <DialogFooter>
           <button
             onClick={handleSubmit}
-            className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+            disabled={submitting}
+            className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
-            Opprett utfordring
+            {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Opprett utfordring'}
           </button>
         </DialogFooter>
       </DialogContent>

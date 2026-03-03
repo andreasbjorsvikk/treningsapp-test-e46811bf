@@ -52,12 +52,10 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
+      {/* App icon */}
       <div className="w-full max-w-sm space-y-8">
-        {/* Logo */}
         <div className="flex flex-col items-center gap-3">
-          <div className="gradient-energy rounded-2xl p-3">
-            <Activity className="w-8 h-8 text-primary-foreground" />
-          </div>
+          <img src="/app-icon-512.png" alt="Treningslogg" className="w-20 h-20 rounded-2xl shadow-lg" />
           <h1 className="font-display font-bold text-2xl">
             Trenings<span className="text-gradient-energy">logg</span>
           </h1>
@@ -207,13 +205,6 @@ const LoginPage = () => {
           )}
         </div>
 
-        {/* Skip login for dev */}
-        <button
-          onClick={() => navigate('/')}
-          className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors w-full text-center"
-        >
-          Fortsett uten innlogging →
-        </button>
       </div>
     </div>
   );
