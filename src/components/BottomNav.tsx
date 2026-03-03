@@ -21,7 +21,7 @@ const BottomNav = ({ active, onNavigate }: BottomNavProps) => {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 glass-card border-t border-border/50 lg:bottom-auto lg:top-0 lg:border-t-0 lg:border-b">
-      <div className="flex items-center justify-between px-2 pt-1 pb-5 lg:pt-0 lg:pb-0 lg:container lg:justify-start lg:gap-1 lg:px-4">
+      <div className="flex items-center justify-between px-2 pt-1 pb-4 lg:pt-0 lg:pb-0 lg:container lg:justify-start lg:gap-1 lg:px-4">
         {tabConfig.map(tab => {
           const Icon = tab.icon;
           const isActive = active === tab.id;

@@ -24,6 +24,8 @@ export interface AppSettings {
   privacyWorkouts: PrivacyLevel;
   privacyStats: PrivacyLevel;
   privacyGoals: PrivacyLevel;
+  pinnedChallengeIds: string[];
+  homeSectionOrder: string[];
 }
 
 interface ThemeColors {
@@ -168,6 +170,8 @@ const defaultSettings: AppSettings = {
   privacyWorkouts: 'me',
   privacyStats: 'me',
   privacyGoals: 'me',
+  pinnedChallengeIds: [],
+  homeSectionOrder: ['wheels', 'activity', 'stats', 'challenges', 'extraGoals'],
 };
 
 interface SettingsContextType {

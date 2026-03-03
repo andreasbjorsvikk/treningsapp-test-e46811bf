@@ -5,6 +5,7 @@ import { getActivityColors } from '@/utils/activityColors';
 import { decodePolyline } from '@/utils/polyline';
 import { useSettings } from '@/contexts/SettingsContext';
 import ActivityIcon from '@/components/ActivityIcon';
+import RouteMapSVG from '@/components/RouteMapSVG';
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter,
 } from '@/components/ui/drawer';
@@ -34,18 +35,6 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
   const [loadingStreams, setLoadingStreams] = useState(false);
   const [streamsLoaded, setStreamsLoaded] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showMap, setShowMap] = useState(false);
-
-  // Delay map render until drawer animation is done
-  useEffect(() => {
-    if (open && session?.summaryPolyline) {
-      setShowMap(false);
-      const timer = setTimeout(() => setShowMap(true), 400);
-      return () => clearTimeout(timer);
-    } else {
-      setShowMap(false);
-    }
-  }, [open, session?.id]);
 
   const config = session ? sessionTypeConfig[session.type] : null;
   const colors = session ? getActivityColors(session.type, isDark) : null;
@@ -71,10 +60,6 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
 
   if (!session || !config || !colors) return null;
 
-  const tileUrl = isDark
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-
   const dateFormatted = new Date(session.date).toLocaleDateString('nb-NO', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
@@ -98,7 +83,6 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
     setStreams(null);
     setStreamsLoaded(false);
     setLoadingStreams(false);
-    setShowMap(false);
     onClose();
   };
 
@@ -112,19 +96,14 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
               <DrawerDescription>Øktdetaljer</DrawerDescription>
             </DrawerHeader>
 
-            {/* Map */}
-            {routePoints && showMap && (
-              <MapSection
+            {/* SVG Route Map - no external dependencies, always works */}
+            {routePoints && (
+              <RouteMapSVG
                 routePoints={routePoints}
                 lineColor={colors.text}
-                tileUrl={tileUrl}
-                sessionId={session.id}
+                height={192}
+                isDark={isDark}
               />
-            )}
-            {routePoints && !showMap && (
-              <div className="w-full h-48 flex items-center justify-center bg-secondary/30">
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-              </div>
             )}
 
             {/* Header */}
@@ -280,51 +259,6 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
     </>
   );
 };
-
-// Separate component to isolate Leaflet rendering
-function MapSection({ routePoints, lineColor, tileUrl, sessionId }: {
-  routePoints: [number, number][];
-  lineColor: string;
-  tileUrl: string;
-  sessionId: string;
-}) {
-  const [error, setError] = useState(false);
-  const [RouteMap, setRouteMap] = useState<React.ComponentType<any> | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    import('@/components/RouteMap')
-      .then(mod => { if (!cancelled) setRouteMap(() => mod.default); })
-      .catch(() => { if (!cancelled) setError(true); });
-    return () => { cancelled = true; };
-  }, []);
-
-  if (error) {
-    return (
-      <div className="w-full h-32 flex items-center justify-center bg-secondary/30 text-muted-foreground text-sm">
-        Kartet kunne ikke lastes
-      </div>
-    );
-  }
-
-  if (!RouteMap) {
-    return (
-      <div className="w-full h-48 flex items-center justify-center bg-secondary/30">
-        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  return (
-    <RouteMap
-      key={sessionId}
-      routePoints={routePoints}
-      lineColor={lineColor}
-      tileUrl={tileUrl}
-      height={192}
-    />
-  );
-}
 
 function StatTile({ icon, value, label, accent }: { icon: React.ReactNode; value: string; label: string; accent?: boolean }) {
   return (
