@@ -33,40 +33,66 @@ interface MapboxRouteMapProps {
   isDark: boolean;
 }
 
+// Encode polyline in Mapbox's format (Google encoded polyline format)
 function encodePolylineForMapbox(points: [number, number][]): string {
-  // Mapbox static API accepts GeoJSON or encoded polyline via path
-  // We'll use the polyline path overlay
-  const coords = points.map(([lat, lng]) => `[${lng},${lat}]`).join(',');
-  return coords;
+  let encoded = '';
+  let prevLat = 0;
+  let prevLng = 0;
+
+  for (const [lat, lng] of points) {
+    const dLat = Math.round((lat - prevLat) * 1e5);
+    const dLng = Math.round((lng - prevLng) * 1e5);
+    prevLat = lat;
+    prevLng = lng;
+    encoded += encodeValue(dLat) + encodeValue(dLng);
+  }
+  return encoded;
+}
+
+function encodeValue(value: number): string {
+  let v = value < 0 ? ~(value << 1) : value << 1;
+  let encoded = '';
+  while (v >= 0x20) {
+    encoded += String.fromCharCode((0x20 | (v & 0x1f)) + 63);
+    v >>= 5;
+  }
+  encoded += String.fromCharCode(v + 63);
+  return encoded;
+}
+
+function simplifyPoints(points: [number, number][], maxPoints: number): [number, number][] {
+  if (points.length <= maxPoints) return points;
+  const step = (points.length - 1) / (maxPoints - 1);
+  const result: [number, number][] = [];
+  for (let i = 0; i < maxPoints; i++) {
+    result.push(points[Math.round(i * step)]);
+  }
+  return result;
 }
 
 function getStaticMapUrl(routePoints: [number, number][], lineColor: string, width: number, height: number, isDark: boolean): string {
   const style = isDark ? 'dark-v11' : 'outdoors-v12';
-  
-  // Build GeoJSON overlay for the route
-  const geojson = {
-    type: 'Feature',
-    properties: { 'stroke': lineColor, 'stroke-width': 3, 'stroke-opacity': 0.85 },
-    geometry: {
-      type: 'LineString',
-      coordinates: routePoints.map(([lat, lng]) => [lng, lat]),
-    },
-  };
 
-  const overlay = `geojson(${encodeURIComponent(JSON.stringify(geojson))})`;
-  
-  // auto = auto-fit bounds
+  // Simplify to avoid URL length issues
+  const simplified = simplifyPoints(routePoints, 200);
+  const encoded = encodePolylineForMapbox(simplified);
+
+  // Clean color (remove # if present)
+  const color = lineColor.replace('#', '');
+
+  // Use path overlay with encoded polyline
+  const overlay = `path-3+${color}-0.85(${encodeURIComponent(encoded)})`;
+
   const retina = window.devicePixelRatio >= 2 ? '@2x' : '';
   return `https://api.mapbox.com/styles/v1/mapbox/${style}/static/${overlay}/auto/${width}x${height}${retina}?padding=40&access_token=${MAPBOX_TOKEN}`;
 }
 
 const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteMapProps) => {
   const [interactive, setInteractive] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [imgError, setImgError] = useState(false);
 
   const staticUrl = useMemo(() => {
     if (routePoints.length < 2) return null;
-    // Use a reasonable width for static image
     return getStaticMapUrl(routePoints, lineColor, 600, Math.round(height * 1.5), isDark);
   }, [routePoints, lineColor, height, isDark]);
 
@@ -83,11 +109,14 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
     ? `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`
     : `https://api.mapbox.com/styles/v1/mapbox/outdoors-v12/tiles/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`;
 
-  if (!staticUrl || routePoints.length < 2) return null;
+  if (routePoints.length < 2) return null;
+
+  // If static image failed, go directly to interactive
+  const showInteractive = interactive || imgError;
 
   return (
-    <div ref={containerRef} className="w-full rounded-t-lg overflow-hidden relative" style={{ height: `${height}px` }}>
-      {!interactive ? (
+    <div className="w-full rounded-t-lg overflow-hidden relative" style={{ height: `${height}px` }}>
+      {!showInteractive && staticUrl ? (
         <>
           <img
             src={staticUrl}
@@ -95,6 +124,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
             className="w-full h-full object-cover"
             loading="lazy"
             onClick={() => setInteractive(true)}
+            onError={() => setImgError(true)}
           />
           <button
             onClick={() => setInteractive(true)}
@@ -122,7 +152,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
             <MapResizer />
           </MapContainer>
           <button
-            onClick={() => setInteractive(false)}
+            onClick={() => { setInteractive(false); setImgError(false); }}
             className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm rounded-lg p-1.5 shadow-md hover:bg-background transition-colors z-[1000]"
             title="Tilbake til standard"
           >

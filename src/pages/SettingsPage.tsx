@@ -15,7 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { SessionType } from '@/types/workout';
-import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw, Loader2, Check, Pencil, Dumbbell, Lock } from 'lucide-react';
+import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw, Loader2, Check, Pencil, Dumbbell, Lock, HelpCircle, Target, BarChart3, Calendar, Users, Zap } from 'lucide-react';
 import { getActivityColors, activityColorMap } from '@/utils/activityColors';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
@@ -39,7 +39,7 @@ const COLOR_PRESETS = [
   { labelKey: 'color.mint', light: { bg: 'rgb(210,240,230)', text: 'rgb(35,95,75)', badge: 'rgb(225,248,240)' }, dark: { bg: 'rgb(80,145,120)', text: '#ffffff', badge: '#1a3a2e' } },
 ];
 
-type SettingsView = 'main' | 'appearance' | 'preferences' | 'training' | 'data' | 'account' | 'sync' | 'privacy' | 'profile';
+type SettingsView = 'main' | 'appearance' | 'preferences' | 'training' | 'data' | 'account' | 'sync' | 'privacy' | 'profile' | 'help';
 
 const SettingsPage = () => {
   const { settings, updateSettings, appThemes, accentPresets, getTypeColor } = useSettings();
@@ -810,6 +810,148 @@ const SettingsPage = () => {
     );
   }
 
+  // ========== HELP VIEW ==========
+  if (view === 'help') {
+    return (
+      <div className="space-y-4">
+        {backButton('Hjelp')}
+
+        <div className="glass-card rounded-xl p-5 space-y-3">
+          <h3 className="font-display font-bold text-lg">Velkommen til Treningslogg 👋</h3>
+          <p className="text-sm text-muted-foreground">
+            Treningslogg hjelper deg med å holde oversikt over treningen din, sette mål, og følge fremgangen din over tid.
+            Her er en guide for å komme i gang!
+          </p>
+        </div>
+
+        {/* Treningsmål */}
+        <div className="glass-card rounded-xl p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="rounded-lg bg-success/10 p-2">
+              <Target className="w-5 h-5 text-[hsl(var(--success))]" />
+            </div>
+            <h3 className="font-display font-semibold text-base">Treningsmål</h3>
+          </div>
+          <div className="bg-secondary/50 rounded-xl p-4 space-y-2">
+            <div className="flex gap-3 items-center">
+              <div className="w-16 h-16 rounded-full border-4 border-success/30 flex items-center justify-center shrink-0">
+                <span className="text-xs font-bold text-[hsl(var(--success))]">75%</span>
+              </div>
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p><strong>Måned- og årshjul</strong> viser fremgangen din mot hovedmålet.</p>
+                <p>Grønn = foran skjema, rød = bak skjema.</p>
+              </div>
+            </div>
+          </div>
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p>📌 <strong>Sett et hovedmål:</strong> Gå til Trening → Mål og opprett ditt overordnede treningsmål (f.eks. antall økter per uke).</p>
+            <p>📌 <strong>Detaljerte mål:</strong> Du kan også sette mål for spesifikke aktiviteter, som «løp 100 km per måned» eller «3 styrkeøkter per uke».</p>
+            <p>📌 <strong>Fest til forsiden:</strong> Aktiver «Vis på forsiden» på dine mål for å se de på hjemskjermen.</p>
+            <p>📌 <strong>Oppdater mål:</strong> Mål kan endres når som helst. Historikken din beholdes.</p>
+          </div>
+        </div>
+
+        {/* Registrere økter */}
+        <div className="glass-card rounded-xl p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="rounded-lg bg-accent/10 p-2">
+              <Dumbbell className="w-5 h-5 text-accent" />
+            </div>
+            <h3 className="font-display font-semibold text-base">Registrere økter</h3>
+          </div>
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p>📝 <strong>Manuelt:</strong> Trykk på «+»-knappen på forsiden og velg «Ny økt». Fyll inn type, varighet, distanse og andre detaljer.</p>
+            <p>📝 <strong>Automatisk med Strava:</strong> Koble til Strava under Innstillinger → Synkronisering, og øktene dine importeres automatisk med kart, puls og andre data.</p>
+            <p>📝 <strong>Økttyper:</strong> Velg mellom løping, sykling, svømming, styrke, yoga, fjelltur, fotball, tennis og gå-tur.</p>
+          </div>
+        </div>
+
+        {/* Strava */}
+        <div className="glass-card rounded-xl p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="rounded-lg bg-warning/10 p-2">
+              <Zap className="w-5 h-5 text-[hsl(var(--warning))]" />
+            </div>
+            <h3 className="font-display font-semibold text-base">Strava-synkronisering</h3>
+          </div>
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p>🔗 <strong>Koble til:</strong> Gå til Innstillinger → Synkronisering og trykk «Koble til Strava».</p>
+            <p>🔗 <strong>Automatisk sync:</strong> Nye økter fra Strava importeres automatisk når du åpner appen.</p>
+            <p>🔗 <strong>Manuell sync:</strong> Trykk på synk-ikonet (🔄) på forsiden for å hente nye økter umiddelbart.</p>
+            <p>🔗 <strong>Detaljerte data:</strong> Trykk «Mer detaljer» på en økt for å se puls- og høydeprofil fra Strava.</p>
+          </div>
+        </div>
+
+        {/* Statistikk */}
+        <div className="glass-card rounded-xl p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="rounded-lg bg-accent/10 p-2">
+              <BarChart3 className="w-5 h-5 text-accent" />
+            </div>
+            <h3 className="font-display font-semibold text-base">Statistikk og rekorder</h3>
+          </div>
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p>📊 <strong>Statistikk:</strong> Under Trening-fanen finner du detaljert statistikk med grafer, trender og oversikt over treningen din.</p>
+            <p>📊 <strong>Rekorder:</strong> Dine personlige rekorder (lengste løpetur, raskeste tempo, osv.) oppdateres automatisk.</p>
+            <p>📊 <strong>Filtrering:</strong> Filtrer statistikken etter aktivitetstype og tidsperiode.</p>
+          </div>
+        </div>
+
+        {/* Kalender */}
+        <div className="glass-card rounded-xl p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="rounded-lg bg-success/10 p-2">
+              <Calendar className="w-5 h-5 text-[hsl(var(--success))]" />
+            </div>
+            <h3 className="font-display font-semibold text-base">Kalender</h3>
+          </div>
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p>📅 <strong>Oversikt:</strong> Kalenderen gir deg en visuell oversikt over alle treningsøktene dine.</p>
+            <p>📅 <strong>Trykk på en dag:</strong> Se detaljene for øktene du har gjort den dagen.</p>
+            <p>📅 <strong>Helsehendelser:</strong> Registrer sykdom eller skade via «+»-menyen, og de vises som markører i kalenderen.</p>
+          </div>
+        </div>
+
+        {/* Fellesskap */}
+        <div className="glass-card rounded-xl p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="rounded-lg bg-accent/10 p-2">
+              <Users className="w-5 h-5 text-accent" />
+            </div>
+            <h3 className="font-display font-semibold text-base">Fellesskap</h3>
+          </div>
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p>👥 <strong>Venner:</strong> Søk etter brukernavn og legg til venner. Se deres statistikk og sammenlign treningen.</p>
+            <p>👥 <strong>Utfordringer:</strong> Opprett utfordringer med venner – hvem klarer flest km løping denne måneden?</p>
+            <p>👥 <strong>Ledertavle:</strong> Se hvor du ligger an sammenlignet med vennene dine.</p>
+          </div>
+        </div>
+
+        {/* Tilpasning */}
+        <div className="glass-card rounded-xl p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="rounded-lg bg-warning/10 p-2">
+              <Palette className="w-5 h-5 text-[hsl(var(--warning))]" />
+            </div>
+            <h3 className="font-display font-semibold text-base">Tilpasning</h3>
+          </div>
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p>🎨 <strong>Fargetema:</strong> Velg mellom ulike fargetemaer under Utseende.</p>
+            <p>🎨 <strong>Aktivitetsfarger:</strong> Tilpass fargene for hver aktivitetstype.</p>
+            <p>🎨 <strong>Mørk modus:</strong> Bytt mellom lys og mørk modus med knappen nede til høyre.</p>
+            <p>🎨 <strong>Forsiden:</strong> Hold inne på en overskrift på forsiden for å endre rekkefølgen på seksjonene.</p>
+          </div>
+        </div>
+
+        <div className="glass-card rounded-xl p-4 text-center">
+          <p className="text-xs text-muted-foreground">
+            Spørsmål eller tilbakemeldinger? Vi jobber stadig med å forbedre appen! 💪
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // ========== MAIN MENU ==========
   return (
     <div className="space-y-2">
@@ -885,6 +1027,7 @@ const SettingsPage = () => {
         {menuItem(t('settings.training'), <Dumbbell className="w-4 h-4" />, () => setView('training'))}
         {menuItem('Personvern', <Lock className="w-4 h-4" />, () => setView('privacy'))}
         {menuItem(t('settings.sync'), <RefreshCw className="w-4 h-4" />, () => setView('sync'))}
+        {menuItem('Hjelp', <HelpCircle className="w-4 h-4" />, () => setView('help'))}
         {menuItem(t('settings.dangerZone'), <Shield className="w-4 h-4" />, () => setView('data'))}
       </div>
 
