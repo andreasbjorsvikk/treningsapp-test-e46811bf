@@ -25,14 +25,12 @@ interface TrainingPageProps {
   initialStatPeriod?: 'month' | 'year';
 }
 
-const monthNames = [
-  'Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni',
-  'Juli', 'August', 'September', 'Oktober', 'November', 'Desember',
-];
+// Month names are now provided via translation
 
 const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
   const [subTab, setSubTab] = useState<TrainingSubTab>('statistikk');
   const { t } = useTranslation();
+  const monthNames = Array.from({ length: 12 }, (_, i) => t(`month.${i}`));
   const appData = useAppDataContext();
 
   // Listen for navigation to goals tab from home page
@@ -140,12 +138,12 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
   const allPeriods = appData.primaryGoals;
 
   const monthData = useMemo(() =>
-    computeMonthWheelData(allPeriods, allSessions, statMonth, statYear, now, 'økter'),
+    computeMonthWheelData(allPeriods, allSessions, statMonth, statYear, now, t('metric.sessions')),
     [allPeriods, allSessions, statMonth, statYear]
   );
 
   const yearData = useMemo(() =>
-    computeYearWheelData(allPeriods, allSessions, statYear, now, 'økter'),
+    computeYearWheelData(allPeriods, allSessions, statYear, now, t('metric.sessions')),
     [allPeriods, allSessions, statYear]
   );
 
@@ -194,7 +192,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
     a.download = `treningslogg-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('Økter eksportert!');
+    toast.success(t('training.exportSuccess'));
   }, [allSessions]);
 
   const handleImportFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -211,7 +209,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
         }
         toast.success(`${data.length} økter importert.`);
       } catch {
-        toast.error('Kunne ikke lese filen. Sjekk at det er en gyldig JSON-fil.');
+        toast.error(t('training.importError'));
       }
     };
     reader.readAsText(file);
@@ -224,7 +222,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
   }, []);
 
   const handleImportReplace = useCallback(() => {
-    if (confirm('⚠️ Dette vil overskrive alle økter du har i appen fra før. Er du sikker?')) {
+    if (confirm(t('training.importReplaceConfirm'))) {
       setImportMode('replace');
       setTimeout(() => importFileRef.current?.click(), 0);
     }
@@ -272,13 +270,13 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={handleExport}>
-                    <Download className="w-4 h-4 mr-2" /> Eksporter alle økter
+                    <Download className="w-4 h-4 mr-2" /> {t('training.exportAll')}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleImportMerge}>
-                    <Upload className="w-4 h-4 mr-2" /> Importer (legg til)
+                    <Upload className="w-4 h-4 mr-2" /> {t('training.importAdd')}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleImportReplace} className="text-destructive focus:text-destructive">
-                    <Replace className="w-4 h-4 mr-2" /> Importer (erstatt alt)
+                    <Replace className="w-4 h-4 mr-2" /> {t('training.importReplace')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -290,7 +288,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
 
           <div className="space-y-2">
             {historyByMonth.length === 0 ? (
-              <p className="text-center py-12 text-muted-foreground">Ingen økter funnet i {historyYear}.</p>
+              <p className="text-center py-12 text-muted-foreground">{t('training.noSessionsFound')} {historyYear}.</p>
             ) : (
               historyByMonth.map(group => {
                 const monthKey = `${historyYear}-${group.month}`;
@@ -305,7 +303,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
                         <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${!isCollapsed ? 'rotate-90' : ''}`} />
                         <span className="font-display font-semibold text-sm">{group.label}</span>
                         <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
-                          {group.sessions.length} {group.sessions.length === 1 ? 'økt' : 'økter'}
+                          {group.sessions.length} {group.sessions.length === 1 ? t('training.session') : t('training.sessions')}
                         </span>
                       </div>
                     </button>
@@ -326,7 +324,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
           {healthEvents.filter(he => new Date(he.dateFrom).getFullYear() === parseInt(historyYear)).length > 0 && (
             <div className="space-y-2 mt-6">
               <h3 className="font-display font-semibold text-base text-foreground">
-                Helsehendelser
+                {t('training.healthEvents')}
               </h3>
               <div className="flex gap-2">
                 {(['all', 'sickness', 'injury'] as const).map(f => (
@@ -340,17 +338,17 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
                     }`}
                   >
                     {f === 'all' ? (
-                      'Alle'
+                      t('training.filterAll')
                     ) : f === 'sickness' ? (
-                      <><Ambulance className="w-3.5 h-3.5" /> Sykdom</>
+                      <><Ambulance className="w-3.5 h-3.5" /> {t('training.filterSickness')}</>
                     ) : (
-                      <><Cross className="w-3.5 h-3.5" /> Skade</>
+                      <><Cross className="w-3.5 h-3.5" /> {t('training.filterInjury')}</>
                     )}
                   </button>
                 ))}
               </div>
               {yearHealthEvents.length === 0 ? (
-                <p className="text-center py-4 text-sm text-muted-foreground">Ingen hendelser funnet.</p>
+                <p className="text-center py-4 text-sm text-muted-foreground">{t('training.noEventsFound')}</p>
               ) : yearHealthEvents.map(he => (
                 <div key={he.id} className="glass-card rounded-xl p-3 flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
@@ -362,11 +360,11 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">
-                      {he.type === 'sickness' ? 'Sykdom' : 'Skade'}
+                      {he.type === 'sickness' ? t('health.sickness') : t('health.injury')}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(he.dateFrom).toLocaleDateString('nb-NO', { day: 'numeric', month: 'short' })}
-                      {he.dateTo && ` – ${new Date(he.dateTo).toLocaleDateString('nb-NO', { day: 'numeric', month: 'short' })}`}
+                      {new Date(he.dateFrom).toLocaleDateString(t('date.locale'), { day: 'numeric', month: 'short' })}
+                      {he.dateTo && ` – ${new Date(he.dateTo).toLocaleDateString(t('date.locale'), { day: 'numeric', month: 'short' })}`}
                     </p>
                     {he.notes && <p className="text-xs text-muted-foreground mt-0.5">{he.notes}</p>}
                   </div>
@@ -380,7 +378,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
                     </button>
                     <button
                       onClick={async () => {
-                        if (confirm('Er du sikker på at du vil slette denne hendelsen?')) {
+                      if (confirm(t('training.deleteEventConfirm'))) {
                           await appData.deleteHealthEvent(he.id);
                         }
                       }}

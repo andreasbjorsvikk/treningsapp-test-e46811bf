@@ -2,6 +2,7 @@ import { ChallengeWithParticipants } from '@/pages/CommunityPage';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { MapPin, Clock, MountainSnow, Activity } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const metricIcons: Record<string, typeof Activity> = {
   sessions: Activity,
@@ -24,15 +25,17 @@ interface ChallengeCardProps {
 
 const ChallengeCard = ({ challenge, onClick }: ChallengeCardProps) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const c = challenge.challenge;
   const Icon = metricIcons[c.metric] || Activity;
   const unit = metricUnits[c.metric] || '';
   const myParticipant = challenge.participants.find(p => p.userId === user?.id);
   const progressPct = myParticipant && c.target > 0 ? Math.min((myParticipant.progress / c.target) * 100, 100) : 0;
 
+  const locale = t('date.locale');
   const startDate = new Date(c.period_start);
   const endDate = new Date(c.period_end);
-  const periodStr = `${startDate.toLocaleDateString('nb-NO', { day: 'numeric', month: 'short' })} – ${endDate.toLocaleDateString('nb-NO', { day: 'numeric', month: 'short' })}`;
+  const periodStr = `${startDate.toLocaleDateString(locale, { day: 'numeric', month: 'short' })} – ${endDate.toLocaleDateString(locale, { day: 'numeric', month: 'short' })}`;
 
   return (
     <button
@@ -53,8 +56,8 @@ const ChallengeCard = ({ challenge, onClick }: ChallengeCardProps) => {
         <p className="text-sm text-muted-foreground">{periodStr}</p>
         <p className="text-sm font-medium text-accent">
           {c.target > 0
-            ? `Mål: ${c.target} ${unit}`
-            : `Mest ${c.metric === 'sessions' ? 'økter' : c.metric === 'distance' ? 'km' : c.metric === 'duration' ? 'timer' : 'm'}`
+            ? `${t('challengeCard.target')}: ${c.target} ${unit}`
+            : `${t('challengeCard.most')} ${t(`challenge.most${c.metric === 'sessions' ? 'Sessions' : c.metric === 'distance' ? 'Distance' : c.metric === 'duration' ? 'Duration' : 'Elevation'}`)}`
           }
         </p>
       </div>
@@ -83,7 +86,7 @@ const ChallengeCard = ({ challenge, onClick }: ChallengeCardProps) => {
           {myParticipant && (
             <span className="text-sm font-medium text-accent">#{myParticipant.rank}</span>
           )}
-          <span className="text-sm text-muted-foreground">· {challenge.participants.length} deltakere</span>
+          <span className="text-sm text-muted-foreground">· {challenge.participants.length} {t('challengeCard.participants')}</span>
         </div>
         <div className="flex -space-x-1.5">
           {challenge.participants.slice(0, 4).map(p => (
