@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { stravaService } from '@/services/stravaService';
 import { mockChallenges, Challenge } from '@/data/mockCommunity';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 import BottomNav, { TabId } from '@/components/BottomNav';
 import StatsOverview from '@/components/StatsOverview';
@@ -41,7 +42,8 @@ const Index = () => {
   );
 };
 
-const ALL_SECTION_IDS = ['wheels', 'activity', 'stats', 'challenges', 'extraGoals'] as const;
+// Only bottom sections are reorderable
+const REORDERABLE_IDS = ['challenges', 'extraGoals', 'recentSessions'] as const;
 
 const IndexContent = () => {
   const { settings, updateSettings } = useSettings();
@@ -49,6 +51,7 @@ const IndexContent = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const appData = useAppDataContext();
+  const isMobile = useIsMobile();
 
   const [activeTab, setActiveTab] = useState<TabId>('hjem');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -62,18 +65,31 @@ const IndexContent = () => {
   const [detailSession, setDetailSession] = useState<WorkoutSession | null>(null);
   const [challengeDetail, setChallengeDetail] = useState<Challenge | null>(null);
 
-  // Section reordering
+  // Section reordering (only for bottom sections)
   const [isReordering, setIsReordering] = useState(false);
   const [reorderItems, setReorderItems] = useState<string[]>([]);
   const [dragSection, setDragSection] = useState<string | null>(null);
-  const [dragOverSection, setDragOverSection] = useState<string | null>(null);
-  const reorderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const sectionOrder = settings.homeSectionOrder?.length === ALL_SECTION_IDS.length
+  const sectionOrder = settings.homeSectionOrder?.length === REORDERABLE_IDS.length
     ? settings.homeSectionOrder
-    : [...ALL_SECTION_IDS];
+    : [...REORDERABLE_IDS];
 
-  // Auto-sync Strava on app open and when returning from background
+  // Lock body scroll when reordering
+  useEffect(() => {
+    if (isReordering) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, [isReordering]);
+
+  // Auto-sync Strava
   const lastSyncRef = useRef<number>(0);
 
   const autoSyncStrava = useCallback(async () => {
@@ -171,13 +187,11 @@ const IndexContent = () => {
     setTimeout(() => window.dispatchEvent(new CustomEvent('navigate-to-history')), 50);
   };
 
-  // === Section reorder handlers ===
+  // === Reorder handlers ===
   const sectionLabels: Record<string, string> = {
-    wheels: 'Treningsmål',
-    activity: t('home.last7days'),
-    stats: 'Statistikk',
     challenges: 'Utfordringer',
     extraGoals: t('home.goals'),
+    recentSessions: t('home.recentSessions'),
   };
 
   const enterReorderMode = () => {
@@ -186,6 +200,7 @@ const IndexContent = () => {
     if (navigator.vibrate) navigator.vibrate(30);
   };
 
+  // Desktop drag
   const handleReorderDragStart = (e: React.DragEvent, id: string) => {
     e.dataTransfer.effectAllowed = 'move';
     setDragSection(id);
@@ -194,8 +209,6 @@ const IndexContent = () => {
   const handleReorderDragOver = (e: React.DragEvent, id: string) => {
     e.preventDefault();
     if (dragSection && dragSection !== id) {
-      setDragOverSection(id);
-      // Swap positions
       setReorderItems(prev => {
         const next = [...prev];
         const fromIdx = next.indexOf(dragSection!);
@@ -209,24 +222,23 @@ const IndexContent = () => {
     }
   };
 
-  const handleReorderDrop = () => {
-    setDragSection(null);
-    setDragOverSection(null);
-  };
+  const handleReorderDrop = () => { setDragSection(null); };
 
   const saveReorder = () => {
     updateSettings({ homeSectionOrder: reorderItems });
     setIsReordering(false);
     setDragSection(null);
-    setDragOverSection(null);
   };
 
-  // Touch reorder
+  // Touch reorder - prevent scroll with e.preventDefault()
   const handleReorderTouchStart = (id: string) => {
     setDragSection(id);
+    if (navigator.vibrate) navigator.vibrate(15);
   };
 
   const handleReorderTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault(); // prevent page scroll
+    e.stopPropagation();
     if (!dragSection) return;
     const touch = e.touches[0];
     const el = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -244,25 +256,21 @@ const IndexContent = () => {
           }
           return next;
         });
-        if (navigator.vibrate) navigator.vibrate(15);
+        if (navigator.vibrate) navigator.vibrate(10);
       }
     }
   };
 
-  const handleReorderTouchEnd = () => {
-    setDragSection(null);
-  };
+  const handleReorderTouchEnd = () => { setDragSection(null); };
 
-  // === Section Header with long-press ===
+  // Long-press on section header to enter reorder
   const SectionHeader = ({ label, sectionId }: { label: string; sectionId?: string }) => {
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
     const onPointerDown = () => {
       if (!sectionId) return;
       timerRef.current = setTimeout(() => enterReorderMode(), 500);
     };
     const onPointerUp = () => { if (timerRef.current) clearTimeout(timerRef.current); };
-
     return (
       <h2
         className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2 select-none"
@@ -296,52 +304,9 @@ const IndexContent = () => {
     </div>
   );
 
-  // === Render individual sections ===
-  const renderSection = (id: string) => {
+  // === Render reorderable section by id ===
+  const renderReorderableSection = (id: string) => {
     switch (id) {
-      case 'wheels':
-        return (
-          <section key="wheels" className="space-y-2">
-            <SectionHeader label="Treningsmål" sectionId="wheels" />
-            <div className="grid grid-cols-2 gap-3">
-              <ProgressWheel
-                percent={monthData.percent} current={monthData.current} target={monthData.target}
-                unit={monthData.unit} title={t(`month.${new Date().getMonth()}`)}
-                hasGoal={!!primaryGoal} expectedFraction={monthData.expectedFraction}
-                paceDiff={monthData.diff} showPaceLabel onClick={navigateToGoals}
-              />
-              <ProgressWheel
-                percent={yearData.percent} current={yearData.current} target={yearData.target}
-                unit={yearData.unit} title={String(new Date().getFullYear())}
-                hasGoal={!!primaryGoal} expectedFraction={yearData.expectedFraction}
-                paceDiff={yearData.diff} showPaceLabel onClick={navigateToGoals}
-              />
-            </div>
-          </section>
-        );
-
-      case 'activity':
-        return (
-          <section key="activity" className="space-y-2">
-            <SectionHeader label={t('home.last7days')} sectionId="activity" />
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <WeeklySessionIcons sessions={allSessions} onClick={navigateToHistory} />
-              </div>
-              <MiniCalendar sessions={allSessions} onClick={navigateToCalendar} />
-            </div>
-          </section>
-        );
-
-      case 'stats':
-        return (
-          <section key="stats" className="space-y-1">
-            <SectionHeader label="Statistikk" sectionId="stats" />
-            <StatModeToggle />
-            <StatsOverview stats={stats} compact onClick={navigateToStats} />
-          </section>
-        );
-
       case 'challenges':
         if (pinnedChallenges.length === 0) return null;
         return (
@@ -368,6 +333,23 @@ const IndexContent = () => {
               onToggleHome={(id) => { appData.updateGoal(id, { showOnHome: false }); }}
               onReorder={(ids) => { if (ids) appData.reorderGoals(ids); }}
             />
+          </section>
+        );
+
+      case 'recentSessions':
+        return (
+          <section key="recentSessions">
+            <div className="flex items-center justify-between mb-3">
+              <SectionHeader label={t('home.recentSessions')} sectionId="recentSessions" />
+              <Button size="sm" onClick={() => { setEditSession(undefined); setDialogOpen(true); }}>
+                <Plus className="w-4 h-4 mr-1" /> {t('home.newSession')}
+              </Button>
+            </div>
+            <div className="space-y-3">
+              {recentSessions.map(s => (
+                <SessionCard key={s.id} session={s} onClick={setDetailSession} />
+              ))}
+            </div>
           </section>
         );
 
@@ -417,9 +399,88 @@ const IndexContent = () => {
               </DropdownMenu>
             </div>
 
-            {/* Reorder mode */}
+            {/* ===== FIXED TOP SECTION (not reorderable) ===== */}
+            {!isReordering && (
+              <div className="space-y-5">
+                {/* Desktop: 4-column layout */}
+                {!isMobile ? (
+                  <div className="grid grid-cols-4 gap-3 items-start">
+                    {/* Col 1: Month wheel */}
+                    <ProgressWheel
+                      percent={monthData.percent} current={monthData.current} target={monthData.target}
+                      unit={monthData.unit} title={t(`month.${new Date().getMonth()}`)}
+                      hasGoal={!!primaryGoal} expectedFraction={monthData.expectedFraction}
+                      paceDiff={monthData.diff} showPaceLabel onClick={navigateToGoals}
+                    />
+                    {/* Col 2: Year wheel */}
+                    <ProgressWheel
+                      percent={yearData.percent} current={yearData.current} target={yearData.target}
+                      unit={yearData.unit} title={String(new Date().getFullYear())}
+                      hasGoal={!!primaryGoal} expectedFraction={yearData.expectedFraction}
+                      paceDiff={yearData.diff} showPaceLabel onClick={navigateToGoals}
+                    />
+                    {/* Col 3: Mini calendar */}
+                    <MiniCalendar sessions={allSessions} onClick={navigateToCalendar} />
+                    {/* Col 4: Weekly icons + Stats stacked */}
+                    <div className="space-y-3">
+                      <WeeklySessionIcons sessions={allSessions} onClick={navigateToHistory} />
+                      <div>
+                        <StatModeToggle />
+                        <StatsOverview stats={stats} compact onClick={navigateToStats} />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* Mobile: stacked sections */
+                  <>
+                    <section className="space-y-2">
+                      <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2 select-none">
+                        Treningsmål
+                      </h2>
+                      <div className="grid grid-cols-2 gap-3">
+                        <ProgressWheel
+                          percent={monthData.percent} current={monthData.current} target={monthData.target}
+                          unit={monthData.unit} title={t(`month.${new Date().getMonth()}`)}
+                          hasGoal={!!primaryGoal} expectedFraction={monthData.expectedFraction}
+                          paceDiff={monthData.diff} showPaceLabel onClick={navigateToGoals}
+                        />
+                        <ProgressWheel
+                          percent={yearData.percent} current={yearData.current} target={yearData.target}
+                          unit={yearData.unit} title={String(new Date().getFullYear())}
+                          hasGoal={!!primaryGoal} expectedFraction={yearData.expectedFraction}
+                          paceDiff={yearData.diff} showPaceLabel onClick={navigateToGoals}
+                        />
+                      </div>
+                    </section>
+                    <section className="space-y-2">
+                      <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2 select-none">
+                        {t('home.last7days')}
+                      </h2>
+                      <div className="grid grid-cols-2 gap-3">
+                        <WeeklySessionIcons sessions={allSessions} onClick={navigateToHistory} />
+                        <MiniCalendar sessions={allSessions} onClick={navigateToCalendar} />
+                      </div>
+                    </section>
+                    <section className="space-y-1">
+                      <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2 select-none">
+                        Statistikk
+                      </h2>
+                      <StatModeToggle />
+                      <StatsOverview stats={stats} compact onClick={navigateToStats} />
+                    </section>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* ===== REORDERABLE BOTTOM SECTIONS ===== */}
             {isReordering ? (
-              <div className="space-y-1.5" onTouchMove={handleReorderTouchMove} onTouchEnd={handleReorderTouchEnd}>
+              <div
+                className="space-y-1.5"
+                style={{ touchAction: 'none' }}
+                onTouchMove={handleReorderTouchMove}
+                onTouchEnd={handleReorderTouchEnd}
+              >
                 <p className="text-xs text-muted-foreground text-center mb-2">Dra for å endre rekkefølge</p>
                 {reorderItems.map((id) => (
                   <div
@@ -430,6 +491,7 @@ const IndexContent = () => {
                     onDragOver={(e) => handleReorderDragOver(e, id)}
                     onDrop={handleReorderDrop}
                     onTouchStart={() => handleReorderTouchStart(id)}
+                    style={{ touchAction: 'none' }}
                     className={`py-3 px-4 rounded-xl flex items-center gap-3 cursor-grab active:cursor-grabbing transition-all select-none ${
                       dragSection === id ? 'bg-primary/10 scale-[1.02] shadow-sm' : 'bg-secondary/50'
                     }`}
@@ -443,29 +505,9 @@ const IndexContent = () => {
                 </Button>
               </div>
             ) : (
-              /* Normal sections in order */
               <div className="space-y-5">
-                {sectionOrder.map(id => renderSection(id))}
+                {sectionOrder.map(id => renderReorderableSection(id))}
               </div>
-            )}
-
-            {/* Recent sessions - always at bottom */}
-            {!isReordering && (
-              <section>
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                    {t('home.recentSessions')}
-                  </h2>
-                  <Button size="sm" onClick={() => { setEditSession(undefined); setDialogOpen(true); }}>
-                    <Plus className="w-4 h-4 mr-1" /> {t('home.newSession')}
-                  </Button>
-                </div>
-                <div className="space-y-3">
-                  {recentSessions.map(s => (
-                    <SessionCard key={s.id} session={s} onClick={setDetailSession} />
-                  ))}
-                </div>
-              </section>
             )}
           </>
         )}
@@ -509,14 +551,12 @@ const IndexContent = () => {
         onSave={handleHealthSave}
       />
 
-      {/* Challenge detail for pinned challenges */}
       <ChallengeDetail
         challenge={challengeDetail}
         open={!!challengeDetail}
         onClose={() => setChallengeDetail(null)}
       />
 
-      {/* Edit Goal Dialog (for home-pinned goals) */}
       <Dialog open={showGoalEditDialog} onOpenChange={(open) => { if (!open) { setShowGoalEditDialog(false); setEditGoal(undefined); } }}>
         <DialogContent className="max-w-[min(calc(100vw-2rem),26rem)] p-4 overflow-hidden">
           <DialogHeader>
