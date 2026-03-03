@@ -102,7 +102,7 @@ const FriendsSection = ({ onOpenProfile }: FriendsSectionProps) => {
         <Input
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Søk etter navn..."
+          placeholder="Søk etter brukernavn..."
           className="pl-9"
         />
       </div>

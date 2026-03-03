@@ -45,9 +45,9 @@ function simplifyPoints(points: [number, number][], maxPoints: number): [number,
   return result;
 }
 
-function getStaticMapUrl(routePoints: [number, number][], lineColor: string, width: number, height: number): string {
-  // Always use outdoors style
-  const style = 'outdoors-v12';
+function getStaticMapUrl(routePoints: [number, number][], lineColor: string, width: number, height: number, isDark: boolean): string {
+  // Use outdoors for light, navigation-night for dark
+  const style = isDark ? 'navigation-night-v1' : 'outdoors-v12';
   const simplified = simplifyPoints(routePoints, 120);
   const encoded = encodePolylineForMapbox(simplified);
   const color = lineColor.replace('#', '');
@@ -57,28 +57,16 @@ function getStaticMapUrl(routePoints: [number, number][], lineColor: string, wid
 }
 
 const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteMapProps) => {
-  const [expanded, setExpanded] = useState(false);
+  const [interactive, setInteractive] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const [expandedHeight, setExpandedHeight] = useState(400);
 
   const staticUrl = useMemo(() => {
     if (routePoints.length < 2) return null;
-    return getStaticMapUrl(routePoints, lineColor, 600, Math.round(height * 1.5));
-  }, [routePoints, lineColor, height]);
-
-  // Calculate available height above for expansion
-  useEffect(() => {
-    if (expanded && wrapperRef.current) {
-      const rect = wrapperRef.current.getBoundingClientRect();
-      // Fill from top of drawer content to current bottom of map
-      const availableHeight = rect.bottom;
-      setExpandedHeight(Math.max(availableHeight, height));
-    }
-  }, [expanded, height]);
+    return getStaticMapUrl(routePoints, lineColor, 600, Math.round(height * 1.5), isDark);
+  }, [routePoints, lineColor, height, isDark]);
 
   const initInteractiveMap = useCallback(async () => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
@@ -100,8 +88,8 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
       [Math.max(...lats) + 0.002, Math.max(...lngs) + 0.005],
     ];
 
-    // Always outdoors style
-    const tileUrl = `https://api.mapbox.com/styles/v1/mapbox/outdoors-v12/tiles/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`;
+    const tileStyle = isDark ? 'navigation-night-v1' : 'outdoors-v12';
+    const tileUrl = `https://api.mapbox.com/styles/v1/mapbox/${tileStyle}/tiles/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`;
 
     const map = L.map(mapContainerRef.current, {
       scrollWheelZoom: true,
@@ -119,10 +107,10 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
     setTimeout(() => map.invalidateSize(), 50);
     setTimeout(() => map.invalidateSize(), 200);
     setTimeout(() => map.invalidateSize(), 500);
-  }, [routePoints, lineColor]);
+  }, [routePoints, lineColor, isDark]);
 
   useEffect(() => {
-    if (expanded && !imgError) {
+    if (interactive && !imgError) {
       initInteractiveMap();
     }
     return () => {
@@ -131,7 +119,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
         mapInstanceRef.current = null;
       }
     };
-  }, [expanded, initInteractiveMap]);
+  }, [interactive, initInteractiveMap]);
 
   useEffect(() => {
     if (imgError) {
@@ -139,43 +127,28 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
     }
   }, [imgError, initInteractiveMap]);
 
-  // Resize map when expanded height changes
-  useEffect(() => {
-    if (expanded && mapInstanceRef.current) {
-      setTimeout(() => mapInstanceRef.current?.invalidateSize(), 50);
-      setTimeout(() => mapInstanceRef.current?.invalidateSize(), 300);
-    }
-  }, [expanded, expandedHeight]);
-
   if (routePoints.length < 2) return null;
 
-  const showInteractive = expanded || imgError;
-  const currentHeight = showInteractive ? expandedHeight : height;
+  const showInteractive = interactive || imgError;
 
   return (
-    <div
-      ref={wrapperRef}
-      className="w-full rounded-t-lg overflow-hidden relative"
-      style={{ height: `${currentHeight}px`, transition: 'height 0.3s ease' }}
-    >
+    <div className="w-full rounded-t-lg overflow-hidden relative" style={{ height: `${height}px` }}>
       {!showInteractive && staticUrl ? (
         <>
-          {/* Dark mode overlay */}
-          {isDark && (
-            <div className="absolute inset-0 bg-black/30 z-[1] pointer-events-none rounded-t-lg" />
-          )}
           <img
             src={staticUrl}
             alt="Kartrute"
             className={`w-full h-full object-cover transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
             loading="lazy"
-            onClick={() => setExpanded(true)}
+            onClick={() => setInteractive(true)}
+            onLoad={() => setImgLoaded(true)}
+            onError={() => setImgError(true)}
           />
           {!imgLoaded && (
             <div className="absolute inset-0 bg-secondary/50 animate-pulse" />
           )}
           <button
-            onClick={() => setExpanded(true)}
+            onClick={() => setInteractive(true)}
             className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm rounded-lg p-1.5 shadow-md hover:bg-background transition-colors z-10"
             title="Utforsk kartet"
           >
@@ -184,13 +157,9 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
         </>
       ) : (
         <>
-          {/* Dark mode overlay on interactive map */}
-          {isDark && (
-            <div className="absolute inset-0 bg-black/20 z-[999] pointer-events-none" />
-          )}
           <div
             ref={mapContainerRef}
-            style={{ height: `${currentHeight}px`, width: '100%' }}
+            style={{ height: `${height}px`, width: '100%' }}
           />
           <button
             onClick={() => {
@@ -198,12 +167,12 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
                 mapInstanceRef.current.remove();
                 mapInstanceRef.current = null;
               }
-              setExpanded(false);
+              setInteractive(false);
               setImgError(false);
               setImgLoaded(false);
             }}
             className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm rounded-lg p-1.5 shadow-md hover:bg-background transition-colors z-[1000]"
-            title="Minimer"
+            title="Tilbake til standard"
           >
             <Minimize2 className="w-4 h-4 text-foreground" />
           </button>

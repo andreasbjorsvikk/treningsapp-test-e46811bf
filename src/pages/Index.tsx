@@ -102,10 +102,10 @@ const IndexContent = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressStartPos = useRef<{ x: number; y: number } | null>(null);
+  // Track the initial order snapshot to implement stable swaps
   const initialOrderRef = useRef<string[]>([]);
+  // Prevent touch move from firing swaps on the same frame as activation
   const dragJustActivated = useRef(false);
-  // Track if a scroll event happened during long press
-  const scrolledDuringLongPress = useRef(false);
 
   const reorderableIds = isMobile ? MOBILE_REORDERABLE_IDS : DESKTOP_REORDERABLE_IDS;
   const sectionOrder = settings.homeSectionOrder?.length === reorderableIds.length
@@ -126,20 +126,6 @@ const IndexContent = () => {
       document.body.style.touchAction = '';
     };
   }, [isDragging]);
-
-  // Cancel long press on ANY scroll event
-  useEffect(() => {
-    const onScroll = () => {
-      scrolledDuringLongPress.current = true;
-      if (longPressTimer.current) {
-        clearTimeout(longPressTimer.current);
-        longPressTimer.current = null;
-        longPressStartPos.current = null;
-      }
-    };
-    window.addEventListener('scroll', onScroll, true); // capture phase
-    return () => window.removeEventListener('scroll', onScroll, true);
-  }, []);
 
   // Auto-sync Strava
   const lastSyncRef = useRef<number>(0);
@@ -251,11 +237,6 @@ const IndexContent = () => {
 
   // === Direct drag handlers ===
   const startDrag = (id: string) => {
-    // If a scroll happened during the long press, cancel
-    if (scrolledDuringLongPress.current) {
-      scrolledDuringLongPress.current = false;
-      return;
-    }
     const order = [...sectionOrder];
     initialOrderRef.current = [...order];
     setDragOrder(order);
@@ -263,54 +244,39 @@ const IndexContent = () => {
     dragJustActivated.current = true;
     setIsDragging(true);
     if (navigator.vibrate) navigator.vibrate(30);
-
-    // On desktop, auto-scroll to bottom so confirm button is visible
-    if (!isMobile) {
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
-      });
-    }
-
+    // Reset flag after a frame so touch move doesn't fire immediately
     requestAnimationFrame(() => {
       dragJustActivated.current = false;
     });
   };
 
-  const cancelLongPress = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-    longPressStartPos.current = null;
-  };
-
-  const handleLongPressStart = (id: string, e?: React.TouchEvent) => {
-    scrolledDuringLongPress.current = false;
-    if (e && e.touches.length > 0) {
+  const handleLongPressStart = (id: string, e?: React.PointerEvent | React.TouchEvent) => {
+    if (e && 'clientX' in e) {
+      longPressStartPos.current = { x: e.clientX, y: e.clientY };
+    } else if (e && 'touches' in e && e.touches.length > 0) {
       longPressStartPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     } else {
       longPressStartPos.current = null;
     }
-    longPressTimer.current = setTimeout(() => {
-      if (!scrolledDuringLongPress.current) {
-        startDrag(id);
-      }
-    }, 700);
+    longPressTimer.current = setTimeout(() => startDrag(id), 700);
   };
-
   const handleLongPressEnd = () => {
-    cancelLongPress();
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressStartPos.current = null;
   };
-
-  const handleLongPressMove = (e: React.TouchEvent) => {
+  const handleLongPressMove = (e: React.PointerEvent | React.TouchEvent) => {
     if (!longPressStartPos.current || !longPressTimer.current) return;
-    const touch = e.touches[0];
-    if (!touch) return;
-    const dx = Math.abs(touch.clientX - longPressStartPos.current.x);
-    const dy = Math.abs(touch.clientY - longPressStartPos.current.y);
-    // Cancel on ANY movement > 5px
-    if (dx > 5 || dy > 5) {
-      cancelLongPress();
+    let cx: number, cy: number;
+    if ('clientX' in e) { cx = e.clientX; cy = e.clientY; }
+    else if ('touches' in e && e.touches.length > 0) { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
+    else return;
+    const dx = Math.abs(cx - longPressStartPos.current.x);
+    const dy = Math.abs(cy - longPressStartPos.current.y);
+    // Cancel on ANY movement (horizontal or vertical) > 8px
+    if (dx > 8 || dy > 8) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+      longPressStartPos.current = null;
     }
   };
 
@@ -323,11 +289,13 @@ const IndexContent = () => {
   const handleDragOver = (e: React.DragEvent, overId: string) => {
     e.preventDefault();
     if (dragId && dragId !== overId) {
+      // Use initial order for stable swap: find where dragId and overId were originally
       setDragOrder(prev => {
         const next = [...prev];
         const fromIdx = next.indexOf(dragId!);
         const toIdx = next.indexOf(overId);
         if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+          // Simple adjacent swap
           next[fromIdx] = overId;
           next[toIdx] = dragId!;
         }
@@ -337,6 +305,11 @@ const IndexContent = () => {
   };
   const handleDragEnd = () => {
     setDragId(null);
+  };
+
+  // Touch drag
+  const handleTouchStart = (id: string, e: React.TouchEvent) => {
+    handleLongPressStart(id, e);
   };
 
   // Streak / motivational data
@@ -484,16 +457,6 @@ const IndexContent = () => {
   }, []);
   const displayName = username || user?.email?.split('@')[0] || '';
 
-  // Section gradient styles
-  const sectionGradients: Record<string, string> = {
-    trainingGoals: 'bg-gradient-to-br from-energy/8 via-background to-accent/5',
-    last7dCalendar: 'bg-gradient-to-br from-accent/8 via-background to-energy/5',
-    statistics: 'bg-gradient-to-br from-primary/5 via-background to-energy/8',
-    challenges: 'bg-gradient-to-br from-warning/8 via-background to-accent/5',
-    extraGoals: 'bg-gradient-to-br from-success/8 via-background to-primary/5',
-    recentSessions: 'bg-gradient-to-br from-accent/8 via-background to-success/5',
-  };
-
   return (
     <div className="min-h-screen bg-background pb-20 lg:pb-0 lg:pt-16">
       <main className="container py-4 space-y-5">
@@ -599,10 +562,11 @@ const IndexContent = () => {
             {/* ===== REORDERABLE SECTIONS ===== */}
             <div
               ref={containerRef}
-              className="space-y-4"
+              className="space-y-5"
               style={isDragging ? { touchAction: 'none', overflowX: 'hidden' } : undefined}
               onTouchMove={(e) => {
                 if (isDragging && dragId) {
+                  // Skip if drag just activated this frame
                   if (dragJustActivated.current) return;
                   e.preventDefault();
                   e.stopPropagation();
@@ -616,6 +580,7 @@ const IndexContent = () => {
                         const fromIdx = prev.indexOf(dragId!);
                         const toIdx = prev.indexOf(overId);
                         if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return prev;
+                        // Simple swap: only the two items exchange
                         const next = [...prev];
                         next[fromIdx] = overId;
                         next[toIdx] = dragId!;
@@ -642,7 +607,6 @@ const IndexContent = () => {
                   if (id === 'challenges' && pinnedChallenges.length === 0) return null;
                   if (id === 'extraGoals' && homeGoals.length === 0) return null;
                 }
-                const gradient = sectionGradients[id] || '';
                 return (
                   <section
                     key={id}
@@ -651,17 +615,20 @@ const IndexContent = () => {
                     onDragStart={(e) => handleDragStart(e, id)}
                     onDragOver={(e) => handleDragOver(e, id)}
                     onDragEnd={handleDragEnd}
-                    className={`transition-all duration-200 ease-in-out rounded-2xl border border-border/30 px-4 py-4 ${gradient} ${
+                    className={`transition-all duration-200 ease-in-out ${
                       isDragging
-                        ? `${dragId === id ? 'scale-[1.02] shadow-md ring-2 ring-energy/30' : 'opacity-80'}`
+                        ? `rounded-xl px-3 py-3 mx-0 ${dragId === id ? 'bg-energy/10 scale-[1.02] shadow-md ring-2 ring-energy/30' : 'bg-secondary/30'}`
                         : ''
                     }`}
                   >
                     <div
                       className="flex items-center gap-2 select-none"
-                      onTouchStart={(e) => { if (!isDragging) handleLongPressStart(id, e); }}
-                      onTouchMove={handleLongPressMove}
-                      onTouchEnd={handleLongPressEnd}
+                      onPointerDown={(e) => { if (!isDragging) handleLongPressStart(id, e); }}
+                      onPointerMove={handleLongPressMove}
+                      onPointerUp={handleLongPressEnd}
+                      onPointerLeave={handleLongPressEnd}
+                      onTouchStart={(e) => { if (!isDragging) handleTouchStart(id, e); }}
+                      onTouchMove={(te) => { handleLongPressMove(te); }}
                     >
                       {isDragging && <GripVertical className="w-4 h-4 text-muted-foreground shrink-0" />}
                       <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2 flex-1">
