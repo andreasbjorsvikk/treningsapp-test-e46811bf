@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export type Period = 'month' | 'year' | 'total';
 
@@ -11,18 +12,15 @@ interface PeriodSelectorProps {
   onYearChange: (y: number) => void;
 }
 
-const monthNames = [
-  'Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni',
-  'Juli', 'August', 'September', 'Oktober', 'November', 'Desember',
-];
-
-const periods: { id: Period; label: string }[] = [
-  { id: 'month', label: 'Måned' },
-  { id: 'year', label: 'År' },
-  { id: 'total', label: 'Total' },
-];
-
 const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, onYearChange }: PeriodSelectorProps) => {
+  const { t } = useTranslation();
+
+  const periods: { id: Period; label: string }[] = [
+    { id: 'month', label: t('period.month') },
+    { id: 'year', label: t('period.year') },
+    { id: 'total', label: t('period.total') },
+  ];
+
   const handlePrev = () => {
     if (period === 'month') {
       if (month === 0) { onMonthChange(11); onYearChange(year - 1); }
@@ -66,7 +64,7 @@ const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, on
               <ChevronLeft className="w-4 h-4" />
             </button>
             <span className="text-xl font-display font-bold">
-              {period === 'month' ? `${monthNames[month]} ${year}` : year}
+              {period === 'month' ? `${t(`month.${month}`)} ${year}` : year}
             </span>
             <button onClick={handleNext} className="p-2 rounded-md hover:bg-secondary transition-colors">
               <ChevronRight className="w-4 h-4" />
@@ -75,7 +73,7 @@ const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, on
         ) : (
           <>
             <div className="p-2 w-8 h-8" aria-hidden />
-            <span className="text-xl font-display font-bold">Total</span>
+            <span className="text-xl font-display font-bold">{t('period.total')}</span>
             <div className="p-2 w-8 h-8" aria-hidden />
           </>
         )}

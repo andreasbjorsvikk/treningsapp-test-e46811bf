@@ -3,6 +3,7 @@ import { sessionTypeConfig } from '@/utils/workoutUtils';
 import { useSettings } from '@/contexts/SettingsContext';
 import { getActivityColors } from '@/utils/activityColors';
 import ActivityIcon from '@/components/ActivityIcon';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface TypeFilterProps {
   selected: SessionType | 'all';
@@ -11,6 +12,7 @@ interface TypeFilterProps {
 
 const TypeFilter = ({ selected, onSelect }: TypeFilterProps) => {
   const { settings } = useSettings();
+  const { t } = useTranslation();
   const isDark = settings.darkMode;
   const disabledTypes = settings.disabledSessionTypes || [];
   const types = (Object.entries(sessionTypeConfig) as [SessionType, typeof sessionTypeConfig[SessionType]][])
@@ -26,7 +28,7 @@ const TypeFilter = ({ selected, onSelect }: TypeFilterProps) => {
             : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
         }`}
       >
-        Alle
+        {t('common.all')}
       </button>
       {types.map(([type, config]) => {
         const isActive = selected === type;
@@ -41,7 +43,7 @@ const TypeFilter = ({ selected, onSelect }: TypeFilterProps) => {
             style={isActive ? { backgroundColor: colors.bg, color: colors.text } : undefined}
           >
             <ActivityIcon type={type} className="w-3.5 h-3.5" />
-            {config.label}
+            {t(`activity.${type}`)}
           </button>
         );
       })}

@@ -3,6 +3,7 @@ import { sessionTypeConfig, allSessionTypes } from '@/utils/workoutUtils';
 import { useSettings } from '@/contexts/SettingsContext';
 import { getActivityColors } from '@/utils/activityColors';
 import ActivityIcon from '@/components/ActivityIcon';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ActivityTypeFilterProps {
   selected: SessionType[];
@@ -11,6 +12,7 @@ interface ActivityTypeFilterProps {
 
 const ActivityTypeFilter = ({ selected, onToggle }: ActivityTypeFilterProps) => {
   const { settings } = useSettings();
+  const { t } = useTranslation();
   const isDark = settings.darkMode;
   const disabledTypes = settings.disabledSessionTypes || [];
   const filteredTypes = allSessionTypes.filter(t => !disabledTypes.includes(t));
@@ -38,10 +40,9 @@ const ActivityTypeFilter = ({ selected, onToggle }: ActivityTypeFilterProps) => 
             : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
         }`}
       >
-        Alle
+        {t('common.all')}
       </button>
       {filteredTypes.map((type) => {
-        const config = sessionTypeConfig[type];
         const isActive = selected.includes(type);
         const colors = getActivityColors(type, isDark);
         return (
@@ -54,7 +55,7 @@ const ActivityTypeFilter = ({ selected, onToggle }: ActivityTypeFilterProps) => 
             style={isActive ? { backgroundColor: colors.bg, color: colors.text } : undefined}
           >
             <ActivityIcon type={type} className="w-3.5 h-3.5" />
-            {config.label}
+            {t(`activity.${type}`)}
           </button>
         );
       })}
