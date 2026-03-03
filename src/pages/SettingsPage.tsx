@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSettings, AppColorTheme, AccentColor } from '@/contexts/SettingsContext';
+import { useSettings, AppColorTheme, AccentColor, PrivacyLevel } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { SessionType } from '@/types/workout';
@@ -19,6 +21,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
 import { stravaService } from '@/services/stravaService';
 import { toast } from 'sonner';
+import { mockUsers } from '@/data/mockCommunity';
 
 // Predefined color options for activity types
 const COLOR_PRESETS = [
@@ -59,6 +62,9 @@ const SettingsPage = () => {
   const [stravaLoading, setStravaLoading] = useState(false);
   const [stravaSyncing, setStravaSyncing] = useState(false);
   const [syncAllLoading, setSyncAllLoading] = useState(false);
+  const [showFriendPicker, setShowFriendPicker] = useState(false);
+  const [selectedPrivacyKey, setSelectedPrivacyKey] = useState<string | null>(null);
+  const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
 
   // Check Strava connection on mount & after callback
   useEffect(() => {
@@ -395,6 +401,7 @@ const SettingsPage = () => {
       { key: 'privacyStats' as const, label: 'Statistikk', desc: 'Hvem kan se statistikken din?' },
       { key: 'privacyGoals' as const, label: 'Mål og progresjon', desc: 'Hvem kan se måned- og årsmålet ditt?' },
     ];
+    const friends = mockUsers.filter(u => u.id !== 'me');
     return (
       <div className="space-y-4">
         {backButton('Personvern')}
@@ -409,7 +416,13 @@ const SettingsPage = () => {
               </div>
               <Select
                 value={settings[opt.key]}
-                onValueChange={(v) => updateSettings({ [opt.key]: v })}
+                onValueChange={(v) => {
+                  updateSettings({ [opt.key]: v });
+                  if (v === 'selected') {
+                    setSelectedPrivacyKey(opt.key);
+                    setShowFriendPicker(true);
+                  }
+                }}
               >
                 <SelectTrigger className="w-[120px] h-8">
                   <SelectValue />
@@ -423,6 +436,35 @@ const SettingsPage = () => {
             </div>
           ))}
         </div>
+
+        <Dialog open={showFriendPicker} onOpenChange={setShowFriendPicker}>
+          <DialogContent className="max-w-[min(calc(100vw-2rem),22rem)]">
+            <DialogHeader>
+              <DialogTitle>Velg venner</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-1 max-h-[50vh] overflow-y-auto">
+              {friends.map(u => (
+                <label key={u.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 cursor-pointer">
+                  <Checkbox
+                    checked={selectedFriendIds.includes(u.id)}
+                    onCheckedChange={(checked) => {
+                      setSelectedFriendIds(prev =>
+                        checked ? [...prev, u.id] : prev.filter(id => id !== u.id)
+                      );
+                    }}
+                  />
+                  <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                    <span className="text-xs font-medium">{u.username[0]}</span>
+                  </div>
+                  <span className="text-sm font-medium">{u.username}</span>
+                </label>
+              ))}
+            </div>
+            <Button onClick={() => { setShowFriendPicker(false); toast.success('Venner oppdatert'); }} className="w-full">
+              Ferdig
+            </Button>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }

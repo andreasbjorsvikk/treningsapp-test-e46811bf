@@ -146,8 +146,8 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
               </div>
             </div>
 
-            {/* Load details button (Strava sessions only) */}
-            {session.stravaActivityId && !streamsLoaded && (
+            {/* Load details button (Strava sessions only, not for strength) */}
+            {session.stravaActivityId && !streamsLoaded && session.type !== 'styrke' && (
               <div className="px-4 pb-3">
                 <button
                   onClick={handleLoadStreams}
@@ -157,7 +157,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
                   {loadingStreams ? (
                     <><Loader2 className="w-4 h-4 animate-spin" /> Henter detaljer…</>
                   ) : (
-                    <><ChevronDown className="w-4 h-4" /> Last detaljer</>
+                    <><ChevronDown className="w-4 h-4" /> Mer detaljer</>
                   )}
                 </button>
               </div>

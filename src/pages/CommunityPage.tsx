@@ -45,6 +45,10 @@ const CommunityPage = () => {
     setTimeout(() => setShowForm(true), 200);
   };
 
+  const handleNavigateToFriends = () => {
+    setMainTab('friends');
+  };
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -112,7 +116,11 @@ const CommunityPage = () => {
         onClose={() => { setShowForm(false); setPreselectedUser(null); }}
         preselectedUser={preselectedUser}
       />
-      <NotificationSheet open={showNotifications} onClose={() => setShowNotifications(false)} />
+      <NotificationSheet
+        open={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        onNavigateToFriends={handleNavigateToFriends}
+      />
       <UserProfileDrawer
         user={profileUser}
         open={!!profileUser}
