@@ -99,6 +99,7 @@ const IndexContent = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOrder, setDragOrder] = useState<string[]>([]);
+  const dragOriginalOrder = useRef<string[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressStartPos = useRef<{ x: number; y: number } | null>(null);
@@ -233,11 +234,12 @@ const IndexContent = () => {
 
   // === Direct drag handlers ===
   const startDrag = (id: string) => {
-    setDragOrder([...sectionOrder]);
+    const order = [...sectionOrder];
+    dragOriginalOrder.current = order;
+    setDragOrder(order);
     setDragId(id);
     setIsDragging(true);
     if (navigator.vibrate) navigator.vibrate(30);
-    // On mobile, scroll to bottom so the full list + Ferdig button is visible
     if (isMobile) {
       setTimeout(() => {
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
@@ -289,9 +291,10 @@ const IndexContent = () => {
         const next = [...prev];
         const fromIdx = next.indexOf(dragId!);
         const toIdx = next.indexOf(overId);
-        if (fromIdx !== -1 && toIdx !== -1) {
-          next.splice(fromIdx, 1);
-          next.splice(toIdx, 0, dragId!);
+        if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+          // Remove dragged item and insert at target position
+          const [item] = next.splice(fromIdx, 1);
+          next.splice(toIdx, 0, item);
         }
         return next;
       });
@@ -600,7 +603,17 @@ const IndexContent = () => {
 
       <BottomNav
         active={activeTab}
-        onNavigate={(tab) => { setInitialStatPeriod(undefined); setActiveTab(tab); window.scrollTo({ top: 0 }); }}
+        onNavigate={(tab) => {
+          setInitialStatPeriod(undefined);
+          // Reset reorder mode when navigating away
+          if (isDragging) {
+            setIsDragging(false);
+            setDragId(null);
+            setDragOrder([]);
+          }
+          setActiveTab(tab);
+          window.scrollTo({ top: 0 });
+        }}
         notificationCount={unreadNotifications}
         profileButton={
           !isMobile && user ? (

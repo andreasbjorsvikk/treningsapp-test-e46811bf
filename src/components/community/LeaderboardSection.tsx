@@ -9,9 +9,9 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Trophy, Loader2 } from 'lucide-react';
 
 const periodTabs = [
-  { id: 'week' as const, label: 'Ukentlig' },
-  { id: 'month' as const, label: 'Månedlig' },
-  { id: 'all' as const, label: 'Totalt' },
+  { id: 'week' as const, label: 'Uke' },
+  { id: 'month' as const, label: 'Måned' },
+  { id: 'all' as const, label: 'År' },
 ];
 
 const LeaderboardSection = () => {
