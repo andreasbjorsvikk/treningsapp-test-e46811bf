@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getFriends, getPendingFriendRequests, respondToFriendRequest, searchUsers, sendFriendRequest, Friend } from '@/services/communityService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { Search, Link2, Check, X, UserPlus, Loader2 } from 'lucide-react';
+import { Search, Link2, Check, X, UserPlus, Loader2, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 
@@ -140,13 +140,14 @@ const FriendsSection = ({ onOpenProfile }: FriendsSectionProps) => {
             <button
               key={u.id}
               onClick={() => onOpenProfile(u)}
-              className="w-full flex items-center gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary/80 transition-colors text-left"
+              className="w-full flex items-center gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary/80 active:scale-[0.98] transition-all text-left"
             >
               <Avatar className="w-8 h-8">
                 {u.avatarUrl ? <AvatarImage src={u.avatarUrl} /> : null}
                 <AvatarFallback className="text-xs font-medium">{(u.username || '?')[0]}</AvatarFallback>
               </Avatar>
               <span className="flex-1 text-sm font-medium">{u.username || 'Ukjent'}</span>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </button>
           ))}
         </div>
