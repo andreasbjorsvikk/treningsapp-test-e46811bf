@@ -165,8 +165,11 @@ export const workoutService = {
 
   getWeeklyStats(): WeeklyStats {
     const now = new Date();
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    return computeStats(sessions.filter(s => new Date(s.date) >= weekAgo));
+    const day = now.getDay();
+    const mondayOffset = day === 0 ? -6 : 1 - day;
+    const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset);
+    weekStart.setHours(0, 0, 0, 0);
+    return computeStats(sessions.filter(s => new Date(s.date) >= weekStart));
   },
 
   getMonthlyStats(): WeeklyStats {
@@ -182,10 +185,15 @@ export function computeStatsFromSessions(sessions: WorkoutSession[]): {
   monthly: WeeklyStats;
 } {
   const now = new Date();
-  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  // Calendar week: Monday to Sunday
+  const day = now.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset);
+  weekStart.setHours(0, 0, 0, 0);
+  // Calendar month
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   return {
-    weekly: computeStats(sessions.filter(s => new Date(s.date) >= weekAgo)),
+    weekly: computeStats(sessions.filter(s => new Date(s.date) >= weekStart)),
     monthly: computeStats(sessions.filter(s => new Date(s.date) >= monthStart)),
   };
 }

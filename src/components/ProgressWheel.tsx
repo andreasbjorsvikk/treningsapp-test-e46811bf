@@ -108,7 +108,9 @@ const ProgressWheel = ({
   const goldShine = '#FFF8DC';
   const safeId = (label || title || 'wheel').replace(/\s+/g, '-') + '-' + Math.random().toString(36).slice(2, 6);
   const rotation = `rotate(-90 ${CENTER} ${CENTER})`;
-  const markerAngle = expectedFraction != null ? expectedFraction * 360 : null;
+  // Marker shows where you should be. Use fillFraction-based comparison for accuracy.
+  // expectedFraction is fraction of time elapsed, so marker angle = expectedFraction * 360
+  const markerAngle = expectedFraction != null ? Math.min(expectedFraction, 1) * 360 : null;
 
   // Pace label
   const getPaceLabel = (d: number): string => {
