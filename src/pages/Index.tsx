@@ -99,7 +99,7 @@ const IndexContent = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOrder, setDragOrder] = useState<string[]>([]);
-  const dragOriginalOrder = useRef<string[]>([]);
+  const lastOverId = useRef<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressStartPos = useRef<{ x: number; y: number } | null>(null);
@@ -235,9 +235,9 @@ const IndexContent = () => {
   // === Direct drag handlers ===
   const startDrag = (id: string) => {
     const order = [...sectionOrder];
-    dragOriginalOrder.current = order;
     setDragOrder(order);
     setDragId(id);
+    lastOverId.current = null;
     setIsDragging(true);
     if (navigator.vibrate) navigator.vibrate(30);
     if (isMobile) {
@@ -291,10 +291,10 @@ const IndexContent = () => {
         const next = [...prev];
         const fromIdx = next.indexOf(dragId!);
         const toIdx = next.indexOf(overId);
-        if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
-          // Remove dragged item and insert at target position
-          const [item] = next.splice(fromIdx, 1);
-          next.splice(toIdx, 0, item);
+        if (fromIdx !== -1 && toIdx !== -1) {
+          // Swap only dragged and target
+          next[fromIdx] = next[toIdx];
+          next[toIdx] = dragId!;
         }
         return next;
       });
@@ -508,7 +508,6 @@ const IndexContent = () => {
               className="space-y-5"
               style={isDragging ? { touchAction: 'none', overflowX: 'hidden' } : undefined}
               onTouchMove={(e) => {
-                // If in drag mode, handle drag; otherwise let the long press move handler check
                 if (isDragging && dragId) {
                   e.preventDefault();
                   e.stopPropagation();
@@ -517,14 +516,16 @@ const IndexContent = () => {
                   const target = el?.closest('[data-section-id]');
                   if (target) {
                     const overId = target.getAttribute('data-section-id');
-                    if (overId && overId !== dragId) {
+                    if (overId && overId !== dragId && overId !== lastOverId.current) {
+                      lastOverId.current = overId;
                       setDragOrder(prev => {
                         const next = [...prev];
                         const fromIdx = next.indexOf(dragId!);
                         const toIdx = next.indexOf(overId);
                         if (fromIdx !== -1 && toIdx !== -1) {
-                          next.splice(fromIdx, 1);
-                          next.splice(toIdx, 0, dragId!);
+                          // Swap: only the dragged item and the target swap positions
+                          next[fromIdx] = next[toIdx];
+                          next[toIdx] = dragId!;
                         }
                         return next;
                       });
@@ -535,7 +536,10 @@ const IndexContent = () => {
               }}
               onTouchEnd={() => {
                 handleLongPressEnd();
-                if (isDragging) setDragId(null);
+                if (isDragging) {
+                  setDragId(null);
+                  lastOverId.current = null;
+                }
               }}
             >
               {isDragging && (
