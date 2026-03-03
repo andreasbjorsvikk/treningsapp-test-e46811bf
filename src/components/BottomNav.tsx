@@ -1,5 +1,6 @@
 import { Home, CalendarDays, Dumbbell, Users, Settings } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { ReactNode } from 'react';
 
 export type TabId = 'hjem' | 'kalender' | 'trening' | 'fellesskap' | 'settings';
 export type TrainingSubTab = 'statistikk' | 'historikk' | 'mål' | 'rekorder';
@@ -7,6 +8,8 @@ export type TrainingSubTab = 'statistikk' | 'historikk' | 'mål' | 'rekorder';
 interface BottomNavProps {
   active: TabId;
   onNavigate: (tab: TabId) => void;
+  notificationCount?: number;
+  profileButton?: ReactNode;
 }
 
 const tabConfig: { id: TabId; labelKey: string; icon: typeof Home }[] = [
@@ -16,7 +19,7 @@ const tabConfig: { id: TabId; labelKey: string; icon: typeof Home }[] = [
   { id: 'fellesskap', labelKey: 'nav.community', icon: Users },
 ];
 
-const BottomNav = ({ active, onNavigate }: BottomNavProps) => {
+const BottomNav = ({ active, onNavigate, notificationCount = 0, profileButton }: BottomNavProps) => {
   const { t } = useTranslation();
 
   return (
@@ -25,15 +28,19 @@ const BottomNav = ({ active, onNavigate }: BottomNavProps) => {
         {tabConfig.map(tab => {
           const Icon = tab.icon;
           const isActive = active === tab.id;
+          const showDot = tab.id === 'fellesskap' && notificationCount > 0;
           return (
             <button
               key={tab.id}
               onClick={() => onNavigate(tab.id)}
-              className={`flex flex-col items-center gap-0.5 py-2 px-3 flex-1 transition-colors lg:flex-row lg:flex-initial lg:gap-2 lg:py-3 lg:px-4 lg:rounded-md ${
+              className={`relative flex flex-col items-center gap-0.5 py-2 px-3 flex-1 transition-colors lg:flex-row lg:flex-initial lg:gap-2 lg:py-3 lg:px-4 lg:rounded-md ${
                 isActive ? 'text-primary lg:bg-primary/10' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <Icon className="w-5 h-5" />
+              {showDot && (
+                <span className="absolute top-1.5 right-1/4 lg:top-2 lg:right-2 w-2 h-2 rounded-full bg-destructive" />
+              )}
               <span className="text-[10px] font-medium lg:text-sm">{t(tab.labelKey)}</span>
             </button>
           );
@@ -46,8 +53,14 @@ const BottomNav = ({ active, onNavigate }: BottomNavProps) => {
           }`}
         >
           <Settings className="w-4 h-4 lg:w-5 lg:h-5" />
-          <span className="text-[10px] font-medium lg:text-sm">{t('nav.settings')}</span>
+          <span className="text-[10px] font-medium lg:hidden">{t('nav.settings')}</span>
         </button>
+        {/* Desktop profile button */}
+        {profileButton && (
+          <div className="hidden lg:flex lg:items-center lg:ml-1">
+            {profileButton}
+          </div>
+        )}
       </div>
     </nav>
   );

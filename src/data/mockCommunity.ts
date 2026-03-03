@@ -31,12 +31,20 @@ export interface Challenge {
 
 export interface CommunityNotification {
   id: string;
-  type: 'invite' | 'edit_approval' | 'challenge_ended';
+  type: 'invite' | 'edit_approval' | 'challenge_ended' | 'friend_request';
   title: string;
   message: string;
   timestamp: string;
   read: boolean;
   challengeId?: string;
+  userId?: string;
+}
+
+export interface FriendRequest {
+  id: string;
+  from: MockUser;
+  timestamp: string;
+  status: 'pending' | 'accepted' | 'declined';
 }
 
 export interface MockGroup {
@@ -48,11 +56,11 @@ export interface MockGroup {
 
 export const mockUsers: MockUser[] = [
   { id: 'me', username: 'Meg' },
-  { id: 'u1', username: 'Erik' },
-  { id: 'u2', username: 'Silje' },
-  { id: 'u3', username: 'Magnus' },
-  { id: 'u4', username: 'Ingrid' },
-  { id: 'u5', username: 'Lars' },
+  { id: 'u1', username: 'Erik', avatarUrl: undefined },
+  { id: 'u2', username: 'Silje', avatarUrl: undefined },
+  { id: 'u3', username: 'Magnus', avatarUrl: undefined },
+  { id: 'u4', username: 'Ingrid', avatarUrl: undefined },
+  { id: 'u5', username: 'Lars', avatarUrl: undefined },
 ];
 
 export const mockGroups: MockGroup[] = [
@@ -131,7 +139,25 @@ export const mockChallenges: Challenge[] = [
   },
 ];
 
+export const mockFriendRequests: FriendRequest[] = [
+  {
+    id: 'fr1',
+    from: { id: 'u6', username: 'Kari', avatarUrl: undefined },
+    timestamp: '2026-03-03T08:00:00Z',
+    status: 'pending',
+  },
+];
+
 export const mockNotifications: CommunityNotification[] = [
+  {
+    id: 'n0',
+    type: 'friend_request',
+    title: 'Venneforespørsel',
+    message: 'Kari vil bli vennen din',
+    timestamp: '2026-03-03T08:00:00Z',
+    read: false,
+    userId: 'u6',
+  },
   {
     id: 'n1',
     type: 'invite',

@@ -1,4 +1,5 @@
 import { MockUser, mockChallenges, metricUnits } from '@/data/mockCommunity';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription,
 } from '@/components/ui/drawer';
@@ -93,9 +94,9 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
         <div className="overflow-y-auto scrollbar-hide pb-6">
           <DrawerHeader className="text-left">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-secondary border-2 border-background flex items-center justify-center">
-                <span className="text-lg font-bold">{user.username[0]}</span>
-              </div>
+              <Avatar className="w-12 h-12">
+                <AvatarFallback className="text-lg font-bold">{user.username[0]}</AvatarFallback>
+              </Avatar>
               <div>
                 <DrawerTitle>{user.username}</DrawerTitle>
                 <DrawerDescription>Venn</DrawerDescription>
@@ -215,7 +216,7 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
               </div>
             )}
 
-            {/* Shared challenges */}
+            {/* Shared challenges - fixed 3-column alignment */}
             {sharedChallenges.length > 0 && (
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
@@ -223,37 +224,38 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                   Felles utfordringer
                 </p>
                 <div className="space-y-1">
-                  {/* Column header */}
-                  <div className="flex items-center gap-3 px-2.5 pb-1">
-                    <span className="flex-1" />
-                    <div className="flex items-center gap-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      <span className="w-14 text-right">Meg</span>
-                      <span className="w-4" />
-                      <span className="w-14 text-right">{user.username}</span>
-                    </div>
-                    <span className="w-3.5" />
-                  </div>
                   {sharedChallenges.map(c => {
                     const myProgress = c.participants.find(p => p.user.id === 'me');
                     const theirProgress = c.participants.find(p => p.user.id === user.id);
                     const unit = metricUnits[c.metric];
                     const iWon = (myProgress?.rank || 99) < (theirProgress?.rank || 99);
                     return (
-                      <div key={c.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-secondary/50">
-                        {c.emoji && <span>{c.emoji}</span>}
-                        <span className="text-sm font-medium flex-1 truncate">{c.name}</span>
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className={`w-14 text-right ${iWon ? 'text-accent font-semibold' : 'text-muted-foreground'}`}>
-                            {myProgress?.progress}{unit ? ` ${unit}` : ''}
-                          </span>
-                          <span className="text-muted-foreground">vs</span>
-                          <span className={`w-14 text-right ${!iWon ? 'text-accent font-semibold' : 'text-muted-foreground'}`}>
-                            {theirProgress?.progress}{unit ? ` ${unit}` : ''}
-                          </span>
+                      <div key={c.id} className="rounded-lg bg-secondary/50 p-2.5">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          {c.emoji && <span>{c.emoji}</span>}
+                          <span className="text-sm font-medium flex-1 truncate">{c.name}</span>
+                          {c.status === 'archived' && (
+                            <Trophy className={`w-3.5 h-3.5 ${iWon ? 'text-warning' : 'text-muted-foreground'}`} />
+                          )}
                         </div>
-                        {c.status === 'archived' && (
-                          <Trophy className={`w-3.5 h-3.5 ${iWon ? 'text-warning' : 'text-muted-foreground'}`} />
-                        )}
+                        {/* 3 even columns: Meg - vs - Them */}
+                        <div className="grid grid-cols-3 items-center text-center">
+                          <div>
+                            <p className="text-[10px] text-muted-foreground mb-0.5">Meg</p>
+                            <p className={`text-sm font-semibold ${iWon ? 'text-primary' : 'text-muted-foreground'}`}>
+                              {myProgress?.progress}{unit ? ` ${unit}` : ''}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">vs</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-muted-foreground mb-0.5">{user.username}</p>
+                            <p className={`text-sm font-semibold ${!iWon ? 'text-primary' : 'text-muted-foreground'}`}>
+                              {theirProgress?.progress}{unit ? ` ${unit}` : ''}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     );
                   })}

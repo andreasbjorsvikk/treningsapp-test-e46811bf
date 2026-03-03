@@ -30,6 +30,17 @@ const CYCLING_BENCHMARKS = [
   { label: '160 km', distance: 160 },
 ];
 
+function formatRecordTime(totalMinutes: number): string {
+  const totalSeconds = Math.round(totalMinutes * 60);
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 function estimateBestTime(sessions: WorkoutSession[], benchmarkKm: number): string | null {
   // Find sessions that have distance >= benchmark
   const qualifying = sessions.filter(s => s.distance && s.distance >= benchmarkKm);
@@ -45,7 +56,7 @@ function estimateBestTime(sessions: WorkoutSession[], benchmarkKm: number): stri
   }
 
   if (bestMinutes === Infinity) return null;
-  return formatDuration(Math.round(bestMinutes));
+  return formatRecordTime(bestMinutes);
 }
 
 // Hiking record types

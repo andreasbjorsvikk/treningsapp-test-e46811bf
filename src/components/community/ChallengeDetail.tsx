@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Challenge, metricUnits, metricLabels, MockUser } from '@/data/mockCommunity';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter,
 } from '@/components/ui/drawer';
@@ -83,7 +84,7 @@ const ChallengeDetail = ({ challenge, open, onClose }: ChallengeDetailProps) => 
                 )}
               </div>
 
-              {/* Ranked participant list */}
+              {/* Ranked participant list with avatars */}
               <div className="space-y-1">
                 {sorted.map((p, i) => {
                   const maxProgress = Math.max(...challenge.participants.map(pp => pp.progress));
@@ -101,9 +102,9 @@ const ChallengeDetail = ({ challenge, open, onClose }: ChallengeDetailProps) => 
                       <span className={`font-display font-bold text-sm w-6 text-center ${i === 0 ? 'text-warning' : 'text-muted-foreground'}`}>
                         {i === 0 ? <Trophy className="w-4 h-4 inline text-warning" /> : `#${p.rank}`}
                       </span>
-                      <div className="w-6 h-6 rounded-full bg-secondary border border-background flex items-center justify-center shrink-0">
-                        <span className="text-[10px] font-medium">{p.user.username[0]}</span>
-                      </div>
+                      <Avatar className="w-6 h-6">
+                        <AvatarFallback className="text-[10px] font-medium">{p.user.username[0]}</AvatarFallback>
+                      </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-0.5">
                           <span className="text-sm font-medium truncate">{p.user.username}</span>
