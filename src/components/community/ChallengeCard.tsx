@@ -1,8 +1,10 @@
 import { ChallengeWithParticipants } from '@/pages/CommunityPage';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { MapPin, Clock, MountainSnow, Activity } from 'lucide-react';
+import { MapPin, Clock, MountainSnow, Activity, Home, Pencil } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/i18n/useTranslation';
+import { toast } from 'sonner';
 
 const metricIcons: Record<string, typeof Activity> = {
   sessions: Activity,
@@ -21,11 +23,13 @@ const metricUnits: Record<string, string> = {
 interface ChallengeCardProps {
   challenge: ChallengeWithParticipants;
   onClick: () => void;
+  onEdit?: (challenge: ChallengeWithParticipants) => void;
 }
 
-const ChallengeCard = ({ challenge, onClick }: ChallengeCardProps) => {
+const ChallengeCard = ({ challenge, onClick, onEdit }: ChallengeCardProps) => {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { settings, updateSettings } = useSettings();
   const c = challenge.challenge;
   const Icon = metricIcons[c.metric] || Activity;
   const unit = metricUnits[c.metric] || '';
@@ -57,7 +61,7 @@ const ChallengeCard = ({ challenge, onClick }: ChallengeCardProps) => {
         <p className="text-sm font-medium text-accent">
           {c.target > 0
             ? `${t('challengeCard.target')}: ${c.target} ${unit}`
-            : `${t('challengeCard.most')} ${t(`challenge.most${c.metric === 'sessions' ? 'Sessions' : c.metric === 'distance' ? 'Distance' : c.metric === 'duration' ? 'Duration' : 'Elevation'}`)}`
+            : t(`challenge.noTarget.${c.metric}`)
           }
         </p>
       </div>
@@ -88,13 +92,42 @@ const ChallengeCard = ({ challenge, onClick }: ChallengeCardProps) => {
           )}
           <span className="text-sm text-muted-foreground">· {challenge.participants.length} {t('challengeCard.participants')}</span>
         </div>
-        <div className="flex -space-x-1.5">
-          {challenge.participants.slice(0, 4).map(p => (
-            <Avatar key={p.userId} className="w-6 h-6 border border-background">
-              {p.avatarUrl ? <AvatarImage src={p.avatarUrl} /> : null}
-              <AvatarFallback className="text-[9px] font-medium">{(p.username || '?')[0]}</AvatarFallback>
-            </Avatar>
-          ))}
+        <div className="flex items-center gap-1">
+          {onEdit && c.created_by === user?.id && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onEdit(challenge); }}
+              className="p-1.5 rounded-md text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+              title={t('common.edit')}
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const current = settings.pinnedChallengeIds || [];
+              const isPinned = current.includes(c.id);
+              const next = isPinned ? current.filter(id => id !== c.id) : [...current, c.id];
+              updateSettings({ pinnedChallengeIds: next });
+              toast.success(isPinned ? t('challenge.removedFromHome') : t('challenge.addedToHome'));
+            }}
+            className={`p-1.5 rounded-md transition-colors ${
+              (settings.pinnedChallengeIds || []).includes(c.id)
+                ? 'text-primary bg-primary/10'
+                : 'text-muted-foreground/40 hover:text-muted-foreground'
+            }`}
+            title={(settings.pinnedChallengeIds || []).includes(c.id) ? t('challenge.removeFromHome') : t('challenge.showOnHome')}
+          >
+            <Home className="w-3.5 h-3.5" />
+          </button>
+          <div className="flex -space-x-1.5 ml-1">
+            {challenge.participants.slice(0, 4).map(p => (
+              <Avatar key={p.userId} className="w-6 h-6 border border-background">
+                {p.avatarUrl ? <AvatarImage src={p.avatarUrl} /> : null}
+                <AvatarFallback className="text-[9px] font-medium">{(p.username || '?')[0]}</AvatarFallback>
+              </Avatar>
+            ))}
+          </div>
         </div>
       </div>
     </button>

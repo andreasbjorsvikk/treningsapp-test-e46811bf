@@ -38,6 +38,7 @@ const CommunityPage = () => {
   const [challengeFilter, setChallengeFilter] = useState('active');
   const [selectedChallenge, setSelectedChallenge] = useState<ChallengeWithParticipants | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [editChallenge, setEditChallenge] = useState<ChallengeWithParticipants | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [profileUser, setProfileUser] = useState<Friend | null>(null);
   const [preselectedUser, setPreselectedUser] = useState<Friend | null>(null);
@@ -164,6 +165,7 @@ const CommunityPage = () => {
                     key={c.challenge.id}
                     challenge={c}
                     onClick={() => handleSelectChallenge(c)}
+                    onEdit={(ch) => { setEditChallenge(ch); /* TODO: open edit form */ }}
                   />
                 ))
               )}

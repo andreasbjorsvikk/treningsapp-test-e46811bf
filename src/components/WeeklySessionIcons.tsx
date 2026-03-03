@@ -29,6 +29,7 @@ const WeeklySessionIcons = ({ sessions, onClick }: WeeklySessionIconsProps) => {
 
   const visible = recentSessions.slice(0, MAX_VISIBLE);
   const overflow = recentSessions.length - MAX_VISIBLE;
+  const isSmall = recentSessions.length > 3;
 
   return (
     <div className="glass-card rounded-xl p-2.5 cursor-pointer" onClick={onClick}>
@@ -38,19 +39,22 @@ const WeeklySessionIcons = ({ sessions, onClick }: WeeklySessionIconsProps) => {
           return (
             <div
               key={session.id}
-              className="aspect-square rounded-lg flex items-center justify-center border border-white/20 dark:border-white/10"
+              className={`${isSmall ? 'aspect-square' : 'aspect-square'} rounded-lg flex items-center justify-center border border-white/20 dark:border-white/10`}
               style={{
                 background: `linear-gradient(145deg, ${colors.bg}ee, ${colors.bg}cc)`,
                 boxShadow: `0 2px 8px ${colors.bg}30, inset 0 1px 2px rgba(255,255,255,0.25), inset 0 -1px 1px rgba(0,0,0,0.06)`,
+                ...(isSmall ? { maxHeight: '2.2rem' } : {}),
               }}
               title={`${session.type} – ${new Date(session.date).toLocaleDateString('nb-NO', { weekday: 'short', day: 'numeric' })}`}
             >
-              <ActivityIcon type={session.type} className="w-7 h-7 drop-shadow-sm" colorOverride={!isDark ? colors.text : undefined} />
+              <ActivityIcon type={session.type} className={`${isSmall ? 'w-4 h-4' : 'w-7 h-7'} drop-shadow-sm`} colorOverride={!isDark ? colors.text : undefined} />
             </div>
           );
         })}
         {overflow > 0 && (
-          <div className="aspect-square rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-sm font-bold">
+          <div className={`${isSmall ? '' : 'aspect-square'} rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-xs font-bold`}
+            style={isSmall ? { maxHeight: '2.2rem' } : {}}
+          >
             +{overflow}
           </div>
         )}
