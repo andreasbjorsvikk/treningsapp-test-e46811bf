@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/hooks/useAuth';
 import UserProfileDrawer from '@/components/community/UserProfileDrawer';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const metricLabels: Record<string, string> = {
   sessions: 'Økter',
@@ -33,6 +34,7 @@ interface ChallengeDetailProps {
 const ChallengeDetail = ({ challenge, open, onClose }: ChallengeDetailProps) => {
   const { settings, updateSettings } = useSettings();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [profileUser, setProfileUser] = useState<Friend | null>(null);
 
   if (!challenge) return null;
@@ -43,8 +45,8 @@ const ChallengeDetail = ({ challenge, open, onClose }: ChallengeDetailProps) => 
   const now = new Date();
   const daysLeft = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
   const isEnded = c.period_end < now.toISOString().split('T')[0];
-
-  const periodStr = `${new Date(c.period_start).toLocaleDateString('nb-NO', { day: 'numeric', month: 'long' })} – ${endDate.toLocaleDateString('nb-NO', { day: 'numeric', month: 'long' })}`;
+  const locale = t('date.locale');
+  const periodStr = `${new Date(c.period_start).toLocaleDateString(locale, { day: 'numeric', month: 'long' })} – ${endDate.toLocaleDateString(locale, { day: 'numeric', month: 'long' })}`;
 
   const sorted = [...challenge.participants].sort((a, b) => a.rank - b.rank);
 
@@ -54,7 +56,7 @@ const ChallengeDetail = ({ challenge, open, onClose }: ChallengeDetailProps) => 
     const current = settings.pinnedChallengeIds || [];
     const next = isPinned ? current.filter(id => id !== c.id) : [...current, c.id];
     updateSettings({ pinnedChallengeIds: next });
-    toast.success(isPinned ? 'Fjernet fra forsiden' : 'Lagt til på forsiden');
+    toast.success(isPinned ? t('challenge.removedFromHome') : t('challenge.addedToHome'));
   };
 
   return (
@@ -73,7 +75,7 @@ const ChallengeDetail = ({ challenge, open, onClose }: ChallengeDetailProps) => 
                 className={`absolute bottom-2 right-4 p-1.5 rounded-md transition-colors ${
                   isPinned ? 'text-primary bg-primary/10' : 'text-muted-foreground/40 hover:text-muted-foreground'
                 }`}
-                title={isPinned ? 'Fjern fra forsiden' : 'Vis på forsiden'}
+                title={isPinned ? t('challenge.removeFromHome') : t('challenge.showOnHome')}
               >
                 <Home className="w-4 h-4" />
               </button>
@@ -83,15 +85,15 @@ const ChallengeDetail = ({ challenge, open, onClose }: ChallengeDetailProps) => 
               <div className="flex items-center justify-between">
                 <span className="text-base text-muted-foreground">
                   {metricLabels[c.metric] || c.metric}
-                  {c.target > 0 ? ` · Mål: ${c.target}${unit ? ` ${unit}` : ''}` : ' · Ingen satt mål'}
+                  {c.target > 0 ? ` · ${t('challengeCard.target')}: ${c.target}${unit ? ` ${unit}` : ''}` : ` · ${t('common.noGoalSet')}`}
                 </span>
                 {!isEnded ? (
                   <span className="text-sm font-medium bg-accent/10 text-accent px-2.5 py-1 rounded-full">
-                    {daysLeft} dager igjen
+                    {daysLeft} {t('challenge.daysLeft')}
                   </span>
                 ) : (
                   <span className="text-sm font-medium bg-muted text-muted-foreground px-2.5 py-1 rounded-full">
-                    Avsluttet
+                    {t('common.ended')}
                   </span>
                 )}
               </div>
@@ -120,7 +122,7 @@ const ChallengeDetail = ({ challenge, open, onClose }: ChallengeDetailProps) => 
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-0.5">
-                          <span className="text-base font-medium truncate">{isSelf ? 'Meg' : p.username}</span>
+                          <span className="text-base font-medium truncate">{isSelf ? t('common.me') : p.username}</span>
                           <span className="text-sm font-medium">{p.progress}{unit ? ` ${unit}` : ''}</span>
                         </div>
                         <div className="h-2 bg-secondary rounded-full overflow-hidden">
@@ -139,7 +141,7 @@ const ChallengeDetail = ({ challenge, open, onClose }: ChallengeDetailProps) => 
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(`${window.location.origin}/challenge/${c.id}/invite`);
-                      toast.success('Invitasjonslenke kopiert!');
+                      toast.success(t('challenge.inviteLink'));
                     }}
                     className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-secondary text-sm font-medium hover:bg-secondary/80 transition-colors"
                   >

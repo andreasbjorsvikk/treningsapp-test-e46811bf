@@ -19,6 +19,7 @@ import {
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { stravaService } from '@/services/stravaService';
 import { toast } from 'sonner';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
   session: WorkoutSession | null;
@@ -30,6 +31,7 @@ interface Props {
 
 const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props) => {
   const { settings } = useSettings();
+  const { t } = useTranslation();
   const isDark = settings.darkMode;
   const [streams, setStreams] = useState<WorkoutStreams | null>(null);
   const [loadingStreams, setLoadingStreams] = useState(false);
@@ -60,7 +62,8 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
 
   if (!session || !config || !colors) return null;
 
-  const dateFormatted = new Date(session.date).toLocaleDateString('nb-NO', {
+  const dateLocale = t('date.locale');
+  const dateFormatted = new Date(session.date).toLocaleDateString(dateLocale, {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
 
@@ -72,7 +75,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
       setStreams(data);
       setStreamsLoaded(true);
     } catch (err) {
-      toast.error('Kunne ikke hente detaljer fra Strava');
+      toast.error(t('workoutDetail.fetchError'));
       console.error(err);
     } finally {
       setLoadingStreams(false);
@@ -92,8 +95,8 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
         <DrawerContent className="max-h-[92vh]">
           <div className="overflow-y-auto scrollbar-hide pb-4">
             <DrawerHeader className="sr-only">
-              <DrawerTitle>{session.title || config.label}</DrawerTitle>
-              <DrawerDescription>Øktdetaljer</DrawerDescription>
+              <DrawerTitle>{session.title || t(`activity.${session.type}`)}</DrawerTitle>
+              <DrawerDescription>{t('workoutDetail.sessionDetails')}</DrawerDescription>
             </DrawerHeader>
 
             {/* Mapbox Route Map */}
@@ -117,7 +120,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
                 </div>
                 <div>
                   <h2 className="font-display font-bold text-lg leading-tight">
-                    {session.title || config.label}
+                    {session.title || t(`activity.${session.type}`)}
                   </h2>
                   <p className="text-sm text-muted-foreground capitalize">{dateFormatted}</p>
                 </div>
@@ -127,21 +130,21 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
             {/* Stat tiles */}
             <div className="px-4 py-3">
               <div className="grid grid-cols-3 gap-2">
-                <StatTile icon={<Clock className="w-4 h-4" />} value={formatDuration(session.durationMinutes)} label="Varighet" />
+                <StatTile icon={<Clock className="w-4 h-4" />} value={formatDuration(session.durationMinutes)} label={t('workoutDetail.duration')} />
                 {session.distance != null && (
-                  <StatTile icon={<MapPin className="w-4 h-4" />} value={`${session.distance} km`} label="Distanse" />
+                  <StatTile icon={<MapPin className="w-4 h-4" />} value={`${session.distance} km`} label={t('workoutDetail.distance')} />
                 )}
                 {session.elevationGain != null && (
-                  <StatTile icon={<MountainSnow className="w-4 h-4" />} value={`${session.elevationGain} m`} label="Høydemeter" />
+                  <StatTile icon={<MountainSnow className="w-4 h-4" />} value={`${session.elevationGain} m`} label={t('workoutDetail.elevation')} />
                 )}
                 {pace && (
-                  <StatTile icon={<Activity className="w-4 h-4" />} value={`${pace} /km`} label="Tempo" />
+                  <StatTile icon={<Activity className="w-4 h-4" />} value={`${pace} /km`} label={t('workoutDetail.pace')} />
                 )}
                 {session.averageHeartrate != null && (
-                  <StatTile icon={<Heart className="w-4 h-4" />} value={`${session.averageHeartrate}`} label="Snittpuls" accent />
+                  <StatTile icon={<Heart className="w-4 h-4" />} value={`${session.averageHeartrate}`} label={t('workoutDetail.avgHr')} accent />
                 )}
                 {session.maxHeartrate != null && (
-                  <StatTile icon={<Heart className="w-4 h-4" />} value={`${session.maxHeartrate}`} label="Makspuls" accent />
+                  <StatTile icon={<Heart className="w-4 h-4" />} value={`${session.maxHeartrate}`} label={t('workoutDetail.maxHr')} accent />
                 )}
               </div>
             </div>
@@ -155,9 +158,9 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-secondary text-sm font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50"
                 >
                   {loadingStreams ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> Henter detaljer…</>
+                    <><Loader2 className="w-4 h-4 animate-spin" /> {t('workoutDetail.loadingDetails')}</>
                   ) : (
-                    <><ChevronDown className="w-4 h-4" /> Mer detaljer</>
+                    <><ChevronDown className="w-4 h-4" /> {t('workoutDetail.moreDetails')}</>
                   )}
                 </button>
               </div>
@@ -168,7 +171,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
               <div className="px-4 space-y-4 pb-2">
                 {streams.altitudeData && streams.altitudeData.length > 0 && (
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">Høydeprofil</p>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">{t('workoutDetail.elevationProfile')}</p>
                     <div className="h-32 w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={streams.altitudeData}>
@@ -190,7 +193,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
 
                 {streams.heartrateData && streams.heartrateData.length > 0 && (
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">Puls</p>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">{t('workoutDetail.heartrate')}</p>
                     <div className="h-32 w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={streams.heartrateData}>
@@ -209,7 +212,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
             {/* Notes */}
             {session.notes && (
               <div className="px-4 py-2">
-                <p className="text-xs font-medium text-muted-foreground mb-1">Notater</p>
+                <p className="text-xs font-medium text-muted-foreground mb-1">{t('workoutDetail.notes')}</p>
                 <p className="text-sm text-foreground">{session.notes}</p>
               </div>
             )}
@@ -221,7 +224,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
                   onClick={() => { handleClose(); setTimeout(() => onEdit(session), 150); }}
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-secondary text-sm font-medium hover:bg-secondary/80 transition-colors"
                 >
-                  <Pencil className="w-4 h-4" /> Rediger
+                  <Pencil className="w-4 h-4" /> {t('workoutDetail.edit')}
                 </button>
               )}
               {onDelete && (
@@ -229,7 +232,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
                   onClick={() => setShowDeleteConfirm(true)}
                   className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-destructive/10 text-destructive text-sm font-medium hover:bg-destructive/20 transition-colors"
                 >
-                  <Trash2 className="w-4 h-4" /> Slett
+                  <Trash2 className="w-4 h-4" /> {t('workoutDetail.delete')}
                 </button>
               )}
             </DrawerFooter>
@@ -240,18 +243,18 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Er du sikker?</AlertDialogTitle>
+            <AlertDialogTitle>{t('workoutDetail.confirmDelete')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Vil du slette «{session.title || config.label}»? Dette kan ikke angres.
+              {t('workoutDetail.confirmDeleteDesc', { name: session.title || t(`activity.${session.type}`) })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => { onDelete?.(session.id); handleClose(); }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Slett
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

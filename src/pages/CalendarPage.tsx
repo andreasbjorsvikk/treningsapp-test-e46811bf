@@ -9,16 +9,10 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Route, Mountain, Clock, Ambulance, Cross } from 'lucide-react';
 import DayDrawer from '@/components/DayDrawer';
 import HealthEventDialog from '@/components/HealthEventDialog';
+import { useTranslation } from '@/i18n/useTranslation';
 // Tooltips for health events use native DOM for reliability inside memoized renders
 
-const WEEKDAYS_MON = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'];
-const WEEKDAYS_SUN = ['Søn', 'Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør'];
-
-const MONTH_NAMES = [
-  'Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni',
-  'Juli', 'August', 'September', 'Oktober', 'November', 'Desember'
-];
-
+// Weekday and month labels are now provided via translation keys
 function getMonthGrid(year: number, month: number, sundayStart: boolean) {
   const firstDay = new Date(year, month, 1);
   let startDay: number;
@@ -115,10 +109,14 @@ const SessionBadge = ({ session, size = 'md', isDark }: {
 
 const CalendarPage = () => {
   const { settings } = useSettings();
+  const { t } = useTranslation();
   const isMobile = useIsMobile();
   const appData = useAppDataContext();
   const sundayStart = settings.firstDayOfWeek === 'sunday';
-  const weekdays = sundayStart ? WEEKDAYS_SUN : WEEKDAYS_MON;
+  const weekdayKeys = sundayStart
+    ? ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
+    : ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+  const weekdays = weekdayKeys.map(k => t(`calendar.weekdays.${k}`));
   const now = new Date();
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [, setRefresh] = useState(0);
@@ -430,7 +428,7 @@ const CalendarPage = () => {
             }} />
           )}
           <h2 className={`font-display font-bold text-lg relative z-10 ${isCurrentMonth ? 'text-primary' : ''}`}>
-            {MONTH_NAMES[monthData.month]} {monthData.year}
+            {t(`calendar.monthNames.${monthData.month}`)} {monthData.year}
           </h2>
         </div>
 
