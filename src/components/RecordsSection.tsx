@@ -328,12 +328,41 @@ const RecordsSection = () => {
           <Drawer open={!!selectedHike} onOpenChange={o => { if (!o) setSelectedHike(null); }}>
             <DrawerContent className="max-h-[85vh]">
               <div className="overflow-y-auto scrollbar-hide pb-6">
-                <DrawerHeader>
-                  <DrawerTitle>{selectedHike?.name}</DrawerTitle>
+                <DrawerHeader className="text-left">
+                  <DrawerTitle className="flex items-center gap-2">
+                    <Mountain className="w-5 h-5 text-muted-foreground" />
+                    {selectedHike?.name}
+                  </DrawerTitle>
                   <DrawerDescription>
                     {selectedHike?.entries.length || 0} registreringer
                   </DrawerDescription>
                 </DrawerHeader>
+
+                {/* Hike info tiles */}
+                {selectedHike && (selectedHike.elevation || selectedHike.distance || selectedHike.elevationGain) && (
+                  <div className="px-4 pb-3">
+                    <div className="flex gap-2">
+                      {selectedHike.elevation != null && (
+                        <div className="flex-1 rounded-lg bg-secondary/50 p-2.5 text-center">
+                          <p className="text-[10px] text-muted-foreground mb-0.5">M.o.h</p>
+                          <p className="font-display font-bold text-sm">{selectedHike.elevation} m</p>
+                        </div>
+                      )}
+                      {selectedHike.distance != null && (
+                        <div className="flex-1 rounded-lg bg-secondary/50 p-2.5 text-center">
+                          <p className="text-[10px] text-muted-foreground mb-0.5">Distanse</p>
+                          <p className="font-display font-bold text-sm">{selectedHike.distance} km</p>
+                        </div>
+                      )}
+                      {selectedHike.elevationGain != null && (
+                        <div className="flex-1 rounded-lg bg-secondary/50 p-2.5 text-center">
+                          <p className="text-[10px] text-muted-foreground mb-0.5">Høydemeter</p>
+                          <p className="font-display font-bold text-sm">{selectedHike.elevationGain} m</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div className="px-4 space-y-3">
                   <Button

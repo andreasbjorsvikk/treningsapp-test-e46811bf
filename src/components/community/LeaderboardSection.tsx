@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { mockLeaderboard, metricUnits, LeaderboardEntry } from '@/data/mockCommunity';
+import { mockLeaderboard, metricUnits, LeaderboardEntry, MockUser } from '@/data/mockCommunity';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import { getActivityColors } from '@/utils/activityColors';
 import { useSettings } from '@/contexts/SettingsContext';
 import ActivityIcon from '@/components/ActivityIcon';
+import UserProfileDrawer from '@/components/community/UserProfileDrawer';
 import { Trophy } from 'lucide-react';
 
 const periodTabs = [
@@ -25,6 +26,7 @@ const LeaderboardSection = () => {
   const [period, setPeriod] = useState('monthly');
   const [category, setCategory] = useState('sessions');
   const [selectedType, setSelectedType] = useState<string>('all');
+  const [profileUser, setProfileUser] = useState<MockUser | null>(null);
 
   const unit = metricUnits[category as keyof typeof metricUnits] || '';
   const data: LeaderboardEntry[] = mockLeaderboard;
@@ -81,7 +83,9 @@ const LeaderboardSection = () => {
               }`}
               style={isSelected ? { backgroundColor: colors.bg, color: colors.text } : undefined}
             >
-              <ActivityIcon type={type} className="w-3 h-3" colorOverride={isSelected ? colors.text : undefined} />
+              <span className="w-3 h-3 flex items-center justify-center">
+                <ActivityIcon type={type} className="w-3 h-3" colorOverride={isSelected ? colors.text : undefined} />
+              </span>
               {sessionTypeConfig[type].label}
             </button>
           );
@@ -95,7 +99,13 @@ const LeaderboardSection = () => {
       ) : (
         <div className="space-y-1">
           {data.map((entry, i) => (
-            <div key={entry.user.id} className="flex items-center gap-3 rounded-lg bg-secondary/50 p-2.5">
+            <button
+              key={entry.user.id}
+              onClick={() => entry.user.id !== 'me' && setProfileUser(entry.user)}
+              className={`w-full flex items-center gap-3 rounded-lg bg-secondary/50 p-2.5 text-left ${
+                entry.user.id !== 'me' ? 'hover:bg-secondary/70 cursor-pointer' : ''
+              } transition-colors`}
+            >
               <span className={`font-display font-bold text-sm w-6 text-center ${i === 0 ? 'text-warning' : 'text-muted-foreground'}`}>
                 {i === 0 ? <Trophy className="w-4 h-4 inline text-warning" /> : `#${entry.rank}`}
               </span>
@@ -104,10 +114,16 @@ const LeaderboardSection = () => {
               </div>
               <span className="flex-1 text-sm font-medium truncate">{entry.user.username}</span>
               <span className="text-sm font-display font-bold">{entry.value}{unit ? ` ${unit}` : ''}</span>
-            </div>
+            </button>
           ))}
         </div>
       )}
+
+      <UserProfileDrawer
+        user={profileUser}
+        open={!!profileUser}
+        onClose={() => setProfileUser(null)}
+      />
     </div>
   );
 };
