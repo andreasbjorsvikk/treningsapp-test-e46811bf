@@ -207,7 +207,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
           const { id, ...rest } = session;
           await appData.addSession(rest);
         }
-        toast.success(`${data.length} økter importert.`);
+        toast.success(t('training.importSuccess', { n: data.length }));
       } catch {
         toast.error(t('training.importError'));
       }
@@ -372,7 +372,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
                     <button
                       onClick={() => { setEditHealthEvent(he); setHealthDialogOpen(true); }}
                       className="p-1.5 rounded-md hover:bg-secondary transition-colors"
-                      aria-label="Rediger"
+                      aria-label={t('common.edit')}
                     >
                       <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
                     </button>
@@ -383,7 +383,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
                         }
                       }}
                       className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"
-                      aria-label="Slett"
+                      aria-label={t('common.delete')}
                     >
                       <Trash2 className="w-3.5 h-3.5 text-destructive" />
                     </button>
