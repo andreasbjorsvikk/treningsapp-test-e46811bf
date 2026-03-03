@@ -50,11 +50,15 @@ const DESKTOP_REORDERABLE_IDS = ['challenges', 'extraGoals', 'recentSessions'] a
 const MOBILE_REORDERABLE_IDS = ['trainingGoals', 'last7dCalendar', 'statistics', 'challenges', 'extraGoals', 'recentSessions'] as const;
 const MOBILE_SECTION_LABELS: Record<string, string> = {
   trainingGoals: 'Treningsmål',
-  last7dCalendar: 'Siste 7 dager + kalender',
+  last7dCalendar: 'Siste 7 dager',
   statistics: 'Statistikk',
   challenges: 'Utfordringer',
   extraGoals: 'Mål',
   recentSessions: 'Siste økter',
+};
+const MOBILE_REORDER_LABELS: Record<string, string> = {
+  ...MOBILE_SECTION_LABELS,
+  last7dCalendar: 'Siste 7 dager + kalender',
 };
 
 const IndexContent = () => {
@@ -96,6 +100,7 @@ const IndexContent = () => {
   const [dragOrder, setDragOrder] = useState<string[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressStartPos = useRef<{ x: number; y: number } | null>(null);
 
   const reorderableIds = isMobile ? MOBILE_REORDERABLE_IDS : DESKTOP_REORDERABLE_IDS;
   const sectionOrder = settings.homeSectionOrder?.length === reorderableIds.length
@@ -219,11 +224,13 @@ const IndexContent = () => {
   };
 
   // === Section labels ===
-  const sectionLabels: Record<string, string> = isMobile ? MOBILE_SECTION_LABELS : {
-    challenges: 'Utfordringer',
-    extraGoals: t('home.goals'),
-    recentSessions: t('home.recentSessions'),
-  };
+  const sectionLabels: Record<string, string> = isMobile
+    ? (isDragging ? MOBILE_REORDER_LABELS : MOBILE_SECTION_LABELS)
+    : {
+        challenges: 'Utfordringer',
+        extraGoals: t('home.goals'),
+        recentSessions: t('home.recentSessions'),
+      };
 
   // === Direct drag handlers ===
   const startDrag = (id: string) => {
@@ -239,11 +246,35 @@ const IndexContent = () => {
     }
   };
 
-  const handleLongPressStart = (id: string) => {
+  const handleLongPressStart = (id: string, e?: React.PointerEvent | React.TouchEvent) => {
+    // Record start position to detect scroll
+    if (e && 'clientX' in e) {
+      longPressStartPos.current = { x: e.clientX, y: e.clientY };
+    } else if (e && 'touches' in e && e.touches.length > 0) {
+      longPressStartPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else {
+      longPressStartPos.current = null;
+    }
     longPressTimer.current = setTimeout(() => startDrag(id), 500);
   };
   const handleLongPressEnd = () => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressStartPos.current = null;
+  };
+  const handleLongPressMove = (e: React.PointerEvent | React.TouchEvent) => {
+    if (!longPressStartPos.current || !longPressTimer.current) return;
+    let cx: number, cy: number;
+    if ('clientX' in e) { cx = e.clientX; cy = e.clientY; }
+    else if ('touches' in e && e.touches.length > 0) { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
+    else return;
+    const dx = Math.abs(cx - longPressStartPos.current.x);
+    const dy = Math.abs(cy - longPressStartPos.current.y);
+    if (dx > 8 || dy > 8) {
+      // User is scrolling, cancel long press
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+      longPressStartPos.current = null;
+    }
   };
 
   // Desktop HTML5 drag
@@ -273,41 +304,11 @@ const IndexContent = () => {
   };
 
   // Touch drag
-  const handleTouchStart = (id: string) => {
-    handleLongPressStart(id);
+  const handleTouchStart = (id: string, e: React.TouchEvent) => {
+    handleLongPressStart(id, e);
   };
-  const handleTouchMove = (e: React.TouchEvent) => {
-    handleLongPressEnd();
-    if (!isDragging || !dragId) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const touch = e.touches[0];
-    const el = document.elementFromPoint(touch.clientX, touch.clientY);
-    const target = el?.closest('[data-section-id]');
-    if (target) {
-      const overId = target.getAttribute('data-section-id');
-      if (overId && overId !== dragId) {
-        setDragOrder(prev => {
-          const next = [...prev];
-          const fromIdx = next.indexOf(dragId!);
-          const toIdx = next.indexOf(overId);
-          if (fromIdx !== -1 && toIdx !== -1) {
-            next.splice(fromIdx, 1);
-            next.splice(toIdx, 0, dragId!);
-          }
-          return next;
-        });
-        if (navigator.vibrate) navigator.vibrate(10);
-      }
-    }
-  };
-  const handleTouchEnd = () => {
-    handleLongPressEnd();
-    if (isDragging) {
-      // Don't save on release - save only on "Ferdig" button click
-      setDragId(null);
-    }
-  };
+
+
 
   const StatModeToggle = () => (
     <div className="flex items-center gap-1 mb-1">
@@ -516,8 +517,36 @@ const IndexContent = () => {
               ref={containerRef}
               className="space-y-5"
               style={isDragging ? { touchAction: 'none', overflowX: 'hidden' } : undefined}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
+              onTouchMove={(e) => {
+                // If in drag mode, handle drag; otherwise let the long press move handler check
+                if (isDragging && dragId) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const touch = e.touches[0];
+                  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                  const target = el?.closest('[data-section-id]');
+                  if (target) {
+                    const overId = target.getAttribute('data-section-id');
+                    if (overId && overId !== dragId) {
+                      setDragOrder(prev => {
+                        const next = [...prev];
+                        const fromIdx = next.indexOf(dragId!);
+                        const toIdx = next.indexOf(overId);
+                        if (fromIdx !== -1 && toIdx !== -1) {
+                          next.splice(fromIdx, 1);
+                          next.splice(toIdx, 0, dragId!);
+                        }
+                        return next;
+                      });
+                      if (navigator.vibrate) navigator.vibrate(10);
+                    }
+                  }
+                }
+              }}
+              onTouchEnd={() => {
+                handleLongPressEnd();
+                if (isDragging) setDragId(null);
+              }}
             >
               {isDragging && (
                 <p className="text-xs text-muted-foreground text-center animate-pulse">Dra for å endre rekkefølge</p>
@@ -536,18 +565,20 @@ const IndexContent = () => {
                     onDragStart={(e) => handleDragStart(e, id)}
                     onDragOver={(e) => handleDragOver(e, id)}
                     onDragEnd={handleDragEnd}
-                    className={`transition-all ${
+                    className={`transition-all duration-200 ease-in-out ${
                       isDragging
-                        ? `rounded-xl p-3 ${dragId === id ? 'bg-primary/10 scale-[1.02] shadow-md ring-2 ring-primary/30' : 'bg-secondary/30'}`
+                        ? `rounded-xl px-2.5 py-2.5 mx-1 ${dragId === id ? 'bg-primary/10 scale-[1.02] shadow-md ring-2 ring-primary/30' : 'bg-secondary/30'}`
                         : ''
                     }`}
                   >
                     <div
                       className="flex items-center gap-2 select-none"
-                      onPointerDown={() => handleLongPressStart(id)}
+                      onPointerDown={(e) => handleLongPressStart(id, e)}
+                      onPointerMove={handleLongPressMove}
                       onPointerUp={handleLongPressEnd}
                       onPointerLeave={handleLongPressEnd}
-                      onTouchStart={() => handleTouchStart(id)}
+                      onTouchStart={(e) => handleTouchStart(id, e)}
+                      onTouchMove={(te) => { handleLongPressMove(te); }}
                     >
                       {isDragging && <GripVertical className="w-4 h-4 text-muted-foreground shrink-0" />}
                       <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2 flex-1">

@@ -432,19 +432,15 @@ const SettingsPage = () => {
                   onValueChange={(v) => {
                     updateSettings({ [opt.key]: v });
                     if (v === 'selected') {
-                      setSelectedPrivacyKey(opt.key);
-                      setSelectedFriendIds((settings as any)[`${opt.key}Friends`] || []);
-                      setShowFriendPicker(true);
+                      setTimeout(() => {
+                        setSelectedPrivacyKey(opt.key);
+                        setSelectedFriendIds((settings as any)[`${opt.key}Friends`] || []);
+                        setShowFriendPicker(true);
+                      }, 100);
                     }
                   }}
                 >
-                  <SelectTrigger className="w-[120px] h-8" onClick={() => {
-                    if (settings[opt.key] === 'selected') {
-                      setSelectedPrivacyKey(opt.key);
-                      setSelectedFriendIds((settings as any)[`${opt.key}Friends`] || []);
-                      setShowFriendPicker(true);
-                    }
-                  }}>
+                  <SelectTrigger className="w-[120px] h-8">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -455,7 +451,7 @@ const SettingsPage = () => {
                 </Select>
               </div>
               {settings[opt.key] === 'selected' && friendNames && (
-                <p className="text-xs text-muted-foreground mt-1">{friendNames} kan se dette</p>
+                <p className="text-xs text-muted-foreground mt-1 text-right">{friendNames} kan se dette</p>
               )}
             </div>
             );

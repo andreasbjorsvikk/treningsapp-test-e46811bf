@@ -52,14 +52,14 @@ const ChallengeCard = ({ challenge, onClick }: ChallengeCardProps) => {
       <div className="space-y-1.5 mb-2.5">
         {challenge.participants.slice(0, 3).map(p => (
           <div key={p.user.id} className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground w-14 truncate">{p.user.username}</span>
+            <span className="text-sm text-muted-foreground w-16 truncate">{p.user.username}</span>
             <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full bg-accent transition-all"
                 style={{ width: `${Math.min((p.progress / challenge.target) * 100, 100)}%` }}
               />
             </div>
-            <span className="text-xs font-medium w-12 text-right">
+            <span className="text-sm font-medium w-14 text-right">
               {p.progress}{unit ? ` ${unit}` : ''}
             </span>
           </div>
