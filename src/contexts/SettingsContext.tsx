@@ -8,7 +8,7 @@ export type AccentColor = 'black' | 'orange' | 'blue' | 'green' | 'red' | 'purpl
 export type FirstDayOfWeek = 'monday' | 'sunday';
 export type UnitSystem = 'metric' | 'imperial';
 
-export type PrivacyLevel = 'me' | 'friends';
+export type PrivacyLevel = 'me' | 'friends' | 'selected';
 
 export interface AppSettings {
   darkMode: boolean;

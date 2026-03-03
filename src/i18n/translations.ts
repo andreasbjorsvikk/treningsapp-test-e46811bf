@@ -127,6 +127,7 @@ const no: Record<string, string> = {
   'training.statistics': 'Statistikk',
   'training.history': 'Historikk',
   'training.goals': 'Mål',
+  'training.records': 'Rekorder',
 
   // Training page
   'training.exportAll': 'Eksporter alle økter',
@@ -380,6 +381,7 @@ const en: Record<string, string> = {
   'training.statistics': 'Statistics',
   'training.history': 'History',
   'training.goals': 'Goals',
+  'training.records': 'Records',
 
   // Training page
   'training.exportAll': 'Export all sessions',

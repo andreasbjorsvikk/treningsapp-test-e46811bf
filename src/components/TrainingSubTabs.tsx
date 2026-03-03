@@ -10,6 +10,7 @@ const tabConfig: { id: TrainingSubTab; labelKey: string }[] = [
   { id: 'statistikk', labelKey: 'training.statistics' },
   { id: 'mål', labelKey: 'training.goals' },
   { id: 'historikk', labelKey: 'training.history' },
+  { id: 'rekorder', labelKey: 'training.records' },
 ];
 
 const TrainingSubTabs = ({ active, onChange }: TrainingSubTabsProps) => {

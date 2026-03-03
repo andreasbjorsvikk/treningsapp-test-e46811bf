@@ -2,7 +2,7 @@ import { Home, CalendarDays, Dumbbell, Users, Settings } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export type TabId = 'hjem' | 'kalender' | 'trening' | 'fellesskap' | 'settings';
-export type TrainingSubTab = 'statistikk' | 'historikk' | 'mål';
+export type TrainingSubTab = 'statistikk' | 'historikk' | 'mål' | 'rekorder';
 
 interface BottomNavProps {
   active: TabId;
