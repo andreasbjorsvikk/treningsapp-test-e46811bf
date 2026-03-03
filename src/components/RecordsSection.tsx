@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { WorkoutSession } from '@/types/workout';
 import { useAppDataContext } from '@/contexts/AppDataContext';
 import { formatDuration } from '@/utils/workoutUtils';
-import { Trophy, ChevronRight, Plus, Trash2, Mountain } from 'lucide-react';
+import { Trophy, ChevronRight, Plus, Trash2, Mountain, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -98,6 +98,7 @@ const RecordsSection = () => {
   const [tab, setTab] = useState<RecordTab>('running');
   const [selectedHike, setSelectedHike] = useState<HikingRecord | null>(null);
   const [showAddHike, setShowAddHike] = useState(false);
+  const [showEditHike, setShowEditHike] = useState(false);
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [newHikeName, setNewHikeName] = useState('');
   const [newHikeElevation, setNewHikeElevation] = useState('');
@@ -192,6 +193,33 @@ const RecordsSection = () => {
   const handleDeleteHike = (id: string) => {
     if (!confirm('Er du sikker på at du vil slette denne fjellturen?')) return;
     saveHikingRecords(hikingRecords.filter(h => h.id !== id));
+  };
+
+  const handleEditHike = () => {
+    if (!selectedHike || !newHikeName.trim()) return;
+    const updated = hikingRecords.map(h =>
+      h.id === selectedHike.id
+        ? {
+            ...h,
+            name: newHikeName.trim(),
+            elevation: newHikeElevation ? Number(newHikeElevation) : undefined,
+            distance: newHikeDistance ? Number(newHikeDistance) : undefined,
+            elevationGain: newHikeElevationGain ? Number(newHikeElevationGain) : undefined,
+          }
+        : h
+    );
+    saveHikingRecords(updated);
+    setSelectedHike(updated.find(h => h.id === selectedHike.id) || null);
+    setShowEditHike(false);
+  };
+
+  const openEditHike = () => {
+    if (!selectedHike) return;
+    setNewHikeName(selectedHike.name);
+    setNewHikeElevation(selectedHike.elevation?.toString() || '');
+    setNewHikeDistance(selectedHike.distance?.toString() || '');
+    setNewHikeElevationGain(selectedHike.elevationGain?.toString() || '');
+    setShowEditHike(true);
   };
 
   const handleDeleteEntry = (entryId: string) => {
@@ -438,13 +466,22 @@ const RecordsSection = () => {
                     );
                   })()}
 
-                  <Button
-                    variant="ghost"
-                    className="w-full text-destructive hover:text-destructive"
-                    onClick={() => { handleDeleteHike(selectedHike!.id); setSelectedHike(null); }}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" /> Slett fjelltur
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={openEditHike}
+                    >
+                      <Pencil className="w-4 h-4 mr-2" /> Rediger
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => { handleDeleteHike(selectedHike!.id); setSelectedHike(null); }}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" /> Slett
+                    </Button>
+                  </div>
                 </div>
               </div>
             </DrawerContent>
@@ -477,6 +514,45 @@ const RecordsSection = () => {
               <DialogFooter>
                 <Button onClick={handleAddEntry} disabled={!newEntryTime.trim()}>
                   Legg til
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Edit hike dialog */}
+          <Dialog open={showEditHike} onOpenChange={setShowEditHike}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Rediger fjelltur</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <Input
+                  value={newHikeName}
+                  onChange={e => setNewHikeName(e.target.value)}
+                  placeholder="Navn på fjellet/turen..."
+                />
+                <Input
+                  type="number"
+                  value={newHikeElevation}
+                  onChange={e => setNewHikeElevation(e.target.value)}
+                  placeholder="M.o.h (valgfritt)"
+                />
+                <Input
+                  type="number"
+                  value={newHikeDistance}
+                  onChange={e => setNewHikeDistance(e.target.value)}
+                  placeholder="Distanse i km (valgfritt)"
+                />
+                <Input
+                  type="number"
+                  value={newHikeElevationGain}
+                  onChange={e => setNewHikeElevationGain(e.target.value)}
+                  placeholder="Høydemeter (valgfritt)"
+                />
+              </div>
+              <DialogFooter>
+                <Button onClick={handleEditHike} disabled={!newHikeName.trim()}>
+                  Lagre
                 </Button>
               </DialogFooter>
             </DialogContent>

@@ -283,7 +283,9 @@ export async function searchUsers(query: string): Promise<Friend[]> {
 
 // ===== LEADERBOARD =====
 
-export async function getLeaderboard(period: 'week' | 'month' | 'all' = 'month') {
+export type LeaderboardMetric = 'sessions' | 'distance' | 'duration' | 'elevation';
+
+export async function getLeaderboard(period: 'week' | 'month' | 'all' = 'month', metric: LeaderboardMetric = 'sessions') {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
@@ -291,27 +293,37 @@ export async function getLeaderboard(period: 'week' | 'month' | 'all' = 'month')
   const friends = await getFriends();
   const userIds = [user.id, ...friends.map(f => f.id)];
 
-  let query = supabase.from('workout_sessions').select('user_id, duration_minutes');
+  let query = supabase.from('workout_sessions').select('user_id, duration_minutes, distance, elevation_gain');
 
+  const now = new Date();
   if (period === 'week') {
-    const now = new Date();
     const day = now.getDay();
     const mondayOffset = day === 0 ? -6 : 1 - day;
     const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset);
     query = query.gte('date', monday.toISOString());
   } else if (period === 'month') {
-    const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     query = query.gte('date', monthStart.toISOString());
+  } else {
+    // 'all' = current year only
+    const yearStart = new Date(now.getFullYear(), 0, 1);
+    query = query.gte('date', yearStart.toISOString());
   }
 
   query = query.in('user_id', userIds);
   const { data: sessions } = await query;
 
-  // Aggregate by user
-  const userSessions: Record<string, number> = {};
+  // Aggregate by user based on selected metric
+  const userValues: Record<string, number> = {};
   for (const s of sessions || []) {
-    userSessions[s.user_id] = (userSessions[s.user_id] || 0) + 1;
+    let val = 0;
+    switch (metric) {
+      case 'sessions': val = 1; break;
+      case 'distance': val = s.distance || 0; break;
+      case 'duration': val = s.duration_minutes || 0; break;
+      case 'elevation': val = s.elevation_gain || 0; break;
+    }
+    userValues[s.user_id] = (userValues[s.user_id] || 0) + val;
   }
 
   const allProfiles = [
@@ -320,7 +332,7 @@ export async function getLeaderboard(period: 'week' | 'month' | 'all' = 'month')
   ];
 
   return allProfiles
-    .map(p => ({ user: p, value: userSessions[p.id] || 0 }))
+    .map(p => ({ user: p, value: Math.round(userValues[p.id] * 10) / 10 || 0 }))
     .sort((a, b) => b.value - a.value)
     .map((entry, idx) => ({ ...entry, rank: idx + 1 }));
 }

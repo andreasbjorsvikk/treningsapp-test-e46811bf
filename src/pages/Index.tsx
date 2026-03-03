@@ -316,7 +316,15 @@ const IndexContent = () => {
 
   // Desktop HTML5 drag
   const handleDragStart = (e: React.DragEvent, id: string) => {
-    if (!isDragging) startDrag(id);
+    if (!isDragging) {
+      // Start reorder mode via drag on desktop
+      const order = [...sectionOrder];
+      initialOrderRef.current = [...order];
+      setDragOrder(order);
+      setDragId(id);
+      setIsDragging(true);
+      if (navigator.vibrate) navigator.vibrate(30);
+    }
     e.dataTransfer.effectAllowed = 'move';
     setDragId(id);
   };
@@ -484,14 +492,14 @@ const IndexContent = () => {
   }, []);
   const displayName = username || user?.email?.split('@')[0] || '';
 
-  // Section gradient styles
+  // Section gradient styles - stronger gradients
   const sectionGradients: Record<string, string> = {
-    trainingGoals: 'bg-gradient-to-br from-energy/8 via-background to-accent/5',
-    last7dCalendar: 'bg-gradient-to-br from-accent/8 via-background to-energy/5',
-    statistics: 'bg-gradient-to-br from-primary/5 via-background to-energy/8',
-    challenges: 'bg-gradient-to-br from-warning/8 via-background to-accent/5',
-    extraGoals: 'bg-gradient-to-br from-success/8 via-background to-primary/5',
-    recentSessions: 'bg-gradient-to-br from-accent/8 via-background to-success/5',
+    trainingGoals: 'bg-gradient-to-br from-energy/15 via-energy/5 to-accent/10',
+    last7dCalendar: 'bg-gradient-to-br from-accent/15 via-accent/5 to-energy/10',
+    statistics: 'bg-gradient-to-br from-primary/12 via-primary/4 to-energy/10',
+    challenges: 'bg-gradient-to-br from-warning/15 via-warning/5 to-accent/10',
+    extraGoals: 'bg-gradient-to-br from-success/15 via-success/5 to-primary/10',
+    recentSessions: 'bg-gradient-to-br from-accent/15 via-accent/5 to-success/10',
   };
 
   return (

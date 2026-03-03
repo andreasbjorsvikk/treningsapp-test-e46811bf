@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getLeaderboard, Friend } from '@/services/communityService';
-import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
+import { getLeaderboard, Friend, LeaderboardMetric } from '@/services/communityService';
+import { allSessionTypes, sessionTypeConfig, formatDuration } from '@/utils/workoutUtils';
 import { getActivityColors } from '@/utils/activityColors';
 import { useSettings } from '@/contexts/SettingsContext';
 import ActivityIcon from '@/components/ActivityIcon';
@@ -14,10 +14,27 @@ const periodTabs = [
   { id: 'all' as const, label: 'År' },
 ];
 
+const metricTabs: { id: LeaderboardMetric; label: string }[] = [
+  { id: 'sessions', label: 'Økter' },
+  { id: 'duration', label: 'Tid' },
+  { id: 'distance', label: 'Distanse' },
+  { id: 'elevation', label: 'Høydem.' },
+];
+
+function formatMetricValue(value: number, metric: LeaderboardMetric): string {
+  switch (metric) {
+    case 'sessions': return String(value);
+    case 'duration': return formatDuration(value);
+    case 'distance': return `${value.toFixed(1)} km`;
+    case 'elevation': return `${Math.round(value)} m`;
+  }
+}
+
 const LeaderboardSection = () => {
   const { settings } = useSettings();
   const isDark = settings.darkMode;
   const [period, setPeriod] = useState<'week' | 'month' | 'all'>('month');
+  const [metric, setMetric] = useState<LeaderboardMetric>('sessions');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [profileUser, setProfileUser] = useState<Friend | null>(null);
   const [data, setData] = useState<{ user: Friend; value: number; rank: number }[]>([]);
@@ -25,8 +42,8 @@ const LeaderboardSection = () => {
 
   useEffect(() => {
     setLoading(true);
-    getLeaderboard(period).then(d => { setData(d); setLoading(false); });
-  }, [period]);
+    getLeaderboard(period, metric).then(d => { setData(d); setLoading(false); });
+  }, [period, metric]);
 
   return (
     <div className="space-y-3">
@@ -37,6 +54,21 @@ const LeaderboardSection = () => {
             onClick={() => setPeriod(tab.id)}
             className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
               period === tab.id ? 'bg-accent text-accent-foreground' : 'bg-secondary text-muted-foreground'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Metric selector */}
+      <div className="flex gap-1">
+        {metricTabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setMetric(tab.id)}
+            className={`flex-1 py-1 text-[10px] font-medium rounded-md transition-colors ${
+              metric === tab.id ? 'bg-primary text-primary-foreground' : 'bg-secondary/60 text-muted-foreground'
             }`}
           >
             {tab.label}
@@ -99,7 +131,7 @@ const LeaderboardSection = () => {
                 <AvatarFallback className="text-[10px] font-medium">{(entry.user.username || '?')[0]}</AvatarFallback>
               </Avatar>
               <span className="flex-1 text-sm font-medium truncate">{entry.user.username}</span>
-              <span className="text-sm font-display font-bold">{entry.value}</span>
+              <span className="text-sm font-display font-bold">{formatMetricValue(entry.value, metric)}</span>
             </button>
           ))}
         </div>

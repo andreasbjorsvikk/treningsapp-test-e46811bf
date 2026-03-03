@@ -60,6 +60,20 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
   const [expanded, setExpanded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+
+  // Lock parent scroll when interacting with expanded map
+  useEffect(() => {
+    if (!expanded) return;
+    const mapEl = mapContainerRef.current;
+    if (!mapEl) return;
+    const preventParentScroll = (e: TouchEvent) => {
+      e.stopPropagation();
+    };
+    mapEl.addEventListener('touchmove', preventParentScroll, { passive: false });
+    return () => {
+      mapEl.removeEventListener('touchmove', preventParentScroll);
+    };
+  }, [expanded]);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -168,8 +182,10 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
             src={staticUrl}
             alt="Kartrute"
             className={`w-full h-full object-cover transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
-            loading="lazy"
+           loading="lazy"
             onClick={() => setExpanded(true)}
+            onLoad={() => setImgLoaded(true)}
+            onError={() => setImgError(true)}
           />
           {!imgLoaded && (
             <div className="absolute inset-0 bg-secondary/50 animate-pulse" />
