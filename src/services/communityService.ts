@@ -294,13 +294,15 @@ export async function getLeaderboard(period: 'week' | 'month' | 'all' = 'month')
   let query = supabase.from('workout_sessions').select('user_id, duration_minutes');
 
   if (period === 'week') {
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    query = query.gte('date', weekAgo.toISOString());
+    const now = new Date();
+    const day = now.getDay();
+    const mondayOffset = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset);
+    query = query.gte('date', monday.toISOString());
   } else if (period === 'month') {
-    const monthAgo = new Date();
-    monthAgo.setMonth(monthAgo.getMonth() - 1);
-    query = query.gte('date', monthAgo.toISOString());
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    query = query.gte('date', monthStart.toISOString());
   }
 
   query = query.in('user_id', userIds);
