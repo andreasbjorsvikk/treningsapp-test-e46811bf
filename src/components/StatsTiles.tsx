@@ -1,22 +1,24 @@
 import { Activity, Clock, MapPin, TrendingUp } from 'lucide-react';
 import { WorkoutSession } from '@/types/workout';
 import { formatDuration } from '@/utils/workoutUtils';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface StatsTilesProps {
   sessions: WorkoutSession[];
 }
 
 const StatsTiles = ({ sessions }: StatsTilesProps) => {
+  const { t } = useTranslation();
   const totalSessions = sessions.length;
   const totalMinutes = sessions.reduce((sum, s) => sum + s.durationMinutes, 0);
   const totalDistance = sessions.reduce((sum, s) => sum + (s.distance || 0), 0);
   const totalElevation = sessions.reduce((sum, s) => sum + (s.elevationGain || 0), 0);
 
   const tiles = [
-    { label: 'Økter', value: totalSessions.toString(), icon: Activity, accent: 'text-primary' },
-    { label: 'Total tid', value: formatDuration(totalMinutes), icon: Clock, accent: 'text-accent' },
-    { label: 'Distanse', value: `${totalDistance.toFixed(1)} km`, icon: MapPin, accent: 'text-success' },
-    { label: 'Høydemeter', value: `${Math.round(totalElevation)} m`, icon: TrendingUp, accent: 'text-warning' },
+    { label: t('stats.sessions'), value: totalSessions.toString(), icon: Activity, accent: 'text-primary' },
+    { label: t('metric.totalTime'), value: formatDuration(totalMinutes), icon: Clock, accent: 'text-accent' },
+    { label: t('stats.distance'), value: `${totalDistance.toFixed(1)} km`, icon: MapPin, accent: 'text-success' },
+    { label: t('stats.elevation'), value: `${Math.round(totalElevation)} m`, icon: TrendingUp, accent: 'text-warning' },
   ];
 
   return (

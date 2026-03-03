@@ -1,25 +1,14 @@
 import { useState, useEffect } from 'react';
 import { getLeaderboard, Friend, LeaderboardMetric } from '@/services/communityService';
-import { allSessionTypes, sessionTypeConfig, formatDuration } from '@/utils/workoutUtils';
+import { allSessionTypes } from '@/utils/workoutUtils';
 import { getActivityColors } from '@/utils/activityColors';
 import { useSettings } from '@/contexts/SettingsContext';
 import ActivityIcon from '@/components/ActivityIcon';
 import UserProfileDrawer from '@/components/community/UserProfileDrawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Trophy, Loader2 } from 'lucide-react';
-
-const periodTabs = [
-  { id: 'week' as const, label: 'Uke' },
-  { id: 'month' as const, label: 'Måned' },
-  { id: 'all' as const, label: 'År' },
-];
-
-const metricTabs: { id: LeaderboardMetric; label: string }[] = [
-  { id: 'sessions', label: 'Økter' },
-  { id: 'duration', label: 'Tid' },
-  { id: 'distance', label: 'Distanse' },
-  { id: 'elevation', label: 'Høydem.' },
-];
+import { formatDuration } from '@/utils/workoutUtils';
+import { useTranslation } from '@/i18n/useTranslation';
 
 function formatMetricValue(value: number, metric: LeaderboardMetric): string {
   switch (metric) {
@@ -32,6 +21,7 @@ function formatMetricValue(value: number, metric: LeaderboardMetric): string {
 
 const LeaderboardSection = () => {
   const { settings } = useSettings();
+  const { t } = useTranslation();
   const isDark = settings.darkMode;
   const [period, setPeriod] = useState<'week' | 'month' | 'all'>('month');
   const [metric, setMetric] = useState<LeaderboardMetric>('sessions');
@@ -39,6 +29,19 @@ const LeaderboardSection = () => {
   const [profileUser, setProfileUser] = useState<Friend | null>(null);
   const [data, setData] = useState<{ user: Friend; value: number; rank: number }[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const periodTabs = [
+    { id: 'week' as const, label: t('leaderboard.week') },
+    { id: 'month' as const, label: t('leaderboard.month') },
+    { id: 'all' as const, label: t('leaderboard.year') },
+  ];
+
+  const metricTabs: { id: LeaderboardMetric; label: string }[] = [
+    { id: 'sessions', label: t('leaderboard.sessions') },
+    { id: 'duration', label: t('leaderboard.time') },
+    { id: 'distance', label: t('leaderboard.distance') },
+    { id: 'elevation', label: t('leaderboard.elevation') },
+  ];
 
   useEffect(() => {
     setLoading(true);
@@ -61,7 +64,6 @@ const LeaderboardSection = () => {
         ))}
       </div>
 
-      {/* Metric selector */}
       <div className="flex gap-1">
         {metricTabs.map(tab => (
           <button
@@ -76,7 +78,6 @@ const LeaderboardSection = () => {
         ))}
       </div>
 
-      {/* Activity type filter */}
       <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
         <button
           onClick={() => setSelectedType('all')}
@@ -84,7 +85,7 @@ const LeaderboardSection = () => {
             selectedType === 'all' ? 'bg-accent text-accent-foreground' : 'bg-secondary text-muted-foreground'
           }`}
         >
-          Alle
+          {t('common.all')}
         </button>
         {allSessionTypes.map(type => {
           const colors = getActivityColors(type, isDark);
@@ -101,7 +102,7 @@ const LeaderboardSection = () => {
               <span className="w-3 h-3 flex items-center justify-center">
                 <ActivityIcon type={type} className="w-3 h-3" colorOverride={isSelected ? colors.text : undefined} />
               </span>
-              {sessionTypeConfig[type].label}
+              {t(`activity.${type}`)}
             </button>
           );
         })}
@@ -111,16 +112,16 @@ const LeaderboardSection = () => {
         <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
       ) : data.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
-          <p className="text-sm">Legg til venner for å se ledertavlen</p>
+          <p className="text-sm">{t('leaderboard.addFriends')}</p>
         </div>
       ) : (
         <div className="space-y-1">
           {data.map((entry, i) => (
             <button
               key={entry.user.id}
-              onClick={() => entry.user.username !== 'Meg' && setProfileUser(entry.user)}
+              onClick={() => entry.user.username !== 'Meg' && entry.user.username !== 'Me' && setProfileUser(entry.user)}
               className={`w-full flex items-center gap-3 rounded-lg bg-secondary/50 p-2.5 text-left ${
-                entry.user.username !== 'Meg' ? 'hover:bg-secondary/70 cursor-pointer' : ''
+                entry.user.username !== 'Meg' && entry.user.username !== 'Me' ? 'hover:bg-secondary/70 cursor-pointer' : ''
               } transition-colors`}
             >
               <span className={`font-display font-bold text-sm w-6 text-center ${i === 0 ? 'text-warning' : 'text-muted-foreground'}`}>

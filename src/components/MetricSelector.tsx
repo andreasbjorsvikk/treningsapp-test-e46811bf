@@ -1,3 +1,5 @@
+import { useTranslation } from '@/i18n/useTranslation';
+
 export type ChartMetric = 'sessions' | 'distance' | 'elevation' | 'minutes';
 
 interface MetricSelectorProps {
@@ -5,14 +7,16 @@ interface MetricSelectorProps {
   onSelect: (m: ChartMetric) => void;
 }
 
-const metrics: { id: ChartMetric; label: string }[] = [
-  { id: 'sessions', label: 'Økter' },
-  { id: 'distance', label: 'Distanse' },
-  { id: 'elevation', label: 'Høydemeter' },
-  { id: 'minutes', label: 'Total tid' },
-];
-
 const MetricSelector = ({ selected, onSelect }: MetricSelectorProps) => {
+  const { t } = useTranslation();
+
+  const metrics: { id: ChartMetric; label: string }[] = [
+    { id: 'sessions', label: t('stats.sessions') },
+    { id: 'distance', label: t('stats.distance') },
+    { id: 'elevation', label: t('stats.elevation') },
+    { id: 'minutes', label: t('metric.totalTime') },
+  ];
+
   return (
     <div className="flex gap-1 flex-wrap justify-center">
       {metrics.map((m) => (

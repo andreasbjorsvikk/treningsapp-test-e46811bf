@@ -1,9 +1,10 @@
 import { WorkoutSession } from '@/types/workout';
-import { sessionTypeConfig, formatDuration, formatDate } from '@/utils/workoutUtils';
+import { sessionTypeConfig, formatDuration } from '@/utils/workoutUtils';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Clock, MapPin, MountainSnow, Pencil } from 'lucide-react';
 import ActivityIcon from '@/components/ActivityIcon';
 import { getActivityColors } from '@/utils/activityColors';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface SessionCardProps {
   session: WorkoutSession;
@@ -14,8 +15,18 @@ interface SessionCardProps {
 const SessionCard = ({ session, onClick, onEdit }: SessionCardProps) => {
   const config = sessionTypeConfig[session.type];
   const { settings } = useSettings();
+  const { t, locale } = useTranslation();
   const isDark = settings.darkMode;
   const colors = getActivityColors(session.type, isDark);
+
+  const formatDate = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return t('common.today');
+    if (diffDays === 1) return t('common.yesterday');
+    return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+  };
 
   return (
     <div
@@ -34,7 +45,7 @@ const SessionCard = ({ session, onClick, onEdit }: SessionCardProps) => {
           <div className="flex items-start justify-between gap-2">
             <div>
               <h3 className="font-display font-semibold text-sm leading-tight">
-                {session.title || config.label}
+                {session.title || t(`activity.${session.type}`)}
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {formatDate(session.date)}

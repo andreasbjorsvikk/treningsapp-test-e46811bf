@@ -12,18 +12,7 @@ import { getChallenges, getChallengeParticipants, getChallengeProgress, getNotif
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Loader2 } from 'lucide-react';
-
-const mainTabs = [
-  { id: 'challenges', label: 'Utfordringer' },
-  { id: 'leaderboard', label: 'Ledertavle' },
-  { id: 'friends', label: 'Venner' },
-];
-
-const challengeFilterTabs = [
-  { id: 'active', label: 'Aktive' },
-  { id: 'mine', label: 'Mine' },
-  { id: 'archived', label: 'Arkiv' },
-];
+import { useTranslation } from '@/i18n/useTranslation';
 
 export interface ChallengeWithParticipants {
   challenge: ChallengeRow;
@@ -32,6 +21,19 @@ export interface ChallengeWithParticipants {
 
 const CommunityPage = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
+
+  const mainTabs = [
+    { id: 'challenges', label: t('community.challenges') },
+    { id: 'leaderboard', label: t('community.leaderboard') },
+    { id: 'friends', label: t('community.friends') },
+  ];
+
+  const challengeFilterTabs = [
+    { id: 'active', label: t('community.active') },
+    { id: 'mine', label: t('community.mine') },
+    { id: 'archived', label: t('community.archived') },
+  ];
   const [mainTab, setMainTab] = useState('challenges');
   const [challengeFilter, setChallengeFilter] = useState('active');
   const [selectedChallenge, setSelectedChallenge] = useState<ChallengeWithParticipants | null>(null);
@@ -117,7 +119,7 @@ const CommunityPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-          Fellesskap
+          {t('community.title')}
         </h2>
         <NotificationBell onClick={() => setShowNotifications(true)} count={unreadCount} />
       </div>
@@ -145,7 +147,7 @@ const CommunityPage = () => {
             onClick={() => { setPreselectedUser(null); setShowForm(true); }}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-dashed border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
           >
-            <Plus className="w-4 h-4" /> Ny utfordring
+            <Plus className="w-4 h-4" /> {t('community.newChallenge')}
           </button>
 
           {loading ? (
@@ -154,7 +156,7 @@ const CommunityPage = () => {
             <div className="space-y-2">
               {filteredChallenges.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  <p className="text-sm">Ingen utfordringer her ennå</p>
+                  <p className="text-sm">{t('community.noChallenges')}</p>
                 </div>
               ) : (
                 filteredChallenges.map(c => (

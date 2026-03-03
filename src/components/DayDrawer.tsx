@@ -7,6 +7,7 @@ import WorkoutDetailDrawer from '@/components/WorkoutDetailDrawer';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DayDrawerProps {
   dateKey: string | null;
@@ -21,9 +22,10 @@ const DayDrawer = ({ dateKey, sessions, onClose, onRefresh, onNavigateToCalendar
   const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
   const [detailSession, setDetailSession] = useState<WorkoutSession | null>(null);
   const appData = useAppDataContext();
+  const { t, locale } = useTranslation();
 
   const dateLabel = dateKey
-    ? new Date(dateKey + 'T00:00:00').toLocaleDateString('nb-NO', {
+    ? new Date(dateKey + 'T00:00:00').toLocaleDateString(locale, {
         weekday: 'long',
         day: 'numeric',
         month: 'long',
@@ -48,7 +50,6 @@ const DayDrawer = ({ dateKey, sessions, onClose, onRefresh, onNavigateToCalendar
     }
     setEditSession(undefined);
     onRefresh();
-    // Navigate to calendar after creating a new workout
     if (!editSession && onNavigateToCalendar) {
       onClose();
       onNavigateToCalendar();
@@ -71,7 +72,7 @@ const DayDrawer = ({ dateKey, sessions, onClose, onRefresh, onNavigateToCalendar
           <div className="space-y-3 pb-4">
             {sessions.length === 0 ? (
               <p className="text-center py-8 text-muted-foreground text-sm">
-                Ingen økter denne dagen.
+                {t('common.noSessions')}
               </p>
             ) : (
               sessions.map(s => (
@@ -80,7 +81,7 @@ const DayDrawer = ({ dateKey, sessions, onClose, onRefresh, onNavigateToCalendar
             )}
 
             <Button onClick={handleAddNew} className="w-full" variant="outline">
-              <Plus className="w-4 h-4 mr-2" /> Legg til økt
+              <Plus className="w-4 h-4 mr-2" /> {t('common.addSession')}
             </Button>
           </div>
         </SheetContent>

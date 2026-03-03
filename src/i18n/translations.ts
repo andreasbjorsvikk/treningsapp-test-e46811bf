@@ -19,6 +19,8 @@ const no: Record<string, string> = {
   // Weekdays (monday-start)
   'weekday.mon': 'M', 'weekday.tue': 'T', 'weekday.wed': 'O', 'weekday.thu': 'T',
   'weekday.fri': 'F', 'weekday.sat': 'L', 'weekday.sun': 'S',
+  'weekday.long.mon': 'Man', 'weekday.long.tue': 'Tir', 'weekday.long.wed': 'Ons',
+  'weekday.long.thu': 'Tor', 'weekday.long.fri': 'Fre', 'weekday.long.sat': 'Lør', 'weekday.long.sun': 'Søn',
 
   // Activity types
   'activity.styrke': 'Styrke', 'activity.løping': 'Løping', 'activity.fjelltur': 'Fjelltur',
@@ -28,6 +30,7 @@ const no: Record<string, string> = {
   // Metrics
   'metric.sessions': 'økter', 'metric.minutes': 'timer', 'metric.distance': 'km', 'metric.elevation': 'm',
   'metric.sessions.label': 'Økter', 'metric.minutes.label': 'Tid', 'metric.distance.label': 'Distanse', 'metric.elevation.label': 'Høydemeter',
+  'metric.totalTime': 'Total tid',
 
   // Home
   'home.last7days': 'Siste 7 dager',
@@ -68,6 +71,7 @@ const no: Record<string, string> = {
   'goals.revertToPrevious': 'Gå tilbake til forrige mål',
   'goals.setNewGoal': 'Sett et nytt mål',
   'goals.noGoalSet': 'Ingen mål satt',
+  'goals.goalProgress': 'Målprogresjon',
 
   // Goal card
   'goalCard.thisWeek': 'Denne uken',
@@ -141,6 +145,9 @@ const no: Record<string, string> = {
   'training.importSuccess': '{n} nye økter lagt til (duplikater hoppet over).',
   'training.importReplaceSuccess': 'Alle økter erstattet med {n} økter.',
   'training.importError': 'Kunne ikke lese filen. Sjekk at det er en gyldig JSON-fil.',
+  'training.healthEvents': 'Helsehendelser',
+  'training.noEventsFound': 'Ingen hendelser funnet.',
+  'training.deleteEventConfirm': 'Er du sikker på at du vil slette denne hendelsen?',
 
   // Workout dialog
   'workout.newSession': 'Ny økt',
@@ -250,6 +257,16 @@ const no: Record<string, string> = {
   'common.today': 'I dag',
   'common.yesterday': 'I går',
   'common.done': 'Ferdig',
+  'common.all': 'Alle',
+  'common.unknown': 'Ukjent',
+  'common.noSessions': 'Ingen økter denne dagen.',
+  'common.addSession': 'Legg til økt',
+  'common.profile': 'Profil',
+  'common.ended': 'Avsluttet',
+  'common.goal': 'Mål',
+  'common.noGoalSet': 'Ingen satt mål',
+  'common.participants': 'deltakere',
+  'common.me': 'Meg',
 
   // Greetings
   'greeting.goodNight': 'God natt',
@@ -375,6 +392,93 @@ const no: Record<string, string> = {
   // Training history filter
   'training.filterAll': 'Alle',
   'training.filterSickness': 'Sykdom',
+  'training.filterInjury': 'Skade',
+
+  // Period selector
+  'period.month': 'Måned',
+  'period.year': 'År',
+  'period.total': 'Total',
+
+  // Community
+  'community.title': 'Fellesskap',
+  'community.challenges': 'Utfordringer',
+  'community.leaderboard': 'Ledertavle',
+  'community.friends': 'Venner',
+  'community.active': 'Aktive',
+  'community.mine': 'Mine',
+  'community.archived': 'Arkiv',
+  'community.newChallenge': 'Ny utfordring',
+  'community.noChallenges': 'Ingen utfordringer her ennå',
+  'community.createError': 'Kunne ikke opprette utfordring',
+  'community.createSuccess': 'Utfordring opprettet!',
+  'community.addFriendsFirst': 'Legg til venner først for å invitere dem',
+
+  // Challenge form
+  'challenge.newChallenge': 'Ny utfordring',
+  'challenge.name': 'Navn',
+  'challenge.namePlaceholder': 'F.eks. Mars-mila',
+  'challenge.emoji': 'Emoji',
+  'challenge.metric': 'Metrikk',
+  'challenge.activityType': 'Aktivitetstype',
+  'challenge.period': 'Periode',
+  'challenge.target': 'Mål (valgfritt)',
+  'challenge.noTargetDesc': 'Uten mål: den med mest vinner',
+  'challenge.participants': 'Deltakere',
+  'challenge.createChallenge': 'Opprett utfordring',
+  'challenge.fillName': 'Fyll ut navn',
+  'challenge.periodWeek': 'Denne uken',
+  'challenge.periodMonth': 'Denne måneden',
+  'challenge.periodYear': 'Dette året',
+  'challenge.metricSessions': 'Antall økter',
+  'challenge.metricDistance': 'Distanse (km)',
+  'challenge.metricDuration': 'Varighet (min)',
+  'challenge.metricElevation': 'Høydemeter (m)',
+  'challenge.daysLeft': 'dager igjen',
+  'challenge.inviteLink': 'Invitasjonslenke kopiert!',
+  'challenge.removedFromHome': 'Fjernet fra forsiden',
+  'challenge.addedToHome': 'Lagt til på forsiden',
+  'challenge.removeFromHome': 'Fjern fra forsiden',
+  'challenge.showOnHome': 'Vis på forsiden',
+  'challenge.mostSessions': 'økter',
+  'challenge.mostDistance': 'km',
+  'challenge.mostDuration': 'timer',
+  'challenge.mostElevation': 'm',
+
+  // Leaderboard
+  'leaderboard.week': 'Uke',
+  'leaderboard.month': 'Måned',
+  'leaderboard.year': 'År',
+  'leaderboard.sessions': 'Økter',
+  'leaderboard.time': 'Tid',
+  'leaderboard.distance': 'Distanse',
+  'leaderboard.elevation': 'Høydem.',
+  'leaderboard.addFriends': 'Legg til venner for å se ledertavlen',
+
+  // Friends
+  'friends.requests': 'Venneforespørsler',
+  'friends.confirm': 'Bekreft',
+  'friends.accepted': 'Venneforespørsel godtatt!',
+  'friends.declined': 'Venneforespørsel avslått',
+  'friends.sent': 'Venneforespørsel sendt!',
+  'friends.sendError': 'Kunne ikke sende forespørsel',
+  'friends.searchPlaceholder': 'Søk etter navn...',
+  'friends.searchResults': 'Søkeresultater',
+  'friends.addFriend': 'Legg til',
+  'friends.noFriends': 'Ingen venner ennå',
+  'friends.noFriendsDesc': 'Søk etter brukernavn for å legge til venner',
+  'friends.searching': 'Søker...',
+  'friends.inviteToChallenge': 'Inviter til utfordring',
+  'friends.sharedChallenges': 'Felles utfordringer',
+  'friends.recentSessions': 'Siste økter',
+  'friends.activities': 'Aktiviteter',
+
+  // Notifications
+  'notifications.title': 'Varsler',
+  'notifications.none': 'Ingen varsler',
+  'notifications.tapToSee': 'Trykk for å se forespørsel →',
+  'notifications.justNow': 'Akkurat nå',
+  'notifications.hoursAgo': '{n}t siden',
+  'notifications.daysAgo': '{n}d siden',
 
   // Date formatting
   'date.locale': 'nb-NO',
@@ -399,6 +503,8 @@ const en: Record<string, string> = {
   // Weekdays
   'weekday.mon': 'M', 'weekday.tue': 'T', 'weekday.wed': 'W', 'weekday.thu': 'T',
   'weekday.fri': 'F', 'weekday.sat': 'S', 'weekday.sun': 'S',
+  'weekday.long.mon': 'Mon', 'weekday.long.tue': 'Tue', 'weekday.long.wed': 'Wed',
+  'weekday.long.thu': 'Thu', 'weekday.long.fri': 'Fri', 'weekday.long.sat': 'Sat', 'weekday.long.sun': 'Sun',
 
   // Activity types
   'activity.styrke': 'Strength', 'activity.løping': 'Running', 'activity.fjelltur': 'Hiking',
@@ -408,6 +514,7 @@ const en: Record<string, string> = {
   // Metrics
   'metric.sessions': 'sessions', 'metric.minutes': 'hours', 'metric.distance': 'km', 'metric.elevation': 'm',
   'metric.sessions.label': 'Sessions', 'metric.minutes.label': 'Time', 'metric.distance.label': 'Distance', 'metric.elevation.label': 'Elevation',
+  'metric.totalTime': 'Total time',
 
   // Home
   'home.last7days': 'Last 7 days',
@@ -448,6 +555,7 @@ const en: Record<string, string> = {
   'goals.revertToPrevious': 'Revert to previous goal',
   'goals.setNewGoal': 'Set a new goal',
   'goals.noGoalSet': 'No goal set',
+  'goals.goalProgress': 'Goal progress',
 
   // Goal card
   'goalCard.thisWeek': 'This week',
@@ -521,6 +629,9 @@ const en: Record<string, string> = {
   'training.importSuccess': '{n} new sessions added (duplicates skipped).',
   'training.importReplaceSuccess': 'All sessions replaced with {n} sessions.',
   'training.importError': 'Could not read the file. Check that it is a valid JSON file.',
+  'training.healthEvents': 'Health events',
+  'training.noEventsFound': 'No events found.',
+  'training.deleteEventConfirm': 'Are you sure you want to delete this event?',
 
   // Workout dialog
   'workout.newSession': 'New session',
@@ -630,6 +741,16 @@ const en: Record<string, string> = {
   'common.today': 'Today',
   'common.yesterday': 'Yesterday',
   'common.done': 'Done',
+  'common.all': 'All',
+  'common.unknown': 'Unknown',
+  'common.noSessions': 'No sessions this day.',
+  'common.addSession': 'Add session',
+  'common.profile': 'Profile',
+  'common.ended': 'Ended',
+  'common.goal': 'Goal',
+  'common.noGoalSet': 'No goal set',
+  'common.participants': 'participants',
+  'common.me': 'Me',
 
   // Greetings
   'greeting.goodNight': 'Good night',
@@ -755,6 +876,93 @@ const en: Record<string, string> = {
   // Training history filter
   'training.filterAll': 'All',
   'training.filterSickness': 'Sickness',
+  'training.filterInjury': 'Injury',
+
+  // Period selector
+  'period.month': 'Month',
+  'period.year': 'Year',
+  'period.total': 'Total',
+
+  // Community
+  'community.title': 'Community',
+  'community.challenges': 'Challenges',
+  'community.leaderboard': 'Leaderboard',
+  'community.friends': 'Friends',
+  'community.active': 'Active',
+  'community.mine': 'Mine',
+  'community.archived': 'Archive',
+  'community.newChallenge': 'New challenge',
+  'community.noChallenges': 'No challenges here yet',
+  'community.createError': 'Could not create challenge',
+  'community.createSuccess': 'Challenge created!',
+  'community.addFriendsFirst': 'Add friends first to invite them',
+
+  // Challenge form
+  'challenge.newChallenge': 'New challenge',
+  'challenge.name': 'Name',
+  'challenge.namePlaceholder': 'E.g. March Mile',
+  'challenge.emoji': 'Emoji',
+  'challenge.metric': 'Metric',
+  'challenge.activityType': 'Activity type',
+  'challenge.period': 'Period',
+  'challenge.target': 'Target (optional)',
+  'challenge.noTargetDesc': 'Without target: whoever has the most wins',
+  'challenge.participants': 'Participants',
+  'challenge.createChallenge': 'Create challenge',
+  'challenge.fillName': 'Enter a name',
+  'challenge.periodWeek': 'This week',
+  'challenge.periodMonth': 'This month',
+  'challenge.periodYear': 'This year',
+  'challenge.metricSessions': 'Number of sessions',
+  'challenge.metricDistance': 'Distance (km)',
+  'challenge.metricDuration': 'Duration (min)',
+  'challenge.metricElevation': 'Elevation (m)',
+  'challenge.daysLeft': 'days left',
+  'challenge.inviteLink': 'Invite link copied!',
+  'challenge.removedFromHome': 'Removed from home',
+  'challenge.addedToHome': 'Added to home',
+  'challenge.removeFromHome': 'Remove from home',
+  'challenge.showOnHome': 'Show on home',
+  'challenge.mostSessions': 'sessions',
+  'challenge.mostDistance': 'km',
+  'challenge.mostDuration': 'hours',
+  'challenge.mostElevation': 'm',
+
+  // Leaderboard
+  'leaderboard.week': 'Week',
+  'leaderboard.month': 'Month',
+  'leaderboard.year': 'Year',
+  'leaderboard.sessions': 'Sessions',
+  'leaderboard.time': 'Time',
+  'leaderboard.distance': 'Distance',
+  'leaderboard.elevation': 'Elev.',
+  'leaderboard.addFriends': 'Add friends to see the leaderboard',
+
+  // Friends
+  'friends.requests': 'Friend requests',
+  'friends.confirm': 'Confirm',
+  'friends.accepted': 'Friend request accepted!',
+  'friends.declined': 'Friend request declined',
+  'friends.sent': 'Friend request sent!',
+  'friends.sendError': 'Could not send request',
+  'friends.searchPlaceholder': 'Search by name...',
+  'friends.searchResults': 'Search results',
+  'friends.addFriend': 'Add',
+  'friends.noFriends': 'No friends yet',
+  'friends.noFriendsDesc': 'Search by username to add friends',
+  'friends.searching': 'Searching...',
+  'friends.inviteToChallenge': 'Invite to challenge',
+  'friends.sharedChallenges': 'Shared challenges',
+  'friends.recentSessions': 'Recent sessions',
+  'friends.activities': 'Activities',
+
+  // Notifications
+  'notifications.title': 'Notifications',
+  'notifications.none': 'No notifications',
+  'notifications.tapToSee': 'Tap to see request →',
+  'notifications.justNow': 'Just now',
+  'notifications.hoursAgo': '{n}h ago',
+  'notifications.daysAgo': '{n}d ago',
 
   // Date formatting
   'date.locale': 'en-US',
