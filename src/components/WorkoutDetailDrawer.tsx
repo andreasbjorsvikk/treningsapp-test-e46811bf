@@ -18,7 +18,6 @@ import {
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { stravaService } from '@/services/stravaService';
 import { toast } from 'sonner';
-import RouteMap from '@/components/RouteMap';
 
 interface Props {
   session: WorkoutSession | null;
@@ -35,16 +34,22 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
   const [loadingStreams, setLoadingStreams] = useState(false);
   const [streamsLoaded, setStreamsLoaded] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [mapReady, setMapReady] = useState(false);
+  const [mapError, setMapError] = useState(false);
+  const [MapComponent, setMapComponent] = useState<React.ComponentType<any> | null>(null);
 
-  // Delay map render until drawer animation completes
+  // Dynamically load RouteMap after drawer opens to avoid Leaflet SSR issues
   useEffect(() => {
     if (open && session?.summaryPolyline) {
-      setMapReady(false);
-      const timer = setTimeout(() => setMapReady(true), 400);
+      setMapError(false);
+      setMapComponent(null);
+      const timer = setTimeout(() => {
+        import('@/components/RouteMap')
+          .then(mod => setMapComponent(() => mod.default))
+          .catch(() => setMapError(true));
+      }, 300);
       return () => clearTimeout(timer);
     } else {
-      setMapReady(false);
+      setMapComponent(null);
     }
   }, [open, session?.id]);
 
@@ -113,14 +118,19 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
             </DrawerHeader>
 
             {/* Map */}
-            {routePoints && mapReady && (
-              <RouteMap
+            {routePoints && MapComponent && !mapError && (
+              <MapComponent
                 key={session.id}
                 routePoints={routePoints}
                 lineColor={colors.text}
                 tileUrl={tileUrl}
                 height={192}
               />
+            )}
+            {routePoints && mapError && (
+              <div className="w-full h-32 flex items-center justify-center bg-secondary/30 text-muted-foreground text-sm">
+                Kartet kunne ikke lastes
+              </div>
             )}
 
             {/* Header */}

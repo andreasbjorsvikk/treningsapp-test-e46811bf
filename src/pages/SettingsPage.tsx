@@ -417,6 +417,7 @@ const SettingsPage = () => {
                 <SelectContent>
                   <SelectItem value="me">Bare meg</SelectItem>
                   <SelectItem value="friends">Venner</SelectItem>
+                  <SelectItem value="selected">Valgte venner</SelectItem>
                 </SelectContent>
               </Select>
             </div>

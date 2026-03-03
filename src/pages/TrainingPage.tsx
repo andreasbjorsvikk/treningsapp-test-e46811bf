@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { SessionType, WorkoutSession, HealthEvent } from '@/types/workout';
 import GoalsSection from '@/components/GoalsSection';
 import StatistikkContent from '@/components/StatistikkContent';
+import RecordsSection from '@/components/RecordsSection';
 import { useAppDataContext } from '@/contexts/AppDataContext';
 import { computeMonthWheelData, computeYearWheelData } from '@/utils/goalWheelData';
 import { allSessionTypes } from '@/utils/workoutUtils';
@@ -397,6 +398,8 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
       )}
 
       {subTab === 'mål' && <GoalsSection />}
+
+      {subTab === 'rekorder' && <RecordsSection />}
 
       <WorkoutDetailDrawer
         session={detailSession}
