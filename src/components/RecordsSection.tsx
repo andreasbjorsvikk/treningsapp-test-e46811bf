@@ -51,14 +51,17 @@ function estimateBestTime(sessions: WorkoutSession[], benchmarkKm: number): stri
 // Hiking record types
 export interface HikingRecord {
   id: string;
-  name: string; // e.g. "Nordfjell"
+  name: string;
+  elevation?: number; // m.o.h (meters above sea level)
+  distance?: number; // km
+  elevationGain?: number; // height gain in meters
   entries: HikingEntry[];
 }
 
 export interface HikingEntry {
   id: string;
-  time: string; // e.g. "2:35"
-  date: string; // ISO date
+  time: string;
+  date: string;
 }
 
 type RecordTab = 'running' | 'cycling' | 'hiking';
@@ -70,6 +73,9 @@ const RecordsSection = () => {
   const [showAddHike, setShowAddHike] = useState(false);
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [newHikeName, setNewHikeName] = useState('');
+  const [newHikeElevation, setNewHikeElevation] = useState('');
+  const [newHikeDistance, setNewHikeDistance] = useState('');
+  const [newHikeElevationGain, setNewHikeElevationGain] = useState('');
   const [newEntryTime, setNewEntryTime] = useState('');
   const [newEntryDate, setNewEntryDate] = useState(new Date().toISOString().slice(0, 10));
 
@@ -125,10 +131,16 @@ const RecordsSection = () => {
     const record: HikingRecord = {
       id: `h${Date.now()}`,
       name: newHikeName.trim(),
+      elevation: newHikeElevation ? Number(newHikeElevation) : undefined,
+      distance: newHikeDistance ? Number(newHikeDistance) : undefined,
+      elevationGain: newHikeElevationGain ? Number(newHikeElevationGain) : undefined,
       entries: [],
     };
     saveHikingRecords([...hikingRecords, record]);
     setNewHikeName('');
+    setNewHikeElevation('');
+    setNewHikeDistance('');
+    setNewHikeElevationGain('');
     setShowAddHike(false);
   };
 
@@ -261,6 +273,9 @@ const RecordsSection = () => {
                       <p className="text-xs text-muted-foreground">
                         {h.entries.length} {h.entries.length === 1 ? 'registrering' : 'registreringer'}
                         {best && ` · Beste: ${best.time}`}
+                        {h.elevation && ` · ${h.elevation} m.o.h`}
+                        {h.distance && ` · ${h.distance} km`}
+                        {h.elevationGain && ` · ${h.elevationGain} hm`}
                       </p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -281,6 +296,24 @@ const RecordsSection = () => {
                   value={newHikeName}
                   onChange={e => setNewHikeName(e.target.value)}
                   placeholder="Navn på fjellet/turen..."
+                />
+                <Input
+                  type="number"
+                  value={newHikeElevation}
+                  onChange={e => setNewHikeElevation(e.target.value)}
+                  placeholder="M.o.h (valgfritt)"
+                />
+                <Input
+                  type="number"
+                  value={newHikeDistance}
+                  onChange={e => setNewHikeDistance(e.target.value)}
+                  placeholder="Distanse i km (valgfritt)"
+                />
+                <Input
+                  type="number"
+                  value={newHikeElevationGain}
+                  onChange={e => setNewHikeElevationGain(e.target.value)}
+                  placeholder="Høydemeter (valgfritt)"
                 />
               </div>
               <DialogFooter>
