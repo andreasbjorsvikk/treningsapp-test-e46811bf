@@ -211,8 +211,45 @@ const IndexContent = () => {
   }, [allSessions, allPeriods, t]);
 
   const homeGoals = appData.goals.filter(g => g.showOnHome);
-  const pinnedChallenges: ChallengeWithParticipants[] = [];
+  const [pinnedChallenges, setPinnedChallenges] = useState<ChallengeWithParticipants[]>([]);
   const unreadNotifications = 0;
+
+  // Load pinned challenges
+  useEffect(() => {
+    if (!user || !settings.pinnedChallengeIds?.length) {
+      setPinnedChallenges([]);
+      return;
+    }
+    const loadPinned = async () => {
+      const pinnedIds = settings.pinnedChallengeIds;
+      const raw = await getChallenges();
+      const pinned = raw.filter(c => pinnedIds.includes(c.id));
+      const enriched: ChallengeWithParticipants[] = [];
+      for (const c of pinned) {
+        const parts = await getChallengeParticipants(c.id);
+        const acceptedParts = parts.filter(p => p.status === 'accepted');
+        const userIds = acceptedParts.map(p => p.user_id);
+        const { data: profiles } = await supabase.from('profiles').select('id, username, avatar_url').in('id', userIds);
+        const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+        const progress = userIds.length > 0 ? await getChallengeProgress(c, userIds) : {};
+        const participantData = acceptedParts.map(p => {
+          const profile = profileMap.get(p.user_id);
+          return {
+            userId: p.user_id,
+            username: profile?.username || t('common.unknown'),
+            avatarUrl: profile?.avatar_url || null,
+            progress: progress[p.user_id] || 0,
+            rank: 0,
+            status: p.status,
+          };
+        }).sort((a, b) => b.progress - a.progress);
+        participantData.forEach((p, i) => { p.rank = i + 1; });
+        enriched.push({ challenge: c, participants: participantData });
+      }
+      setPinnedChallenges(enriched);
+    };
+    loadPinned();
+  }, [user, settings.pinnedChallengeIds]);
 
   const handleDelete = async (id: string) => { await appData.deleteSession(id); };
   const handleEdit = (session: WorkoutSession) => { setEditSession(session); setDialogOpen(true); };
@@ -684,12 +721,7 @@ const IndexContent = () => {
                       }}
                       onTouchMove={handleLongPressMove}
                       onTouchEnd={handleLongPressEnd}
-                      onMouseDown={(e) => {
-                        // Desktop: initiate drag mode on header mousedown
-                        if (!isDragging && !isMobile) {
-                          e.preventDefault();
-                        }
-                      }}
+                      onMouseDown={() => {}}
                     >
                       {isDragging && <GripVertical className="w-4 h-4 text-muted-foreground shrink-0" />}
                       <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2 flex-1">
