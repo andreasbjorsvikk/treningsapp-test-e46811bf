@@ -39,7 +39,7 @@ const COLOR_PRESETS = [
   { labelKey: 'color.mint', light: { bg: 'rgb(210,240,230)', text: 'rgb(35,95,75)', badge: 'rgb(225,248,240)' }, dark: { bg: 'rgb(80,145,120)', text: '#ffffff', badge: '#1a3a2e' } },
 ];
 
-type SettingsView = 'main' | 'appearance' | 'preferences' | 'training' | 'data' | 'account' | 'sync' | 'privacy';
+type SettingsView = 'main' | 'appearance' | 'preferences' | 'training' | 'data' | 'account' | 'sync' | 'privacy' | 'profile';
 
 const SettingsPage = () => {
   const { settings, updateSettings, appThemes, accentPresets, getTypeColor } = useSettings();
@@ -84,6 +84,13 @@ const SettingsPage = () => {
         if (data?.avatar_url) setAvatarUrl(data.avatar_url);
       });
   }, [user]);
+
+  // Listen for navigate-to-profile event
+  useEffect(() => {
+    const handler = () => setView('profile');
+    window.addEventListener('navigate-to-profile', handler);
+    return () => window.removeEventListener('navigate-to-profile', handler);
+  }, []);
 
   const handleSaveUsername = async () => {
     if (!user) return;
@@ -408,33 +415,51 @@ const SettingsPage = () => {
 
         <div className="glass-card rounded-xl p-4 space-y-1">
           <p className="text-xs text-muted-foreground mb-3">E-postadressen din er alltid skjult for andre.</p>
-          {privacyOptions.map(opt => (
-            <div key={opt.key} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
-              <div className="min-w-0 flex-1 pr-4">
-                <p className="text-sm font-medium">{opt.label}</p>
-                <p className="text-xs text-muted-foreground">{opt.desc}</p>
+          {privacyOptions.map(opt => {
+            const selectedFriendsForKey = (settings as any)[`${opt.key}Friends`] as string[] | undefined;
+            const friendNames = selectedFriendsForKey?.length
+              ? friends.filter(f => selectedFriendsForKey.includes(f.id)).map(f => f.username).join(' og ')
+              : null;
+            return (
+            <div key={opt.key} className="py-3 border-b border-border/50 last:border-0">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0 flex-1 pr-4">
+                  <p className="text-sm font-medium">{opt.label}</p>
+                  <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                </div>
+                <Select
+                  value={settings[opt.key]}
+                  onValueChange={(v) => {
+                    updateSettings({ [opt.key]: v });
+                    if (v === 'selected') {
+                      setSelectedPrivacyKey(opt.key);
+                      setSelectedFriendIds((settings as any)[`${opt.key}Friends`] || []);
+                      setShowFriendPicker(true);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-[120px] h-8" onClick={() => {
+                    if (settings[opt.key] === 'selected') {
+                      setSelectedPrivacyKey(opt.key);
+                      setSelectedFriendIds((settings as any)[`${opt.key}Friends`] || []);
+                      setShowFriendPicker(true);
+                    }
+                  }}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="me">Bare meg</SelectItem>
+                    <SelectItem value="friends">Venner</SelectItem>
+                    <SelectItem value="selected">Valgte venner</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <Select
-                value={settings[opt.key]}
-                onValueChange={(v) => {
-                  updateSettings({ [opt.key]: v });
-                  if (v === 'selected') {
-                    setSelectedPrivacyKey(opt.key);
-                    setShowFriendPicker(true);
-                  }
-                }}
-              >
-                <SelectTrigger className="w-[120px] h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="me">Bare meg</SelectItem>
-                  <SelectItem value="friends">Venner</SelectItem>
-                  <SelectItem value="selected">Valgte venner</SelectItem>
-                </SelectContent>
-              </Select>
+              {settings[opt.key] === 'selected' && friendNames && (
+                <p className="text-xs text-muted-foreground mt-1">{friendNames} kan se dette</p>
+              )}
             </div>
-          ))}
+            );
+          })}
         </div>
 
         <Dialog open={showFriendPicker} onOpenChange={setShowFriendPicker}>
@@ -460,7 +485,13 @@ const SettingsPage = () => {
                 </label>
               ))}
             </div>
-            <Button onClick={() => { setShowFriendPicker(false); toast.success('Venner oppdatert'); }} className="w-full">
+            <Button onClick={() => {
+              if (selectedPrivacyKey) {
+                updateSettings({ [`${selectedPrivacyKey}Friends`]: selectedFriendIds } as any);
+              }
+              setShowFriendPicker(false);
+              toast.success('Venner oppdatert');
+            }} className="w-full">
               Ferdig
             </Button>
           </DialogContent>
@@ -700,6 +731,84 @@ const SettingsPage = () => {
               </Button>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ========== PROFILE VIEW ==========
+  if (view === 'profile' && user) {
+    return (
+      <div className="space-y-4">
+        {backButton('Profil')}
+
+        <div className="glass-card rounded-xl p-4 space-y-5">
+          {/* Avatar & name */}
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Avatar className="w-16 h-16">
+                {avatarUrl ? <AvatarImage src={avatarUrl} alt="Avatar" /> : null}
+                <AvatarFallback className="text-lg font-bold">
+                  {(username || user.email?.charAt(0) || 'U').charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+              >
+                <Camera className="w-3.5 h-3.5" />
+              </button>
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarSelect} />
+              <AvatarCropper
+                open={showCropper}
+                imageFile={cropFile}
+                imageUrl={cropUrl}
+                onConfirm={handleCroppedUpload}
+                onCancel={() => { setShowCropper(false); setCropFile(null); setCropUrl(null); }}
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold truncate">{username || user.email?.split('@')[0]}</p>
+              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+            </div>
+          </div>
+
+          {/* Username */}
+          <div className="space-y-1.5">
+            <Label className="text-sm">{t('settings.username')}</Label>
+            <div className="flex gap-2">
+              <Input
+                value={username}
+                onChange={(e) => { setUsername(e.target.value); setUsernameSaved(false); }}
+                placeholder={t('settings.usernamePlaceholder')}
+                className="flex-1"
+              />
+              <Button size="sm" variant={usernameSaved ? 'ghost' : 'default'} onClick={handleSaveUsername} disabled={usernameLoading || usernameSaved}>
+                {usernameSaved ? t('settings.saved') : t('settings.save')}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Change password */}
+        <div className="glass-card rounded-xl p-4 space-y-3">
+          <Label className="text-sm font-semibold">Endre passord</Label>
+          <p className="text-xs text-muted-foreground">Vi sender en lenke til e-posten din for å tilbakestille passordet.</p>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={async () => {
+              if (!user?.email) return;
+              const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+                redirectTo: `${window.location.origin}/reset-password`,
+              });
+              if (error) toast.error('Kunne ikke sende e-post');
+              else toast.success('E-post for passordendring sendt!');
+            }}
+          >
+            <Lock className="w-4 h-4 mr-2" /> Send passordlenke
+          </Button>
         </div>
       </div>
     );

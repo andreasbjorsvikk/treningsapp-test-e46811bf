@@ -39,7 +39,7 @@ const BottomNav = ({ active, onNavigate, notificationCount = 0, profileButton }:
             >
               <Icon className="w-5 h-5" />
               {showDot && (
-                <span className="absolute top-1.5 right-1/4 lg:top-2 lg:right-2 w-2 h-2 rounded-full bg-destructive" />
+                <span className="absolute top-1 left-1/2 translate-x-1 lg:top-2 lg:left-auto lg:right-3 lg:translate-x-0 w-2 h-2 rounded-full bg-destructive" />
               )}
               <span className="text-[10px] font-medium lg:text-sm">{t(tab.labelKey)}</span>
             </button>

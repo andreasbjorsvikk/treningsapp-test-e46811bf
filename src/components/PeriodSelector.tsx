@@ -48,7 +48,7 @@ const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, on
           <button
             key={p.id}
             onClick={() => onPeriodChange(p.id)}
-            className={`py-1 px-4 rounded-full text-xs font-medium transition-colors ${
+            className={`py-1.5 px-5 rounded-full text-sm font-medium transition-colors ${
               period === p.id
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-secondary/60 text-muted-foreground hover:text-foreground hover:bg-secondary'

@@ -41,22 +41,38 @@ function formatRecordTime(totalMinutes: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-function estimateBestTime(sessions: WorkoutSession[], benchmarkKm: number): string | null {
+interface BestTimeResult {
+  time: string;
+  date: string;
+  sessionTitle?: string;
+  sessionId?: string;
+}
+
+function estimateBestTime(sessions: WorkoutSession[], benchmarkKm: number): BestTimeResult | null {
   // Find sessions that have distance >= benchmark
   const qualifying = sessions.filter(s => s.distance && s.distance >= benchmarkKm);
   if (qualifying.length === 0) return null;
 
   // Estimate time for the benchmark distance based on pace
   let bestMinutes = Infinity;
+  let bestSession: WorkoutSession | null = null;
   for (const s of qualifying) {
     if (!s.distance || s.distance <= 0) continue;
     const paceMinPerKm = s.durationMinutes / s.distance;
     const estimatedMin = paceMinPerKm * benchmarkKm;
-    if (estimatedMin < bestMinutes) bestMinutes = estimatedMin;
+    if (estimatedMin < bestMinutes) {
+      bestMinutes = estimatedMin;
+      bestSession = s;
+    }
   }
 
-  if (bestMinutes === Infinity) return null;
-  return formatRecordTime(bestMinutes);
+  if (bestMinutes === Infinity || !bestSession) return null;
+  return {
+    time: formatRecordTime(bestMinutes),
+    date: bestSession.date,
+    sessionTitle: bestSession.title || undefined,
+    sessionId: bestSession.id,
+  };
 }
 
 // Hiking record types
@@ -199,8 +215,8 @@ const RecordsSection = () => {
 
   const renderDistanceRecords = (sessions: WorkoutSession[], benchmarks: typeof RUNNING_BENCHMARKS) => {
     const records = benchmarks
-      .map(b => ({ ...b, time: estimateBestTime(sessions, b.distance) }))
-      .filter(b => b.time !== null);
+      .map(b => ({ ...b, result: estimateBestTime(sessions, b.distance) }))
+      .filter(b => b.result !== null);
 
     if (records.length === 0) {
       return (
@@ -218,9 +234,12 @@ const RecordsSection = () => {
           </p>
         </div>
         {records.map(r => (
-          <div key={r.label} className="flex items-center justify-between px-4 py-3">
-            <span className="text-sm font-medium">{r.label}</span>
-            <span className="font-display font-bold text-sm">{r.time}</span>
+          <div key={r.label} className="flex items-center gap-3 px-4 py-3">
+            <span className="text-xs text-muted-foreground w-20 shrink-0">
+              {r.result && new Date(r.result.date).toLocaleDateString('nb-NO', { day: 'numeric', month: 'short', year: '2-digit' })}
+            </span>
+            <span className="text-sm font-medium flex-1">{r.label}</span>
+            <span className="font-display font-bold text-sm">{r.result?.time}</span>
           </div>
         ))}
       </div>
