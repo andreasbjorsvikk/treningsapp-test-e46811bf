@@ -30,14 +30,15 @@ export function computeMonthWheelData(
   const percent = target === 0 ? 0 : (current / target) * 100;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const isCurrentMonth = month === now.getMonth() && year === now.getFullYear();
-  // Use fractional day progress for more precise marker placement
-  // e.g. at noon on day 15 of 30 = (14 + 0.5) / 30 = 0.4833
+  // Use day-of-month / daysInMonth for marker position
+  // At end of day 3 of 31, marker should be at 3/31 = ~9.7%
+  // This means "by end of today you should have X" — slightly ahead to push the marker forward
   const expectedFraction = isCurrentMonth
-    ? ((now.getDate() - 1) + now.getHours() / 24) / daysInMonth
+    ? (now.getDate() + now.getHours() / 24) / daysInMonth
     : 1;
   const expected = target * expectedFraction;
   const diff = current - expected;
-  return { current, target: Math.round(target * 10) / 10, percent, unit: unitLabel, expectedFraction, diff };
+  return { current, target: Math.round(target), percent, unit: unitLabel, expectedFraction, diff };
 }
 
 /**

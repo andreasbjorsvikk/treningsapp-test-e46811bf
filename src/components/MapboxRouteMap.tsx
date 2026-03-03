@@ -61,17 +61,47 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
 
-  // Lock parent scroll when interacting with expanded map
+  // Lock parent/drawer scroll when touching the map area (both static and expanded)
   useEffect(() => {
-    if (!expanded) return;
     const mapEl = mapContainerRef.current;
-    if (!mapEl) return;
-    const preventParentScroll = (e: TouchEvent) => {
-      e.stopPropagation();
+    const wrapperEl = wrapperRef.current;
+    const target = mapEl || wrapperEl;
+    if (!target) return;
+
+    // Find the scrollable drawer parent
+    const findScrollParent = (el: HTMLElement | null): HTMLElement | null => {
+      while (el) {
+        if (el.scrollHeight > el.clientHeight && getComputedStyle(el).overflowY !== 'visible') return el;
+        el = el.parentElement;
+      }
+      return null;
     };
-    mapEl.addEventListener('touchmove', preventParentScroll, { passive: false });
+
+    let scrollParent: HTMLElement | null = null;
+    let savedOverflow = '';
+
+    const onTouchStart = () => {
+      scrollParent = findScrollParent(target.parentElement);
+      if (scrollParent) {
+        savedOverflow = scrollParent.style.overflowY;
+        scrollParent.style.overflowY = 'hidden';
+      }
+    };
+    const onTouchEnd = () => {
+      if (scrollParent) {
+        scrollParent.style.overflowY = savedOverflow;
+        scrollParent = null;
+      }
+    };
+
+    target.addEventListener('touchstart', onTouchStart, { passive: true });
+    target.addEventListener('touchend', onTouchEnd, { passive: true });
+    target.addEventListener('touchcancel', onTouchEnd, { passive: true });
     return () => {
-      mapEl.removeEventListener('touchmove', preventParentScroll);
+      target.removeEventListener('touchstart', onTouchStart);
+      target.removeEventListener('touchend', onTouchEnd);
+      target.removeEventListener('touchcancel', onTouchEnd);
+      onTouchEnd();
     };
   }, [expanded]);
   const mapContainerRef = useRef<HTMLDivElement>(null);
