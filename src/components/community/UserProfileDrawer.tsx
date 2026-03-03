@@ -230,7 +230,8 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge, onOpenCha
                     const theirProgress = c.participants.find(p => p.user.id === user.id);
                     const unit = metricUnits[c.metric];
                     const iWon = (myProgress?.rank || 99) < (theirProgress?.rank || 99);
-                    const metricLabel = c.metric === 'sessions' ? 'økter' : unit || '';
+                    const isInline = c.metric === 'distance' || c.metric === 'elevation';
+                    const metricLabel = c.metric === 'sessions' ? 'økter' : c.metric === 'duration' ? 'timer' : unit || '';
                     return (
                       <button
                         key={c.id}
@@ -249,9 +250,9 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge, onOpenCha
                           <div>
                             <p className="text-[10px] text-muted-foreground mb-0.5">Meg</p>
                             <p className={`text-sm font-semibold ${iWon ? 'text-primary' : 'text-muted-foreground'}`}>
-                              {myProgress?.progress}
+                              {myProgress?.progress}{isInline && metricLabel ? ` ${metricLabel}` : ''}
                             </p>
-                            {metricLabel && <p className="text-[9px] text-muted-foreground">{metricLabel}</p>}
+                            {!isInline && metricLabel && <p className="text-[9px] text-muted-foreground">{metricLabel}</p>}
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground">vs</p>
@@ -259,9 +260,9 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge, onOpenCha
                           <div>
                             <p className="text-[10px] text-muted-foreground mb-0.5">{user.username}</p>
                             <p className={`text-sm font-semibold ${!iWon ? 'text-primary' : 'text-muted-foreground'}`}>
-                              {theirProgress?.progress}
+                              {theirProgress?.progress}{isInline && metricLabel ? ` ${metricLabel}` : ''}
                             </p>
-                            {metricLabel && <p className="text-[9px] text-muted-foreground">{metricLabel}</p>}
+                            {!isInline && metricLabel && <p className="text-[9px] text-muted-foreground">{metricLabel}</p>}
                           </div>
                         </div>
                       </button>
