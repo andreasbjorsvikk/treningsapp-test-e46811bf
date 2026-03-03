@@ -69,23 +69,23 @@ const ChallengeDetail = ({ challenge, open, onClose }: ChallengeDetailProps) => 
             <div className="px-4 space-y-4">
               {/* Countdown / status */}
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
+                <span className="text-base text-muted-foreground">
                   {metricLabels[challenge.metric]}
                   {challenge.target > 0 ? ` · Mål: ${challenge.target}${unit ? ` ${unit}` : ''}` : ' · Ingen satt mål'}
                 </span>
                 {challenge.status !== 'archived' ? (
-                  <span className="text-xs font-medium bg-accent/10 text-accent px-2 py-0.5 rounded-full">
+                  <span className="text-sm font-medium bg-accent/10 text-accent px-2.5 py-1 rounded-full">
                     {daysLeft} dager igjen
                   </span>
                 ) : (
-                  <span className="text-xs font-medium bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
+                  <span className="text-sm font-medium bg-muted text-muted-foreground px-2.5 py-1 rounded-full">
                     Avsluttet
                   </span>
                 )}
               </div>
 
               {/* Ranked participant list with avatars */}
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {sorted.map((p, i) => {
                   const maxProgress = Math.max(...challenge.participants.map(pp => pp.progress));
                   const pct = challenge.target > 0
@@ -95,22 +95,22 @@ const ChallengeDetail = ({ challenge, open, onClose }: ChallengeDetailProps) => 
                     <button
                       key={p.user.id}
                       onClick={() => p.user.id !== 'me' && setProfileUser(p.user)}
-                      className={`w-full flex items-center gap-3 rounded-lg bg-secondary/50 p-2.5 text-left ${
+                      className={`w-full flex items-center gap-3 rounded-lg bg-secondary/50 p-3 text-left ${
                         p.user.id !== 'me' ? 'hover:bg-secondary/70 cursor-pointer' : ''
                       } transition-colors`}
                     >
-                      <span className={`font-display font-bold text-sm w-6 text-center ${i === 0 ? 'text-warning' : 'text-muted-foreground'}`}>
-                        {i === 0 ? <Trophy className="w-4 h-4 inline text-warning" /> : `#${p.rank}`}
+                      <span className={`font-display font-bold text-base w-7 text-center ${i === 0 ? 'text-warning' : 'text-muted-foreground'}`}>
+                        {i === 0 ? <Trophy className="w-4.5 h-4.5 inline text-warning" /> : `#${p.rank}`}
                       </span>
-                      <Avatar className="w-6 h-6">
-                        <AvatarFallback className="text-[10px] font-medium">{p.user.username[0]}</AvatarFallback>
+                      <Avatar className="w-7 h-7">
+                        <AvatarFallback className="text-xs font-medium">{p.user.username[0]}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-0.5">
-                          <span className="text-sm font-medium truncate">{p.user.username}</span>
-                          <span className="text-xs font-medium">{p.progress}{unit ? ` ${unit}` : ''}</span>
+                          <span className="text-base font-medium truncate">{p.user.username}</span>
+                          <span className="text-sm font-medium">{p.progress}{unit ? ` ${unit}` : ''}</span>
                         </div>
-                        <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                        <div className="h-2 bg-secondary rounded-full overflow-hidden">
                           <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${pct}%` }} />
                         </div>
                       </div>

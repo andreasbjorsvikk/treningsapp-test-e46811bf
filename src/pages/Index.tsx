@@ -44,8 +44,18 @@ const Index = () => {
   );
 };
 
-// Only bottom sections are reorderable
-const REORDERABLE_IDS = ['challenges', 'extraGoals', 'recentSessions'] as const;
+// Desktop: only bottom sections are reorderable
+const DESKTOP_REORDERABLE_IDS = ['challenges', 'extraGoals', 'recentSessions'] as const;
+// Mobile: all sections reorderable
+const MOBILE_REORDERABLE_IDS = ['trainingGoals', 'last7dCalendar', 'statistics', 'challenges', 'extraGoals', 'recentSessions'] as const;
+const MOBILE_SECTION_LABELS: Record<string, string> = {
+  trainingGoals: 'Treningsmål',
+  last7dCalendar: 'Siste 7 dager + kalender',
+  statistics: 'Statistikk',
+  challenges: 'Utfordringer',
+  extraGoals: 'Mål',
+  recentSessions: 'Siste økter',
+};
 
 const IndexContent = () => {
   const { settings, updateSettings } = useSettings();
@@ -87,9 +97,10 @@ const IndexContent = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const sectionOrder = settings.homeSectionOrder?.length === REORDERABLE_IDS.length
+  const reorderableIds = isMobile ? MOBILE_REORDERABLE_IDS : DESKTOP_REORDERABLE_IDS;
+  const sectionOrder = settings.homeSectionOrder?.length === reorderableIds.length
     ? settings.homeSectionOrder
-    : [...REORDERABLE_IDS];
+    : [...reorderableIds];
 
   // Lock body scroll when dragging
   useEffect(() => {
@@ -208,7 +219,7 @@ const IndexContent = () => {
   };
 
   // === Section labels ===
-  const sectionLabels: Record<string, string> = {
+  const sectionLabels: Record<string, string> = isMobile ? MOBILE_SECTION_LABELS : {
     challenges: 'Utfordringer',
     extraGoals: t('home.goals'),
     recentSessions: t('home.recentSessions'),
@@ -220,6 +231,12 @@ const IndexContent = () => {
     setDragId(id);
     setIsDragging(true);
     if (navigator.vibrate) navigator.vibrate(30);
+    // On mobile, scroll to bottom so the full list + Ferdig button is visible
+    if (isMobile) {
+      setTimeout(() => {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      }, 100);
+    }
   };
 
   const handleLongPressStart = (id: string) => {
@@ -251,11 +268,8 @@ const IndexContent = () => {
     }
   };
   const handleDragEnd = () => {
-    if (isDragging) {
-      updateSettings({ homeSectionOrder: dragOrder });
-    }
+    // Don't save on drop - save only on "Ferdig" button click
     setDragId(null);
-    setIsDragging(false);
   };
 
   // Touch drag
@@ -290,9 +304,8 @@ const IndexContent = () => {
   const handleTouchEnd = () => {
     handleLongPressEnd();
     if (isDragging) {
-      updateSettings({ homeSectionOrder: dragOrder });
+      // Don't save on release - save only on "Ferdig" button click
       setDragId(null);
-      setIsDragging(false);
     }
   };
 
@@ -321,6 +334,37 @@ const IndexContent = () => {
   const renderSection = (id: string, collapsed: boolean) => {
     if (collapsed) return null;
     switch (id) {
+      case 'trainingGoals':
+        return (
+          <div className="grid grid-cols-2 gap-3">
+            <ProgressWheel
+              percent={monthData.percent} current={monthData.current} target={monthData.target}
+              unit={monthData.unit} title={t(`month.${new Date().getMonth()}`)}
+              hasGoal={!!primaryGoal} expectedFraction={monthData.expectedFraction}
+              paceDiff={monthData.diff} showPaceLabel onClick={navigateToGoals}
+            />
+            <ProgressWheel
+              percent={yearData.percent} current={yearData.current} target={yearData.target}
+              unit={yearData.unit} title={String(new Date().getFullYear())}
+              hasGoal={!!primaryGoal} expectedFraction={yearData.expectedFraction}
+              paceDiff={yearData.diff} showPaceLabel onClick={navigateToGoals}
+            />
+          </div>
+        );
+      case 'last7dCalendar':
+        return (
+          <div className="grid grid-cols-2 gap-3">
+            <WeeklySessionIcons sessions={allSessions} onClick={navigateToHistory} />
+            <MiniCalendar sessions={allSessions} onClick={navigateToCalendar} />
+          </div>
+        );
+      case 'statistics':
+        return (
+          <>
+            <StatModeToggle />
+            <StatsOverview stats={stats} compact onClick={navigateToStats} />
+          </>
+        );
       case 'challenges':
         if (pinnedChallenges.length === 0) return null;
         return (
@@ -367,7 +411,7 @@ const IndexContent = () => {
   // Profile button component
   const ProfileButton = ({ className }: { className?: string }) => (
     <button
-      onClick={() => setActiveTab('settings')}
+      onClick={() => { setActiveTab('settings'); setTimeout(() => window.dispatchEvent(new CustomEvent('navigate-to-profile')), 50); }}
       className={`rounded-full transition-all hover:ring-2 hover:ring-primary/30 ${className || ''}`}
     >
       <Avatar className="w-8 h-8">
@@ -430,8 +474,8 @@ const IndexContent = () => {
             {/* ===== FIXED TOP SECTION (not reorderable) ===== */}
             <div className="space-y-5">
               {/* Desktop: 4-column layout */}
-              {!isMobile ? (
-                <div className="grid grid-cols-4 gap-3 items-start">
+              {!isMobile && (
+                <div className="grid grid-cols-4 gap-3 items-stretch">
                   {/* Col 1: Month wheel */}
                   <ProgressWheel
                     percent={monthData.percent} current={monthData.current} target={monthData.target}
@@ -459,63 +503,24 @@ const IndexContent = () => {
                       <WeeklySessionIcons sessions={allSessions} onClick={navigateToHistory} />
                     </div>
                   </div>
-                  {/* Col 4: Mini calendar (constrained height) */}
-                  <div className="max-h-[240px] overflow-hidden">
+                  {/* Col 4: Mini calendar */}
+                  <div>
                     <MiniCalendar sessions={allSessions} onClick={navigateToCalendar} />
                   </div>
                 </div>
-              ) : (
-                /* Mobile: stacked sections */
-                <>
-                  <section className="space-y-2">
-                    <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2 select-none">
-                      Treningsmål
-                    </h2>
-                    <div className="grid grid-cols-2 gap-3">
-                      <ProgressWheel
-                        percent={monthData.percent} current={monthData.current} target={monthData.target}
-                        unit={monthData.unit} title={t(`month.${new Date().getMonth()}`)}
-                        hasGoal={!!primaryGoal} expectedFraction={monthData.expectedFraction}
-                        paceDiff={monthData.diff} showPaceLabel onClick={navigateToGoals}
-                      />
-                      <ProgressWheel
-                        percent={yearData.percent} current={yearData.current} target={yearData.target}
-                        unit={yearData.unit} title={String(new Date().getFullYear())}
-                        hasGoal={!!primaryGoal} expectedFraction={yearData.expectedFraction}
-                        paceDiff={yearData.diff} showPaceLabel onClick={navigateToGoals}
-                      />
-                    </div>
-                  </section>
-                  <section className="space-y-2">
-                    <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2 select-none">
-                      {t('home.last7days')}
-                    </h2>
-                    <div className="grid grid-cols-2 gap-3">
-                      <WeeklySessionIcons sessions={allSessions} onClick={navigateToHistory} />
-                      <MiniCalendar sessions={allSessions} onClick={navigateToCalendar} />
-                    </div>
-                  </section>
-                  <section className="space-y-1">
-                    <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2 select-none">
-                      Statistikk
-                    </h2>
-                    <StatModeToggle />
-                    <StatsOverview stats={stats} compact onClick={navigateToStats} />
-                  </section>
-                </>
               )}
             </div>
 
-            {/* ===== REORDERABLE BOTTOM SECTIONS with direct drag ===== */}
+            {/* ===== REORDERABLE SECTIONS ===== */}
             <div
               ref={containerRef}
               className="space-y-5"
-              style={isDragging ? { touchAction: 'none' } : undefined}
+              style={isDragging ? { touchAction: 'none', overflowX: 'hidden' } : undefined}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             >
               {isDragging && (
-                <p className="text-xs text-muted-foreground text-center animate-pulse">Dra for å endre rekkefølge · Slipp for å lagre</p>
+                <p className="text-xs text-muted-foreground text-center animate-pulse">Dra for å endre rekkefølge</p>
               )}
               {currentOrder.map(id => {
                 // Skip empty sections when not dragging

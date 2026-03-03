@@ -1,4 +1,4 @@
-import { MockUser, mockChallenges, metricUnits } from '@/data/mockCommunity';
+import { MockUser, mockChallenges, metricUnits, Challenge } from '@/data/mockCommunity';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription,
@@ -10,6 +10,7 @@ interface UserProfileDrawerProps {
   open: boolean;
   onClose: () => void;
   onInviteToChallenge?: (user: MockUser) => void;
+  onOpenChallenge?: (challenge: Challenge) => void;
 }
 
 // Mock profile data for each user
@@ -72,7 +73,7 @@ const mockProfileData: Record<string, {
   },
 };
 
-const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserProfileDrawerProps) => {
+const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge, onOpenChallenge }: UserProfileDrawerProps) => {
   if (!user) return null;
 
   const profile = mockProfileData[user.id] || mockProfileData['u1'];
@@ -229,8 +230,13 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                     const theirProgress = c.participants.find(p => p.user.id === user.id);
                     const unit = metricUnits[c.metric];
                     const iWon = (myProgress?.rank || 99) < (theirProgress?.rank || 99);
+                    const metricLabel = c.metric === 'sessions' ? 'økter' : unit || '';
                     return (
-                      <div key={c.id} className="rounded-lg bg-secondary/50 p-2.5">
+                      <button
+                        key={c.id}
+                        onClick={() => onOpenChallenge?.(c)}
+                        className="w-full rounded-lg bg-secondary/50 p-2.5 text-left hover:bg-secondary/70 transition-colors"
+                      >
                         <div className="flex items-center gap-2 mb-1.5">
                           {c.emoji && <span>{c.emoji}</span>}
                           <span className="text-sm font-medium flex-1 truncate">{c.name}</span>
@@ -243,8 +249,9 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                           <div>
                             <p className="text-[10px] text-muted-foreground mb-0.5">Meg</p>
                             <p className={`text-sm font-semibold ${iWon ? 'text-primary' : 'text-muted-foreground'}`}>
-                              {myProgress?.progress}{unit ? ` ${unit}` : ''}
+                              {myProgress?.progress}
                             </p>
+                            {metricLabel && <p className="text-[9px] text-muted-foreground">{metricLabel}</p>}
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground">vs</p>
@@ -252,11 +259,12 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                           <div>
                             <p className="text-[10px] text-muted-foreground mb-0.5">{user.username}</p>
                             <p className={`text-sm font-semibold ${!iWon ? 'text-primary' : 'text-muted-foreground'}`}>
-                              {theirProgress?.progress}{unit ? ` ${unit}` : ''}
+                              {theirProgress?.progress}
                             </p>
+                            {metricLabel && <p className="text-[9px] text-muted-foreground">{metricLabel}</p>}
                           </div>
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
