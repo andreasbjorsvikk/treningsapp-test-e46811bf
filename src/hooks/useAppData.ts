@@ -5,6 +5,8 @@ import { workoutService, workoutServiceAsync, computeStatsFromSessions } from '@
 import { goalService, goalServiceAsync } from '@/services/goalService';
 import { primaryGoalService, primaryGoalServiceAsync } from '@/services/primaryGoalService';
 import { healthEventService, healthEventServiceAsync } from '@/services/healthEventService';
+import { checkAllPRs, PRAlert } from '@/utils/prDetection';
+import { toast } from 'sonner';
 
 export function useAppData() {
   const { user, loading: authLoading } = useAuth();
@@ -101,13 +103,25 @@ export function useAppData() {
 
   // ===== Session operations =====
   const addSession = useCallback(async (data: Omit<WorkoutSession, 'id'>) => {
+    let newSession: WorkoutSession | undefined;
     if (isOnline && user) {
-      await workoutServiceAsync.add(user.id, data);
+      newSession = await workoutServiceAsync.add(user.id, data);
     } else {
-      workoutService.add(data);
+      newSession = workoutService.add(data);
     }
     await reload();
-  }, [isOnline, user, reload]);
+
+    // PR detection after reload so sessions list is fresh
+    if (newSession) {
+      const otherSessions = sessions.filter(s => s.id !== newSession!.id);
+      const prAlerts = checkAllPRs(newSession, otherSessions);
+      for (const pr of prAlerts) {
+        toast.success(`🏆 Ny personlig rekord! ${pr.benchmark}: ${pr.newTime}${pr.improvement ? ` (${pr.improvement})` : ''}`, {
+          duration: 6000,
+        });
+      }
+    }
+  }, [isOnline, user, reload, sessions]);
 
   const updateSession = useCallback(async (id: string, data: Partial<Omit<WorkoutSession, 'id'>>) => {
     if (isOnline && user) {

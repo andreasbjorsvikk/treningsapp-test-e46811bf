@@ -95,7 +95,8 @@ export function getYearExpectedProgress(periods: PrimaryGoalPeriod[], year: numb
     } else if (refDate >= monthStart) {
       const daysInMonth = monthEnd.getDate();
       const dayOfMonth = refDate.getDate();
-      expected += mTarget * (dayOfMonth / daysInMonth);
+      const hourFraction = refDate.getHours() / 24;
+      expected += mTarget * ((dayOfMonth + hourFraction) / daysInMonth);
     }
   }
   const fractionElapsed = target > 0 ? expected / target : 0;

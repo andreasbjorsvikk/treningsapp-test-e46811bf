@@ -494,12 +494,12 @@ const IndexContent = () => {
 
   // Section gradient styles - stronger gradients
   const sectionGradients: Record<string, string> = {
-    trainingGoals: 'bg-gradient-to-br from-energy/15 via-energy/5 to-accent/10',
-    last7dCalendar: 'bg-gradient-to-br from-accent/15 via-accent/5 to-energy/10',
-    statistics: 'bg-gradient-to-br from-primary/12 via-primary/4 to-energy/10',
-    challenges: 'bg-gradient-to-br from-warning/15 via-warning/5 to-accent/10',
-    extraGoals: 'bg-gradient-to-br from-success/15 via-success/5 to-primary/10',
-    recentSessions: 'bg-gradient-to-br from-accent/15 via-accent/5 to-success/10',
+    trainingGoals: 'bg-gradient-to-br from-energy/8 via-transparent to-accent/5',
+    last7dCalendar: 'bg-gradient-to-br from-accent/8 via-transparent to-energy/5',
+    statistics: 'bg-gradient-to-br from-primary/6 via-transparent to-energy/5',
+    challenges: 'bg-gradient-to-br from-warning/8 via-transparent to-accent/5',
+    extraGoals: 'bg-gradient-to-br from-success/8 via-transparent to-primary/5',
+    recentSessions: 'bg-gradient-to-br from-accent/8 via-transparent to-success/5',
   };
 
   return (
@@ -655,9 +655,8 @@ const IndexContent = () => {
                   <section
                     key={id}
                     data-section-id={id}
-                    draggable={isDragging}
-                    onDragStart={(e) => handleDragStart(e, id)}
                     onDragOver={(e) => handleDragOver(e, id)}
+                    onDrop={() => { if (dragId) { /* swap handled in dragOver */ } }}
                     onDragEnd={handleDragEnd}
                     className={`transition-all duration-200 ease-in-out rounded-2xl border border-border/30 px-4 py-4 ${gradient} ${
                       isDragging
@@ -666,10 +665,15 @@ const IndexContent = () => {
                     }`}
                   >
                     <div
-                      className={`flex items-center gap-2 select-none ${isDragging ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                      className={`flex items-center gap-2 select-none ${isDragging ? 'cursor-grab active:cursor-grabbing' : 'cursor-grab'}`}
+                      draggable={!isDragging}
+                      onDragStart={(e) => {
+                        if (!isDragging) {
+                          handleDragStart(e, id);
+                        }
+                      }}
                       onTouchStart={(e) => {
                         if (isDragging) {
-                          // In reorder mode: pick up this section for dragging
                           setDragId(id);
                           if (navigator.vibrate) navigator.vibrate(15);
                         } else {
@@ -678,6 +682,12 @@ const IndexContent = () => {
                       }}
                       onTouchMove={handleLongPressMove}
                       onTouchEnd={handleLongPressEnd}
+                      onMouseDown={(e) => {
+                        // Desktop: initiate drag mode on header mousedown
+                        if (!isDragging && !isMobile) {
+                          e.preventDefault();
+                        }
+                      }}
                     >
                       {isDragging && <GripVertical className="w-4 h-4 text-muted-foreground shrink-0" />}
                       <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2 flex-1">
