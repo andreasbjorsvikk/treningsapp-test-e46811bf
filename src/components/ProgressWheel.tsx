@@ -110,7 +110,9 @@ const ProgressWheel = ({
   const rotation = `rotate(-90 ${CENTER} ${CENTER})`;
   // Marker shows where you should be. Use fillFraction-based comparison for accuracy.
   // expectedFraction is fraction of time elapsed, so marker angle = expectedFraction * 360
-  const markerAngle = expectedFraction != null ? Math.min(expectedFraction, 1) * 360 : null;
+  // Add offset to account for strokeLinecap="round" which extends the progress arc visually
+  const lineCapOffset = (STROKE / 2) / (2 * Math.PI * RADIUS); // fraction of circle added by round cap
+  const markerAngle = expectedFraction != null ? Math.min(expectedFraction + lineCapOffset, 1) * 360 : null;
 
   // Pace label
   const getPaceLabel = (d: number): string => {

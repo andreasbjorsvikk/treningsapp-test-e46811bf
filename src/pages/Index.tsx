@@ -49,17 +49,17 @@ const Index = () => {
 const DESKTOP_REORDERABLE_IDS = ['challenges', 'extraGoals', 'recentSessions'] as const;
 // Mobile: all sections reorderable
 const MOBILE_REORDERABLE_IDS = ['trainingGoals', 'last7dCalendar', 'statistics', 'challenges', 'extraGoals', 'recentSessions'] as const;
-const MOBILE_SECTION_LABELS: Record<string, string> = {
-  trainingGoals: 'Treningsmål',
-  last7dCalendar: 'Siste 7 dager',
-  statistics: 'Statistikk',
-  challenges: 'Utfordringer',
-  extraGoals: 'Mål',
-  recentSessions: 'Siste økter',
+const MOBILE_SECTION_LABELS_KEYS: Record<string, string> = {
+  trainingGoals: 'home.trainingGoals',
+  last7dCalendar: 'home.last7dCalendar',
+  statistics: 'home.statistics',
+  challenges: 'home.challenges',
+  extraGoals: 'home.goals',
+  recentSessions: 'home.recentSessions',
 };
-const MOBILE_REORDER_LABELS: Record<string, string> = {
-  ...MOBILE_SECTION_LABELS,
-  last7dCalendar: 'Siste 7 dager + kalender',
+const MOBILE_REORDER_LABELS_KEYS: Record<string, string> = {
+  ...MOBILE_SECTION_LABELS_KEYS,
+  last7dCalendar: 'home.last7dCalendar',
 };
 
 const IndexContent = () => {
@@ -154,7 +154,7 @@ const IndexContent = () => {
       if (!status.connected) return;
       const result = await stravaService.sync();
       if (result.synced > 0) {
-        toast.success(`${result.synced} nye økter synkronisert fra Strava`);
+        toast.success(t('sync.newSessions', { n: result.synced }));
         appData.reload();
       }
     } catch { }
@@ -176,20 +176,20 @@ const IndexContent = () => {
     try {
       const status = await stravaService.getStatus();
       if (!status.connected) {
-        toast.info('Strava er ikke tilkoblet. Gå til Innstillinger → Synkronisering.');
+        toast.info(t('sync.notConnected'));
         setStravaSyncing(false);
         return;
       }
       lastSyncRef.current = Date.now();
       const result = await stravaService.sync();
       if (result.synced > 0) {
-        toast.success(`${result.synced} nye økter synkronisert fra Strava!`);
+        toast.success(t('sync.newSessions', { n: result.synced }));
         appData.reload();
       } else {
-        toast.info('Ingen nye økter å synkronisere.');
+        toast.info(t('sync.noNew'));
       }
     } catch {
-      toast.error('Synkronisering feilet');
+      toast.error(t('sync.failed'));
     }
     setStravaSyncing(false);
   };
@@ -241,13 +241,17 @@ const IndexContent = () => {
   };
 
   // === Section labels ===
-  const sectionLabels: Record<string, string> = isMobile
-    ? (isDragging ? MOBILE_REORDER_LABELS : MOBILE_SECTION_LABELS)
+  const sectionLabels: Record<string, string> = {};
+  const labelKeys = isMobile
+    ? (isDragging ? MOBILE_REORDER_LABELS_KEYS : MOBILE_SECTION_LABELS_KEYS)
     : {
-        challenges: 'Utfordringer',
-        extraGoals: t('home.goals'),
-        recentSessions: t('home.recentSessions'),
+        challenges: 'home.challenges',
+        extraGoals: 'home.goals',
+        recentSessions: 'home.recentSessions',
       };
+  for (const [k, v] of Object.entries(labelKeys)) {
+    sectionLabels[k] = t(v);
+  }
 
   // === Direct drag handlers ===
   const startDrag = (id: string) => {
@@ -485,21 +489,21 @@ const IndexContent = () => {
   // Greeting based on time of day
   const greeting = useMemo(() => {
     const h = new Date().getHours();
-    if (h < 6) return 'God natt';
-    if (h < 12) return 'God morgen';
-    if (h < 18) return 'Hei';
-    return 'God kveld';
-  }, []);
+    if (h < 6) return t('greeting.goodNight');
+    if (h < 12) return t('greeting.goodMorning');
+    if (h < 18) return t('greeting.hello');
+    return t('greeting.goodEvening');
+  }, [t]);
   const displayName = username || user?.email?.split('@')[0] || '';
 
-  // Section gradient styles - stronger gradients
+  // Section gradient styles - subtle gradients
   const sectionGradients: Record<string, string> = {
-    trainingGoals: 'bg-gradient-to-br from-energy/8 via-transparent to-accent/5',
-    last7dCalendar: 'bg-gradient-to-br from-accent/8 via-transparent to-energy/5',
-    statistics: 'bg-gradient-to-br from-primary/6 via-transparent to-energy/5',
-    challenges: 'bg-gradient-to-br from-warning/8 via-transparent to-accent/5',
-    extraGoals: 'bg-gradient-to-br from-success/8 via-transparent to-primary/5',
-    recentSessions: 'bg-gradient-to-br from-accent/8 via-transparent to-success/5',
+    trainingGoals: 'bg-gradient-to-br from-energy/5 via-transparent to-accent/3',
+    last7dCalendar: 'bg-gradient-to-br from-accent/5 via-transparent to-energy/3',
+    statistics: 'bg-gradient-to-br from-primary/4 via-transparent to-energy/3',
+    challenges: 'bg-gradient-to-br from-warning/5 via-transparent to-accent/3',
+    extraGoals: 'bg-gradient-to-br from-success/5 via-transparent to-primary/3',
+    recentSessions: 'bg-gradient-to-br from-accent/5 via-transparent to-success/3',
   };
 
   return (
@@ -555,13 +559,13 @@ const IndexContent = () => {
               <div className="relative flex items-center gap-4 mt-4 pt-3 border-t border-border/30">
                 <div className="flex items-center gap-1.5">
                   <Target className="w-3.5 h-3.5 text-energy" />
-                  <span className="text-xs text-muted-foreground">Denne uken</span>
-                  <span className="text-sm font-bold text-foreground">{totalThisWeek} økter</span>
+                   <span className="text-xs text-muted-foreground">{t('home.thisWeekSessions')}</span>
+                   <span className="text-sm font-bold text-foreground">{totalThisWeek} {t('home.sessions')}</span>
                 </div>
                 {primaryGoal && (
                   <div className="flex items-center gap-1.5">
                     <TrendingUp className="w-3.5 h-3.5 text-accent" />
-                    <span className="text-xs text-muted-foreground">Mål</span>
+                    <span className="text-xs text-muted-foreground">{t('home.goal')}</span>
                     <span className="text-sm font-bold text-foreground">{monthData.current}/{monthData.target}</span>
                   </div>
                 )}
@@ -591,9 +595,9 @@ const IndexContent = () => {
                       <StatsOverview stats={stats} compact onClick={navigateToStats} />
                     </div>
                     <div>
-                      <h2 className="font-display font-semibold text-[10px] text-muted-foreground uppercase tracking-wide mb-1.5">
-                        Siste 7 dager
-                      </h2>
+                     <h2 className="font-display font-semibold text-[10px] text-muted-foreground uppercase tracking-wide mb-1.5">
+                       {t('home.last7dCalendar')}
+                     </h2>
                       <WeeklySessionIcons sessions={allSessions} onClick={navigateToHistory} />
                     </div>
                   </div>
@@ -642,7 +646,7 @@ const IndexContent = () => {
               }}
             >
               {isDragging && (
-                <p className="text-xs text-muted-foreground text-center animate-pulse">Dra for å endre rekkefølge</p>
+                <p className="text-xs text-muted-foreground text-center animate-pulse">{t('home.dragToReorder')}</p>
               )}
               {currentOrder.map(id => {
                 // Skip empty sections when not dragging
@@ -700,7 +704,7 @@ const IndexContent = () => {
               })}
               {isDragging && (
                 <Button onClick={() => { updateSettings({ homeSectionOrder: dragOrder }); setDragId(null); setIsDragging(false); }} className="w-full gradient-energy text-primary-foreground border-0" size="sm">
-                  <Check className="w-4 h-4 mr-1" /> Ferdig
+                  <Check className="w-4 h-4 mr-1" /> {t('common.done')}
                 </Button>
               )}
             </div>

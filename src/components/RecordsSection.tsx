@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { WorkoutSession } from '@/types/workout';
 import { useAppDataContext } from '@/contexts/AppDataContext';
 import { formatDuration } from '@/utils/workoutUtils';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Trophy, ChevronRight, Plus, Trash2, Mountain, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -95,6 +96,7 @@ type RecordTab = 'running' | 'cycling' | 'hiking';
 
 const RecordsSection = () => {
   const appData = useAppDataContext();
+  const { t, locale } = useTranslation();
   const [tab, setTab] = useState<RecordTab>('running');
   const [selectedHike, setSelectedHike] = useState<HikingRecord | null>(null);
   const [showAddHike, setShowAddHike] = useState(false);
@@ -149,9 +151,9 @@ const RecordsSection = () => {
   );
 
   const tabs: { id: RecordTab; label: string }[] = [
-    { id: 'running', label: 'Løping' },
-    { id: 'cycling', label: 'Sykling' },
-    { id: 'hiking', label: 'Fjelltur' },
+    { id: 'running', label: t('records.running') },
+    { id: 'cycling', label: t('records.cycling') },
+    { id: 'hiking', label: t('records.hiking') },
   ];
 
   const handleAddHike = () => {
@@ -191,7 +193,7 @@ const RecordsSection = () => {
   };
 
   const handleDeleteHike = (id: string) => {
-    if (!confirm('Er du sikker på at du vil slette denne fjellturen?')) return;
+    if (!confirm(t('records.deleteHikeConfirm'))) return;
     saveHikingRecords(hikingRecords.filter(h => h.id !== id));
   };
 
@@ -249,7 +251,7 @@ const RecordsSection = () => {
     if (records.length === 0) {
       return (
         <p className="text-center py-8 text-muted-foreground text-sm">
-          Ingen økter med distanse registrert ennå.
+          {t('records.noDistanceSessions')}
         </p>
       );
     }
@@ -258,14 +260,14 @@ const RecordsSection = () => {
       <div className="glass-card rounded-xl overflow-hidden divide-y divide-border/50">
         <div className="px-4 py-2.5 bg-secondary/30">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-            <Trophy className="w-3.5 h-3.5" /> Raskeste
+            <Trophy className="w-3.5 h-3.5" /> {t('records.fastest')}
           </p>
         </div>
         {records.map(r => (
           <div key={r.label} className="flex items-center gap-3 px-4 py-3">
             <span className="text-sm font-medium w-20 shrink-0">{r.label}</span>
             <span className="text-xs text-muted-foreground flex-1 text-center">
-              {r.result && new Date(r.result.date).toLocaleDateString('nb-NO', { day: 'numeric', month: 'short', year: 'numeric' })}
+              {r.result && new Date(r.result.date).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
             </span>
             <span className="font-display font-bold text-sm">{r.result?.time}</span>
           </div>
@@ -303,12 +305,12 @@ const RecordsSection = () => {
             className="w-full"
             onClick={() => setShowAddHike(true)}
           >
-            <Plus className="w-4 h-4 mr-2" /> Legg til fjelltur
+            <Plus className="w-4 h-4 mr-2" /> {t('records.addHike')}
           </Button>
 
           {hikingRecords.length === 0 ? (
             <p className="text-center py-8 text-muted-foreground text-sm">
-              Ingen fjellturer lagt til ennå.
+              {t('records.noHikes')}
             </p>
           ) : (
             <div className="space-y-1">
@@ -329,8 +331,8 @@ const RecordsSection = () => {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold truncate">{h.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {h.entries.length} {h.entries.length === 1 ? 'registrering' : 'registreringer'}
-                        {best && ` · Beste: ${best.time}`}
+                        {h.entries.length} {h.entries.length === 1 ? t('records.registration') : t('records.registrations')}
+                        {best && ` · ${t('records.best')}: ${best.time}`}
                         {h.elevation && ` · ${h.elevation} m.o.h`}
                         {h.distance && ` · ${h.distance} km`}
                         {h.elevationGain && ` · ${h.elevationGain} hm`}
@@ -347,36 +349,36 @@ const RecordsSection = () => {
           <Dialog open={showAddHike} onOpenChange={setShowAddHike}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Ny fjelltur</DialogTitle>
+                <DialogTitle>{t('records.newHike')}</DialogTitle>
               </DialogHeader>
               <div className="space-y-3">
                 <Input
                   value={newHikeName}
                   onChange={e => setNewHikeName(e.target.value)}
-                  placeholder="Navn på fjellet/turen..."
+                  placeholder={t('records.hikeName')}
                 />
                 <Input
                   type="number"
                   value={newHikeElevation}
                   onChange={e => setNewHikeElevation(e.target.value)}
-                  placeholder="M.o.h (valgfritt)"
+                  placeholder={t('records.elevationOptional')}
                 />
                 <Input
                   type="number"
                   value={newHikeDistance}
                   onChange={e => setNewHikeDistance(e.target.value)}
-                  placeholder="Distanse i km (valgfritt)"
+                  placeholder={t('records.distanceOptional')}
                 />
                 <Input
                   type="number"
                   value={newHikeElevationGain}
                   onChange={e => setNewHikeElevationGain(e.target.value)}
-                  placeholder="Høydemeter (valgfritt)"
+                  placeholder={t('records.elevationGainOptional')}
                 />
               </div>
               <DialogFooter>
                 <Button onClick={handleAddHike} disabled={!newHikeName.trim()}>
-                  Legg til
+                  {t('common.add')}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -392,7 +394,7 @@ const RecordsSection = () => {
                     {selectedHike?.name}
                   </DrawerTitle>
                   <DrawerDescription>
-                    {selectedHike?.entries.length || 0} registreringer
+                    {selectedHike?.entries.length || 0} {t('records.registrations')}
                   </DrawerDescription>
                 </DrawerHeader>
 
@@ -408,13 +410,13 @@ const RecordsSection = () => {
                       )}
                       {selectedHike.distance != null && (
                         <div className="flex-1 rounded-lg bg-secondary/50 p-2.5 text-center">
-                          <p className="text-[10px] text-muted-foreground mb-0.5">Distanse</p>
+                          <p className="text-[10px] text-muted-foreground mb-0.5">{t('metric.distance.label')}</p>
                           <p className="font-display font-bold text-sm">{selectedHike.distance} km</p>
                         </div>
                       )}
                       {selectedHike.elevationGain != null && (
                         <div className="flex-1 rounded-lg bg-secondary/50 p-2.5 text-center">
-                          <p className="text-[10px] text-muted-foreground mb-0.5">Høydemeter</p>
+                          <p className="text-[10px] text-muted-foreground mb-0.5">{t('metric.elevation.label')}</p>
                           <p className="font-display font-bold text-sm">{selectedHike.elevationGain} m</p>
                         </div>
                       )}
@@ -428,16 +430,16 @@ const RecordsSection = () => {
                     className="w-full"
                     onClick={() => setShowAddEntry(true)}
                   >
-                    <Plus className="w-4 h-4 mr-2" /> Legg til tid
+                    <Plus className="w-4 h-4 mr-2" /> {t('records.addTime')}
                   </Button>
 
                   {selectedHike && (() => {
                     const sorted = [...selectedHike.entries].sort((a, b) =>
                       parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time)
                     );
-                    return sorted.length === 0 ? (
-                      <p className="text-center py-6 text-muted-foreground text-sm">
-                        Ingen tider registrert ennå.
+                     return sorted.length === 0 ? (
+                       <p className="text-center py-6 text-muted-foreground text-sm">
+                         {t('records.noTimes')}
                       </p>
                     ) : (
                       <div className="glass-card rounded-xl overflow-hidden divide-y divide-border/50">
@@ -452,7 +454,7 @@ const RecordsSection = () => {
                               <span className="font-display font-bold text-sm">{e.time}</span>
                             </div>
                             <span className="text-xs text-muted-foreground">
-                              {new Date(e.date).toLocaleDateString('nb-NO', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              {new Date(e.date).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
                             </span>
                             <button
                               onClick={() => handleDeleteEntry(e.id)}
@@ -472,14 +474,14 @@ const RecordsSection = () => {
                       className="flex-1"
                       onClick={openEditHike}
                     >
-                      <Pencil className="w-4 h-4 mr-2" /> Rediger
+                      <Pencil className="w-4 h-4 mr-2" /> {t('common.edit')}
                     </Button>
                     <Button
                       variant="ghost"
                       className="text-destructive hover:text-destructive"
                       onClick={() => { handleDeleteHike(selectedHike!.id); setSelectedHike(null); }}
                     >
-                      <Trash2 className="w-4 h-4 mr-2" /> Slett
+                      <Trash2 className="w-4 h-4 mr-2" /> {t('common.delete')}
                     </Button>
                   </div>
                 </div>
@@ -491,19 +493,19 @@ const RecordsSection = () => {
           <Dialog open={showAddEntry} onOpenChange={setShowAddEntry}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Ny tid – {selectedHike?.name}</DialogTitle>
+                <DialogTitle>{t('records.newTime')} – {selectedHike?.name}</DialogTitle>
               </DialogHeader>
               <div className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Tid (t:mm eller tt:mm)</label>
-                  <Input
-                    value={newEntryTime}
-                    onChange={e => setNewEntryTime(e.target.value)}
-                    placeholder="F.eks. 3:45"
-                  />
+                   <label className="text-sm font-medium mb-1 block">{t('records.timeFormat')}</label>
+                   <Input
+                     value={newEntryTime}
+                     onChange={e => setNewEntryTime(e.target.value)}
+                     placeholder={t('records.timeExample')}
+                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Dato</label>
+                  <label className="text-sm font-medium mb-1 block">{t('workout.date')}</label>
                   <Input
                     type="date"
                     value={newEntryDate}
@@ -512,8 +514,8 @@ const RecordsSection = () => {
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={handleAddEntry} disabled={!newEntryTime.trim()}>
-                  Legg til
+                 <Button onClick={handleAddEntry} disabled={!newEntryTime.trim()}>
+                   {t('common.add')}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -521,38 +523,38 @@ const RecordsSection = () => {
 
           {/* Edit hike dialog */}
           <Dialog open={showEditHike} onOpenChange={setShowEditHike}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Rediger fjelltur</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-3">
-                <Input
-                  value={newHikeName}
-                  onChange={e => setNewHikeName(e.target.value)}
-                  placeholder="Navn på fjellet/turen..."
+             <DialogContent>
+               <DialogHeader>
+                 <DialogTitle>{t('records.editHike')}</DialogTitle>
+               </DialogHeader>
+               <div className="space-y-3">
+                 <Input
+                   value={newHikeName}
+                   onChange={e => setNewHikeName(e.target.value)}
+                   placeholder={t('records.hikeName')}
                 />
                 <Input
                   type="number"
                   value={newHikeElevation}
                   onChange={e => setNewHikeElevation(e.target.value)}
-                  placeholder="M.o.h (valgfritt)"
-                />
-                <Input
-                  type="number"
-                  value={newHikeDistance}
-                  onChange={e => setNewHikeDistance(e.target.value)}
-                  placeholder="Distanse i km (valgfritt)"
-                />
-                <Input
-                  type="number"
-                  value={newHikeElevationGain}
-                  onChange={e => setNewHikeElevationGain(e.target.value)}
-                  placeholder="Høydemeter (valgfritt)"
+                   placeholder={t('records.elevationOptional')}
+                 />
+                 <Input
+                   type="number"
+                   value={newHikeDistance}
+                   onChange={e => setNewHikeDistance(e.target.value)}
+                   placeholder={t('records.distanceOptional')}
+                 />
+                 <Input
+                   type="number"
+                   value={newHikeElevationGain}
+                   onChange={e => setNewHikeElevationGain(e.target.value)}
+                   placeholder={t('records.elevationGainOptional')}
                 />
               </div>
               <DialogFooter>
-                <Button onClick={handleEditHike} disabled={!newHikeName.trim()}>
-                  Lagre
+                 <Button onClick={handleEditHike} disabled={!newHikeName.trim()}>
+                   {t('common.save')}
                 </Button>
               </DialogFooter>
             </DialogContent>
