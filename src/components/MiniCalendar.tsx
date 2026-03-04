@@ -76,7 +76,7 @@ const MiniCalendar = ({ sessions, onClick }: MiniCalendarProps) => {
 
   return (
     <>
-      <div className="glass-card bg-gradient-to-br from-primary/15 via-muted/80 to-accent/12 rounded-xl p-2.5 cursor-pointer shadow-md" onClick={onClick}>
+      <div className="glass-card bg-gradient-to-br from-foreground/14 via-muted/65 to-foreground/10 rounded-xl p-2.5 cursor-pointer shadow-md" onClick={onClick}>
         <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 text-center">
           {monthLabel}
         </div>
@@ -115,34 +115,34 @@ const MiniCalendar = ({ sessions, onClick }: MiniCalendarProps) => {
                   </span>
                 )}
 
-                {/* 1 session - full color with glass */}
+                {/* 1 session - full color with gradient */}
                 {count === 1 && (
                   <div
                     className="absolute inset-0 rounded-[4px]"
                     style={{
-                      backgroundColor: getActivityColors(daySessions[0].type, isDark).bg,
-                      boxShadow: `inset 0 1px 2px rgba(255,255,255,0.25), inset 0 -1px 1px rgba(0,0,0,0.08), 0 1px 3px ${getActivityColors(daySessions[0].type, isDark).bg}40`,
+                      background: `linear-gradient(135deg, ${getActivityColors(daySessions[0].type, isDark).bg}, ${getActivityColors(daySessions[0].type, isDark).bg}99)`,
+                      boxShadow: `inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 2px rgba(0,0,0,0.15), 0 1px 3px ${getActivityColors(daySessions[0].type, isDark).bg}40`,
                     }}
                   />
                 )}
 
-                {/* 2 sessions - split */}
+                {/* 2 sessions - split with gradient */}
                 {count === 2 && (
                   <div className="absolute inset-0 flex rounded-[4px] overflow-hidden"
-                    style={{ boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.25), inset 0 -1px 1px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.1)' }}>
-                    <div className="flex-1" style={{ backgroundColor: getActivityColors(daySessions[0].type, isDark).bg }} />
-                    <div className="flex-1" style={{ backgroundColor: getActivityColors(daySessions[1].type, isDark).bg }} />
+                    style={{ boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 2px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.1)' }}>
+                    <div className="flex-1" style={{ background: `linear-gradient(180deg, ${getActivityColors(daySessions[0].type, isDark).bg}, ${getActivityColors(daySessions[0].type, isDark).bg}88)` }} />
+                    <div className="flex-1" style={{ background: `linear-gradient(180deg, ${getActivityColors(daySessions[1].type, isDark).bg}, ${getActivityColors(daySessions[1].type, isDark).bg}88)` }} />
                   </div>
                 )}
 
-                {/* 3+ sessions - split grid */}
+                {/* 3+ sessions - split grid with gradient */}
                 {count >= 3 && (
                   <div className="absolute inset-0 flex flex-col rounded-[4px] overflow-hidden"
-                    style={{ boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.25), inset 0 -1px 1px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.1)' }}>
-                    <div className="flex-1" style={{ backgroundColor: getActivityColors(daySessions[0].type, isDark).bg }} />
+                    style={{ boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 2px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.1)' }}>
+                    <div className="flex-1" style={{ background: `linear-gradient(135deg, ${getActivityColors(daySessions[0].type, isDark).bg}, ${getActivityColors(daySessions[0].type, isDark).bg}88)` }} />
                     <div className="flex flex-1">
-                      <div className="flex-1" style={{ backgroundColor: getActivityColors(daySessions[1].type, isDark).bg }} />
-                      <div className="flex-1" style={{ backgroundColor: getActivityColors(daySessions[2].type, isDark).bg }} />
+                      <div className="flex-1" style={{ background: `linear-gradient(135deg, ${getActivityColors(daySessions[1].type, isDark).bg}, ${getActivityColors(daySessions[1].type, isDark).bg}88)` }} />
+                      <div className="flex-1" style={{ background: `linear-gradient(135deg, ${getActivityColors(daySessions[2].type, isDark).bg}, ${getActivityColors(daySessions[2].type, isDark).bg}88)` }} />
                     </div>
                   </div>
                 )}
