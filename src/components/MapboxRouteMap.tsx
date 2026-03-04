@@ -46,7 +46,6 @@ function simplifyPoints(points: [number, number][], maxPoints: number): [number,
 }
 
 function getStaticMapUrl(routePoints: [number, number][], lineColor: string, width: number, height: number): string {
-  // Always use outdoors style
   const style = 'outdoors-v12';
   const simplified = simplifyPoints(routePoints, 120);
   const encoded = encodePolylineForMapbox(simplified);
@@ -56,19 +55,39 @@ function getStaticMapUrl(routePoints: [number, number][], lineColor: string, wid
   return `https://api.mapbox.com/styles/v1/mapbox/${style}/static/${overlay}/auto/${width}x${height}${retina}?padding=40&access_token=${MAPBOX_TOKEN}`;
 }
 
+function getBounds(routePoints: [number, number][]): { sw: [number, number]; ne: [number, number]; center: [number, number] } {
+  const lats = routePoints.map(p => p[0]);
+  const lngs = routePoints.map(p => p[1]);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
+  return {
+    sw: [minLng - 0.005, minLat - 0.002],
+    ne: [maxLng + 0.005, maxLat + 0.002],
+    center: [(minLng + maxLng) / 2, (minLat + maxLat) / 2],
+  };
+}
+
 const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteMapProps) => {
   const [expanded, setExpanded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [expandedHeight, setExpandedHeight] = useState(400);
 
-  // Lock parent/drawer scroll when touching the map area (both static and expanded)
+  const staticUrl = useMemo(() => {
+    if (routePoints.length < 2) return null;
+    return getStaticMapUrl(routePoints, lineColor, 600, Math.round(height * 1.5));
+  }, [routePoints, lineColor, height]);
+
+  // Lock parent scroll on touch
   useEffect(() => {
-    const mapEl = mapContainerRef.current;
-    const wrapperEl = wrapperRef.current;
-    const target = mapEl || wrapperEl;
+    const target = mapContainerRef.current || wrapperRef.current;
     if (!target) return;
 
-    // Find the scrollable drawer parent
     const findScrollParent = (el: HTMLElement | null): HTMLElement | null => {
       while (el) {
         if (el.scrollHeight > el.clientHeight && getComputedStyle(el).overflowY !== 'visible') return el;
@@ -104,65 +123,94 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
       onTouchEnd();
     };
   }, [expanded]);
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const [expandedHeight, setExpandedHeight] = useState(400);
 
-  const staticUrl = useMemo(() => {
-    if (routePoints.length < 2) return null;
-    return getStaticMapUrl(routePoints, lineColor, 600, Math.round(height * 1.5));
-  }, [routePoints, lineColor, height]);
-
-  // Calculate available height above for expansion
+  // Calculate expanded height
   useEffect(() => {
     if (expanded && wrapperRef.current) {
       const rect = wrapperRef.current.getBoundingClientRect();
-      // Fill from top of drawer content to current bottom of map
-      const availableHeight = rect.bottom;
-      setExpandedHeight(Math.max(availableHeight, height));
+      setExpandedHeight(Math.max(rect.bottom, height));
     }
   }, [expanded, height]);
 
   const initInteractiveMap = useCallback(async () => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
-    const L = (await import('leaflet')).default;
-    await import('leaflet/dist/leaflet.css');
+    const mapboxgl = (await import('mapbox-gl')).default;
+    await import('mapbox-gl/dist/mapbox-gl.css');
 
-    delete (L.Icon.Default.prototype as any)._getIconUrl;
-    L.Icon.Default.mergeOptions({
-      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    (mapboxgl as any).accessToken = MAPBOX_TOKEN;
+
+    const bounds = getBounds(routePoints);
+
+    const map = new mapboxgl.Map({
+      container: mapContainerRef.current,
+      style: 'mapbox://styles/mapbox/outdoors-v12',
+      center: bounds.center,
+      zoom: 12,
+      pitch: 60,
+      bearing: -20,
+      antialias: true,
     });
 
-    const lats = routePoints.map(p => p[0]);
-    const lngs = routePoints.map(p => p[1]);
-    const bounds: L.LatLngBoundsExpression = [
-      [Math.min(...lats) - 0.002, Math.min(...lngs) - 0.005],
-      [Math.max(...lats) + 0.002, Math.max(...lngs) + 0.005],
-    ];
+    map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
 
-    // Always outdoors style
-    const tileUrl = `https://api.mapbox.com/styles/v1/mapbox/outdoors-v12/tiles/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`;
+    map.on('style.load', () => {
+      // Enable 3D terrain
+      map.addSource('mapbox-dem', {
+        type: 'raster-dem',
+        url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+        tileSize: 512,
+        maxzoom: 14,
+      });
+      map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
 
-    const map = L.map(mapContainerRef.current, {
-      scrollWheelZoom: true,
-      dragging: true,
-      zoomControl: false,
-      attributionControl: false,
+      // Add sky layer for atmosphere
+      map.addLayer({
+        id: 'sky',
+        type: 'sky',
+        paint: {
+          'sky-type': 'atmosphere',
+          'sky-atmosphere-sun': [0.0, 90.0],
+          'sky-atmosphere-sun-intensity': 15,
+        },
+      });
+
+      // Add route line
+      map.addSource('route', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: routePoints.map(([lat, lng]) => [lng, lat]),
+          },
+        },
+      });
+
+      map.addLayer({
+        id: 'route-line',
+        type: 'line',
+        source: 'route',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round',
+        },
+        paint: {
+          'line-color': lineColor,
+          'line-width': 4,
+          'line-opacity': 0.95,
+        },
+      });
+
+      // Fit bounds with padding
+      map.fitBounds(
+        [bounds.sw, bounds.ne],
+        { padding: 60, pitch: 60, bearing: -20, duration: 1000 }
+      );
     });
 
-    L.tileLayer(tileUrl, { tileSize: 512, zoomOffset: -1 }).addTo(map);
-    L.polyline(routePoints, { color: lineColor, weight: 4, opacity: 0.95 }).addTo(map);
-
-    map.fitBounds(bounds);
     mapInstanceRef.current = map;
-
-    setTimeout(() => map.invalidateSize(), 50);
-    setTimeout(() => map.invalidateSize(), 200);
-    setTimeout(() => map.invalidateSize(), 500);
   }, [routePoints, lineColor]);
 
   useEffect(() => {
@@ -183,11 +231,10 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
     }
   }, [imgError, initInteractiveMap]);
 
-  // Resize map when expanded height changes
   useEffect(() => {
     if (expanded && mapInstanceRef.current) {
-      setTimeout(() => mapInstanceRef.current?.invalidateSize(), 50);
-      setTimeout(() => mapInstanceRef.current?.invalidateSize(), 300);
+      setTimeout(() => mapInstanceRef.current?.resize(), 50);
+      setTimeout(() => mapInstanceRef.current?.resize(), 300);
     }
   }, [expanded, expandedHeight]);
 
@@ -204,7 +251,6 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
     >
       {!showInteractive && staticUrl ? (
         <>
-          {/* Dark mode overlay */}
           {isDark && (
             <div className="absolute inset-0 bg-black/30 z-[1] pointer-events-none rounded-t-lg" />
           )}
@@ -212,7 +258,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
             src={staticUrl}
             alt="Kartrute"
             className={`w-full h-full object-cover transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
-           loading="lazy"
+            loading="lazy"
             onClick={() => setExpanded(true)}
             onLoad={() => setImgLoaded(true)}
             onError={() => setImgError(true)}
@@ -230,10 +276,6 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
         </>
       ) : (
         <>
-          {/* Dark mode overlay on interactive map */}
-          {isDark && (
-            <div className="absolute inset-0 bg-black/20 z-[999] pointer-events-none" />
-          )}
           <div
             ref={mapContainerRef}
             style={{ height: `${currentHeight}px`, width: '100%' }}
