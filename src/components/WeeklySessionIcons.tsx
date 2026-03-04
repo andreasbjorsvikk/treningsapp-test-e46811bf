@@ -32,7 +32,7 @@ const WeeklySessionIcons = ({ sessions, onClick }: WeeklySessionIconsProps) => {
   const isSmall = recentSessions.length > 3;
 
   return (
-    <div className="glass-card bg-gradient-to-br from-accent/12 via-card/95 to-energy/9 rounded-xl p-2.5 cursor-pointer shadow-md" onClick={onClick}>
+    <div className="glass-card bg-gradient-to-br from-accent/15 via-muted/80 to-energy/12 rounded-xl p-2.5 cursor-pointer shadow-md" onClick={onClick}>
       <div className="grid grid-cols-3 gap-[6px]">
         {visible.map((session) => {
           const colors = getActivityColors(session.type, isDark);

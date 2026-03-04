@@ -232,7 +232,31 @@ export async function respondToChallenge(challengeId: string, accept: boolean) {
 }
 
 export async function deleteChallenge(challengeId: string) {
+  // Delete participants first, then challenge
+  await supabase.from('challenge_participants').delete().eq('challenge_id', challengeId);
+  await supabase.from('community_notifications').delete().eq('challenge_id', challengeId);
   await supabase.from('challenges').delete().eq('id', challengeId);
+}
+
+export async function updateChallenge(challengeId: string, updates: {
+  name: string;
+  emoji?: string;
+  metric: string;
+  activityType: string;
+  target: number;
+  periodStart: string;
+  periodEnd: string;
+}) {
+  const { error } = await supabase.from('challenges').update({
+    name: updates.name,
+    emoji: updates.emoji || null,
+    metric: updates.metric,
+    activity_type: updates.activityType,
+    target: updates.target,
+    period_start: updates.periodStart,
+    period_end: updates.periodEnd,
+  }).eq('id', challengeId);
+  if (error) throw error;
 }
 
 // ===== NOTIFICATIONS =====
