@@ -281,7 +281,7 @@ const no: Record<string, string> = {
   'home.challenges': 'Utfordringer',
   'home.dragToReorder': 'Dra for å endre rekkefølge',
   'home.thisWeekSessions': 'Denne uken',
-  'home.goal': 'Mål',
+  'home.goal': 'Denne måneden',
   'home.sessions': 'økter',
 
   // Sync messages
@@ -837,7 +837,7 @@ const en: Record<string, string> = {
   'home.challenges': 'Challenges',
   'home.dragToReorder': 'Drag to reorder',
   'home.thisWeekSessions': 'This week',
-  'home.goal': 'Goal',
+  'home.goal': 'This month',
   'home.sessions': 'workouts',
 
   // Sync messages

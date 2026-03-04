@@ -24,8 +24,10 @@ type ChallengeMetric = 'sessions' | 'distance' | 'duration' | 'elevation';
 function getPeriodDates(period: string): { start: string; end: string } {
   const now = new Date();
   if (period === 'week') {
-    const day = now.getDay() || 7;
-    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day + 1);
+    // Monday-based week: getDay() returns 0=Sun, so Mon=1..Sun=0
+    const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon...6=Sat
+    const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diffToMonday);
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
     return { start: monday.toISOString().split('T')[0], end: sunday.toISOString().split('T')[0] };
