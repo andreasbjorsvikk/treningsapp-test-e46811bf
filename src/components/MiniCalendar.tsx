@@ -76,7 +76,7 @@ const MiniCalendar = ({ sessions, onClick }: MiniCalendarProps) => {
 
   return (
     <>
-      <div className="glass-card bg-gradient-to-br from-foreground/20 via-muted-foreground/12 to-foreground/16 rounded-xl p-2.5 cursor-pointer shadow-md" onClick={onClick}>
+      <div className="glass-card bg-gradient-to-br from-primary/16 via-primary/7 to-primary/13 rounded-xl p-2.5 cursor-pointer shadow-md" onClick={onClick}>
         <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 text-center">
           {monthLabel}
         </div>
