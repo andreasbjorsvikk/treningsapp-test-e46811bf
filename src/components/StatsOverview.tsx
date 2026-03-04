@@ -24,7 +24,8 @@ const StatsOverview = ({ stats, compact, onClick }: StatsOverviewProps) => {
       {statCards.map((stat) => (
         <div
           key={stat.label}
-          className={`glass-card bg-gradient-to-br from-primary/16 via-primary/7 to-primary/13 rounded-lg ${compact ? 'p-2' : 'p-3'} shadow-md ${onClick ? 'cursor-pointer hover:brightness-95 dark:hover:brightness-110 transition-all' : ''}`}
+          className={`glass-card rounded-lg ${compact ? 'p-2' : 'p-3'} shadow-md ${onClick ? 'cursor-pointer hover:brightness-95 dark:hover:brightness-110 transition-all' : ''}`}
+          style={{ background: 'linear-gradient(to bottom right, hsl(var(--primary) / 0.16), hsl(var(--primary) / 0.07), hsl(var(--primary) / 0.13))' }}
           onClick={onClick}
         >
           <div className="flex items-center gap-1.5 mb-0.5">

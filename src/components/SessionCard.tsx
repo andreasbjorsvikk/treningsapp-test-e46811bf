@@ -30,7 +30,8 @@ const SessionCard = ({ session, onClick, onEdit }: SessionCardProps) => {
 
   return (
     <div
-      className="glass-card bg-gradient-to-br from-primary/16 via-primary/7 to-primary/13 rounded-lg px-3 py-2.5 hover:shadow-md transition-shadow cursor-pointer active:scale-[0.98] shadow-md"
+      className="glass-card rounded-lg px-3 py-2.5 hover:shadow-md transition-shadow cursor-pointer active:scale-[0.98] shadow-md"
+      style={{ background: 'linear-gradient(to bottom right, hsl(var(--primary) / 0.16), hsl(var(--primary) / 0.07), hsl(var(--primary) / 0.13))' }}
       onClick={() => onClick?.(session)}
     >
       <div className="flex items-center gap-2.5">

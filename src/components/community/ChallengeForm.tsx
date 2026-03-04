@@ -21,21 +21,26 @@ interface ChallengeFormProps {
 
 type ChallengeMetric = 'sessions' | 'distance' | 'duration' | 'elevation';
 
+function toLocalDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function getPeriodDates(period: string): { start: string; end: string } {
   const now = new Date();
   if (period === 'week') {
-    // Monday-based week: getDay() returns 0=Sun, so Mon=1..Sun=0
     const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon...6=Sat
     const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diffToMonday);
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    return { start: monday.toISOString().split('T')[0], end: sunday.toISOString().split('T')[0] };
+    const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+    return { start: toLocalDateStr(monday), end: toLocalDateStr(sunday) };
   }
   if (period === 'month') {
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
+    return { start: toLocalDateStr(start), end: toLocalDateStr(end) };
   }
   // year
   return { start: `${now.getFullYear()}-01-01`, end: `${now.getFullYear()}-12-31` };
@@ -49,6 +54,8 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
   const [metric, setMetric] = useState<ChallengeMetric>('sessions');
   const [activityType, setActivityType] = useState('all');
   const [period, setPeriod] = useState('month');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
   const [target, setTarget] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -89,9 +96,10 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
 
   const handleSubmit = async () => {
     if (!name.trim()) { toast.error(t('challenge.fillName')); return; }
+    if (period === 'custom' && (!customStart || !customEnd)) { toast.error(t('challenge.fillDates')); return; }
     setSubmitting(true);
     try {
-      const dates = getPeriodDates(period);
+      const dates = period === 'custom' ? { start: customStart, end: customEnd } : getPeriodDates(period);
       if (isEditing) {
         await updateChallenge(editChallenge!.challenge.id, {
           name,
@@ -189,7 +197,7 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
               <Select value={period} onValueChange={setPeriod}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {['week', 'month', 'year'].map(o => (
+              {['week', 'month', 'year', 'custom'].map(o => (
                     <SelectItem key={o} value={o}>{t(`challenge.period${o.charAt(0).toUpperCase() + o.slice(1)}`)}</SelectItem>
                   ))}
                 </SelectContent>
@@ -200,6 +208,19 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
               <Input type="number" value={target} onChange={e => setTarget(e.target.value)} placeholder="—" />
             </div>
           </div>
+
+          {period === 'custom' && (
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Label className="text-xs">{t('challenge.customFrom')}</Label>
+                <Input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)} />
+              </div>
+              <div className="flex-1">
+                <Label className="text-xs">{t('challenge.customTo')}</Label>
+                <Input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)} />
+              </div>
+            </div>
+          )}
           {!target && <p className="text-xs text-muted-foreground">{t('challenge.noTargetDesc')}</p>}
 
           {/* Participant selection - only for new challenges */}
