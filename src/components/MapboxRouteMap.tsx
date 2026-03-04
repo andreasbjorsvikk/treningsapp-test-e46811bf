@@ -174,12 +174,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
     };
   }, [fullscreen, initInteractiveMap]);
 
-  // Fallback: init inline if static image fails
-  useEffect(() => {
-    if (imgError && !fullscreen) {
-      setFullscreen(true);
-    }
-  }, [imgError, fullscreen]);
+  // No auto-fullscreen on error – just show placeholder
 
   // Lock body scroll in fullscreen
   useEffect(() => {
