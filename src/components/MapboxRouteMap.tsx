@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Maximize2, Minimize2 } from 'lucide-react';
+import { Maximize2, ArrowLeft } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
@@ -70,67 +71,16 @@ function getBounds(routePoints: [number, number][]): { sw: [number, number]; ne:
 }
 
 const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteMapProps) => {
-  const [expanded, setExpanded] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const [expandedHeight, setExpandedHeight] = useState(400);
 
   const staticUrl = useMemo(() => {
     if (routePoints.length < 2) return null;
     return getStaticMapUrl(routePoints, lineColor, 600, Math.round(height * 1.5));
   }, [routePoints, lineColor, height]);
-
-  // Lock parent scroll on touch
-  useEffect(() => {
-    const target = mapContainerRef.current || wrapperRef.current;
-    if (!target) return;
-
-    const findScrollParent = (el: HTMLElement | null): HTMLElement | null => {
-      while (el) {
-        if (el.scrollHeight > el.clientHeight && getComputedStyle(el).overflowY !== 'visible') return el;
-        el = el.parentElement;
-      }
-      return null;
-    };
-
-    let scrollParent: HTMLElement | null = null;
-    let savedOverflow = '';
-
-    const onTouchStart = () => {
-      scrollParent = findScrollParent(target.parentElement);
-      if (scrollParent) {
-        savedOverflow = scrollParent.style.overflowY;
-        scrollParent.style.overflowY = 'hidden';
-      }
-    };
-    const onTouchEnd = () => {
-      if (scrollParent) {
-        scrollParent.style.overflowY = savedOverflow;
-        scrollParent = null;
-      }
-    };
-
-    target.addEventListener('touchstart', onTouchStart, { passive: true });
-    target.addEventListener('touchend', onTouchEnd, { passive: true });
-    target.addEventListener('touchcancel', onTouchEnd, { passive: true });
-    return () => {
-      target.removeEventListener('touchstart', onTouchStart);
-      target.removeEventListener('touchend', onTouchEnd);
-      target.removeEventListener('touchcancel', onTouchEnd);
-      onTouchEnd();
-    };
-  }, [expanded]);
-
-  // Calculate expanded height
-  useEffect(() => {
-    if (expanded && wrapperRef.current) {
-      const rect = wrapperRef.current.getBoundingClientRect();
-      setExpandedHeight(Math.max(rect.bottom, height));
-    }
-  }, [expanded, height]);
 
   const initInteractiveMap = useCallback(async () => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
@@ -155,7 +105,6 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
 
     map.on('style.load', () => {
-      // Enable 3D terrain
       map.addSource('mapbox-dem', {
         type: 'raster-dem',
         url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
@@ -164,7 +113,6 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
       });
       map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
 
-      // Add sky layer for atmosphere
       map.addLayer({
         id: 'sky',
         type: 'sky',
@@ -175,7 +123,6 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
         },
       });
 
-      // Add route line
       map.addSource('route', {
         type: 'geojson',
         data: {
@@ -203,7 +150,6 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
         },
       });
 
-      // Fit bounds with padding
       map.fitBounds(
         [bounds.sw, bounds.ne],
         { padding: 60, pitch: 60, bearing: -20, duration: 1000 }
@@ -213,9 +159,12 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
     mapInstanceRef.current = map;
   }, [routePoints, lineColor]);
 
+  // Init map when fullscreen opens
   useEffect(() => {
-    if (expanded && !imgError) {
-      initInteractiveMap();
+    if (fullscreen) {
+      // Small delay to let portal mount
+      const timer = setTimeout(() => initInteractiveMap(), 50);
+      return () => clearTimeout(timer);
     }
     return () => {
       if (mapInstanceRef.current) {
@@ -223,81 +172,83 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
         mapInstanceRef.current = null;
       }
     };
-  }, [expanded, initInteractiveMap]);
+  }, [fullscreen, initInteractiveMap]);
 
+  // Fallback: init inline if static image fails
   useEffect(() => {
-    if (imgError) {
-      initInteractiveMap();
+    if (imgError && !fullscreen) {
+      setFullscreen(true);
     }
-  }, [imgError, initInteractiveMap]);
+  }, [imgError, fullscreen]);
 
+  // Lock body scroll in fullscreen
   useEffect(() => {
-    if (expanded && mapInstanceRef.current) {
-      setTimeout(() => mapInstanceRef.current?.resize(), 50);
-      setTimeout(() => mapInstanceRef.current?.resize(), 300);
+    if (fullscreen) {
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = ''; };
     }
-  }, [expanded, expandedHeight]);
+  }, [fullscreen]);
 
   if (routePoints.length < 2) return null;
 
-  const showInteractive = expanded || imgError;
-  const currentHeight = showInteractive ? expandedHeight : height;
+  const closeFullscreen = () => {
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.remove();
+      mapInstanceRef.current = null;
+    }
+    setFullscreen(false);
+  };
 
   return (
-    <div
-      ref={wrapperRef}
-      className="w-full rounded-t-lg overflow-hidden relative"
-      style={{ height: `${currentHeight}px`, transition: 'height 0.3s ease' }}
-    >
-      {!showInteractive && staticUrl ? (
-        <>
-          {isDark && (
-            <div className="absolute inset-0 bg-black/30 z-[1] pointer-events-none rounded-t-lg" />
-          )}
+    <>
+      {/* Static preview thumbnail */}
+      <div
+        className="w-full rounded-t-lg overflow-hidden relative cursor-pointer"
+        style={{ height: `${height}px` }}
+        onClick={() => setFullscreen(true)}
+      >
+        {isDark && (
+          <div className="absolute inset-0 bg-black/30 z-[1] pointer-events-none rounded-t-lg" />
+        )}
+        {staticUrl && (
           <img
             src={staticUrl}
             alt="Kartrute"
             className={`w-full h-full object-cover transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
             loading="lazy"
-            onClick={() => setExpanded(true)}
             onLoad={() => setImgLoaded(true)}
             onError={() => setImgError(true)}
           />
-          {!imgLoaded && (
-            <div className="absolute inset-0 bg-secondary/50 animate-pulse" />
-          )}
+        )}
+        {!imgLoaded && (
+          <div className="absolute inset-0 bg-secondary/50 animate-pulse" />
+        )}
+        <button
+          className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm rounded-lg p-1.5 shadow-md hover:bg-background transition-colors z-10"
+          title="Utforsk kartet"
+        >
+          <Maximize2 className="w-4 h-4 text-foreground" />
+        </button>
+      </div>
+
+      {/* Fullscreen map portal */}
+      {fullscreen && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-background flex flex-col">
           <button
-            onClick={() => setExpanded(true)}
-            className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm rounded-lg p-1.5 shadow-md hover:bg-background transition-colors z-10"
-            title="Utforsk kartet"
+            onClick={closeFullscreen}
+            className="absolute top-4 left-4 z-[10000] flex items-center gap-2 bg-background/90 backdrop-blur-sm rounded-full py-2 px-3 shadow-lg hover:bg-background transition-colors"
           >
-            <Maximize2 className="w-4 h-4 text-foreground" />
+            <ArrowLeft className="w-5 h-5 text-foreground" />
+            <span className="text-sm font-medium text-foreground">Tilbake</span>
           </button>
-        </>
-      ) : (
-        <>
           <div
             ref={mapContainerRef}
-            style={{ height: `${currentHeight}px`, width: '100%' }}
+            className="flex-1 w-full"
           />
-          <button
-            onClick={() => {
-              if (mapInstanceRef.current) {
-                mapInstanceRef.current.remove();
-                mapInstanceRef.current = null;
-              }
-              setExpanded(false);
-              setImgError(false);
-              setImgLoaded(false);
-            }}
-            className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm rounded-lg p-1.5 shadow-md hover:bg-background transition-colors z-[1000]"
-            title="Minimer"
-          >
-            <Minimize2 className="w-4 h-4 text-foreground" />
-          </button>
-        </>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 };
 
