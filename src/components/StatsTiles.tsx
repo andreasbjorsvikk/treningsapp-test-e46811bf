@@ -24,7 +24,7 @@ const StatsTiles = ({ sessions }: StatsTilesProps) => {
   return (
     <div className="grid grid-cols-4 gap-2">
       {tiles.map((tile) => (
-        <div key={tile.label} className="glass-card rounded-lg p-3 flex flex-col items-center text-center shadow-md" style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.10), hsl(var(--background)), hsl(var(--accent) / 0.05))' }}>
+        <div key={tile.label} className="glass-card card-gradient rounded-lg p-3 flex flex-col items-center text-center shadow-md">
           <tile.icon className={`w-4 h-4 ${tile.accent} mb-1`} />
           <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">
             {tile.label}

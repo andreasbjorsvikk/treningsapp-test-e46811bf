@@ -103,7 +103,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
             {routePoints && (
               <MapboxRouteMap
                 routePoints={routePoints}
-                lineColor={colors.text}
+                lineColor={getActivityColors(session.type, false).text}
                 height={192}
                 isDark={isDark}
               />
