@@ -52,8 +52,17 @@ function getGeoJsonUrl(routePoints: [number, number][], lineColor: string, width
   return `https://api.mapbox.com/styles/v1/mapbox/${style}/static/${overlay}/auto/${width}x${height}${retina}?padding=40&access_token=${MAPBOX_TOKEN}`;
 }
 
-const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteMapProps) => {
+export const useMapFullscreen = () => {
   const [fullscreen, setFullscreen] = useState(false);
+  return { isMapFullscreen: fullscreen, setMapFullscreen: setFullscreen };
+};
+
+const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenChange }: MapboxRouteMapProps & { onFullscreenChange?: (fs: boolean) => void }) => {
+  const [fullscreen, setFullscreenState] = useState(false);
+  const setFullscreen = (fs: boolean) => {
+    setFullscreenState(fs);
+    onFullscreenChange?.(fs);
+  };
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [previewMapReady, setPreviewMapReady] = useState(false);
@@ -287,6 +296,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
           onTouchEnd={e => e.stopPropagation()}
           onPointerDown={e => e.stopPropagation()}
           onPointerMove={e => e.stopPropagation()}
+          onPointerUp={e => e.stopPropagation()}
         >
           <button
             onClick={closeFullscreen}

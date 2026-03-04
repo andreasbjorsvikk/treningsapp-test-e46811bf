@@ -37,6 +37,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
   const [loadingStreams, setLoadingStreams] = useState(false);
   const [streamsLoaded, setStreamsLoaded] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [mapFullscreen, setMapFullscreen] = useState(false);
 
   const config = session ? sessionTypeConfig[session.type] : null;
   const colors = session ? getActivityColors(session.type, isDark) : null;
@@ -91,7 +92,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
 
   return (
     <>
-      <Drawer open={open} onOpenChange={(o) => !o && handleClose()}>
+      <Drawer open={open} onOpenChange={(o) => { if (mapFullscreen) return; if (!o) handleClose(); }}>
         <DrawerContent className="max-h-[92vh]">
           <div className="overflow-y-auto scrollbar-hide pb-4">
             <DrawerHeader className="sr-only">
@@ -106,6 +107,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
                 lineColor={getActivityColors(session.type, false).text}
                 height={192}
                 isDark={isDark}
+                onFullscreenChange={setMapFullscreen}
               />
             )}
 
