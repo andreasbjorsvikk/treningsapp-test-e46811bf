@@ -30,7 +30,7 @@ const SessionCard = ({ session, onClick, onEdit }: SessionCardProps) => {
 
   return (
     <div
-      className="glass-card bg-gradient-to-br from-accent/12 via-card/95 to-success/9 rounded-lg px-3 py-2.5 hover:shadow-md transition-shadow cursor-pointer active:scale-[0.98] shadow-md"
+      className="glass-card bg-gradient-to-br from-accent/15 via-muted/80 to-success/12 rounded-lg px-3 py-2.5 hover:shadow-md transition-shadow cursor-pointer active:scale-[0.98] shadow-md"
       onClick={() => onClick?.(session)}
     >
       <div className="flex items-center gap-2.5">

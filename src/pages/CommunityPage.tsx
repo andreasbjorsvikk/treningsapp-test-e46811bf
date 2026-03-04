@@ -165,7 +165,7 @@ const CommunityPage = () => {
                     key={c.challenge.id}
                     challenge={c}
                     onClick={() => handleSelectChallenge(c)}
-                    onEdit={(ch) => { setEditChallenge(ch); /* TODO: open edit form */ }}
+                    onEdit={(ch) => { setEditChallenge(ch); setShowForm(true); }}
                   />
                 ))
               )}
@@ -185,11 +185,13 @@ const CommunityPage = () => {
         challenge={selectedChallenge}
         open={!!selectedChallenge}
         onClose={() => setSelectedChallenge(null)}
+        onEdit={(ch) => { setSelectedChallenge(null); setEditChallenge(ch); setTimeout(() => setShowForm(true), 200); }}
       />
       <ChallengeForm
         open={showForm}
-        onClose={() => { setShowForm(false); setPreselectedUser(null); }}
+        onClose={() => { setShowForm(false); setPreselectedUser(null); setEditChallenge(null); }}
         preselectedUser={preselectedUser}
+        editChallenge={editChallenge}
         onCreated={loadChallenges}
       />
       <NotificationSheet
