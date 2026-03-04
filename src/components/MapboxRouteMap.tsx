@@ -100,6 +100,9 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
       pitch: 60,
       bearing: -20,
       antialias: true,
+      touchPitch: true,
+      touchZoomRotate: true,
+      dragRotate: true,
     });
 
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
@@ -215,8 +218,13 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
             onError={() => setImgError(true)}
           />
         )}
-        {!imgLoaded && (
+        {!imgLoaded && !imgError && (
           <div className="absolute inset-0 bg-secondary/50 animate-pulse" />
+        )}
+        {imgError && (
+          <div className="absolute inset-0 bg-secondary/30 flex items-center justify-center">
+            <span className="text-xs text-muted-foreground">Trykk for å åpne kart</span>
+          </div>
         )}
         <button
           className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm rounded-lg p-1.5 shadow-md hover:bg-background transition-colors z-10"
