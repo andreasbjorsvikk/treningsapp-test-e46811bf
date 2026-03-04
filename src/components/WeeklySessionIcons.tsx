@@ -32,7 +32,7 @@ const WeeklySessionIcons = ({ sessions, onClick }: WeeklySessionIconsProps) => {
   const isSmall = recentSessions.length > 3;
 
   return (
-    <div className="glass-card rounded-xl p-2.5 cursor-pointer shadow-md" onClick={onClick} style={{ background: 'linear-gradient(to bottom right, hsl(var(--primary) / 0.16), hsl(var(--primary) / 0.07), hsl(var(--primary) / 0.13))' }}>
+    <div className="glass-card rounded-xl p-2.5 cursor-pointer shadow-md" onClick={onClick} style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.10), hsl(var(--background)), hsl(var(--accent) / 0.05))' }}>
       <div className="grid grid-cols-3 gap-[6px]">
         {visible.map((session) => {
           const colors = getActivityColors(session.type, isDark);
