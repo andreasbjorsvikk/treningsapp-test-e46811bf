@@ -11,31 +11,6 @@ interface MapboxRouteMapProps {
   isDark: boolean;
 }
 
-function encodePolylineForMapbox(points: [number, number][]): string {
-  let encoded = '';
-  let prevLat = 0;
-  let prevLng = 0;
-  for (const [lat, lng] of points) {
-    const dLat = Math.round((lat - prevLat) * 1e5);
-    const dLng = Math.round((lng - prevLng) * 1e5);
-    prevLat = lat;
-    prevLng = lng;
-    encoded += encodeValue(dLat) + encodeValue(dLng);
-  }
-  return encoded;
-}
-
-function encodeValue(value: number): string {
-  let v = value < 0 ? ~(value << 1) : value << 1;
-  let encoded = '';
-  while (v >= 0x20) {
-    encoded += String.fromCharCode((0x20 | (v & 0x1f)) + 63);
-    v >>= 5;
-  }
-  encoded += String.fromCharCode(v + 63);
-  return encoded;
-}
-
 function simplifyPoints(points: [number, number][], maxPoints: number): [number, number][] {
   if (points.length <= maxPoints) return points;
   const step = (points.length - 1) / (maxPoints - 1);
@@ -44,16 +19,6 @@ function simplifyPoints(points: [number, number][], maxPoints: number): [number,
     result.push(points[Math.round(i * step)]);
   }
   return result;
-}
-
-function getStaticMapUrl(routePoints: [number, number][], lineColor: string, width: number, height: number): string {
-  const style = 'outdoors-v12';
-  const simplified = simplifyPoints(routePoints, 120);
-  const encoded = encodePolylineForMapbox(simplified);
-  const color = lineColor.replace('#', '');
-  const overlay = `path-4+${color}-0.95(${encodeURIComponent(encoded)})`;
-  const retina = window.devicePixelRatio >= 2 ? '@2x' : '';
-  return `https://api.mapbox.com/styles/v1/mapbox/${style}/static/${overlay}/auto/${width}x${height}${retina}?padding=40&access_token=${MAPBOX_TOKEN}`;
 }
 
 function getBounds(routePoints: [number, number][]): { sw: [number, number]; ne: [number, number]; center: [number, number] } {
@@ -70,24 +35,103 @@ function getBounds(routePoints: [number, number][]): { sw: [number, number]; ne:
   };
 }
 
+function getGeoJsonUrl(routePoints: [number, number][], lineColor: string, width: number, height: number): string {
+  const style = 'outdoors-v12';
+  const simplified = simplifyPoints(routePoints, 80);
+  const coordinates = simplified.map(([lat, lng]) => [lng, lat]);
+  const color = lineColor.startsWith('#') ? lineColor : `#${lineColor}`;
+  
+  const geojson = {
+    type: 'Feature',
+    properties: { stroke: color, 'stroke-width': 4, 'stroke-opacity': 0.95 },
+    geometry: { type: 'LineString', coordinates },
+  };
+  
+  const overlay = `geojson(${encodeURIComponent(JSON.stringify(geojson))})`;
+  const retina = window.devicePixelRatio >= 2 ? '@2x' : '';
+  return `https://api.mapbox.com/styles/v1/mapbox/${style}/static/${overlay}/auto/${width}x${height}${retina}?padding=40&access_token=${MAPBOX_TOKEN}`;
+}
+
 const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteMapProps) => {
   const [fullscreen, setFullscreen] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [previewMapReady, setPreviewMapReady] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const previewMapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
+  const previewMapRef = useRef<any>(null);
 
   const staticUrl = useMemo(() => {
     if (routePoints.length < 2) return null;
-    return getStaticMapUrl(routePoints, lineColor, 600, Math.round(height * 1.5));
+    return getGeoJsonUrl(routePoints, lineColor, 600, Math.round(height * 1.5));
   }, [routePoints, lineColor, height]);
+
+  // Initialize a small static preview map as fallback when image fails
+  const initPreviewMap = useCallback(async () => {
+    if (!previewMapContainerRef.current || previewMapRef.current) return;
+
+    const mapboxgl = (await import('mapbox-gl')).default;
+    await import('mapbox-gl/dist/mapbox-gl.css');
+    (mapboxgl as any).accessToken = MAPBOX_TOKEN;
+
+    const bounds = getBounds(routePoints);
+
+    const map = new mapboxgl.Map({
+      container: previewMapContainerRef.current,
+      style: 'mapbox://styles/mapbox/outdoors-v12',
+      center: bounds.center,
+      zoom: 11,
+      interactive: false,
+      attributionControl: false,
+    });
+
+    map.on('style.load', () => {
+      map.addSource('route', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: routePoints.map(([lat, lng]) => [lng, lat]),
+          },
+        },
+      });
+
+      map.addLayer({
+        id: 'route-line',
+        type: 'line',
+        source: 'route',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': lineColor, 'line-width': 3, 'line-opacity': 0.9 },
+      });
+
+      map.fitBounds([bounds.sw, bounds.ne], { padding: 30, duration: 0 });
+      setPreviewMapReady(true);
+    });
+
+    previewMapRef.current = map;
+  }, [routePoints, lineColor]);
+
+  // If static image fails, render a small non-interactive map preview
+  useEffect(() => {
+    if (imgError && !previewMapRef.current) {
+      initPreviewMap();
+    }
+    return () => {
+      if (previewMapRef.current) {
+        previewMapRef.current.remove();
+        previewMapRef.current = null;
+      }
+    };
+  }, [imgError, initPreviewMap]);
 
   const initInteractiveMap = useCallback(async () => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
     const mapboxgl = (await import('mapbox-gl')).default;
     await import('mapbox-gl/dist/mapbox-gl.css');
-
     (mapboxgl as any).accessToken = MAPBOX_TOKEN;
 
     const bounds = getBounds(routePoints);
@@ -100,10 +144,12 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
       pitch: 60,
       bearing: -20,
       antialias: true,
-      touchPitch: true,
-      touchZoomRotate: true,
-      dragRotate: true,
     });
+
+    // Explicitly enable all touch interactions
+    map.dragRotate.enable();
+    map.touchZoomRotate.enable();
+    map.touchPitch.enable();
 
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
 
@@ -142,15 +188,8 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
         id: 'route-line',
         type: 'line',
         source: 'route',
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round',
-        },
-        paint: {
-          'line-color': lineColor,
-          'line-width': 4,
-          'line-opacity': 0.95,
-        },
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': lineColor, 'line-width': 4, 'line-opacity': 0.95 },
       });
 
       map.fitBounds(
@@ -165,7 +204,6 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
   // Init map when fullscreen opens
   useEffect(() => {
     if (fullscreen) {
-      // Small delay to let portal mount
       const timer = setTimeout(() => initInteractiveMap(), 50);
       return () => clearTimeout(timer);
     }
@@ -176,8 +214,6 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
       }
     };
   }, [fullscreen, initInteractiveMap]);
-
-  // No auto-fullscreen on error – just show placeholder
 
   // Lock body scroll in fullscreen
   useEffect(() => {
@@ -208,7 +244,9 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
         {isDark && (
           <div className="absolute inset-0 bg-black/30 z-[1] pointer-events-none rounded-t-lg" />
         )}
-        {staticUrl && (
+        
+        {/* Static image (primary) */}
+        {staticUrl && !imgError && (
           <img
             src={staticUrl}
             alt="Kartrute"
@@ -218,14 +256,20 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark }: MapboxRouteM
             onError={() => setImgError(true)}
           />
         )}
+        
+        {/* Fallback: non-interactive mini map */}
+        {imgError && (
+          <div
+            ref={previewMapContainerRef}
+            className="w-full h-full"
+          />
+        )}
+        
+        {/* Loading state */}
         {!imgLoaded && !imgError && (
           <div className="absolute inset-0 bg-secondary/50 animate-pulse" />
         )}
-        {imgError && (
-          <div className="absolute inset-0 bg-secondary/30 flex items-center justify-center">
-            <span className="text-xs text-muted-foreground">Trykk for å åpne kart</span>
-          </div>
-        )}
+        
         <button
           className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm rounded-lg p-1.5 shadow-md hover:bg-background transition-colors z-10"
           title="Utforsk kartet"
