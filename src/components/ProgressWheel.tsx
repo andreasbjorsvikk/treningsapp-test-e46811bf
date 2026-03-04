@@ -155,7 +155,7 @@ const ProgressWheel = ({
   return (
     <Wrapper
       onClick={onClick}
-      className={`flex flex-col items-center gap-0.5 ${naked ? 'p-0' : compact ? 'p-1 pt-1.5 rounded-2xl glass-card shadow-md hover:shadow-xl' : 'p-2 pt-3 rounded-2xl glass-card shadow-md hover:shadow-xl'} transition-all ${onClick ? 'cursor-pointer' : ''} overflow-visible flex-1 min-w-0`}
+      className={`flex flex-col items-center gap-0.5 ${naked ? 'p-0' : compact ? 'p-1 pt-1.5 rounded-2xl glass-card bg-gradient-to-br from-energy/8 via-card/80 to-accent/6 shadow-md hover:shadow-xl' : 'p-2 pt-3 rounded-2xl glass-card bg-gradient-to-br from-energy/8 via-card/80 to-accent/6 shadow-md hover:shadow-xl'} transition-all ${onClick ? 'cursor-pointer' : ''} overflow-visible flex-1 min-w-0`}
       aria-label={label}
     >
       {titleOverride ? (

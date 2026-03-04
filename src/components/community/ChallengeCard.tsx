@@ -44,7 +44,7 @@ const ChallengeCard = ({ challenge, onClick, onEdit }: ChallengeCardProps) => {
   return (
     <button
       onClick={onClick}
-      className="w-full glass-card rounded-lg p-3.5 text-left transition-colors hover:bg-card/90"
+      className="w-full glass-card bg-gradient-to-br from-warning/8 via-card/80 to-accent/5 rounded-lg p-3.5 text-left transition-colors hover:bg-card/90 shadow-md"
     >
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">

@@ -534,14 +534,7 @@ const IndexContent = () => {
   const displayName = username || user?.email?.split('@')[0] || '';
 
   // Section gradient styles - subtle gradients
-  const sectionGradients: Record<string, string> = {
-    trainingGoals: 'bg-gradient-to-br from-energy/5 via-transparent to-accent/3',
-    last7dCalendar: 'bg-gradient-to-br from-accent/5 via-transparent to-energy/3',
-    statistics: 'bg-gradient-to-br from-primary/4 via-transparent to-energy/3',
-    challenges: 'bg-gradient-to-br from-warning/5 via-transparent to-accent/3',
-    extraGoals: 'bg-gradient-to-br from-success/5 via-transparent to-primary/3',
-    recentSessions: 'bg-gradient-to-br from-accent/5 via-transparent to-success/3',
-  };
+  const sectionGradients: Record<string, string> = {};
 
   return (
     <div className="min-h-screen bg-background pb-20 lg:pb-0 lg:pt-16">
