@@ -94,36 +94,47 @@ const ChallengeDetail = ({ challenge, open, onClose, onEdit }: ChallengeDetailPr
                 )}
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {sorted.map((p, i) => {
                   const maxProgress = Math.max(...challenge.participants.map(pp => pp.progress));
                   const pct = c.target > 0
                     ? Math.min((p.progress / c.target) * 100, 100)
                     : maxProgress > 0 ? (p.progress / maxProgress) * 100 : 0;
                   const isSelf = p.userId === user?.id;
+                  const isLeader = i === 0 && p.progress > 0;
                   return (
                     <button
                       key={p.userId}
                       onClick={() => !isSelf && setProfileUser({ id: p.userId, username: p.username, avatarUrl: p.avatarUrl })}
-                      className={`w-full flex items-center gap-3 rounded-lg bg-secondary/50 p-3 text-left ${
-                        !isSelf ? 'hover:bg-secondary/70 cursor-pointer' : ''
-                      } transition-colors`}
+                      className={`w-full flex items-center gap-3 rounded-xl p-3 text-left transition-colors ${
+                        isLeader ? 'bg-accent/10 ring-1 ring-accent/20' : 'bg-secondary/50'
+                      } ${!isSelf ? 'hover:bg-secondary/70 cursor-pointer' : ''}`}
                     >
-                      <span className={`font-display font-bold text-base w-7 text-center ${i === 0 ? 'text-warning' : 'text-muted-foreground'}`}>
+                      <span className={`font-display font-bold text-base w-7 text-center ${
+                        i === 0 ? 'text-warning' : i === 1 ? 'text-muted-foreground' : i === 2 ? 'text-amber-800 dark:text-amber-600' : 'text-muted-foreground'
+                      }`}>
                         {i === 0 ? <Trophy className="w-4.5 h-4.5 inline text-warning" /> : `#${p.rank}`}
                       </span>
-                      <Avatar className="w-7 h-7">
+                      <Avatar className="w-8 h-8">
                         {p.avatarUrl ? <AvatarImage src={p.avatarUrl} /> : null}
                         <AvatarFallback className="text-xs font-medium">{(p.username || '?')[0]}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-0.5">
-                          <span className="text-base font-medium truncate">{isSelf ? t('common.me') : p.username}</span>
-                          <span className="text-sm font-medium">{p.progress}{unit ? ` ${unit}` : ''}</span>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className={`text-base truncate ${isSelf ? 'font-semibold' : 'font-medium'}`}>
+                            {isSelf ? t('common.me') : p.username}
+                          </span>
+                          <span className="text-sm font-bold tabular-nums">{p.progress}{unit ? ` ${unit}` : ''}</span>
                         </div>
                         <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                          <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${pct}%` }} />
+                          <div
+                            className={`h-full rounded-full transition-all ${isLeader ? 'bg-accent' : 'bg-muted-foreground/40'}`}
+                            style={{ width: `${Math.max(pct, 2)}%` }}
+                          />
                         </div>
+                        {c.target > 0 && (
+                          <p className="text-[10px] text-muted-foreground mt-0.5">{Math.round(pct)}%</p>
+                        )}
                       </div>
                     </button>
                   );
