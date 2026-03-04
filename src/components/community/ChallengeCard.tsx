@@ -1,6 +1,6 @@
 import { ChallengeWithParticipants } from '@/pages/CommunityPage';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { MapPin, Clock, MountainSnow, Activity, Home, Pencil } from 'lucide-react';
+import { MapPin, Clock, MountainSnow, Activity, Home, Pencil, Trophy } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -34,12 +34,14 @@ const ChallengeCard = ({ challenge, onClick, onEdit }: ChallengeCardProps) => {
   const Icon = metricIcons[c.metric] || Activity;
   const unit = metricUnits[c.metric] || '';
   const myParticipant = challenge.participants.find(p => p.userId === user?.id);
-  const progressPct = myParticipant && c.target > 0 ? Math.min((myParticipant.progress / c.target) * 100, 100) : 0;
 
   const locale = t('date.locale');
   const startDate = new Date(c.period_start);
   const endDate = new Date(c.period_end);
   const periodStr = `${startDate.toLocaleDateString(locale, { day: 'numeric', month: 'short' })} – ${endDate.toLocaleDateString(locale, { day: 'numeric', month: 'short' })}`;
+
+  const sorted = [...challenge.participants].sort((a, b) => a.rank - b.rank);
+  const maxProgress = Math.max(...challenge.participants.map(p => p.progress), 1);
 
   return (
     <button
@@ -56,7 +58,7 @@ const ChallengeCard = ({ challenge, onClick, onEdit }: ChallengeCardProps) => {
         </div>
       </div>
 
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-2.5">
         <p className="text-sm text-muted-foreground">{periodStr}</p>
         <p className="text-sm font-medium text-accent">
           {c.target > 0
@@ -66,22 +68,44 @@ const ChallengeCard = ({ challenge, onClick, onEdit }: ChallengeCardProps) => {
         </p>
       </div>
 
-      {/* Progress bars */}
-      <div className="space-y-1.5 mb-2.5">
-        {challenge.participants.slice(0, 3).map(p => (
-          <div key={p.userId} className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground w-16 truncate">{p.username}</span>
-            <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full bg-accent transition-all"
-                style={{ width: c.target > 0 ? `${Math.min((p.progress / c.target) * 100, 100)}%` : '0%' }}
-              />
+      {/* Progress bars with ranking */}
+      <div className="space-y-2 mb-2.5">
+        {sorted.slice(0, 3).map((p, i) => {
+          const pct = c.target > 0
+            ? Math.min((p.progress / c.target) * 100, 100)
+            : maxProgress > 0 ? (p.progress / maxProgress) * 100 : 0;
+          const isSelf = p.userId === user?.id;
+          const isLeader = i === 0 && p.progress > 0;
+          return (
+            <div key={p.userId} className="flex items-center gap-2">
+              <span className={`text-xs font-bold w-5 text-center ${
+                i === 0 ? 'text-warning' : 'text-muted-foreground'
+              }`}>
+                {isLeader ? <Trophy className="w-3.5 h-3.5 inline" /> : `#${p.rank}`}
+              </span>
+              <Avatar className="w-5 h-5 shrink-0 border border-background">
+                {p.avatarUrl ? <AvatarImage src={p.avatarUrl} /> : null}
+                <AvatarFallback className="text-[8px] font-medium">{(p.username || '?')[0]}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className={`text-xs truncate ${isSelf ? 'font-semibold' : 'text-muted-foreground'}`}>
+                    {isSelf ? t('common.me') : p.username}
+                  </span>
+                  <span className="text-xs font-medium ml-1">
+                    {p.progress}{unit ? ` ${unit}` : ''}
+                  </span>
+                </div>
+                <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${isLeader ? 'bg-accent' : 'bg-muted-foreground/40'}`}
+                    style={{ width: `${Math.max(pct, 2)}%` }}
+                  />
+                </div>
+              </div>
             </div>
-            <span className="text-sm font-medium w-14 text-right">
-              {p.progress}{unit ? ` ${unit}` : ''}
-            </span>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Footer */}
