@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN session_type_colors jsonb DEFAULT NULL;

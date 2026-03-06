@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { SessionType } from '@/types/workout';
 import { defaultTypeColors, allSessionTypes } from '@/utils/workoutUtils';
+import { supabase } from '@/integrations/supabase/client';
 import type { Language } from '@/i18n/translations';
 
 export type AppColorTheme = 'white' | 'orange' | 'blue' | 'green' | 'rose';
@@ -235,10 +236,64 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--ring', mode.primary);
   }, [settings.accentColor, settings.darkMode]);
 
-  // Persist
+  // Persist to localStorage
   useEffect(() => {
     localStorage.setItem('treningslogg_settings', JSON.stringify(settings));
   }, [settings]);
+
+  // Load session type colors from database on auth
+  const [dbColorsLoaded, setDbColorsLoaded] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    const loadDbColors = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user || cancelled) return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('session_type_colors')
+        .eq('id', session.user.id)
+        .single();
+      if (cancelled) return;
+      if (data?.session_type_colors && typeof data.session_type_colors === 'object') {
+        const dbColors = data.session_type_colors as Record<string, string>;
+        setSettings(prev => ({
+          ...prev,
+          sessionTypeColors: { ...defaultTypeColors, ...dbColors },
+        }));
+      }
+      setDbColorsLoaded(true);
+    };
+    loadDbColors();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) loadDbColors();
+      else setDbColorsLoaded(false);
+    });
+
+    return () => { cancelled = true; subscription.unsubscribe(); };
+  }, []);
+
+  // Save session type colors to database when changed (debounced)
+  const colorsRef = useCallback((colors: Record<SessionType, string>) => colors, []);
+  useEffect(() => {
+    if (!dbColorsLoaded) return;
+    const timer = setTimeout(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      // Only save non-default colors to keep it clean
+      const colorsToSave: Record<string, string> = {};
+      for (const [type, color] of Object.entries(settings.sessionTypeColors)) {
+        if (color !== defaultTypeColors[type as SessionType]) {
+          colorsToSave[type] = color;
+        }
+      }
+      await supabase
+        .from('profiles')
+        .update({ session_type_colors: Object.keys(colorsToSave).length > 0 ? colorsToSave : null } as any)
+        .eq('id', session.user.id);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [settings.sessionTypeColors, dbColorsLoaded]);
 
   const updateSettings = (patch: Partial<AppSettings>) => {
     setSettings(prev => ({ ...prev, ...patch }));
