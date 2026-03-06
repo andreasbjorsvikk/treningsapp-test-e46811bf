@@ -36,7 +36,7 @@ const PrimaryGoalForm = ({ existing, onSave, onCancel }: PrimaryGoalFormProps) =
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (targetNum <= 0) return;
+    if (targetNum < 0) return;
     const fromDate = useToday ? today : validFrom;
     onSave({
       inputPeriod: period,
@@ -79,7 +79,7 @@ const PrimaryGoalForm = ({ existing, onSave, onCancel }: PrimaryGoalFormProps) =
         </label>
         <input
           type="number"
-          min="1"
+          min="0"
           step="1"
           value={target}
           onChange={e => setTarget(e.target.value)}
