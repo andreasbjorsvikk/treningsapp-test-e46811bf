@@ -36,7 +36,7 @@ const PrimaryGoalForm = ({ existing, onSave, onCancel }: PrimaryGoalFormProps) =
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (targetNum <= 0) return;
+    if (targetNum < 0) return;
     const fromDate = useToday ? today : validFrom;
     onSave({
       inputPeriod: period,
