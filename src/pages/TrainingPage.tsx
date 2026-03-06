@@ -203,11 +203,33 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
       try {
         const data = JSON.parse(ev.target?.result as string);
         if (!Array.isArray(data)) throw new Error('Invalid format');
-        for (const session of data) {
-          const { id, ...rest } = session;
-          await appData.addSession(rest);
+
+        if (importMode === 'replace') {
+          // Delete all existing sessions first
+          const existingSessions = appData.sessions;
+          for (const s of existingSessions) {
+            await appData.deleteSession(s.id);
+          }
         }
-        toast.success(t('training.importSuccess', { n: data.length }));
+
+        let added = 0;
+        if (importMode === 'merge') {
+          const existingIds = new Set(appData.sessions.map(s => s.id));
+          for (const session of data) {
+            const { id, ...rest } = session;
+            if (!existingIds.has(id)) {
+              await appData.addSession(rest);
+              added++;
+            }
+          }
+          toast.success(t('training.importSuccess', { n: added }));
+        } else {
+          for (const session of data) {
+            const { id, ...rest } = session;
+            await appData.addSession(rest);
+          }
+          toast.success(t('training.importReplaceSuccess', { n: data.length }));
+        }
       } catch {
         toast.error(t('training.importError'));
       }

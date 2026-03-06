@@ -133,8 +133,24 @@ const SettingsPage = () => {
     navigate('/login');
   };
 
-  const handleClearData = () => {
+  const handleClearData = async () => {
     if (confirm(t('settings.deleteAllDataConfirm'))) {
+      if (user) {
+        try {
+          // Delete all user data from database
+          await Promise.all([
+            supabase.from('workout_sessions').delete().eq('user_id', user.id),
+            supabase.from('goals').delete().eq('user_id', user.id),
+            supabase.from('primary_goal_periods').delete().eq('user_id', user.id),
+            supabase.from('health_events').delete().eq('user_id', user.id),
+          ]);
+          toast.success(t('settings.dataDeleted') || 'All data deleted');
+        } catch (err) {
+          console.error('Failed to delete data:', err);
+          toast.error('Could not delete data');
+          return;
+        }
+      }
       localStorage.removeItem('treningslogg_sessions');
       localStorage.removeItem('treningslogg_goals');
       window.location.reload();

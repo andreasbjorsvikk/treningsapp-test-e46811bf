@@ -471,7 +471,7 @@ const CalendarPage = () => {
                   }
                   ${!cell.isCurrentMonth && sessionCount === 0 ? 'opacity-40' : ''}
                   ${isSelected ? 'ring-2 ring-primary' : ''}
-                  ${isToday && !isSelected ? 'ring-1 ring-primary/50' : ''}
+                  ${isToday && !isSelected ? 'ring-2 ring-primary/40' : ''}
                 `}
                 style={!isMulti ? cellStyle : undefined}
               >
@@ -484,13 +484,8 @@ const CalendarPage = () => {
                         sessionCount === 2 ? renderTwoDesktop(daySessions) : renderThreeDesktop(daySessions)
                       )}
                     </div>
-                    <span className={`
-                      text-[10px] lg:text-xs font-semibold z-10 absolute top-1 left-1.5
-                      ${isToday
-                        ? 'bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px]'
-                        : ''
-                      }
-                    `} style={!isToday ? { color: isDark ? '#fff' : '#333' } : undefined}>
+                    <span className="text-[10px] lg:text-xs font-semibold z-10 absolute top-1 left-1.5"
+                      style={{ color: isDark ? '#fff' : '#333' }}>
                       {cell.day}
                     </span>
                   </>
@@ -499,10 +494,6 @@ const CalendarPage = () => {
                     <span className={`
                       text-[10px] lg:text-xs font-semibold absolute top-1 left-1.5 z-10
                       ${!cell.isCurrentMonth ? 'text-muted-foreground/40' : ''}
-                      ${isToday
-                        ? 'bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] static mt-1 ml-1'
-                        : ''
-                      }
                     `}>
                       {cell.day}
                     </span>
