@@ -79,7 +79,7 @@ const PrimaryGoalForm = ({ existing, onSave, onCancel }: PrimaryGoalFormProps) =
         </label>
         <input
           type="number"
-          min="1"
+          min="0"
           step="1"
           value={target}
           onChange={e => setTarget(e.target.value)}
