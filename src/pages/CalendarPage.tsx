@@ -471,7 +471,7 @@ const CalendarPage = () => {
                   }
                   ${!cell.isCurrentMonth && sessionCount === 0 ? 'opacity-40' : ''}
                   ${isSelected ? 'ring-2 ring-primary' : ''}
-                  ${isToday && !isSelected ? 'ring-1 ring-primary/50' : ''}
+                  ${isToday && !isSelected ? 'ring-2 ring-primary/40' : ''}
                 `}
                 style={!isMulti ? cellStyle : undefined}
               >
