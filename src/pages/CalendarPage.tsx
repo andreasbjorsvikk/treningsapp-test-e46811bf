@@ -494,10 +494,6 @@ const CalendarPage = () => {
                     <span className={`
                       text-[10px] lg:text-xs font-semibold absolute top-1 left-1.5 z-10
                       ${!cell.isCurrentMonth ? 'text-muted-foreground/40' : ''}
-                      ${isToday
-                        ? 'bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] static mt-1 ml-1'
-                        : ''
-                      }
                     `}>
                       {cell.day}
                     </span>
