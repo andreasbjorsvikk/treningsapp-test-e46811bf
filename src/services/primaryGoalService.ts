@@ -62,10 +62,47 @@ export function getActiveGoalForDate(periods: PrimaryGoalPeriod[], date: Date): 
 }
 
 export function getMonthTarget(periods: PrimaryGoalPeriod[], year: number, month: number): number {
-  const monthEnd = new Date(year, month + 1, 0);
-  const goal = getActiveGoalForDate(periods, monthEnd);
-  if (!goal) return 0;
-  return convertGoalValue(goal.inputTarget, goal.inputPeriod, 'month');
+  if (periods.length === 0) return 0;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const monthStartStr = `${year}-${pad(month + 1)}-01`;
+  const monthEndStr = `${year}-${pad(month + 1)}-${pad(daysInMonth)}`;
+
+  const s = sorted(periods);
+
+  // Build transitions: each entry is { day, monthlyTarget } for when a goal becomes active
+  const transitions: { day: number; monthlyTarget: number }[] = [];
+
+  for (const p of s) {
+    if (p.validFrom > monthEndStr) break;
+    const monthlyTarget = convertGoalValue(p.inputTarget, p.inputPeriod, 'month');
+    if (p.validFrom <= monthStartStr) {
+      // Goal set before or on the 1st — use as baseline (keep latest)
+      if (transitions.length > 0 && transitions[0].day === 1) {
+        transitions[0].monthlyTarget = monthlyTarget;
+      } else {
+        transitions.unshift({ day: 1, monthlyTarget });
+      }
+    } else {
+      // Goal starts mid-month
+      const day = parseInt(p.validFrom.slice(8, 10));
+      transitions.push({ day, monthlyTarget });
+    }
+  }
+
+  if (transitions.length === 0) return 0;
+
+  transitions.sort((a, b) => a.day - b.day);
+
+  // Prorate each segment by fraction of days in month
+  let total = 0;
+  for (let i = 0; i < transitions.length; i++) {
+    const fromDay = transitions[i].day;
+    const toDay = i + 1 < transitions.length ? transitions[i + 1].day - 1 : daysInMonth;
+    total += transitions[i].monthlyTarget * ((toDay - fromDay + 1) / daysInMonth);
+  }
+
+  return Math.round(total * 10) / 10;
 }
 
 export function getYearTarget(periods: PrimaryGoalPeriod[], year: number): number {
