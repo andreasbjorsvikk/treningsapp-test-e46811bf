@@ -273,11 +273,11 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                 </div>
               </div>
 
-              {/* Goal progress bars */}
+              {/* Goal progress bars - side by side */}
               {(monthTarget > 0 || yearTarget > 0) && (
                 <div className="space-y-2">
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Målprogresjon</h3>
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
                     {monthTarget > 0 && (
                       <GoalProgressBar
                         label="Måned"
@@ -294,71 +294,6 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                         percent={yearPct}
                       />
                     )}
-                  </div>
-                </div>
-              )}
-
-              {/* Activity breakdown */}
-              {activityBreakdown.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Aktiviteter</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {activityBreakdown.map(a => {
-                      const colors = getActivityColors(a.type as SessionType, settings.darkMode);
-                      return (
-                        <div key={a.type} className="flex items-center gap-1.5 rounded-full px-3 py-1.5" style={{ backgroundColor: colors.bg }}>
-                          <ActivityIcon type={a.type as SessionType} className="w-4 h-4" colorOverride={!settings.darkMode ? colors.text : undefined} />
-                          <span className="text-xs font-medium capitalize" style={{ color: settings.darkMode ? '#fff' : colors.text }}>{a.type}</span>
-                          <span className="text-xs opacity-70" style={{ color: settings.darkMode ? '#fff' : colors.text }}>({a.count})</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Shared challenges */}
-              {sharedChallenges.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                    <Trophy className="w-3.5 h-3.5" /> Felles utfordringer
-                  </h3>
-                  <div className="space-y-2">
-                    {sharedChallenges.map(ch => {
-                      const myPct = ch.target > 0 ? Math.min(100, (ch.myProgress / ch.target) * 100) : 0;
-                      const friendPct = ch.target > 0 ? Math.min(100, (ch.friendProgress / ch.target) * 100) : 0;
-                      const unit = metricUnit(ch.metric);
-                      return (
-                        <div key={ch.id} className="rounded-xl bg-secondary/50 p-3 space-y-2">
-                          <div className="flex items-center gap-2">
-                            {ch.emoji && <span className="text-base">{ch.emoji}</span>}
-                            <span className="text-sm font-semibold flex-1">{ch.name}</span>
-                            {!ch.isActive && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Avsluttet</span>}
-                          </div>
-                          <div className="space-y-1.5">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[11px] w-10 text-muted-foreground">Meg</span>
-                              <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                                <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${myPct}%` }} />
-                              </div>
-                              <span className="text-[11px] font-medium w-14 text-right">
-                                {ch.metric === 'sessions' ? ch.myProgress : ch.myProgress.toFixed(1)}{unit && ` ${unit}`}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[11px] w-10 text-muted-foreground truncate">{user.username?.split(' ')[0]}</span>
-                              <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                                <div className="h-full rounded-full bg-accent-foreground/40 transition-all" style={{ width: `${friendPct}%` }} />
-                              </div>
-                              <span className="text-[11px] font-medium w-14 text-right">
-                                {ch.metric === 'sessions' ? ch.friendProgress : ch.friendProgress.toFixed(1)}{unit && ` ${unit}`}
-                              </span>
-                            </div>
-                          </div>
-                          <p className="text-[10px] text-muted-foreground">Mål: {ch.target} {unit}</p>
-                        </div>
-                      );
-                    })}
                   </div>
                 </div>
               )}
@@ -389,6 +324,35 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                       );
                     })}
                   </div>
+                </div>
+              )}
+
+              {/* Shared challenges - at bottom */}
+              {sharedChallenges.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <Trophy className="w-3.5 h-3.5" /> Felles utfordringer
+                  </h3>
+                  
+                  {/* Active challenges */}
+                  {sharedChallenges.filter(c => c.isActive).length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="text-[11px] font-medium text-muted-foreground">Aktive</p>
+                      {sharedChallenges.filter(c => c.isActive).map(ch => (
+                        <ChallengeComparisonCard key={ch.id} challenge={ch} friendName={user.username?.split(' ')[0] || '?'} />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Past challenges */}
+                  {sharedChallenges.filter(c => !c.isActive).length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="text-[11px] font-medium text-muted-foreground">Tidligere</p>
+                      {sharedChallenges.filter(c => !c.isActive).map(ch => (
+                        <ChallengeComparisonCard key={ch.id} challenge={ch} friendName={user.username?.split(' ')[0] || '?'} />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
