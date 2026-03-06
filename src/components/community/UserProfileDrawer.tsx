@@ -381,17 +381,58 @@ function StatTile({ icon, value, label }: { icon: React.ReactNode; value: string
 }
 
 function GoalProgressBar({ label, current, target, percent }: { label: string; current: number; target: number; percent: number }) {
-  const color = percent >= 100 ? 'bg-green-500' : percent >= 75 ? 'bg-lime-500' : percent >= 50 ? 'bg-yellow-500' : percent >= 25 ? 'bg-orange-500' : 'bg-red-500';
+  const color = percent >= 100 ? 'bg-[hsl(var(--success))]' : percent >= 75 ? 'bg-lime-500' : percent >= 50 ? 'bg-yellow-500' : percent >= 25 ? 'bg-orange-500' : 'bg-red-500';
   return (
     <div className="rounded-xl bg-secondary/50 p-3 space-y-1.5">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium">{label}</span>
-        <span className="text-xs text-muted-foreground">{current} / {target} økter</span>
+        <span className="text-[10px] text-muted-foreground">{current}/{target}</span>
       </div>
       <div className="h-2.5 rounded-full bg-muted overflow-hidden">
         <div className={`h-full rounded-full ${color} transition-all duration-500`} style={{ width: `${Math.min(100, percent)}%` }} />
       </div>
       <p className="text-[10px] text-muted-foreground text-right">{Math.round(percent)}%</p>
+    </div>
+  );
+}
+
+function ChallengeComparisonCard({ challenge: ch, friendName }: { challenge: { id: string; name: string; emoji: string | null; metric: string; target: number; myProgress: number; friendProgress: number; isActive: boolean; periodEnd: string }; friendName: string }) {
+  const metricUnit = (m: string) => { switch(m) { case 'distance': return 'km'; case 'duration': return 'min'; case 'elevation': return 'm'; default: return ''; } };
+  const unit = metricUnit(ch.metric);
+  const iAmLeading = ch.myProgress >= ch.friendProgress;
+  const maxVal = Math.max(ch.myProgress, ch.friendProgress, ch.target || 1);
+  const myPct = (ch.myProgress / maxVal) * 100;
+  const friendPct = (ch.friendProgress / maxVal) * 100;
+  const leaderLabel = iAmLeading ? '👑 Meg' : `👑 ${friendName}`;
+  
+  return (
+    <div className="rounded-xl bg-secondary/50 p-3 space-y-2">
+      <div className="flex items-center gap-2">
+        {ch.emoji && <span className="text-base">{ch.emoji}</span>}
+        <span className="text-sm font-semibold flex-1">{ch.name}</span>
+        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{leaderLabel}</span>
+      </div>
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] w-10 text-muted-foreground">Meg</span>
+          <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+            <div className={`h-full rounded-full transition-all ${iAmLeading ? 'bg-primary' : 'bg-muted-foreground/40'}`} style={{ width: `${myPct}%` }} />
+          </div>
+          <span className="text-[11px] font-medium w-14 text-right">
+            {ch.metric === 'sessions' ? ch.myProgress : ch.myProgress.toFixed(1)}{unit && ` ${unit}`}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] w-10 text-muted-foreground truncate">{friendName}</span>
+          <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+            <div className={`h-full rounded-full transition-all ${!iAmLeading ? 'bg-primary' : 'bg-muted-foreground/40'}`} style={{ width: `${friendPct}%` }} />
+          </div>
+          <span className="text-[11px] font-medium w-14 text-right">
+            {ch.metric === 'sessions' ? ch.friendProgress : ch.friendProgress.toFixed(1)}{unit && ` ${unit}`}
+          </span>
+        </div>
+      </div>
+      {ch.target > 0 && <p className="text-[10px] text-muted-foreground">Mål: {ch.target} {unit}</p>}
     </div>
   );
 }
