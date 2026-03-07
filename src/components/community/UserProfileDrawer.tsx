@@ -408,6 +408,13 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
         </div>
       </DrawerContent>
     </Drawer>
+
+    <ChallengeDetail
+      challenge={challengeDetailData}
+      open={!!challengeDetailData}
+      onClose={() => setChallengeDetailData(null)}
+    />
+    </>
   );
 };
 
