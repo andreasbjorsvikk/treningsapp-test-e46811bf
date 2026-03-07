@@ -161,11 +161,13 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
       try {
         const allChallenges = await getChallenges();
         const shared: SharedChallenge[] = [];
+        const fullDataMap = new Map<string, ChallengeWithParticipants>();
         for (const c of allChallenges) {
           const parts = await getChallengeParticipants(c.id);
-          const acceptedIds = parts.filter(p => p.status === 'accepted').map(p => p.user_id);
+          const acceptedParts = parts.filter(p => p.status === 'accepted');
+          const acceptedIds = acceptedParts.map(p => p.user_id);
           if (acceptedIds.includes(me.id) && acceptedIds.includes(user.id)) {
-            const progress = await getChallengeProgress(c, [me.id, user.id]);
+            const progress = await getChallengeProgress(c, acceptedIds);
             const now = new Date().toISOString().split('T')[0];
             shared.push({
               id: c.id, name: c.name, emoji: c.emoji, metric: c.metric,
@@ -173,9 +175,26 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
               myProgress: progress[me.id] || 0, friendProgress: progress[user.id] || 0,
               isActive: c.period_end >= now,
             });
+            // Build full challenge data for detail view
+            const { data: profiles } = await supabase.from('profiles').select('id, username, avatar_url').in('id', acceptedIds);
+            const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+            const participantData = acceptedParts.map(p => {
+              const profile = profileMap.get(p.user_id);
+              return {
+                userId: p.user_id,
+                username: profile?.username || '?',
+                avatarUrl: profile?.avatar_url || null,
+                progress: progress[p.user_id] || 0,
+                rank: 0,
+                status: p.status,
+              };
+            }).sort((a, b) => b.progress - a.progress);
+            participantData.forEach((p, i) => { p.rank = i + 1; });
+            fullDataMap.set(c.id, { challenge: c, participants: participantData });
           }
         }
         setSharedChallenges(shared);
+        setFullChallengeData(fullDataMap);
       } catch {}
 
       setLoading(false);
