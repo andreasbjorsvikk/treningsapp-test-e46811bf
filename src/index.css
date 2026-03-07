@@ -129,11 +129,11 @@
   }
 
   .card-gradient {
-    background: linear-gradient(135deg, hsl(var(--primary) / 0.05), hsl(var(--background)), hsl(var(--accent) / 0.02));
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.00), hsl(var(--background)), hsl(var(--accent) / 0.00));
   }
 
   .dark .card-gradient {
-    background: linear-gradient(135deg, hsl(var(--primary) / 0.10), hsl(var(--background)), hsl(var(--accent) / 0.05));
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--background)), hsl(var(--accent) / 0.03));
   }
 
   .gradient-energy {

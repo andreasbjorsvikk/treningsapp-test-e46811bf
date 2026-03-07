@@ -10,6 +10,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { getActivityColors } from '@/utils/activityColors';
 import { useSettings } from '@/contexts/SettingsContext';
 import { getMonthTarget, getYearTarget, convertGoalValue } from '@/services/primaryGoalService';
+import ChallengeDetail from '@/components/community/ChallengeDetail';
+import { ChallengeWithParticipants } from '@/pages/CommunityPage';
 
 interface UserProfileDrawerProps {
   user: Friend | null;
@@ -90,6 +92,8 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
   const [friendGoalPeriods, setFriendGoalPeriods] = useState<PrimaryGoalPeriod[]>([]);
   const [friendMonthSessions, setFriendMonthSessions] = useState(0);
   const [friendYearSessions, setFriendYearSessions] = useState(0);
+  const [challengeDetailData, setChallengeDetailData] = useState<ChallengeWithParticipants | null>(null);
+  const [fullChallengeData, setFullChallengeData] = useState<Map<string, ChallengeWithParticipants>>(new Map());
 
   useEffect(() => {
     if (!user || !open || !me) return;
@@ -157,11 +161,13 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
       try {
         const allChallenges = await getChallenges();
         const shared: SharedChallenge[] = [];
+        const fullDataMap = new Map<string, ChallengeWithParticipants>();
         for (const c of allChallenges) {
           const parts = await getChallengeParticipants(c.id);
-          const acceptedIds = parts.filter(p => p.status === 'accepted').map(p => p.user_id);
+          const acceptedParts = parts.filter(p => p.status === 'accepted');
+          const acceptedIds = acceptedParts.map(p => p.user_id);
           if (acceptedIds.includes(me.id) && acceptedIds.includes(user.id)) {
-            const progress = await getChallengeProgress(c, [me.id, user.id]);
+            const progress = await getChallengeProgress(c, acceptedIds);
             const now = new Date().toISOString().split('T')[0];
             shared.push({
               id: c.id, name: c.name, emoji: c.emoji, metric: c.metric,
@@ -169,9 +175,26 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
               myProgress: progress[me.id] || 0, friendProgress: progress[user.id] || 0,
               isActive: c.period_end >= now,
             });
+            // Build full challenge data for detail view
+            const { data: profiles } = await supabase.from('profiles').select('id, username, avatar_url').in('id', acceptedIds);
+            const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+            const participantData = acceptedParts.map(p => {
+              const profile = profileMap.get(p.user_id);
+              return {
+                userId: p.user_id,
+                username: profile?.username || '?',
+                avatarUrl: profile?.avatar_url || null,
+                progress: progress[p.user_id] || 0,
+                rank: 0,
+                status: p.status,
+              };
+            }).sort((a, b) => b.progress - a.progress);
+            participantData.forEach((p, i) => { p.rank = i + 1; });
+            fullDataMap.set(c.id, { challenge: c, participants: participantData });
           }
         }
         setSharedChallenges(shared);
+        setFullChallengeData(fullDataMap);
       } catch {}
 
       setLoading(false);
@@ -191,6 +214,18 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
   const monthPct = monthTarget > 0 ? Math.min(100, (friendMonthSessions / monthTarget) * 100) : 0;
   const yearPct = yearTarget > 0 ? Math.min(100, (friendYearSessions / yearTarget) * 100) : 0;
 
+  // Compute pace diff for color matching with ProgressWheel
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const monthExpectedFraction = (now.getDate() + now.getHours() / 24) / daysInMonth;
+  const monthExpected = monthTarget * monthExpectedFraction;
+  const monthDiff = friendMonthSessions - monthExpected;
+
+  const dayOfYear = Math.floor((now.getTime() - new Date(currentYear, 0, 1).getTime()) / 86400000) + 1;
+  const daysInYear = new Date(currentYear, 11, 31).getDate() === 31 ? 365 : 366;
+  const yearExpectedFraction = dayOfYear / (((currentYear % 4 === 0 && currentYear % 100 !== 0) || currentYear % 400 === 0) ? 366 : 365);
+  const yearExpected = yearTarget * yearExpectedFraction;
+  const yearDiff = friendYearSessions - yearExpected;
+
   const formatDuration = (mins: number) => {
     const h = Math.floor(mins / 60);
     const m = Math.round(mins % 60);
@@ -209,6 +244,7 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
   const periodLabels: Record<StatPeriod, string> = { week: 'Denne uken', month: 'Denne måneden', year: 'I år' };
 
   return (
+    <>
     <Drawer open={open} onOpenChange={(o) => !o && onClose()}>
       <DrawerContent className="max-h-[92vh] h-[92vh]">
         <div className="overflow-y-auto scrollbar-hide pb-8 h-full">
@@ -284,6 +320,7 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                         current={friendMonthSessions}
                         target={Math.round(monthTarget)}
                         percent={monthPct}
+                        diff={monthDiff}
                       />
                     )}
                     {yearTarget > 0 && (
@@ -292,6 +329,7 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                         current={friendYearSessions}
                         target={Math.round(yearTarget)}
                         percent={yearPct}
+                        diff={yearDiff}
                       />
                     )}
                   </div>
@@ -339,7 +377,9 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                     <div className="space-y-1.5">
                       <p className="text-[11px] font-medium text-muted-foreground">Aktive</p>
                       {sharedChallenges.filter(c => c.isActive).map(ch => (
-                        <ChallengeComparisonCard key={ch.id} challenge={ch} friendName={user.username?.split(' ')[0] || '?'} />
+                        <div key={ch.id} className="cursor-pointer" onClick={() => setChallengeDetailData(fullChallengeData.get(ch.id) || null)}>
+                          <ChallengeComparisonCard challenge={ch} friendName={user.username?.split(' ')[0] || '?'} />
+                        </div>
                       ))}
                     </div>
                   )}
@@ -349,7 +389,9 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                     <div className="space-y-1.5">
                       <p className="text-[11px] font-medium text-muted-foreground">Tidligere</p>
                       {sharedChallenges.filter(c => !c.isActive).map(ch => (
-                        <ChallengeComparisonCard key={ch.id} challenge={ch} friendName={user.username?.split(' ')[0] || '?'} />
+                        <div key={ch.id} className="cursor-pointer" onClick={() => setChallengeDetailData(fullChallengeData.get(ch.id) || null)}>
+                          <ChallengeComparisonCard challenge={ch} friendName={user.username?.split(' ')[0] || '?'} />
+                        </div>
                       ))}
                     </div>
                   )}
@@ -367,6 +409,13 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
         </div>
       </DrawerContent>
     </Drawer>
+
+    <ChallengeDetail
+      challenge={challengeDetailData}
+      open={!!challengeDetailData}
+      onClose={() => setChallengeDetailData(null)}
+    />
+    </>
   );
 };
 
@@ -380,8 +429,18 @@ function StatTile({ icon, value, label }: { icon: React.ReactNode; value: string
   );
 }
 
-function GoalProgressBar({ label, current, target, percent }: { label: string; current: number; target: number; percent: number }) {
-  const color = percent >= 100 ? 'bg-[hsl(var(--success))]' : percent >= 75 ? 'bg-lime-500' : percent >= 50 ? 'bg-yellow-500' : percent >= 25 ? 'bg-orange-500' : 'bg-red-500';
+function getProgressColor(diff: number): string {
+  // Match ProgressWheel's getPaceColor logic
+  if (diff >= 5) return 'hsl(152, 58%, 38%)';
+  if (diff >= 1) return 'hsl(142, 50%, 48%)';
+  if (diff >= -0.5) return 'hsl(142, 50%, 48%)';
+  if (diff >= -2) return 'hsl(45, 85%, 48%)';
+  if (diff >= -5) return 'hsl(25, 85%, 48%)';
+  return 'hsl(0, 65%, 48%)';
+}
+
+function GoalProgressBar({ label, current, target, percent, diff }: { label: string; current: number; target: number; percent: number; diff: number }) {
+  const barColor = percent >= 100 ? 'hsl(45, 90%, 50%)' : getProgressColor(diff);
   return (
     <div className="rounded-xl bg-secondary/50 p-3 space-y-1.5">
       <div className="flex items-center justify-between">
@@ -389,7 +448,7 @@ function GoalProgressBar({ label, current, target, percent }: { label: string; c
         <span className="text-[10px] text-muted-foreground">{current}/{target}</span>
       </div>
       <div className="h-2.5 rounded-full bg-muted overflow-hidden">
-        <div className={`h-full rounded-full ${color} transition-all duration-500`} style={{ width: `${Math.min(100, percent)}%` }} />
+        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, percent)}%`, backgroundColor: barColor }} />
       </div>
       <p className="text-[10px] text-muted-foreground text-right">{Math.round(percent)}%</p>
     </div>
