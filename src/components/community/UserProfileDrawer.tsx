@@ -244,6 +244,7 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
   const periodLabels: Record<StatPeriod, string> = { week: 'Denne uken', month: 'Denne måneden', year: 'I år' };
 
   return (
+    <>
     <Drawer open={open} onOpenChange={(o) => !o && onClose()}>
       <DrawerContent className="max-h-[92vh] h-[92vh]">
         <div className="overflow-y-auto scrollbar-hide pb-8 h-full">
