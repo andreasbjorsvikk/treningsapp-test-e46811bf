@@ -191,6 +191,18 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
   const monthPct = monthTarget > 0 ? Math.min(100, (friendMonthSessions / monthTarget) * 100) : 0;
   const yearPct = yearTarget > 0 ? Math.min(100, (friendYearSessions / yearTarget) * 100) : 0;
 
+  // Compute pace diff for color matching with ProgressWheel
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const monthExpectedFraction = (now.getDate() + now.getHours() / 24) / daysInMonth;
+  const monthExpected = monthTarget * monthExpectedFraction;
+  const monthDiff = friendMonthSessions - monthExpected;
+
+  const dayOfYear = Math.floor((now.getTime() - new Date(currentYear, 0, 1).getTime()) / 86400000) + 1;
+  const daysInYear = new Date(currentYear, 11, 31).getDate() === 31 ? 365 : 366;
+  const yearExpectedFraction = dayOfYear / (((currentYear % 4 === 0 && currentYear % 100 !== 0) || currentYear % 400 === 0) ? 366 : 365);
+  const yearExpected = yearTarget * yearExpectedFraction;
+  const yearDiff = friendYearSessions - yearExpected;
+
   const formatDuration = (mins: number) => {
     const h = Math.floor(mins / 60);
     const m = Math.round(mins % 60);
