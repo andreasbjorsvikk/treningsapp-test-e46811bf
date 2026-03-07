@@ -10,6 +10,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { getActivityColors } from '@/utils/activityColors';
 import { useSettings } from '@/contexts/SettingsContext';
 import { getMonthTarget, getYearTarget, convertGoalValue } from '@/services/primaryGoalService';
+import ChallengeDetail from '@/components/community/ChallengeDetail';
+import { ChallengeWithParticipants } from '@/pages/CommunityPage';
 
 interface UserProfileDrawerProps {
   user: Friend | null;
