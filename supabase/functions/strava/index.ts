@@ -195,40 +195,19 @@ Deno.serve(async (req) => {
         activities.push(...batch);
         page++;
       }
-      const { data: existing } = await admin.from("workout_sessions").select("id, strava_activity_id, summary_polyline, average_heartrate").eq("user_id", userId).not("strava_activity_id", "is", null);
-      const existingMap = new Map((existing || []).map((r: any) => [Number(r.strava_activity_id), r]));
-      const newActivities = activities.filter((a) => !existingMap.has(Number(a.id)));
-      let updated = 0;
-
-      // Insert new activities
-      if (newActivities.length > 0) {
-        for (let i = 0; i < newActivities.length; i += 100) {
-          const batch = newActivities.slice(i, i + 100);
-          const rows = batch.map((a) => buildActivityRow(a, userId));
-          const { error } = await admin.from("workout_sessions").insert(rows);
-          if (error) { console.error("Insert error:", error); return new Response(JSON.stringify({ error: "Failed to insert activities", synced: i }), { status: 500, headers: corsHeaders }); }
-        }
+      // Upsert all activities – the unique index on (user_id, strava_activity_id) prevents duplicates
+      let synced = 0;
+      for (let i = 0; i < activities.length; i += 100) {
+        const batch = activities.slice(i, i + 100);
+        const rows = batch.map((a) => buildActivityRow(a, userId));
+        const { data: upserted, error } = await admin.from("workout_sessions")
+          .upsert(rows, { onConflict: "user_id,strava_activity_id", ignoreDuplicates: false })
+          .select("id");
+        if (error) { console.error("Upsert error:", error); return new Response(JSON.stringify({ error: "Failed to upsert activities", synced: i }), { status: 500, headers: corsHeaders }); }
+        synced += (upserted || []).length;
       }
 
-      // Update existing activities missing map/heartrate data
-      for (const a of activities) {
-        const existingRow = existingMap.get(Number(a.id));
-        if (!existingRow) continue;
-        const needsUpdate = !existingRow.summary_polyline && a.map?.summary_polyline
-          || !existingRow.average_heartrate && a.average_heartrate;
-        if (needsUpdate) {
-          const updateObj: any = {};
-          if (!existingRow.summary_polyline && a.map?.summary_polyline) updateObj.summary_polyline = a.map.summary_polyline;
-          if (!existingRow.average_heartrate && a.average_heartrate) {
-            updateObj.average_heartrate = Math.round(a.average_heartrate);
-            updateObj.max_heartrate = a.max_heartrate ? Math.round(a.max_heartrate) : null;
-          }
-          await admin.from("workout_sessions").update(updateObj).eq("id", existingRow.id);
-          updated++;
-        }
-      }
-
-      return new Response(JSON.stringify({ synced: newActivities.length, updated, total: activities.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ synced, total: activities.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ===== FETCH-STREAMS: get detailed streams for one activity =====

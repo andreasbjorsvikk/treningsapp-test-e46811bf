@@ -250,7 +250,11 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
         <div className="overflow-y-auto scrollbar-hide pb-8 h-full">
           {/* Header */}
           <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md px-4 py-3 flex items-center gap-3 border-b border-border/30">
-            <button onClick={onClose} className="p-1 -ml-1 rounded-lg hover:bg-muted/50 transition-colors">
+            <button
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); onClose(); }}
+              className="p-1 -ml-1 rounded-lg hover:bg-muted/50 transition-colors"
+              type="button"
+            >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <span className="text-sm font-semibold flex-1">Profil</span>
