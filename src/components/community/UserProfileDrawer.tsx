@@ -92,6 +92,8 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
   const [friendGoalPeriods, setFriendGoalPeriods] = useState<PrimaryGoalPeriod[]>([]);
   const [friendMonthSessions, setFriendMonthSessions] = useState(0);
   const [friendYearSessions, setFriendYearSessions] = useState(0);
+  const [challengeDetailData, setChallengeDetailData] = useState<ChallengeWithParticipants | null>(null);
+  const [fullChallengeData, setFullChallengeData] = useState<Map<string, ChallengeWithParticipants>>(new Map());
 
   useEffect(() => {
     if (!user || !open || !me) return;
