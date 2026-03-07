@@ -296,6 +296,7 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                         current={friendMonthSessions}
                         target={Math.round(monthTarget)}
                         percent={monthPct}
+                        diff={monthDiff}
                       />
                     )}
                     {yearTarget > 0 && (
@@ -304,6 +305,7 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                         current={friendYearSessions}
                         target={Math.round(yearTarget)}
                         percent={yearPct}
+                        diff={yearDiff}
                       />
                     )}
                   </div>
