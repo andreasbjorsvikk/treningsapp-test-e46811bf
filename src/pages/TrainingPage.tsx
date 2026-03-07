@@ -246,7 +246,10 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
   const handleImportReplace = useCallback(() => {
     if (confirm(t('training.importReplaceConfirm'))) {
       setImportMode('replace');
-      setTimeout(() => importFileRef.current?.click(), 0);
+      // Use a longer timeout to ensure state update completes before file picker opens
+      setTimeout(() => {
+        importFileRef.current?.click();
+      }, 100);
     }
   }, []);
 

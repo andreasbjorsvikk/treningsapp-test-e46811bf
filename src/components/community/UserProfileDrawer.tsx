@@ -380,8 +380,18 @@ function StatTile({ icon, value, label }: { icon: React.ReactNode; value: string
   );
 }
 
-function GoalProgressBar({ label, current, target, percent }: { label: string; current: number; target: number; percent: number }) {
-  const color = percent >= 100 ? 'bg-[hsl(var(--success))]' : percent >= 75 ? 'bg-lime-500' : percent >= 50 ? 'bg-yellow-500' : percent >= 25 ? 'bg-orange-500' : 'bg-red-500';
+function getProgressColor(diff: number): string {
+  // Match ProgressWheel's getPaceColor logic
+  if (diff >= 5) return 'hsl(152, 58%, 38%)';
+  if (diff >= 1) return 'hsl(142, 50%, 48%)';
+  if (diff >= -0.5) return 'hsl(142, 50%, 48%)';
+  if (diff >= -2) return 'hsl(45, 85%, 48%)';
+  if (diff >= -5) return 'hsl(25, 85%, 48%)';
+  return 'hsl(0, 65%, 48%)';
+}
+
+function GoalProgressBar({ label, current, target, percent, diff }: { label: string; current: number; target: number; percent: number; diff: number }) {
+  const barColor = percent >= 100 ? 'hsl(45, 90%, 50%)' : getProgressColor(diff);
   return (
     <div className="rounded-xl bg-secondary/50 p-3 space-y-1.5">
       <div className="flex items-center justify-between">
@@ -389,7 +399,7 @@ function GoalProgressBar({ label, current, target, percent }: { label: string; c
         <span className="text-[10px] text-muted-foreground">{current}/{target}</span>
       </div>
       <div className="h-2.5 rounded-full bg-muted overflow-hidden">
-        <div className={`h-full rounded-full ${color} transition-all duration-500`} style={{ width: `${Math.min(100, percent)}%` }} />
+        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, percent)}%`, backgroundColor: barColor }} />
       </div>
       <p className="text-[10px] text-muted-foreground text-right">{Math.round(percent)}%</p>
     </div>
