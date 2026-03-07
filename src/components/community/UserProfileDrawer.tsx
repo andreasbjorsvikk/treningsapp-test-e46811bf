@@ -376,7 +376,9 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                     <div className="space-y-1.5">
                       <p className="text-[11px] font-medium text-muted-foreground">Aktive</p>
                       {sharedChallenges.filter(c => c.isActive).map(ch => (
-                        <ChallengeComparisonCard key={ch.id} challenge={ch} friendName={user.username?.split(' ')[0] || '?'} />
+                        <div key={ch.id} className="cursor-pointer" onClick={() => setChallengeDetailData(fullChallengeData.get(ch.id) || null)}>
+                          <ChallengeComparisonCard challenge={ch} friendName={user.username?.split(' ')[0] || '?'} />
+                        </div>
                       ))}
                     </div>
                   )}
@@ -386,7 +388,9 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                     <div className="space-y-1.5">
                       <p className="text-[11px] font-medium text-muted-foreground">Tidligere</p>
                       {sharedChallenges.filter(c => !c.isActive).map(ch => (
-                        <ChallengeComparisonCard key={ch.id} challenge={ch} friendName={user.username?.split(' ')[0] || '?'} />
+                        <div key={ch.id} className="cursor-pointer" onClick={() => setChallengeDetailData(fullChallengeData.get(ch.id) || null)}>
+                          <ChallengeComparisonCard challenge={ch} friendName={user.username?.split(' ')[0] || '?'} />
+                        </div>
                       ))}
                     </div>
                   )}
