@@ -252,12 +252,13 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
           <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md px-4 py-3 flex items-center gap-3 border-b border-border/30">
             <button
               onClick={(e) => { e.stopPropagation(); e.preventDefault(); onClose(); }}
-              className="p-1 -ml-1 rounded-lg hover:bg-muted/50 transition-colors"
+              className="flex items-center gap-1 -ml-2 px-2 py-2 rounded-lg hover:bg-muted/50 transition-colors min-h-[44px] min-w-[44px]"
               type="button"
             >
               <ChevronLeft className="w-5 h-5" />
+              <span className="text-sm font-semibold">Profil</span>
             </button>
-            <span className="text-sm font-semibold flex-1">Profil</span>
+            <span className="flex-1" />
           </div>
 
           {/* Profile hero */}

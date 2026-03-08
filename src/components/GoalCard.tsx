@@ -120,12 +120,6 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome }: GoalCardPr
         )}
       </div>
 
-      <p className="text-xs text-muted-foreground">{periodLabel}</p>
-
-      {!done && (
-        <p className="text-xs text-muted-foreground">{daysLeft} {t('goalCard.daysLeft')}</p>
-      )}
-
       <p className="text-sm font-bold">
         {formatValue(current, goal.metric)} / {formatValue(goal.target, goal.metric)}
         <span className="text-xs font-normal text-muted-foreground ml-1">{t(`metric.${goal.metric}`)}</span>
@@ -135,6 +129,12 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome }: GoalCardPr
         <p className="text-xs text-muted-foreground">
           {formatValue(remaining, goal.metric)} {t(`metric.${goal.metric}`)} {t('goalCard.remaining')}
         </p>
+      )}
+
+      <p className="text-xs text-muted-foreground">{periodLabel}</p>
+
+      {!done && (
+        <p className="text-xs text-muted-foreground">{daysLeft} {t('goalCard.daysLeft')}</p>
       )}
 
       <p className={`text-xs ${schedule.className}`}>{schedule.label}</p>

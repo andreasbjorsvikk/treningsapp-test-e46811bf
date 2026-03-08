@@ -47,7 +47,7 @@ const WeeklySessionIcons = ({ sessions, onClick }: WeeklySessionIconsProps) => {
               }}
               title={`${session.type} – ${new Date(session.date).toLocaleDateString('nb-NO', { weekday: 'short', day: 'numeric' })}`}
             >
-              <ActivityIcon type={session.type} className={`${isSmall ? 'w-4 h-4' : 'w-7 h-7'} drop-shadow-sm`} colorOverride={!isDark ? colors.text : undefined} />
+              <ActivityIcon type={session.type} className={`${isSmall ? 'w-6 h-6' : 'w-9 h-9'} drop-shadow-sm`} colorOverride={!isDark ? colors.text : undefined} />
             </div>
           );
         })}
