@@ -75,9 +75,6 @@ const MiniCalendar = ({ sessions, onClick }: MiniCalendarProps) => {
     ? sessions.filter(s => s.date.slice(0, 10) === selectedDay)
     : [];
 
-  // Debug: log sessions and sessionsByDay
-  console.log('[MiniCalendar] sessions count:', sessions.length, 'sessionsByDay entries:', Array.from(sessionsByDay.entries()).map(([d, s]) => `${d}: ${s.length} sessions (${s.map(x => x.type).join(',')})`));
-
   return (
     <>
       <div className="glass-card card-gradient rounded-xl p-2.5 cursor-pointer shadow-md" onClick={onClick}>
@@ -101,59 +98,59 @@ const MiniCalendar = ({ sessions, onClick }: MiniCalendarProps) => {
             const isToday = day === today;
             const count = daySessions.length;
 
+            // For single session: use bg color directly
+            const cellBg = count === 1
+              ? getActivityColors(daySessions[0].type, isDark).bg
+              : undefined;
+
+            const cellStyle: React.CSSProperties = count === 1
+              ? {
+                  backgroundColor: cellBg,
+                  boxShadow: `inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 2px rgba(0,0,0,0.15), 0 1px 3px ${cellBg}40`,
+                }
+              : {};
+
             return (
               <button
                 key={i}
-                onClick={() => setSelectedDay(toDateKey(day))}
+                onClick={(e) => { e.stopPropagation(); setSelectedDay(toDateKey(day)); }}
                 className={`
                   w-full aspect-square rounded-[4px] flex items-center justify-center relative overflow-hidden
                   transition-all hover:ring-1 hover:ring-primary/30
                   ${isToday ? 'ring-1 ring-primary/60' : ''}
                   ${count === 0 ? 'bg-muted/30 dark:bg-muted/15' : ''}
                 `}
+                style={cellStyle}
               >
-                {/* No sessions - plain cell */}
-                {count === 0 && (
-                  <span className={`text-[8px] leading-none ${isToday ? 'font-bold text-primary' : 'text-muted-foreground'}`}>
-                    {day}
-                  </span>
-                )}
-
-                {/* 1 session - full color with gradient */}
-                {count === 1 && (
-                  <div
-                    className="absolute inset-0 rounded-[4px]"
-                    style={{
-                      background: `linear-gradient(135deg, ${getActivityColors(daySessions[0].type, isDark).bg}, ${getActivityColors(daySessions[0].type, isDark).bg}99)`,
-                      boxShadow: `inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 2px rgba(0,0,0,0.15), 0 1px 3px ${getActivityColors(daySessions[0].type, isDark).bg}40`,
-                    }}
-                  />
-                )}
-
-                {/* 2 sessions - split with gradient */}
+                {/* 2 sessions - split */}
                 {count === 2 && (
                   <div className="absolute inset-0 flex rounded-[4px] overflow-hidden"
-                    style={{ boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 2px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.1)' }}>
-                    <div className="flex-1" style={{ background: `linear-gradient(180deg, ${getActivityColors(daySessions[0].type, isDark).bg}, ${getActivityColors(daySessions[0].type, isDark).bg}88)` }} />
-                    <div className="flex-1" style={{ background: `linear-gradient(180deg, ${getActivityColors(daySessions[1].type, isDark).bg}, ${getActivityColors(daySessions[1].type, isDark).bg}88)` }} />
+                    style={{ boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 2px rgba(0,0,0,0.15)' }}>
+                    <div className="flex-1" style={{ backgroundColor: getActivityColors(daySessions[0].type, isDark).bg }} />
+                    <div className="flex-1" style={{ backgroundColor: getActivityColors(daySessions[1].type, isDark).bg }} />
                   </div>
                 )}
 
-                {/* 3+ sessions - split grid with gradient */}
+                {/* 3+ sessions - grid */}
                 {count >= 3 && (
                   <div className="absolute inset-0 flex flex-col rounded-[4px] overflow-hidden"
-                    style={{ boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 2px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.1)' }}>
-                    <div className="flex-1" style={{ background: `linear-gradient(135deg, ${getActivityColors(daySessions[0].type, isDark).bg}, ${getActivityColors(daySessions[0].type, isDark).bg}88)` }} />
+                    style={{ boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -1px 2px rgba(0,0,0,0.15)' }}>
+                    <div className="flex-1" style={{ backgroundColor: getActivityColors(daySessions[0].type, isDark).bg }} />
                     <div className="flex flex-1">
-                      <div className="flex-1" style={{ background: `linear-gradient(135deg, ${getActivityColors(daySessions[1].type, isDark).bg}, ${getActivityColors(daySessions[1].type, isDark).bg}88)` }} />
-                      <div className="flex-1" style={{ background: `linear-gradient(135deg, ${getActivityColors(daySessions[2].type, isDark).bg}, ${getActivityColors(daySessions[2].type, isDark).bg}88)` }} />
+                      <div className="flex-1" style={{ backgroundColor: getActivityColors(daySessions[1].type, isDark).bg }} />
+                      <div className="flex-1" style={{ backgroundColor: getActivityColors(daySessions[2].type, isDark).bg }} />
                     </div>
                   </div>
                 )}
 
-                {count > 0 && (
-                  <span className={`relative z-10 text-[7px] font-bold leading-none drop-shadow-sm ${isToday ? 'text-primary' : ''}`}
-                    style={{ color: isToday ? undefined : getActivityColors(daySessions[0].type, isDark).text }}>
+                {/* Day number */}
+                {count === 0 ? (
+                  <span className={`text-[8px] leading-none ${isToday ? 'font-bold text-primary' : 'text-muted-foreground'}`}>
+                    {day}
+                  </span>
+                ) : (
+                  <span className={`relative z-10 text-[7px] font-bold leading-none drop-shadow-sm`}
+                    style={{ color: isToday ? `hsl(var(--primary))` : getActivityColors(daySessions[0].type, isDark).text }}>
                     {day}
                   </span>
                 )}
