@@ -1,0 +1,49 @@
+import { supabase } from '@/integrations/supabase/client';
+
+export interface PeakCheckin {
+  id: string;
+  user_id: string;
+  peak_id: string;
+  checked_in_at: string;
+  verified: boolean;
+  activity_id: string | null;
+}
+
+export async function getUserCheckins(userId: string): Promise<PeakCheckin[]> {
+  const { data, error } = await supabase
+    .from('peak_checkins' as any)
+    .select('*')
+    .eq('user_id', userId);
+  if (error) throw error;
+  return (data || []) as unknown as PeakCheckin[];
+}
+
+export async function checkinPeak(userId: string, peakId: string): Promise<PeakCheckin> {
+  const { data, error } = await supabase
+    .from('peak_checkins' as any)
+    .insert({ user_id: userId, peak_id: peakId } as any)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as unknown as PeakCheckin;
+}
+
+export async function deleteCheckin(checkinId: string): Promise<void> {
+  const { error } = await supabase
+    .from('peak_checkins' as any)
+    .delete()
+    .eq('id', checkinId);
+  if (error) throw error;
+}
+
+export function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
