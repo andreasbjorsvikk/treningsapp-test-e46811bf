@@ -309,7 +309,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   }, [peaks, checkins, mapLoaded, t, adminMode]);
 
   return (
-    <div className="relative w-full h-full">
+    <div className={`relative w-full h-full ${is3D ? 'map-is-3d' : ''}`}>
       <div ref={mapContainer} className="w-full h-full" />
       <button
         onClick={() => setIs3D(prev => !prev)}
