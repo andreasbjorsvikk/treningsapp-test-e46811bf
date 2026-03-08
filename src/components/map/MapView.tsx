@@ -5,6 +5,7 @@ import { Peak } from '@/data/peaks';
 import { PeakCheckin } from '@/services/peakCheckinService';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSettings } from '@/contexts/SettingsContext';
+import { toast } from 'sonner';
 
 interface MapViewProps {
   peaks: Peak[];
