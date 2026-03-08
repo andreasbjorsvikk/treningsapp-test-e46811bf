@@ -1,0 +1,24 @@
+export interface Peak {
+  id: string;
+  name: string;
+  heightMoh: number;
+  latitude: number;
+  longitude: number;
+  area: string;
+  description: string;
+}
+
+// Orkjå (Arka) - confirmed from Peakbook UTM 32V 290334 6593617
+// Nordfjell - awaiting confirmed coordinates from user
+export const peaks: Peak[] = [
+  {
+    id: 'orkja',
+    name: 'Orkjå',
+    heightMoh: 174,
+    latitude: 59.4731,
+    longitude: 5.2982,
+    area: 'Haugesund',
+    description: '',
+  },
+  // Nordfjell will be added when coordinates are confirmed
+];

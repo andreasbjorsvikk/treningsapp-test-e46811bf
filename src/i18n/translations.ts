@@ -4,9 +4,27 @@ const no: Record<string, string> = {
   // Navigation
   'nav.home': 'Hjem',
   'nav.calendar': 'Kalender',
+  'nav.map': 'Kart',
   'nav.training': 'Trening',
   'nav.community': 'Fellesskap',
   'nav.settings': 'Innst.',
+
+  // Map
+  'map.tab.map': 'Kart',
+  'map.tab.peaks': 'Topper',
+  'map.filter.all': 'Alle',
+  'map.filter.notTaken': 'Ikke tatt',
+  'map.filter.taken': 'Tatt',
+  'map.noPeaks': 'Ingen topper å vise.',
+  'map.viewPeak': 'Vis topp',
+  'map.checkin': 'Sjekk inn',
+  'map.checkinSuccess': 'Sjekk inn registrert!',
+  'map.tooFar': 'Du må være innenfor 100 meter fra toppen for å sjekke inn.',
+  'map.locationDenied': 'Lokasjonstilgang ble avslått. Aktiver GPS for å sjekke inn.',
+  'map.checkinError': 'Noe gikk galt med innsjekking. Prøv igjen.',
+  'map.alreadyCheckedIn': 'Du har sjekket inn på denne toppen',
+  'map.taken': 'Tatt',
+  'map.imagePlaceholder': 'Bilde kommer',
 
   // Months
   'month.0': 'Januar', 'month.1': 'Februar', 'month.2': 'Mars', 'month.3': 'April',
@@ -564,9 +582,27 @@ const en: Record<string, string> = {
   // Navigation
   'nav.home': 'Home',
   'nav.calendar': 'Calendar',
+  'nav.map': 'Map',
   'nav.training': 'Training',
   'nav.community': 'Community',
   'nav.settings': 'Settings',
+
+  // Map
+  'map.tab.map': 'Map',
+  'map.tab.peaks': 'Peaks',
+  'map.filter.all': 'All',
+  'map.filter.notTaken': 'Not visited',
+  'map.filter.taken': 'Visited',
+  'map.noPeaks': 'No peaks to show.',
+  'map.viewPeak': 'View peak',
+  'map.checkin': 'Check in',
+  'map.checkinSuccess': 'Check-in registered!',
+  'map.tooFar': 'You must be within 100 meters of the peak to check in.',
+  'map.locationDenied': 'Location access denied. Enable GPS to check in.',
+  'map.checkinError': 'Something went wrong. Please try again.',
+  'map.alreadyCheckedIn': 'You have checked in at this peak',
+  'map.taken': 'Visited',
+  'map.imagePlaceholder': 'Image coming soon',
 
   // Months
   'month.0': 'January', 'month.1': 'February', 'month.2': 'March', 'month.3': 'April',
