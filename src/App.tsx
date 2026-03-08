@@ -30,6 +30,7 @@ function RedirectIfAuth({ children }: { children: React.ReactNode }) {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+      <AdminProvider>
       <SettingsProvider>
         <TooltipProvider>
           <Toaster />
