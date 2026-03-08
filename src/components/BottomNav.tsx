@@ -1,8 +1,8 @@
-import { Home, CalendarDays, Dumbbell, Users, Settings } from 'lucide-react';
+import { Home, CalendarDays, Map, Dumbbell, Users, Settings } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ReactNode } from 'react';
 
-export type TabId = 'hjem' | 'kalender' | 'trening' | 'fellesskap' | 'settings';
+export type TabId = 'hjem' | 'kalender' | 'kart' | 'trening' | 'fellesskap' | 'settings';
 export type TrainingSubTab = 'statistikk' | 'historikk' | 'mål' | 'rekorder';
 
 interface BottomNavProps {
