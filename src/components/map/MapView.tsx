@@ -110,6 +110,46 @@ const MapView = ({ peaks, checkins, onSelectPeak }: MapViewProps) => {
     }
   }, [is3D, mapLoaded]);
 
+  // Toggle satellite/outdoors
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    const m = map.current;
+    const style = isSatellite
+      ? 'mapbox://styles/mapbox/satellite-streets-v12'
+      : 'mapbox://styles/mapbox/outdoors-v12';
+
+    m.setStyle(style);
+
+    m.once('style.load', () => {
+      // Re-add terrain after style change
+      if (!m.getSource('mapbox-dem')) {
+        m.addSource('mapbox-dem', {
+          type: 'raster-dem',
+          url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+          tileSize: 512,
+          maxzoom: 14,
+        });
+      }
+      if (is3D) {
+        m.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+      }
+      if (!m.getLayer('sky')) {
+        m.addLayer({
+          id: 'sky',
+          type: 'sky',
+          paint: {
+            'sky-type': 'atmosphere',
+            'sky-atmosphere-sun': [0.0, 90.0],
+            'sky-atmosphere-sun-intensity': 15,
+          },
+        });
+      }
+      // Re-trigger marker rendering
+      setMapLoaded(prev => !prev);
+      setTimeout(() => setMapLoaded(true), 50);
+    });
+  }, [isSatellite]);
+
   // Add/update markers
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
