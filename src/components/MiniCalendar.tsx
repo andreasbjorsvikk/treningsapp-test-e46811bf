@@ -75,6 +75,9 @@ const MiniCalendar = ({ sessions, onClick }: MiniCalendarProps) => {
     ? sessions.filter(s => s.date.slice(0, 10) === selectedDay)
     : [];
 
+  // Debug: log sessions and sessionsByDay
+  console.log('[MiniCalendar] sessions count:', sessions.length, 'sessionsByDay entries:', Array.from(sessionsByDay.entries()).map(([d, s]) => `${d}: ${s.length} sessions (${s.map(x => x.type).join(',')})`));
+
   return (
     <>
       <div className="glass-card card-gradient rounded-xl p-2.5 cursor-pointer shadow-md" onClick={onClick}>
