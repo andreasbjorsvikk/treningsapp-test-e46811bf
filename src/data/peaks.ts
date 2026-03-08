@@ -20,5 +20,13 @@ export const peaks: Peak[] = [
     area: 'Haugesund',
     description: '',
   },
-  // Nordfjell will be added when coordinates are confirmed
+  {
+    id: 'nordfjell',
+    name: 'Nordfjell',
+    heightMoh: 559,
+    latitude: 59.8474344,
+    longitude: 5.7979750,
+    area: 'Valen, Kvinnherad',
+    description: '',
+  },
 ];
