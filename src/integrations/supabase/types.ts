@@ -258,6 +258,96 @@ export type Database = {
         }
         Relationships: []
       }
+      peak_suggestions: {
+        Row: {
+          admin_comment: string | null
+          comment: string | null
+          created_at: string
+          elevation_moh: number | null
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_by: string
+        }
+        Insert: {
+          admin_comment?: string | null
+          comment?: string | null
+          created_at?: string
+          elevation_moh?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          name: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_by: string
+        }
+        Update: {
+          admin_comment?: string | null
+          comment?: string | null
+          created_at?: string
+          elevation_moh?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          name?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_by?: string
+        }
+        Relationships: []
+      }
+      peaks_db: {
+        Row: {
+          area: string
+          created_at: string
+          created_by: string | null
+          description_no: string | null
+          elevation_moh: number
+          id: string
+          image_url: string | null
+          is_published: boolean
+          latitude: number
+          longitude: number
+          name_no: string
+          updated_at: string
+        }
+        Insert: {
+          area?: string
+          created_at?: string
+          created_by?: string | null
+          description_no?: string | null
+          elevation_moh?: number
+          id?: string
+          image_url?: string | null
+          is_published?: boolean
+          latitude: number
+          longitude: number
+          name_no: string
+          updated_at?: string
+        }
+        Update: {
+          area?: string
+          created_at?: string
+          created_by?: string | null
+          description_no?: string | null
+          elevation_moh?: number
+          id?: string
+          image_url?: string | null
+          is_published?: boolean
+          latitude?: number
+          longitude?: number
+          name_no?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       primary_goal_periods: {
         Row: {
           created_at: string
@@ -341,6 +431,24 @@ export type Database = {
           refresh_token?: string
           strava_athlete_id?: number
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
         Relationships: []
@@ -442,13 +550,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_challenge_participant: {
         Args: { _challenge_id: string; _user_id: string }
         Returns: boolean
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -575,6 +690,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const

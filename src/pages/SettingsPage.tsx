@@ -15,13 +15,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { SessionType } from '@/types/workout';
-import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw, Loader2, Check, Pencil, Dumbbell, Lock, HelpCircle, Target, BarChart3, Calendar, Users, Zap } from 'lucide-react';
+import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw, Loader2, Check, Pencil, Dumbbell, Lock, HelpCircle, Target, BarChart3, Calendar, Users, Zap, ShieldCheck } from 'lucide-react';
 import { getActivityColors, activityColorMap } from '@/utils/activityColors';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
 import { stravaService } from '@/services/stravaService';
 import { toast } from 'sonner';
 import { mockUsers } from '@/data/mockCommunity';
+import { useAdmin } from '@/hooks/useAdmin';
 
 // Predefined color options for activity types
 const COLOR_PRESETS = [
@@ -45,6 +46,7 @@ const SettingsPage = () => {
   const { settings, updateSettings, appThemes, accentPresets, getTypeColor } = useSettings();
   const { t } = useTranslation();
   const { user, signOut } = useAuth();
+  const { isAdmin, adminMode, setAdminMode } = useAdmin();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1037,7 +1039,21 @@ const SettingsPage = () => {
         </div>
       </div>
 
-      {/* Menu items */}
+      {/* Admin section - only for users with admin rights */}
+      {isAdmin && (
+        <div className="glass-card rounded-xl overflow-hidden divide-y divide-border">
+          <div className="flex items-center gap-3 px-4 py-3">
+            <ShieldCheck className="w-4 h-4 text-muted-foreground" />
+            <Label htmlFor="admin-mode" className="flex-1 text-sm font-medium">Adminmodus</Label>
+            <Switch
+              id="admin-mode"
+              checked={adminMode}
+              onCheckedChange={setAdminMode}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="glass-card rounded-xl overflow-hidden divide-y divide-border">
         {menuItem(t('settings.appearance'), <Palette className="w-4 h-4" />, () => setView('appearance'))}
         {menuItem(t('settings.preferences'), <Settings2 className="w-4 h-4" />, () => setView('preferences'))}

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { AdminProvider } from "@/hooks/useAdmin";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -29,6 +30,7 @@ function RedirectIfAuth({ children }: { children: React.ReactNode }) {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+      <AdminProvider>
       <SettingsProvider>
         <TooltipProvider>
           <Toaster />
@@ -43,6 +45,7 @@ const App = () => (
           </BrowserRouter>
         </TooltipProvider>
       </SettingsProvider>
+      </AdminProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
