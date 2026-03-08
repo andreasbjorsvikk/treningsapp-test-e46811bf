@@ -231,6 +231,33 @@ export type Database = {
         }
         Relationships: []
       }
+      peak_checkins: {
+        Row: {
+          activity_id: string | null
+          checked_in_at: string
+          id: string
+          peak_id: string
+          user_id: string
+          verified: boolean
+        }
+        Insert: {
+          activity_id?: string | null
+          checked_in_at?: string
+          id?: string
+          peak_id: string
+          user_id: string
+          verified?: boolean
+        }
+        Update: {
+          activity_id?: string | null
+          checked_in_at?: string
+          id?: string
+          peak_id?: string
+          user_id?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
       primary_goal_periods: {
         Row: {
           created_at: string
