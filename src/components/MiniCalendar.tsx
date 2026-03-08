@@ -57,11 +57,12 @@ const MiniCalendar = ({ sessions, onClick }: MiniCalendarProps) => {
   const sessionsByDay = useMemo(() => {
     const map = new Map<number, WorkoutSession[]>();
     sessions.forEach(s => {
-      const d = new Date(s.date);
-      if (d.getFullYear() === year && d.getMonth() === month) {
-        const day = d.getDate();
-        if (!map.has(day)) map.set(day, []);
-        map.get(day)!.push(s);
+      // Parse date robustly - handle both "2026-03-07" and "2026-03-07T16:25:07+00:00" formats
+      const dateStr = s.date.slice(0, 10); // "YYYY-MM-DD"
+      const [y, m, d] = dateStr.split('-').map(Number);
+      if (y === year && (m - 1) === month) {
+        if (!map.has(d)) map.set(d, []);
+        map.get(d)!.push(s);
       }
     });
     return map;
