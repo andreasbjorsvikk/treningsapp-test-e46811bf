@@ -46,6 +46,7 @@ const SettingsPage = () => {
   const { settings, updateSettings, appThemes, accentPresets, getTypeColor } = useSettings();
   const { t } = useTranslation();
   const { user, signOut } = useAuth();
+  const { isAdmin, adminMode, setAdminMode } = useAdmin();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
