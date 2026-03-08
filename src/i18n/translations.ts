@@ -4,9 +4,27 @@ const no: Record<string, string> = {
   // Navigation
   'nav.home': 'Hjem',
   'nav.calendar': 'Kalender',
+  'nav.map': 'Kart',
   'nav.training': 'Trening',
   'nav.community': 'Fellesskap',
   'nav.settings': 'Innst.',
+
+  // Map
+  'map.tab.map': 'Kart',
+  'map.tab.peaks': 'Topper',
+  'map.filter.all': 'Alle',
+  'map.filter.notTaken': 'Ikke tatt',
+  'map.filter.taken': 'Tatt',
+  'map.noPeaks': 'Ingen topper å vise.',
+  'map.viewPeak': 'Vis topp',
+  'map.checkin': 'Sjekk inn',
+  'map.checkinSuccess': 'Sjekk inn registrert!',
+  'map.tooFar': 'Du må være innenfor 100 meter fra toppen for å sjekke inn.',
+  'map.locationDenied': 'Lokasjonstilgang ble avslått. Aktiver GPS for å sjekke inn.',
+  'map.checkinError': 'Noe gikk galt med innsjekking. Prøv igjen.',
+  'map.alreadyCheckedIn': 'Du har sjekket inn på denne toppen',
+  'map.taken': 'Tatt',
+  'map.imagePlaceholder': 'Bilde kommer',
 
   // Months
   'month.0': 'Januar', 'month.1': 'Februar', 'month.2': 'Mars', 'month.3': 'April',
