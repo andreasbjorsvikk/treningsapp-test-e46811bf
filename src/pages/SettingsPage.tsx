@@ -22,6 +22,7 @@ import AvatarCropper from '@/components/AvatarCropper';
 import { stravaService } from '@/services/stravaService';
 import { toast } from 'sonner';
 import { mockUsers } from '@/data/mockCommunity';
+import { useAdmin } from '@/hooks/useAdmin';
 
 // Predefined color options for activity types
 const COLOR_PRESETS = [
