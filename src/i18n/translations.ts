@@ -582,9 +582,27 @@ const en: Record<string, string> = {
   // Navigation
   'nav.home': 'Home',
   'nav.calendar': 'Calendar',
+  'nav.map': 'Map',
   'nav.training': 'Training',
   'nav.community': 'Community',
   'nav.settings': 'Settings',
+
+  // Map
+  'map.tab.map': 'Map',
+  'map.tab.peaks': 'Peaks',
+  'map.filter.all': 'All',
+  'map.filter.notTaken': 'Not visited',
+  'map.filter.taken': 'Visited',
+  'map.noPeaks': 'No peaks to show.',
+  'map.viewPeak': 'View peak',
+  'map.checkin': 'Check in',
+  'map.checkinSuccess': 'Check-in registered!',
+  'map.tooFar': 'You must be within 100 meters of the peak to check in.',
+  'map.locationDenied': 'Location access denied. Enable GPS to check in.',
+  'map.checkinError': 'Something went wrong. Please try again.',
+  'map.alreadyCheckedIn': 'You have checked in at this peak',
+  'map.taken': 'Visited',
+  'map.imagePlaceholder': 'Image coming soon',
 
   // Months
   'month.0': 'January', 'month.1': 'February', 'month.2': 'March', 'month.3': 'April',
