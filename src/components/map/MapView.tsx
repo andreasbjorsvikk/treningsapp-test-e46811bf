@@ -211,12 +211,19 @@ const MapView = ({ peaks, checkins, onSelectPeak }: MapViewProps) => {
   return (
     <div className="relative w-full h-full">
       <div ref={mapContainer} className="w-full h-full" />
-      {/* 2D / 3D toggle */}
+      {/* Top-left: 2D/3D toggle */}
       <button
         onClick={() => setIs3D(prev => !prev)}
         className="absolute top-2 left-2 z-10 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-md border border-border bg-background text-foreground"
       >
         {is3D ? '2D' : '3D'}
+      </button>
+      {/* Top-left: Map style toggle */}
+      <button
+        onClick={() => setIsSatellite(prev => !prev)}
+        className="absolute top-12 left-2 z-10 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-md border border-border bg-background text-foreground"
+      >
+        {isSatellite ? '🗺️ Kart' : '🛰️ Satelitt'}
       </button>
     </div>
   );
