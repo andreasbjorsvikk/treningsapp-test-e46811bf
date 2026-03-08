@@ -15,6 +15,7 @@ interface BottomNavProps {
 const tabConfig: { id: TabId; labelKey: string; icon: typeof Home }[] = [
   { id: 'hjem', labelKey: 'nav.home', icon: Home },
   { id: 'kalender', labelKey: 'nav.calendar', icon: CalendarDays },
+  { id: 'kart', labelKey: 'nav.map', icon: Map },
   { id: 'trening', labelKey: 'nav.training', icon: Dumbbell },
   { id: 'fellesskap', labelKey: 'nav.community', icon: Users },
 ];

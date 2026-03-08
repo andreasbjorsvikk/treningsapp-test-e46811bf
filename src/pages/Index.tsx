@@ -736,6 +736,7 @@ const IndexContent = () => {
         )}
 
         {activeTab === 'kalender' && <CalendarPage />}
+        {activeTab === 'kart' && <MapPage />}
         {activeTab === 'trening' && <TrainingPage initialStatPeriod={initialStatPeriod} />}
         {activeTab === 'fellesskap' && <CommunityPage />}
         {activeTab === 'settings' && <SettingsPage />}
