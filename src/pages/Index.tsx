@@ -18,6 +18,7 @@ import WorkoutDetailDrawer from '@/components/WorkoutDetailDrawer';
 import HealthEventDialog from '@/components/HealthEventDialog';
 import GoalForm from '@/components/GoalForm';
 import CalendarPage from '@/pages/CalendarPage';
+import MapPage from '@/pages/MapPage';
 import TrainingPage from '@/pages/TrainingPage';
 import CommunityPage from '@/pages/CommunityPage';
 import SettingsPage from '@/pages/SettingsPage';
