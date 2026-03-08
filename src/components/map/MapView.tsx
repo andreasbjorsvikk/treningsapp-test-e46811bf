@@ -170,19 +170,34 @@ const MapView = ({ peaks, checkins, onSelectPeak }: MapViewProps) => {
       `;
       el.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${isTaken ? 'white' : 'hsl(220, 10%, 46%)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 2 15H2L8 3z"/></svg>`;
 
+      const isDark = document.documentElement.classList.contains('dark');
+      const popupBg = isDark ? 'hsl(222, 25%, 12%)' : 'hsl(0, 0%, 100%)';
+      const popupBorder = isDark ? 'hsl(222, 20%, 20%)' : 'hsl(220, 13%, 90%)';
+      const popupText = isDark ? 'hsl(210, 20%, 95%)' : 'hsl(220, 25%, 10%)';
+      const popupMuted = isDark ? 'hsl(220, 12%, 62%)' : 'hsl(220, 10%, 46%)';
+      const btnBg = isDark ? 'hsl(152, 55%, 38%)' : 'hsl(0, 0%, 15%)';
+      const statusColor = isTaken ? 'hsl(152, 60%, 42%)' : popupMuted;
+      const statusText = isTaken ? '✓ Besøkt' : `${peak.heightMoh} moh`;
+
       const popup = new mapboxgl.Popup({
         offset: 25,
         closeButton: false,
-        maxWidth: '220px',
+        maxWidth: '240px',
+        className: 'peak-popup',
       });
       popup.setHTML(`
-        <div style="font-family: 'Space Grotesk', sans-serif; padding: 4px 0;">
-          <div style="font-weight: 600; font-size: 14px; margin-bottom: 2px;">${peak.name}</div>
-          <div style="font-size: 12px; color: #666; margin-bottom: 6px;">${peak.heightMoh} moh · ${peak.area}</div>
+        <div style="font-family: 'Space Grotesk', sans-serif; padding: 8px 4px; background: ${popupBg}; border-radius: 12px;">
+          <div style="font-weight: 700; font-size: 15px; color: ${popupText}; margin-bottom: 4px; letter-spacing: -0.01em;">${peak.name}</div>
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px;">
+            <span style="font-size: 11px; font-weight: 600; color: ${statusColor}; background: ${isDark ? 'hsl(222, 20%, 18%)' : 'hsl(220, 16%, 95%)'}; padding: 2px 8px; border-radius: 100px;">${statusText}</span>
+            <span style="font-size: 11px; color: ${popupMuted};">${peak.area}</span>
+          </div>
           <button id="peak-btn-${peak.id}" style="
-            font-size: 12px; font-weight: 500; padding: 6px 12px;
-            background: hsl(0, 0%, 15%); color: white; border: none;
-            border-radius: 6px; cursor: pointer; width: 100%;
+            font-size: 12px; font-weight: 600; padding: 8px 14px;
+            background: ${btnBg}; color: white; border: none;
+            border-radius: 10px; cursor: pointer; width: 100%;
+            transition: opacity 0.15s;
+            letter-spacing: 0.01em;
           ">${t('map.viewPeak')}</button>
         </div>
       `);
