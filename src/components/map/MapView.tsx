@@ -22,6 +22,7 @@ const MapView = ({ peaks, checkins, onSelectPeak }: MapViewProps) => {
   const { settings } = useSettings();
   const [mapLoaded, setMapLoaded] = useState(false);
   const [is3D, setIs3D] = useState(true);
+  const [isSatellite, setIsSatellite] = useState(false);
 
   const checkedPeakIds = new Set(checkins.map(c => c.peak_id));
 
