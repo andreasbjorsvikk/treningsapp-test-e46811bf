@@ -21,6 +21,7 @@ const MapView = ({ peaks, checkins, onSelectPeak }: MapViewProps) => {
   const { t } = useTranslation();
   const { settings } = useSettings();
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [is3D, setIs3D] = useState(true);
 
   const checkedPeakIds = new Set(checkins.map(c => c.peak_id));
 
@@ -35,9 +36,7 @@ const MapView = ({ peaks, checkins, onSelectPeak }: MapViewProps) => {
 
     const m = new mapboxgl.Map({
       container: mapContainer.current,
-      style: settings.darkMode
-        ? 'mapbox://styles/mapbox/outdoors-v12'
-        : 'mapbox://styles/mapbox/outdoors-v12',
+      style: 'mapbox://styles/mapbox/outdoors-v12',
       center,
       zoom: 11,
       pitch: 60,
@@ -47,7 +46,6 @@ const MapView = ({ peaks, checkins, onSelectPeak }: MapViewProps) => {
 
     m.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-    // Add user location
     m.addControl(
       new mapboxgl.GeolocateControl({
         positionOptions: { enableHighAccuracy: true },
@@ -58,7 +56,6 @@ const MapView = ({ peaks, checkins, onSelectPeak }: MapViewProps) => {
     );
 
     m.on('style.load', () => {
-      // Enable 3D terrain
       m.addSource('mapbox-dem', {
         type: 'raster-dem',
         url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
@@ -67,7 +64,6 @@ const MapView = ({ peaks, checkins, onSelectPeak }: MapViewProps) => {
       });
       m.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
 
-      // Add sky layer
       m.addLayer({
         id: 'sky',
         type: 'sky',
@@ -89,34 +85,50 @@ const MapView = ({ peaks, checkins, onSelectPeak }: MapViewProps) => {
     };
   }, []);
 
+  // Toggle 2D/3D
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    const m = map.current;
+
+    if (is3D) {
+      m.easeTo({ pitch: 60, bearing: -20, duration: 600 });
+      if (!m.getTerrain()) {
+        if (!m.getSource('mapbox-dem')) {
+          m.addSource('mapbox-dem', {
+            type: 'raster-dem',
+            url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+            tileSize: 512,
+            maxzoom: 14,
+          });
+        }
+        m.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+      }
+    } else {
+      m.easeTo({ pitch: 0, bearing: 0, duration: 600 });
+      m.setTerrain(null);
+    }
+  }, [is3D, mapLoaded]);
+
   // Add/update markers
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
 
-    // Remove old markers
     markersRef.current.forEach(m => m.remove());
     markersRef.current = [];
 
     peaks.forEach(peak => {
       const isTaken = checkedPeakIds.has(peak.id);
 
-      // Create custom marker element
       const el = document.createElement('div');
-      el.className = 'peak-marker';
       el.style.cssText = `
         width: 36px; height: 36px; cursor: pointer;
         display: flex; align-items: center; justify-content: center;
         background: ${isTaken ? 'hsl(152, 60%, 42%)' : 'hsl(0, 0%, 100%)'};
         border: 2px solid ${isTaken ? 'hsl(152, 60%, 35%)' : 'hsl(220, 13%, 80%)'};
         border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        transition: transform 0.15s;
       `;
       el.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${isTaken ? 'white' : 'hsl(220, 10%, 46%)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 2 15H2L8 3z"/></svg>`;
 
-      el.addEventListener('mouseenter', () => { el.style.transform = 'scale(1.15)'; });
-      el.addEventListener('mouseleave', () => { el.style.transform = 'scale(1)'; });
-
-      // Create popup
       const popup = new mapboxgl.Popup({
         offset: 25,
         closeButton: false,
@@ -146,7 +158,7 @@ const MapView = ({ peaks, checkins, onSelectPeak }: MapViewProps) => {
         }, 10);
       });
 
-      const marker = new mapboxgl.Marker({ element: el })
+      const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
         .setLngLat([peak.longitude, peak.latitude])
         .setPopup(popup)
         .addTo(map.current!);
@@ -156,7 +168,16 @@ const MapView = ({ peaks, checkins, onSelectPeak }: MapViewProps) => {
   }, [peaks, checkins, mapLoaded, t]);
 
   return (
-    <div ref={mapContainer} className="w-full h-full" />
+    <div className="relative w-full h-full">
+      <div ref={mapContainer} className="w-full h-full" />
+      {/* 2D / 3D toggle */}
+      <button
+        onClick={() => setIs3D(prev => !prev)}
+        className="absolute top-2 left-2 z-10 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-md border border-border bg-background text-foreground"
+      >
+        {is3D ? '2D' : '3D'}
+      </button>
+    </div>
   );
 };
 

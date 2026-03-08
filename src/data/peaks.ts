@@ -29,4 +29,13 @@ export const peaks: Peak[] = [
     area: 'Valen, Kvinnherad',
     description: '',
   },
+  {
+    id: 'helgelandsfjellet',
+    name: 'Helgelandsfjellet',
+    heightMoh: 219,
+    latitude: 59.4235376,
+    longitude: 5.4096230,
+    area: 'Haugesund',
+    description: '',
+  },
 ];
