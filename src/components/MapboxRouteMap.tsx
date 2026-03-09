@@ -215,16 +215,16 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     mapInstanceRef.current = map;
   }, [routePoints, lineColor]);
 
-  // Init map when fullscreen opens
+  // Init map when fullscreen opens — no delay for instant responsiveness
   useEffect(() => {
     if (fullscreen) {
-      const timer = setTimeout(() => initInteractiveMap(), 50);
-      return () => clearTimeout(timer);
+      initInteractiveMap();
     }
     return () => {
-      if (mapInstanceRef.current) {
+      if (!fullscreen && mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
+        setMapReady(false);
       }
     };
   }, [fullscreen, initInteractiveMap]);
