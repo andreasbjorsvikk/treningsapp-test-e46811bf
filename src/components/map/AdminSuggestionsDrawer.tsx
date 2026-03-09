@@ -81,7 +81,7 @@ const AdminSuggestionsDrawer = ({ open, onClose, onApproved }: AdminSuggestionsD
           dist = getDistanceMeters(selected.latitude, selected.longitude, selected.user_latitude, selected.user_longitude);
           if (dist <= 100) {
             try {
-              await checkinPeak(selected.submitted_by, newPeak.id);
+              await checkinPeak(selected.submitted_by, newPeak.id, selected.created_at);
               autoCheckedIn = true;
             } catch (e) {
               console.error("Failed to auto checkin", e);

@@ -18,10 +18,15 @@ export async function getUserCheckins(userId: string): Promise<PeakCheckin[]> {
   return (data || []) as unknown as PeakCheckin[];
 }
 
-export async function checkinPeak(userId: string, peakId: string): Promise<PeakCheckin> {
+export async function checkinPeak(userId: string, peakId: string, checkedInAt?: string): Promise<PeakCheckin> {
+  const payload: any = { user_id: userId, peak_id: peakId };
+  if (checkedInAt) {
+    payload.checked_in_at = checkedInAt;
+  }
+  
   const { data, error } = await supabase
     .from('peak_checkins' as any)
-    .insert({ user_id: userId, peak_id: peakId } as any)
+    .insert(payload)
     .select()
     .single();
   if (error) throw error;
