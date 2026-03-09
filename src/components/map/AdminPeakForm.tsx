@@ -135,10 +135,10 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
     return (
       <div className="fixed bottom-6 left-4 right-4 z-[60] bg-background/95 backdrop-blur-xl border border-border shadow-2xl rounded-2xl p-4 animate-in slide-in-from-bottom-10 max-w-sm mx-auto">
         <div className="flex items-center justify-between mb-4">
-          <p className="text-sm font-semibold text-amber-500 flex items-center gap-2">
+          <p className="text-sm font-semibold text-warning flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-warning opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-warning"></span>
             </span>
             Forhåndsvisning
           </p>
@@ -147,7 +147,7 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
           </div>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleApproveRoute} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm">
+          <Button onClick={handleApproveRoute} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm">
             Godkjenn rute
           </Button>
           <Button variant="outline" onClick={handleClearRoute} className="flex-1 font-semibold text-destructive border-destructive/20 hover:bg-destructive/10">
