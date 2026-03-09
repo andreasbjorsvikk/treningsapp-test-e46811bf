@@ -265,43 +265,44 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     const sourceId = 'peak-route-source';
     const layerId = 'peak-route-layer';
 
-    if (routeGeojson) {
-      if (!m.getSource(sourceId)) {
-        m.addSource(sourceId, {
-          type: 'geojson',
-          data: routeGeojson,
-        });
-        m.addLayer({
-          id: layerId,
-          type: 'line',
-          source: sourceId,
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round',
-          },
-          paint: {
-            'line-color': '#10b981', // Tailwind success color
-            'line-width': 6,
-            'line-opacity': 0.8,
-          },
-        });
-      } else {
-        (m.getSource(sourceId) as mapboxgl.GeoJSONSource).setData(routeGeojson);
-      }
+    whenStyleReady(m, () => {
+      if (routeGeojson) {
+        if (!m.getSource(sourceId)) {
+          m.addSource(sourceId, {
+            type: 'geojson',
+            data: routeGeojson,
+          });
+          m.addLayer({
+            id: layerId,
+            type: 'line',
+            source: sourceId,
+            layout: {
+              'line-join': 'round',
+              'line-cap': 'round',
+            },
+            paint: {
+              'line-color': '#10b981',
+              'line-width': 6,
+              'line-opacity': 0.8,
+            },
+          });
+        } else {
+          (m.getSource(sourceId) as mapboxgl.GeoJSONSource).setData(routeGeojson);
+        }
 
-      // Zoom to route
-      const bounds = new mapboxgl.LngLatBounds();
-      if (routeGeojson.coordinates) {
-        routeGeojson.coordinates.forEach((coord: [number, number]) => {
-          bounds.extend(coord);
-        });
-        m.fitBounds(bounds, { padding: 50, duration: 1000 });
+        const bounds = new mapboxgl.LngLatBounds();
+        if (routeGeojson.coordinates) {
+          routeGeojson.coordinates.forEach((coord: [number, number]) => {
+            bounds.extend(coord);
+          });
+          m.fitBounds(bounds, { padding: 50, duration: 1000 });
+        }
+      } else {
+        if (m.getLayer(layerId)) m.removeLayer(layerId);
+        if (m.getSource(sourceId)) m.removeSource(sourceId);
       }
-    } else {
-      if (m.getLayer(layerId)) m.removeLayer(layerId);
-      if (m.getSource(sourceId)) m.removeSource(sourceId);
-    }
-  }, [routeGeojson, mapLoaded]);
+    });
+  }, [routeGeojson, mapLoaded, whenStyleReady]);
 
   // Handle preview waypoints
   useEffect(() => {
