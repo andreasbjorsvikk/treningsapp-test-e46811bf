@@ -491,7 +491,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     });
   }, [peaks, checkins, mapLoaded, t, adminMode]);
 
-  // === HEATMAP: Load user workout streams and display as heatmap ===
+  // === HEATMAP: Load from summary_polyline in workout_sessions ===
   useEffect(() => {
     if (!map.current || !mapLoaded || !user) return;
     const m = map.current;
@@ -507,39 +507,52 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     const loadHeatmapData = async () => {
       try {
         let query = supabase
-          .from('workout_streams')
-          .select('latlng_data, created_at')
+          .from('workout_sessions')
+          .select('summary_polyline, date')
           .eq('user_id', user.id)
-          .not('latlng_data', 'is', null);
+          .not('summary_polyline', 'is', null);
 
         if (heatmapPeriod === 'year') {
           const startOfYear = new Date(new Date().getFullYear(), 0, 1).toISOString();
-          query = query.gte('created_at', startOfYear);
+          query = query.gte('date', startOfYear);
         }
 
-        const { data: streams } = await query;
-        if (!streams || streams.length === 0) {
+        // Fetch all pages (bypass 1000 row limit)
+        let allSessions: any[] = [];
+        let page = 0;
+        const pageSize = 1000;
+        while (true) {
+          const { data } = await query.range(page * pageSize, (page + 1) * pageSize - 1);
+          if (!data || data.length === 0) break;
+          allSessions = allSessions.concat(data);
+          if (data.length < pageSize) break;
+          page++;
+        }
+
+        if (allSessions.length === 0) {
           if (m.getLayer(layerId)) m.removeLayer(layerId);
           if (m.getSource(sourceId)) m.removeSource(sourceId);
           return;
         }
 
         const features: any[] = [];
-        streams.forEach((stream: any) => {
-          const latlngs = stream.latlng_data as number[][];
-          if (!Array.isArray(latlngs)) return;
-          latlngs.forEach((point: number[]) => {
-            if (Array.isArray(point) && point.length >= 2) {
+        allSessions.forEach((session: any) => {
+          if (!session.summary_polyline) return;
+          try {
+            const points = decodePolyline(session.summary_polyline);
+            // Sample every Nth point per polyline for performance
+            const step = points.length > 200 ? Math.ceil(points.length / 200) : 1;
+            for (let i = 0; i < points.length; i += step) {
               features.push({
                 type: 'Feature',
-                geometry: { type: 'Point', coordinates: [point[1], point[0]] },
+                geometry: { type: 'Point', coordinates: [points[i][1], points[i][0]] },
                 properties: {},
               });
             }
-          });
+          } catch {}
         });
 
-        const maxPoints = 50000;
+        const maxPoints = 80000;
         let sampledFeatures = features;
         if (features.length > maxPoints) {
           const step = Math.ceil(features.length / maxPoints);
