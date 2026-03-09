@@ -80,7 +80,7 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
         setRouteDuration(route.duration);
         setRouteStatus('preview');
         if (onPreviewRoute) onPreviewRoute(route.geometry);
-        toast.success('Rute generert. Dra ned vinduet for å se ruten på kartet.');
+        toast.success('Rute generert!');
       } else {
         toast.error('Fant ingen rute');
       }
@@ -130,6 +130,36 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
     }
     setSaving(false);
   };
+
+  if (routeStatus === 'preview' && routeGeojson) {
+    return (
+      <div className="fixed bottom-6 left-4 right-4 z-[60] bg-background/95 backdrop-blur-xl border border-border shadow-2xl rounded-2xl p-4 animate-in slide-in-from-bottom-10 max-w-sm mx-auto">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm font-semibold text-warning flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-warning opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-warning"></span>
+            </span>
+            Forhåndsvisning
+          </p>
+          <div className="text-right text-xs text-muted-foreground font-medium bg-muted px-2 py-1 rounded-md">
+            {(routeDistance! / 1000).toFixed(1)} km • {Math.round(routeDuration! / 60)} min
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={handleApproveRoute} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm">
+            Godkjenn rute
+          </Button>
+          <Button variant="outline" onClick={handleClearRoute} className="flex-1 font-semibold text-destructive border-destructive/20 hover:bg-destructive/10">
+            Slett
+          </Button>
+        </div>
+        <Button variant="ghost" className="w-full mt-2 text-xs text-muted-foreground" onClick={onPickRouteStart}>
+          Prøv nytt startpunkt
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <Drawer open={open} onOpenChange={(o) => !o && onClose()} modal={false}>
@@ -218,27 +248,6 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
                     Endre start
                   </Button>
                 </div>
-              </div>
-            )}
-
-            {routeStatus === 'preview' && routeGeojson && (
-              <div className="space-y-3 bg-muted/30 p-3 rounded-lg border border-border">
-                <p className="text-xs font-medium text-warning">Rute i forhåndsvisning</p>
-                <div className="text-sm">
-                  Distanse: {(routeDistance! / 1000).toFixed(1)} km<br/>
-                  Estimert tid: {Math.round(routeDuration! / 60)} min
-                </div>
-                <div className="flex gap-2">
-                  <Button type="button" onClick={handleApproveRoute} className="flex-1 bg-success hover:bg-success/90">
-                    Godkjenn rute
-                  </Button>
-                  <Button type="button" variant="outline" onClick={handleClearRoute}>
-                    Fjern rute
-                  </Button>
-                </div>
-                <Button type="button" variant="ghost" className="w-full" onClick={onPickRouteStart}>
-                  Prøv nytt startpunkt
-                </Button>
               </div>
             )}
 
