@@ -132,8 +132,8 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
   };
 
   return (
-    <Drawer open={open} onOpenChange={(o) => !o && onClose()}>
-      <DrawerContent className="max-h-[90vh]">
+    <Drawer open={open} onOpenChange={(o) => !o && onClose()} modal={false}>
+      <DrawerContent className="max-h-[85vh] shadow-[0_-10px_40px_rgba(0,0,0,0.2)] border-t border-border z-40 bg-background/95 backdrop-blur-xl">
         <DrawerHeader>
           <DrawerTitle className="font-display">{title}</DrawerTitle>
         </DrawerHeader>
