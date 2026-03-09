@@ -242,11 +242,13 @@ const MapPage = () => {
       {editingPeak && (
         <AdminPeakForm
           open={!!editingPeak}
-          onClose={() => setEditingPeak(null)}
+          onClose={() => { setEditingPeak(null); setRouteStartCoords(null); }}
           onSave={handleUpdatePeak}
           initial={editingPeak}
           title="Rediger topp"
           peakId={editingPeak.id}
+          onPickRouteStart={handlePickRouteStart}
+          routeStartCoordsProp={routeStartCoords}
         />
       )}
 
