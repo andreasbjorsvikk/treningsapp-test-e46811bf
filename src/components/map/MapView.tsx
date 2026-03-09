@@ -30,7 +30,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   const { settings } = useSettings();
   const [mapLoaded, setMapLoaded] = useState(false);
   const [is3D, setIs3D] = useState(true);
-  const [isSatellite, setIsSatellite] = useState(false);
+  const [mapStyle, setMapStyle] = useState<'outdoors' | 'satellite' | 'streets'>('outdoors');
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressCoords = useRef<{ lat: number; lng: number } | null>(null);
 
@@ -168,12 +168,16 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     }
   }, [is3D, mapLoaded]);
 
-  // Toggle satellite/outdoors
+  // Toggle map style
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
     const m = map.current;
-    const style = isSatellite ? 'mapbox://styles/mapbox/satellite-streets-v12' : 'mapbox://styles/mapbox/outdoors-v12';
-    m.setStyle(style);
+    
+    let styleUrl = 'mapbox://styles/mapbox/outdoors-v12';
+    if (mapStyle === 'satellite') styleUrl = 'mapbox://styles/mapbox/satellite-streets-v12';
+    else if (mapStyle === 'streets') styleUrl = 'mapbox://styles/mapbox/streets-v12';
+    
+    m.setStyle(styleUrl);
     m.once('style.load', () => {
       if (!m.getSource('mapbox-dem')) {
         m.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
@@ -185,7 +189,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       setMapLoaded(prev => !prev);
       setTimeout(() => setMapLoaded(true), 50);
     });
-  }, [isSatellite]);
+  }, [mapStyle]);
 
   // Add/update markers
   useEffect(() => {
@@ -317,12 +321,16 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       >
         {is3D ? '2D' : '3D'}
       </button>
-      <button
-        onClick={() => setIsSatellite(prev => !prev)}
-        className="absolute top-12 left-2 z-10 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-md border border-border bg-background text-foreground"
+      <select
+        value={mapStyle}
+        onChange={(e) => setMapStyle(e.target.value as 'outdoors' | 'satellite' | 'streets')}
+        className="absolute top-12 left-2 z-10 px-2.5 py-1.5 rounded-lg text-xs font-semibold shadow-md border border-border bg-background text-foreground appearance-none pr-8 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary"
+        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 4-4H2z'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
       >
-        {isSatellite ? '🗺️ Kart' : '🛰️ Satelitt'}
-      </button>
+        <option value="streets">🗺️ Standard</option>
+        <option value="outdoors">⛰️ Terreng</option>
+        <option value="satellite">🛰️ Satelitt</option>
+      </select>
     </div>
   );
 };
