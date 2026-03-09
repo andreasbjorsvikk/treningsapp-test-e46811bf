@@ -19,11 +19,12 @@ interface AdminPeakFormProps {
   peakId?: string;
   onPickRouteStart?: () => void;
   routeStartCoordsProp?: { lat: number; lng: number } | null;
+  onPreviewRoute?: (geojson: any) => void;
 }
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
-const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRouteStart, routeStartCoordsProp }: AdminPeakFormProps) => {
+const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRouteStart, routeStartCoordsProp, onPreviewRoute }: AdminPeakFormProps) => {
   const [name, setName] = useState(initial?.name_no || '');
   const [elevation, setElevation] = useState(String(initial?.elevation_moh ?? ''));
   const [area, setArea] = useState(initial?.area || '');
@@ -78,7 +79,8 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
         setRouteDistance(route.distance);
         setRouteDuration(route.duration);
         setRouteStatus('preview');
-        toast.success('Rute generert');
+        if (onPreviewRoute) onPreviewRoute(route.geometry);
+        toast.success('Rute generert. Dra ned vinduet for å se ruten på kartet.');
       } else {
         toast.error('Fant ingen rute');
       }
@@ -99,6 +101,7 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
     setRouteDistance(null);
     setRouteDuration(null);
     setRouteStatus('none');
+    if (onPreviewRoute) onPreviewRoute(null);
   };
 
   const handleSubmit = async () => {
@@ -117,8 +120,8 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
         route_start_lat: routeStartLat,
         route_start_lng: routeStartLng,
         route_geojson: routeGeojson,
-        route_distance_m: routeDistance,
-        route_duration_s: routeDuration,
+        route_distance_m: routeDistance ? Math.round(routeDistance) : null,
+        route_duration_s: routeDuration ? Math.round(routeDuration) : null,
         route_status: routeStatus,
       });
       onClose();
@@ -129,8 +132,8 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
   };
 
   return (
-    <Drawer open={open} onOpenChange={(o) => !o && onClose()}>
-      <DrawerContent className="max-h-[90vh]">
+    <Drawer open={open} onOpenChange={(o) => !o && onClose()} modal={false}>
+      <DrawerContent className="max-h-[85vh] shadow-[0_-10px_40px_rgba(0,0,0,0.2)] border-t border-border z-40 bg-background/95 backdrop-blur-xl">
         <DrawerHeader>
           <DrawerTitle className="font-display">{title}</DrawerTitle>
         </DrawerHeader>

@@ -242,13 +242,14 @@ const MapPage = () => {
       {editingPeak && (
         <AdminPeakForm
           open={!!editingPeak}
-          onClose={() => { setEditingPeak(null); setRouteStartCoords(null); }}
+          onClose={() => { setEditingPeak(null); setRouteStartCoords(null); setActiveRouteGeojson(null); }}
           onSave={handleUpdatePeak}
           initial={editingPeak}
           title="Rediger topp"
           peakId={editingPeak.id}
           onPickRouteStart={handlePickRouteStart}
           routeStartCoordsProp={routeStartCoords}
+          onPreviewRoute={(geojson) => setActiveRouteGeojson(geojson)}
         />
       )}
 
