@@ -69,8 +69,15 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
       setRouteStartLng(routeStartCoordsProp.lng);
       setRouteGeojson(null);
       setRouteStatus('none');
+      setRouteWaypoints([]);
     }
   }, [routeStartCoordsProp]);
+
+  useEffect(() => {
+    if (onWaypointsChange) {
+      onWaypointsChange(routeWaypoints);
+    }
+  }, [routeWaypoints, onWaypointsChange]);
 
   const handleGenerateRoute = async () => {
     if (!routeStartLat || !routeStartLng || !lat || !lng) return;
