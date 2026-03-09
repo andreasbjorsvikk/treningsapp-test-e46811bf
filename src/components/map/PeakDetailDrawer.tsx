@@ -109,16 +109,18 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
     if (!selectedUser || !peak) return;
     setSubmittingCheckin(true);
     try {
-      await adminCheckinPeak(selectedUser.id, peak.id, checkinDate.toISOString());
+      const result = await adminCheckinPeak(selectedUser.id, peak.id, checkinDate.toISOString());
+      console.log('Admin checkin success:', result);
       toast.success(`Innsjekking registrert for ${selectedUser.username}`);
       setManualCheckinOpen(false);
       setSelectedUser(null);
       setSearchQuery('');
       setCheckinDate(new Date());
       onCheckinSuccess();
-    } catch (e) {
+    } catch (e: any) {
       console.error('Manual checkin error:', e);
-      toast.error('Kunne ikke registrere innsjekking');
+      const msg = e?.message || e?.details || 'Ukjent feil';
+      toast.error(`Kunne ikke registrere innsjekking: ${msg}`);
     }
     setSubmittingCheckin(false);
   };
