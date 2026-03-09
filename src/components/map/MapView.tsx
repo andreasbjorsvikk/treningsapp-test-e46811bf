@@ -237,11 +237,11 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       popup.setHTML(`
         <div class="peak-popup-inner">
           <div class="peak-popup-header">
-            <div class="peak-popup-title">${peak.name}${isUnpublished ? ' <span class="peak-popup-unpublished">(upublisert)</span>' : ''}</div>
+            <div class="peak-popup-title">${peak.name}${isUnpublished ? '<br><span class="peak-popup-unpublished">(upublisert)</span>' : ''}</div>
           </div>
+          <div class="peak-popup-area">${peak.area}</div>
           <div class="peak-popup-info">
             <span class="peak-popup-status ${isTaken ? 'taken' : 'untaken'}">${statusText}</span>
-            <span class="peak-popup-area">${peak.area}</span>
           </div>
           ${buttonsHtml}
         </div>
