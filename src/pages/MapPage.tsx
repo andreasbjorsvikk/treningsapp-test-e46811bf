@@ -203,6 +203,8 @@ const MapPage = () => {
             onLongPress={handleLongPress}
             routeGeojson={activeRouteGeojson}
             onClearRoute={() => setActiveRouteGeojson(null)}
+            previewWaypoints={editingPeak ? undefined : null} // Will be passed from AdminPeakForm
+            onWaypointClick={(index) => setWaypointClickEvent({ index, timestamp: Date.now() })}
           />
         ) : (
           <div className="h-full overflow-y-auto">
