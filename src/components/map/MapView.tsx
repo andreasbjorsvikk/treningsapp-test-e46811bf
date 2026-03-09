@@ -5,6 +5,7 @@ import { Peak } from '@/data/peaks';
 import { PeakCheckin } from '@/services/peakCheckinService';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSettings } from '@/contexts/SettingsContext';
+import { toast } from 'sonner';
 
 interface MapViewProps {
   peaks: Peak[];
@@ -208,23 +209,16 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       `;
       el.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${isTaken ? 'white' : isUnpublished ? 'white' : 'hsl(220, 10%, 46%)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 2 15H2L8 3z"/></svg>`;
 
-      const isDark = document.documentElement.classList.contains('dark');
-      const popupBg = isDark ? 'hsl(222, 25%, 12%)' : 'hsl(0, 0%, 100%)';
-      const popupText = isDark ? 'hsl(210, 20%, 95%)' : 'hsl(220, 25%, 10%)';
-      const popupMuted = isDark ? 'hsl(220, 12%, 62%)' : 'hsl(220, 10%, 46%)';
-      const btnBg = isDark ? 'hsl(152, 55%, 38%)' : 'hsl(0, 0%, 15%)';
-      const statusColor = isTaken ? 'hsl(152, 60%, 42%)' : popupMuted;
       const statusText = isTaken ? '✓ Besøkt' : `${peak.heightMoh} moh`;
 
-      // Build popup buttons
-      let buttonsHtml = `<button id="peak-btn-${peak.id}" style="font-size:12px;font-weight:600;padding:8px 14px;background:${btnBg};color:white;border:none;border-radius:10px;cursor:pointer;width:100%;letter-spacing:0.01em;">${t('map.viewPeak')}</button>`;
+      let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;
       
       if (adminMode) {
         buttonsHtml = `
-          <div style="display:flex;gap:6px;">
-            <button id="peak-btn-${peak.id}" style="flex:1;font-size:11px;font-weight:600;padding:7px 10px;background:${btnBg};color:white;border:none;border-radius:8px;cursor:pointer;">Vis</button>
-            <button id="peak-edit-${peak.id}" style="flex:1;font-size:11px;font-weight:600;padding:7px 10px;background:${isDark ? 'hsl(210, 80%, 50%)' : 'hsl(210, 80%, 50%)'};color:white;border:none;border-radius:8px;cursor:pointer;">Rediger</button>
-            <button id="peak-del-${peak.id}" style="font-size:11px;font-weight:600;padding:7px 10px;background:hsl(0, 75%, 50%);color:white;border:none;border-radius:8px;cursor:pointer;">Slett</button>
+          <div class="peak-popup-actions">
+            <button class="peak-popup-btn secondary" id="peak-btn-${peak.id}">Vis</button>
+            <button class="peak-popup-btn edit" id="peak-edit-${peak.id}">Redigér</button>
+            <button class="peak-popup-btn delete" id="peak-del-${peak.id}">Slett</button>
           </div>
         `;
       }
@@ -232,15 +226,18 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       const popup = new mapboxgl.Popup({
         offset: 25,
         closeButton: false,
-        maxWidth: '260px',
+        maxWidth: '280px',
         className: 'peak-popup',
       });
+      
       popup.setHTML(`
-        <div style="font-family:'Space Grotesk',sans-serif;padding:8px 4px;background:${popupBg};border-radius:12px;">
-          <div style="font-weight:700;font-size:15px;color:${popupText};margin-bottom:4px;">${peak.name}${isUnpublished ? ' <span style="font-size:10px;color:hsl(38,85%,50%);">(upublisert)</span>' : ''}</div>
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
-            <span style="font-size:11px;font-weight:600;color:${statusColor};background:${isDark ? 'hsl(222,20%,18%)' : 'hsl(220,16%,95%)'};padding:2px 8px;border-radius:100px;">${statusText}</span>
-            <span style="font-size:11px;color:${popupMuted};">${peak.area}</span>
+        <div class="peak-popup-inner">
+          <div class="peak-popup-header">
+            <div class="peak-popup-title">${peak.name}${isUnpublished ? ' <span class="peak-popup-unpublished">(upublisert)</span>' : ''}</div>
+          </div>
+          <div class="peak-popup-info">
+            <span class="peak-popup-status ${isTaken ? 'taken' : 'untaken'}">${statusText}</span>
+            <span class="peak-popup-area">${peak.area}</span>
           </div>
           ${buttonsHtml}
         </div>
@@ -265,14 +262,43 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         }, 10);
       });
 
-      const draggable = adminMode === true;
+      const draggable = false; // Start som false, krever long press i admin
       const marker = new mapboxgl.Marker({ element: el, anchor: 'center', draggable })
         .setLngLat([peak.longitude, peak.latitude])
         .setPopup(popup)
         .addTo(map.current!);
 
-      if (draggable && onMarkerDrag) {
+      if (adminMode && onMarkerDrag) {
+        let isUnlocked = false;
+        let unlockTimer: ReturnType<typeof setTimeout>;
+
+        const handleStart = () => {
+          if (isUnlocked) return;
+          unlockTimer = setTimeout(() => {
+            isUnlocked = true;
+            marker.setDraggable(true);
+            el.style.transform = 'scale(1.25)';
+            el.style.boxShadow = '0 0 0 4px rgba(56, 189, 248, 0.5)';
+            toast.info('Markør ulåst for flytting. Dra for å plassere.', { duration: 3000 });
+          }, 600);
+        };
+
+        const handleCancel = () => {
+          clearTimeout(unlockTimer);
+        };
+
+        el.addEventListener('mousedown', handleStart);
+        el.addEventListener('touchstart', handleStart, { passive: true });
+        el.addEventListener('mouseup', handleCancel);
+        el.addEventListener('mouseleave', handleCancel);
+        el.addEventListener('touchend', handleCancel);
+        el.addEventListener('touchmove', handleCancel);
+
         marker.on('dragend', () => {
+          isUnlocked = false;
+          marker.setDraggable(false);
+          el.style.transform = '';
+          el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
           const lngLat = marker.getLngLat();
           onMarkerDrag(peak.id, lngLat.lat, lngLat.lng);
         });
@@ -283,7 +309,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   }, [peaks, checkins, mapLoaded, t, adminMode]);
 
   return (
-    <div className="relative w-full h-full">
+    <div className={`relative w-full h-full ${is3D ? 'map-is-3d' : ''}`}>
       <div ref={mapContainer} className="w-full h-full" />
       <button
         onClick={() => setIs3D(prev => !prev)}
