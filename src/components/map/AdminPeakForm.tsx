@@ -22,6 +22,7 @@ interface AdminPeakFormProps {
   onPreviewRoute?: (geojson: any) => void;
   mapClickEvent?: { lat: number; lng: number; timestamp: number } | null;
   waypointClickEvent?: { index: number; timestamp: number } | null;
+  waypointDragEvent?: { index: number; lat: number; lng: number; timestamp: number } | null;
   onWaypointsChange?: (waypoints: { lat: number; lng: number }[]) => void;
 }
 
