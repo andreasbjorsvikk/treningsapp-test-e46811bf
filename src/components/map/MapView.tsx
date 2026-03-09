@@ -53,6 +53,15 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressCoords = useRef<{ lat: number; lng: number } | null>(null);
 
+  // Helper: safely run map operations only when style is loaded
+  const whenStyleReady = useCallback((m: mapboxgl.Map, fn: () => void) => {
+    if (m.isStyleLoaded()) {
+      fn();
+    } else {
+      m.once('style.load', fn);
+    }
+  }, []);
+
   const checkedPeakIds = new Set(checkins.map(c => c.peak_id));
 
   // Map initialization
@@ -256,43 +265,44 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     const sourceId = 'peak-route-source';
     const layerId = 'peak-route-layer';
 
-    if (routeGeojson) {
-      if (!m.getSource(sourceId)) {
-        m.addSource(sourceId, {
-          type: 'geojson',
-          data: routeGeojson,
-        });
-        m.addLayer({
-          id: layerId,
-          type: 'line',
-          source: sourceId,
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round',
-          },
-          paint: {
-            'line-color': '#10b981', // Tailwind success color
-            'line-width': 6,
-            'line-opacity': 0.8,
-          },
-        });
-      } else {
-        (m.getSource(sourceId) as mapboxgl.GeoJSONSource).setData(routeGeojson);
-      }
+    whenStyleReady(m, () => {
+      if (routeGeojson) {
+        if (!m.getSource(sourceId)) {
+          m.addSource(sourceId, {
+            type: 'geojson',
+            data: routeGeojson,
+          });
+          m.addLayer({
+            id: layerId,
+            type: 'line',
+            source: sourceId,
+            layout: {
+              'line-join': 'round',
+              'line-cap': 'round',
+            },
+            paint: {
+              'line-color': '#10b981',
+              'line-width': 6,
+              'line-opacity': 0.8,
+            },
+          });
+        } else {
+          (m.getSource(sourceId) as mapboxgl.GeoJSONSource).setData(routeGeojson);
+        }
 
-      // Zoom to route
-      const bounds = new mapboxgl.LngLatBounds();
-      if (routeGeojson.coordinates) {
-        routeGeojson.coordinates.forEach((coord: [number, number]) => {
-          bounds.extend(coord);
-        });
-        m.fitBounds(bounds, { padding: 50, duration: 1000 });
+        const bounds = new mapboxgl.LngLatBounds();
+        if (routeGeojson.coordinates) {
+          routeGeojson.coordinates.forEach((coord: [number, number]) => {
+            bounds.extend(coord);
+          });
+          m.fitBounds(bounds, { padding: 50, duration: 1000 });
+        }
+      } else {
+        if (m.getLayer(layerId)) m.removeLayer(layerId);
+        if (m.getSource(sourceId)) m.removeSource(sourceId);
       }
-    } else {
-      if (m.getLayer(layerId)) m.removeLayer(layerId);
-      if (m.getSource(sourceId)) m.removeSource(sourceId);
-    }
-  }, [routeGeojson, mapLoaded]);
+    });
+  }, [routeGeojson, mapLoaded, whenStyleReady]);
 
   // Handle preview waypoints
   useEffect(() => {
@@ -503,8 +513,10 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     const layerId = 'heatmap-layer';
 
     if (!showHeatmap) {
-      if (m.getLayer(layerId)) m.removeLayer(layerId);
-      if (m.getSource(sourceId)) m.removeSource(sourceId);
+      whenStyleReady(m, () => {
+        if (m.getLayer(layerId)) m.removeLayer(layerId);
+        if (m.getSource(sourceId)) m.removeSource(sourceId);
+      });
       return;
     }
 
@@ -603,40 +615,42 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
 
         const geojson = { type: 'FeatureCollection', features: Array.from(dedupMap.values()) };
 
-        if (m.getSource(sourceId)) {
-          (m.getSource(sourceId) as mapboxgl.GeoJSONSource).setData(geojson as any);
-        } else {
-          m.addSource(sourceId, { type: 'geojson', data: geojson as any });
-        }
+        whenStyleReady(m, () => {
+          if (m.getSource(sourceId)) {
+            (m.getSource(sourceId) as mapboxgl.GeoJSONSource).setData(geojson as any);
+          } else {
+            m.addSource(sourceId, { type: 'geojson', data: geojson as any });
+          }
 
-        if (!m.getLayer(layerId)) {
-          m.addLayer({
-            id: layerId,
-            type: 'line',
-            source: sourceId,
-            paint: {
-              'line-color': [
-                'interpolate', ['linear'], ['get', 'normFreq'],
-                0, 'hsla(0, 80%, 60%, 0.7)',
-                0.15, 'hsla(0, 85%, 55%, 0.85)',
-                0.4, 'hsla(0, 90%, 48%, 0.9)',
-                1, 'hsla(0, 95%, 40%, 1)',
-              ],
-              'line-width': [
-                'interpolate', ['linear'], ['get', 'normFreq'],
-                0, 4,
-                0.2, 6,
-                0.5, 9,
-                1, 13,
-              ],
-              'line-opacity': 1,
-            },
-            layout: {
-              'line-cap': 'round',
-              'line-join': 'round',
-            },
-          });
-        }
+          if (!m.getLayer(layerId)) {
+            m.addLayer({
+              id: layerId,
+              type: 'line',
+              source: sourceId,
+              paint: {
+                'line-color': [
+                  'interpolate', ['linear'], ['get', 'normFreq'],
+                  0, 'hsla(0, 80%, 60%, 0.7)',
+                  0.15, 'hsla(0, 85%, 55%, 0.85)',
+                  0.4, 'hsla(0, 90%, 48%, 0.9)',
+                  1, 'hsla(0, 95%, 40%, 1)',
+                ],
+                'line-width': [
+                  'interpolate', ['linear'], ['get', 'normFreq'],
+                  0, 4,
+                  0.2, 6,
+                  0.5, 9,
+                  1, 13,
+                ],
+                'line-opacity': 1,
+              },
+              layout: {
+                'line-cap': 'round',
+                'line-join': 'round',
+              },
+            });
+          }
+        });
       } catch (e) {
         console.error('Heatmap load error:', e);
       }
@@ -653,14 +667,16 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     // Cleanup
     areaMarkersRef.current.forEach(mk => mk.remove());
     areaMarkersRef.current = [];
-    // Remove old boundary layers/sources
-    const existingSources = Object.keys((m.getStyle()?.sources) || {}).filter(s => s.startsWith('kommune-boundary-'));
-    existingSources.forEach(sid => {
-      const lid = sid.replace('boundary', 'fill');
-      const lidOutline = sid.replace('boundary', 'outline');
-      if (m.getLayer(lid)) m.removeLayer(lid);
-      if (m.getLayer(lidOutline)) m.removeLayer(lidOutline);
-      if (m.getSource(sid)) m.removeSource(sid);
+    // Remove old boundary layers/sources safely
+    whenStyleReady(m, () => {
+      const existingSources = Object.keys((m.getStyle()?.sources) || {}).filter(s => s.startsWith('kommune-boundary-'));
+      existingSources.forEach(sid => {
+        const lid = sid.replace('boundary', 'fill');
+        const lidOutline = sid.replace('boundary', 'outline');
+        if (m.getLayer(lid)) m.removeLayer(lid);
+        if (m.getLayer(lidOutline)) m.removeLayer(lidOutline);
+        if (m.getSource(sid)) m.removeSource(sid);
+      });
     });
 
     if (!showAreaStats) return;
@@ -729,25 +745,27 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
                                pct >= 25 ? 'hsla(210, 70%, 45%, 0.75)' :
                                            'hsla(250, 55%, 50%, 0.6)';
 
-          if (!m.getSource(sourceId)) {
-            m.addSource(sourceId, { type: 'geojson', data: boundaryData.omrade as any });
-          }
-          if (!m.getLayer(fillLayerId)) {
-            m.addLayer({
-              id: fillLayerId,
-              type: 'fill',
-              source: sourceId,
-              paint: { 'fill-color': fillColor, 'fill-opacity': 1 },
-            });
-          }
-          if (!m.getLayer(outlineLayerId)) {
-            m.addLayer({
-              id: outlineLayerId,
-              type: 'line',
-              source: sourceId,
-              paint: { 'line-color': outlineColor, 'line-width': 3 },
-            });
-          }
+          whenStyleReady(m, () => {
+            if (!m.getSource(sourceId)) {
+              m.addSource(sourceId, { type: 'geojson', data: boundaryData.omrade as any });
+            }
+            if (!m.getLayer(fillLayerId)) {
+              m.addLayer({
+                id: fillLayerId,
+                type: 'fill',
+                source: sourceId,
+                paint: { 'fill-color': fillColor, 'fill-opacity': 1 },
+              });
+            }
+            if (!m.getLayer(outlineLayerId)) {
+              m.addLayer({
+                id: outlineLayerId,
+                type: 'line',
+                source: sourceId,
+                paint: { 'line-color': outlineColor, 'line-width': 3 },
+              });
+            }
+          });
 
           // Add label marker
           const avgLat = entry.peaks.reduce((s, p) => s + p.latitude, 0) / entry.peaks.length;
