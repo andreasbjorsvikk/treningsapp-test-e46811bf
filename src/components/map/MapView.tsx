@@ -114,9 +114,6 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       if (!hasStoredPos) {
         geolocate.trigger();
       }
-      if (m.getZoom() >= 12.5) {
-        mapContainer.current?.classList.add('show-peak-labels');
-      }
     });
 
     m.on('zoom', () => {
