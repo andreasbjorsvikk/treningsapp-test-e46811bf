@@ -35,7 +35,7 @@ export async function checkinPeak(userId: string, peakId: string, checkedInAt?: 
 
 export async function deleteCheckin(checkinId: string): Promise<void> {
   const { error } = await supabase
-    .from('peak_checkins' as any)
+    .from('peak_checkins')
     .delete()
     .eq('id', checkinId);
   if (error) throw error;
