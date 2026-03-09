@@ -94,6 +94,18 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       if (!hasStoredPos) {
         geolocate.trigger();
       }
+      if (m.getZoom() >= 12.5) {
+        mapContainer.current?.classList.add('show-peak-labels');
+      }
+    });
+
+    m.on('zoom', () => {
+      const currentZoom = m.getZoom();
+      if (currentZoom >= 12.5) {
+        mapContainer.current?.classList.add('show-peak-labels');
+      } else {
+        mapContainer.current?.classList.remove('show-peak-labels');
+      }
     });
 
     m.on('style.load', () => {
@@ -350,7 +362,23 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         ${isUnpublished ? 'opacity: 0.7;' : ''}
       `;
-      el.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${isTaken ? 'white' : isUnpublished ? 'white' : 'hsl(220, 10%, 46%)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 2 15H2L8 3z"/></svg>`;
+      el.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${isTaken ? 'white' : isUnpublished ? 'white' : 'hsl(220, 10%, 46%)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 2 15H2L8 3z"/></svg>
+        <div class="peak-marker-label" style="
+          position: absolute; 
+          top: 38px; 
+          left: 50%; 
+          transform: translateX(-50%); 
+          white-space: nowrap; 
+          font-size: 11px; 
+          font-weight: 600; 
+          color: hsl(var(--foreground)); 
+          text-shadow: -1px -1px 0 hsl(var(--background)), 1px -1px 0 hsl(var(--background)), -1px 1px 0 hsl(var(--background)), 1px 1px 0 hsl(var(--background)), 0 2px 4px rgba(0,0,0,0.5);
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        ">${peak.name}</div>
+      `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;
       
@@ -455,6 +483,11 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
 
   return (
     <div className={`relative w-full h-full ${is3D ? 'map-is-3d' : ''}`}>
+      <style>{`
+        .show-peak-labels .peak-marker-label {
+          opacity: 1 !important;
+        }
+      `}</style>
       <div ref={mapContainer} className="w-full h-full" />
       <div className="absolute top-2 left-2 z-10 flex items-center gap-2">
         <button
