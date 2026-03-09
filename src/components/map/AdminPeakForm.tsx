@@ -128,6 +128,15 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
     }
   }, [waypointClickEvent]);
 
+  useEffect(() => {
+    if (waypointDragEvent) {
+      const newWaypoints = [...routeWaypoints];
+      newWaypoints[waypointDragEvent.index] = { lat: waypointDragEvent.lat, lng: waypointDragEvent.lng };
+      setRouteWaypoints(newWaypoints);
+      generateRouteWithWaypoints(newWaypoints);
+    }
+  }, [waypointDragEvent]);
+
   const handleApproveRoute = () => {
     setRouteStatus('approved');
     setAddingWaypointMode(false);

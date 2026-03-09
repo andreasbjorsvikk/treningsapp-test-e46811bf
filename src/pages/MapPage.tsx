@@ -261,6 +261,7 @@ const MapPage = () => {
           onPreviewRoute={(geojson) => setActiveRouteGeojson(geojson)}
           mapClickEvent={mapClickEvent}
           waypointClickEvent={waypointClickEvent}
+          waypointDragEvent={waypointDragEvent}
           onWaypointsChange={setPreviewWaypoints}
         />
       )}

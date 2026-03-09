@@ -286,16 +286,21 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           border: 2px solid white;
           border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         `;
-        el.title = 'Trykk for å fjerne waypoint';
+        el.title = 'Trykk for å fjerne waypoint. Dra for å flytte.';
         
         el.addEventListener('click', (e) => {
           e.stopPropagation();
           if (onWaypointClick) onWaypointClick(index);
         });
 
-        const marker = new mapboxgl.Marker({ element: el })
+        const marker = new mapboxgl.Marker({ element: el, draggable: true })
           .setLngLat([wp.lng, wp.lat])
           .addTo(map.current!);
+          
+        marker.on('dragend', () => {
+          const lngLat = marker.getLngLat();
+          if (onWaypointDrag) onWaypointDrag(index, lngLat.lat, lngLat.lng);
+        });
           
         waypointMarkersRef.current.push(marker);
       });
