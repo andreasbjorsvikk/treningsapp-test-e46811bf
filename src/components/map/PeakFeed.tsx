@@ -96,7 +96,7 @@ const PeakFeed = () => {
       // Get peak info
       const peakIds = [...new Set((checkins as any[]).map((c: any) => c.peak_id))];
       const { data: peaks } = await supabase
-        .from('peaks_db' as any)
+        .from('peaks_db')
         .select('id, name_no, elevation_moh, area')
         .in('id', peakIds);
 
