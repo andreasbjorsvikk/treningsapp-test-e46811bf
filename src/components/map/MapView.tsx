@@ -615,40 +615,42 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
 
         const geojson = { type: 'FeatureCollection', features: Array.from(dedupMap.values()) };
 
-        if (m.getSource(sourceId)) {
-          (m.getSource(sourceId) as mapboxgl.GeoJSONSource).setData(geojson as any);
-        } else {
-          m.addSource(sourceId, { type: 'geojson', data: geojson as any });
-        }
+        whenStyleReady(m, () => {
+          if (m.getSource(sourceId)) {
+            (m.getSource(sourceId) as mapboxgl.GeoJSONSource).setData(geojson as any);
+          } else {
+            m.addSource(sourceId, { type: 'geojson', data: geojson as any });
+          }
 
-        if (!m.getLayer(layerId)) {
-          m.addLayer({
-            id: layerId,
-            type: 'line',
-            source: sourceId,
-            paint: {
-              'line-color': [
-                'interpolate', ['linear'], ['get', 'normFreq'],
-                0, 'hsla(0, 80%, 60%, 0.7)',
-                0.15, 'hsla(0, 85%, 55%, 0.85)',
-                0.4, 'hsla(0, 90%, 48%, 0.9)',
-                1, 'hsla(0, 95%, 40%, 1)',
-              ],
-              'line-width': [
-                'interpolate', ['linear'], ['get', 'normFreq'],
-                0, 4,
-                0.2, 6,
-                0.5, 9,
-                1, 13,
-              ],
-              'line-opacity': 1,
-            },
-            layout: {
-              'line-cap': 'round',
-              'line-join': 'round',
-            },
-          });
-        }
+          if (!m.getLayer(layerId)) {
+            m.addLayer({
+              id: layerId,
+              type: 'line',
+              source: sourceId,
+              paint: {
+                'line-color': [
+                  'interpolate', ['linear'], ['get', 'normFreq'],
+                  0, 'hsla(0, 80%, 60%, 0.7)',
+                  0.15, 'hsla(0, 85%, 55%, 0.85)',
+                  0.4, 'hsla(0, 90%, 48%, 0.9)',
+                  1, 'hsla(0, 95%, 40%, 1)',
+                ],
+                'line-width': [
+                  'interpolate', ['linear'], ['get', 'normFreq'],
+                  0, 4,
+                  0.2, 6,
+                  0.5, 9,
+                  1, 13,
+                ],
+                'line-opacity': 1,
+              },
+              layout: {
+                'line-cap': 'round',
+                'line-join': 'round',
+              },
+            });
+          }
+        });
       } catch (e) {
         console.error('Heatmap load error:', e);
       }
