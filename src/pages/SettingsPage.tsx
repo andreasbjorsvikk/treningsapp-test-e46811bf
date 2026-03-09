@@ -288,6 +288,7 @@ const SettingsPage = () => {
                             key={idx}
                             onClick={() => {
                               (activityColorMap as any)[type] = { light: preset.light, dark: preset.dark };
+                              saveActivityColors();
                               updateSettings({
                                 sessionTypeColors: { ...settings.sessionTypeColors, [type]: preset.light.bg },
                               });
