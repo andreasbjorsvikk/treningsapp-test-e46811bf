@@ -25,7 +25,7 @@ export async function checkinPeak(userId: string, peakId: string, checkedInAt?: 
   }
   
   const { data, error } = await supabase
-    .from('peak_checkins' as any)
+    .from('peak_checkins')
     .insert(payload)
     .select()
     .single();
