@@ -116,14 +116,6 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       }
     });
 
-    m.on('zoom', () => {
-      const currentZoom = m.getZoom();
-      if (currentZoom >= 12.5) {
-        mapContainer.current?.classList.add('show-peak-labels');
-      } else {
-        mapContainer.current?.classList.remove('show-peak-labels');
-      }
-    });
 
     m.on('style.load', () => {
       m.addSource('mapbox-dem', {
