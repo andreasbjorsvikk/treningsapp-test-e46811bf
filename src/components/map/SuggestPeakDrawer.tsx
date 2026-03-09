@@ -22,6 +22,21 @@ const SuggestPeakDrawer = ({ open, onClose, latitude, longitude }: SuggestPeakDr
   const [elevation, setElevation] = useState('');
   const [comment, setComment] = useState('');
   const [saving, setSaving] = useState(false);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+
+  useEffect(() => {
+    if (open && 'geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        () => {
+          // silent fallback
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+  }, [open]);
 
   const handleSubmit = async () => {
     if (!user || !name.trim()) return;
