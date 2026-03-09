@@ -27,9 +27,14 @@ const MapPage = () => {
   const [addCoords, setAddCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [editingPeak, setEditingPeak] = useState<DbPeak | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [routeStartPickForPeak, setRouteStartPickForPeak] = useState<DbPeak | null>(null);
+  const [routeStartCoords, setRouteStartCoords] = useState<{lat: number, lng: number} | null>(null);
 
   // User suggestion state
   const [suggestCoords, setSuggestCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Active route
+  const [activeRouteGeojson, setActiveRouteGeojson] = useState<any>(null);
 
   const loadPeaks = useCallback(async () => {
     try {

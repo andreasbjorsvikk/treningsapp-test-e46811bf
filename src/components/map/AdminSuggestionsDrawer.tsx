@@ -66,6 +66,12 @@ const AdminSuggestionsDrawer = ({ open, onClose, onApproved }: AdminSuggestionsD
           longitude: selected.longitude,
           is_published: true,
           created_by: user.id,
+          route_start_lat: null,
+          route_start_lng: null,
+          route_geojson: null,
+          route_distance_m: null,
+          route_duration_s: null,
+          route_status: 'none',
         });
         toast.success('Toppen ble godkjent og opprettet');
         onApproved();
