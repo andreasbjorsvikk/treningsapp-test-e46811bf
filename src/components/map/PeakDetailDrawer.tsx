@@ -117,9 +117,35 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
       setCheckinDate(new Date());
       onCheckinSuccess();
     } catch (e) {
+      console.error('Manual checkin error:', e);
       toast.error('Kunne ikke registrere innsjekking');
     }
     setSubmittingCheckin(false);
+  };
+
+  const loadAllCheckins = async () => {
+    if (!peak) return;
+    setLoadingAllCheckins(true);
+    try {
+      const data = await getAllCheckinsForPeak(peak.id);
+      setAllCheckins(data);
+    } catch (e) {
+      console.error('Load checkins error:', e);
+      toast.error('Kunne ikke laste innsjekkinger');
+    }
+    setLoadingAllCheckins(false);
+  };
+
+  const handleDeleteCheckin = async (checkinId: string) => {
+    if (!confirm('Er du sikker på at du vil slette denne innsjekkingen?')) return;
+    try {
+      await deleteCheckin(checkinId);
+      toast.success('Innsjekking slettet');
+      loadAllCheckins();
+      onCheckinSuccess();
+    } catch (e) {
+      toast.error('Kunne ikke slette innsjekking');
+    }
   };
 
   return (
