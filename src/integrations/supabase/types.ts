@@ -316,6 +316,14 @@ export type Database = {
           latitude: number
           longitude: number
           name_no: string
+          route_distance_m: number | null
+          route_duration_s: number | null
+          route_geojson: Json | null
+          route_start_lat: number | null
+          route_start_lng: number | null
+          route_status: string | null
+          route_updated_at: string | null
+          route_updated_by: string | null
           updated_at: string
         }
         Insert: {
@@ -330,6 +338,14 @@ export type Database = {
           latitude: number
           longitude: number
           name_no: string
+          route_distance_m?: number | null
+          route_duration_s?: number | null
+          route_geojson?: Json | null
+          route_start_lat?: number | null
+          route_start_lng?: number | null
+          route_status?: string | null
+          route_updated_at?: string | null
+          route_updated_by?: string | null
           updated_at?: string
         }
         Update: {
@@ -344,6 +360,14 @@ export type Database = {
           latitude?: number
           longitude?: number
           name_no?: string
+          route_distance_m?: number | null
+          route_duration_s?: number | null
+          route_geojson?: Json | null
+          route_start_lat?: number | null
+          route_start_lng?: number | null
+          route_status?: string | null
+          route_updated_at?: string | null
+          route_updated_by?: string | null
           updated_at?: string
         }
         Relationships: []
