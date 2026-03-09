@@ -187,17 +187,35 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
             {(routeDistance! / 1000).toFixed(1)} km • {Math.round(routeDuration! / 60)} min
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={handleApproveRoute} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm">
+        <div className="space-y-2">
+          <Button onClick={handleApproveRoute} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm">
             Godkjenn rute
           </Button>
-          <Button variant="outline" onClick={handleClearRoute} className="flex-1 font-semibold text-destructive border-destructive/20 hover:bg-destructive/10">
-            Slett
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant={addingWaypointMode ? "default" : "outline"} onClick={() => setAddingWaypointMode(!addingWaypointMode)} className="text-xs">
+              {addingWaypointMode ? 'Avslutt waypoint-modus' : '+ Legg til waypoint'}
+            </Button>
+            <Button variant="outline" disabled={routeWaypoints.length === 0} onClick={() => {
+              const newWp = routeWaypoints.slice(0, -1);
+              setRouteWaypoints(newWp);
+              generateRouteWithWaypoints(newWp);
+            }} className="text-xs">
+              Angre siste
+            </Button>
+            <Button variant="outline" disabled={routeWaypoints.length === 0} onClick={() => {
+              setRouteWaypoints([]);
+              generateRouteWithWaypoints([]);
+            }} className="text-xs">
+              Fjern alle
+            </Button>
+            <Button variant="outline" onClick={onPickRouteStart} className="text-xs">
+              Nytt startpunkt
+            </Button>
+          </div>
+          <Button variant="ghost" onClick={handleClearRoute} className="w-full mt-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10">
+            Fjern rute helt
           </Button>
         </div>
-        <Button variant="ghost" className="w-full mt-2 text-xs text-muted-foreground" onClick={onPickRouteStart}>
-          Prøv nytt startpunkt
-        </Button>
       </div>
     );
   }
