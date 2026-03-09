@@ -25,6 +25,7 @@ export interface AppSettings {
   privacyWorkouts: PrivacyLevel;
   privacyStats: PrivacyLevel;
   privacyGoals: PrivacyLevel;
+  privacyPeakCheckins: PrivacyLevel;
   pinnedChallengeIds: string[];
   homeSectionOrder: string[];
 }
