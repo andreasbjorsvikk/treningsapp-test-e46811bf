@@ -38,6 +38,7 @@ const MapPage = () => {
 
   // Active route
   const [activeRouteGeojson, setActiveRouteGeojson] = useState<any>(null);
+  const [activeRoutePeakId, setActiveRoutePeakId] = useState<string | null>(null);
   const [previewWaypoints, setPreviewWaypoints] = useState<{lat: number, lng: number}[]>([]);
 
   const loadPeaks = useCallback(async () => {
@@ -145,12 +146,17 @@ const MapPage = () => {
     if (peak.route_status === 'approved' && peak.route_geojson) {
       setSubTab('kart');
       setActiveRouteGeojson(peak.route_geojson);
-      // Wait for tab switch
+      setActiveRoutePeakId(peak.id);
       setTimeout(() => {
         const evt = new CustomEvent('zoom-to-route', { detail: peak.route_geojson });
         window.dispatchEvent(evt);
       }, 300);
     }
+  };
+
+  const handleHideRoute = () => {
+    setActiveRouteGeojson(null);
+    setActiveRoutePeakId(null);
   };
 
   return (
@@ -234,6 +240,8 @@ const MapPage = () => {
         onEdit={handleEditPeak}
         onDelete={handleDeletePeak}
         onShowRoute={handleShowRoute}
+        onHideRoute={handleHideRoute}
+        isRouteShown={!!activeRoutePeakId && activeRoutePeakId === selectedPeak?.id}
       />
 
       {/* Admin: Add new peak form */}

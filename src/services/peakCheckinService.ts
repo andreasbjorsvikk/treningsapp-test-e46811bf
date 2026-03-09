@@ -41,6 +41,26 @@ export async function deleteCheckin(checkinId: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function adminCheckinPeak(targetUserId: string, peakId: string, checkedInAt: string): Promise<PeakCheckin> {
+  const { data, error } = await supabase
+    .from('peak_checkins' as any)
+    .insert({ user_id: targetUserId, peak_id: peakId, checked_in_at: checkedInAt })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as unknown as PeakCheckin;
+}
+
+export async function searchProfiles(query: string): Promise<{ id: string; username: string | null; avatar_url: string | null }[]> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, username, avatar_url')
+    .ilike('username', `%${query}%`)
+    .limit(10);
+  if (error) throw error;
+  return data || [];
+}
+
 export function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371000;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
