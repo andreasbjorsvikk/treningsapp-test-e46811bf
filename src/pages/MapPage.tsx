@@ -29,6 +29,8 @@ const MapPage = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [routeStartPickForPeak, setRouteStartPickForPeak] = useState<DbPeak | null>(null);
   const [routeStartCoords, setRouteStartCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [mapClickEvent, setMapClickEvent] = useState<{lat: number, lng: number, timestamp: number} | null>(null);
+  const [waypointClickEvent, setWaypointClickEvent] = useState<{index: number, timestamp: number} | null>(null);
 
   // User suggestion state
   const [suggestCoords, setSuggestCoords] = useState<{ lat: number; lng: number } | null>(null);
