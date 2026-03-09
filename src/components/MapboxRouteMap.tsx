@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Maximize2, ArrowLeft } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import RouteReplay from '@/components/RouteReplay';
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
@@ -9,6 +10,8 @@ interface MapboxRouteMapProps {
   lineColor: string;
   height: number;
   isDark: boolean;
+  totalDistance?: number;
+  totalElevation?: number;
 }
 
 function simplifyPoints(points: [number, number][], maxPoints: number): [number, number][] {
@@ -57,7 +60,7 @@ export const useMapFullscreen = () => {
   return { isMapFullscreen: fullscreen, setMapFullscreen: setFullscreen };
 };
 
-const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenChange }: MapboxRouteMapProps & { onFullscreenChange?: (fs: boolean) => void }) => {
+const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenChange, totalDistance, totalElevation }: MapboxRouteMapProps & { onFullscreenChange?: (fs: boolean) => void }) => {
   const [fullscreen, setFullscreenState] = useState(false);
   const setFullscreen = (fs: boolean) => {
     setFullscreenState(fs);
@@ -70,6 +73,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
   const previewMapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const previewMapRef = useRef<any>(null);
+  const [mapReady, setMapReady] = useState(false);
 
   const staticUrl = useMemo(() => {
     if (routePoints.length < 2) return null;
@@ -205,6 +209,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
         [bounds.sw, bounds.ne],
         { padding: 60, pitch: 60, bearing: -20, duration: 1000 }
       );
+      setMapReady(true);
     });
 
     mapInstanceRef.current = map;
@@ -239,6 +244,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
       mapInstanceRef.current.remove();
       mapInstanceRef.current = null;
     }
+    setMapReady(false);
     setFullscreen(false);
   };
 
@@ -309,6 +315,15 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
             ref={mapContainerRef}
             className="flex-1 w-full"
           />
+          {mapReady && mapInstanceRef.current && (
+            <RouteReplay
+              map={mapInstanceRef.current}
+              routePoints={routePoints}
+              lineColor={lineColor}
+              totalDistance={totalDistance}
+              totalElevation={totalElevation}
+            />
+          )}
         </div>,
         document.body
       )}

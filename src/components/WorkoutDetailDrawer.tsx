@@ -108,6 +108,8 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
                 height={192}
                 isDark={isDark}
                 onFullscreenChange={setMapFullscreen}
+                totalDistance={session.distance}
+                totalElevation={session.elevationGain}
               />
             )}
 
