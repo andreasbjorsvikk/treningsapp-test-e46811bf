@@ -408,8 +408,8 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           <div class="peak-popup-header">
             <div class="peak-popup-title">${peak.name}${isUnpublished ? '<br><span class="peak-popup-unpublished">(upublisert)</span>' : ''}</div>
           </div>
-          <div class="peak-popup-area" style="margin-bottom: 8px;">${peak.area}</div>
-          <div style="text-align: center; padding: 4px 0; margin-bottom: 8px;">
+          <div class="peak-popup-area" style="margin-bottom: 2px;">${peak.area}</div>
+          <div style="text-align: center; padding: 2px 0; margin-bottom: 4px;">
             ${statusHtml}
           </div>
           ${buttonsHtml}

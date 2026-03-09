@@ -66,13 +66,33 @@ export interface CheckinWithProfile extends PeakCheckin {
 }
 
 export async function getAllCheckinsForPeak(peakId: string): Promise<CheckinWithProfile[]> {
-  const { data, error } = await supabase
+  // First get all checkins for this peak
+  const { data: checkins, error } = await supabase
     .from('peak_checkins' as any)
-    .select('*, profiles:user_id(username, avatar_url)')
+    .select('*')
     .eq('peak_id', peakId)
     .order('checked_in_at', { ascending: false });
   if (error) throw error;
-  return (data || []) as unknown as CheckinWithProfile[];
+  
+  if (!checkins || checkins.length === 0) return [];
+  
+  // Get unique user IDs
+  const userIds = [...new Set(checkins.map((c: any) => c.user_id))];
+  
+  // Fetch profiles for these users
+  const { data: profiles, error: profilesError } = await supabase
+    .from('profiles')
+    .select('id, username, avatar_url')
+    .in('id', userIds);
+  if (profilesError) throw profilesError;
+  
+  // Map profiles to checkins
+  const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+  
+  return checkins.map((checkin: any) => ({
+    ...checkin,
+    profiles: profileMap.get(checkin.user_id) || null
+  })) as CheckinWithProfile[];
 }
 
 export function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
