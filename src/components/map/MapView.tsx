@@ -5,7 +5,11 @@ import { Peak } from '@/data/peaks';
 import { PeakCheckin } from '@/services/peakCheckinService';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+type HeatmapPeriod = 'year' | 'total';
 
 interface MapViewProps {
   peaks: Peak[];
@@ -23,6 +27,9 @@ interface MapViewProps {
   previewWaypoints?: { lat: number; lng: number }[] | null;
   onWaypointClick?: (index: number) => void;
   onWaypointDrag?: (index: number, lat: number, lng: number) => void;
+  showHeatmap?: boolean;
+  heatmapPeriod?: HeatmapPeriod;
+  showAreaStats?: boolean;
 }
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
