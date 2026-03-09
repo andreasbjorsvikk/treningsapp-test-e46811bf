@@ -19,6 +19,7 @@ export interface DbPeak {
   route_distance_m: number | null;
   route_duration_s: number | null;
   route_status: string | null;
+  route_waypoints: any[] | null;
 }
 
 // Convert DB peak to the Peak interface used by map components
@@ -39,6 +40,7 @@ export function dbPeakToLegacy(p: DbPeak) {
     route_distance_m: p.route_distance_m,
     route_duration_s: p.route_duration_s,
     route_status: p.route_status,
+    route_waypoints: p.route_waypoints,
   };
 }
 

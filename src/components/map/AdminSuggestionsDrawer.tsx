@@ -73,6 +73,7 @@ const AdminSuggestionsDrawer = ({ open, onClose, onApproved }: AdminSuggestionsD
           route_distance_m: null,
           route_duration_s: null,
           route_status: 'none',
+          route_waypoints: null,
         });
 
         let autoCheckedIn = false;

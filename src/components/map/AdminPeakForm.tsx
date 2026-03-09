@@ -20,11 +20,14 @@ interface AdminPeakFormProps {
   onPickRouteStart?: () => void;
   routeStartCoordsProp?: { lat: number; lng: number } | null;
   onPreviewRoute?: (geojson: any) => void;
+  mapClickEvent?: { lat: number; lng: number; timestamp: number } | null;
+  waypointClickEvent?: { index: number; timestamp: number } | null;
+  onWaypointsChange?: (waypoints: { lat: number; lng: number }[]) => void;
 }
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
-const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRouteStart, routeStartCoordsProp, onPreviewRoute }: AdminPeakFormProps) => {
+const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRouteStart, routeStartCoordsProp, onPreviewRoute, mapClickEvent, waypointClickEvent, onWaypointsChange }: AdminPeakFormProps) => {
   const [name, setName] = useState(initial?.name_no || '');
   const [elevation, setElevation] = useState(String(initial?.elevation_moh ?? ''));
   const [area, setArea] = useState(initial?.area || '');
@@ -40,6 +43,8 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
   const [routeDistance, setRouteDistance] = useState<number | null>(initial?.route_distance_m || null);
   const [routeDuration, setRouteDuration] = useState<number | null>(initial?.route_duration_s || null);
   const [routeStatus, setRouteStatus] = useState<string>(initial?.route_status || 'none');
+  const [routeWaypoints, setRouteWaypoints] = useState<{lat: number, lng: number}[]>(initial?.route_waypoints || []);
+  const [addingWaypointMode, setAddingWaypointMode] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -64,13 +69,26 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
       setRouteStartLng(routeStartCoordsProp.lng);
       setRouteGeojson(null);
       setRouteStatus('none');
+      setRouteWaypoints([]);
     }
   }, [routeStartCoordsProp]);
 
-  const handleGenerateRoute = async () => {
+  useEffect(() => {
+    if (onWaypointsChange) {
+      onWaypointsChange(routeWaypoints);
+    }
+  }, [routeWaypoints, onWaypointsChange]);
+
+  const generateRouteWithWaypoints = async (waypoints: {lat: number, lng: number}[]) => {
     if (!routeStartLat || !routeStartLng || !lat || !lng) return;
     try {
-      const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${routeStartLng},${routeStartLat};${lng},${lat}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
+      const coords = [
+        `${routeStartLng},${routeStartLat}`,
+        ...waypoints.map(wp => `${wp.lng},${wp.lat}`),
+        `${lng},${lat}`
+      ].join(';');
+      
+      const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${coords}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
       const res = await fetch(url);
       const data = await res.json();
       if (data.routes && data.routes.length > 0) {
@@ -80,7 +98,6 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
         setRouteDuration(route.duration);
         setRouteStatus('preview');
         if (onPreviewRoute) onPreviewRoute(route.geometry);
-        toast.success('Rute generert!');
       } else {
         toast.error('Fant ingen rute');
       }
@@ -89,8 +106,30 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
     }
   };
 
+  const handleGenerateRoute = async () => {
+    await generateRouteWithWaypoints(routeWaypoints);
+    toast.success('Rute generert!');
+  };
+
+  useEffect(() => {
+    if (mapClickEvent && addingWaypointMode) {
+      const newWaypoints = [...routeWaypoints, { lat: mapClickEvent.lat, lng: mapClickEvent.lng }];
+      setRouteWaypoints(newWaypoints);
+      generateRouteWithWaypoints(newWaypoints);
+    }
+  }, [mapClickEvent]);
+
+  useEffect(() => {
+    if (waypointClickEvent) {
+      const newWaypoints = routeWaypoints.filter((_, i) => i !== waypointClickEvent.index);
+      setRouteWaypoints(newWaypoints);
+      generateRouteWithWaypoints(newWaypoints);
+    }
+  }, [waypointClickEvent]);
+
   const handleApproveRoute = () => {
     setRouteStatus('approved');
+    setAddingWaypointMode(false);
     toast.success('Rute godkjent');
   };
 
@@ -101,6 +140,8 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
     setRouteDistance(null);
     setRouteDuration(null);
     setRouteStatus('none');
+    setRouteWaypoints([]);
+    setAddingWaypointMode(false);
     if (onPreviewRoute) onPreviewRoute(null);
   };
 
@@ -123,6 +164,7 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
         route_distance_m: routeDistance ? Math.round(routeDistance) : null,
         route_duration_s: routeDuration ? Math.round(routeDuration) : null,
         route_status: routeStatus,
+        route_waypoints: routeWaypoints.length > 0 ? routeWaypoints : null,
       });
       onClose();
     } catch {
@@ -146,17 +188,35 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
             {(routeDistance! / 1000).toFixed(1)} km • {Math.round(routeDuration! / 60)} min
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={handleApproveRoute} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm">
+        <div className="space-y-2">
+          <Button onClick={handleApproveRoute} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm">
             Godkjenn rute
           </Button>
-          <Button variant="outline" onClick={handleClearRoute} className="flex-1 font-semibold text-destructive border-destructive/20 hover:bg-destructive/10">
-            Slett
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant={addingWaypointMode ? "default" : "outline"} onClick={() => setAddingWaypointMode(!addingWaypointMode)} className="text-xs">
+              {addingWaypointMode ? 'Avslutt waypoint-modus' : '+ Legg til waypoint'}
+            </Button>
+            <Button variant="outline" disabled={routeWaypoints.length === 0} onClick={() => {
+              const newWp = routeWaypoints.slice(0, -1);
+              setRouteWaypoints(newWp);
+              generateRouteWithWaypoints(newWp);
+            }} className="text-xs">
+              Angre siste
+            </Button>
+            <Button variant="outline" disabled={routeWaypoints.length === 0} onClick={() => {
+              setRouteWaypoints([]);
+              generateRouteWithWaypoints([]);
+            }} className="text-xs">
+              Fjern alle
+            </Button>
+            <Button variant="outline" onClick={onPickRouteStart} className="text-xs">
+              Nytt startpunkt
+            </Button>
+          </div>
+          <Button variant="ghost" onClick={handleClearRoute} className="w-full mt-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10">
+            Fjern rute helt
           </Button>
         </div>
-        <Button variant="ghost" className="w-full mt-2 text-xs text-muted-foreground" onClick={onPickRouteStart}>
-          Prøv nytt startpunkt
-        </Button>
       </div>
     );
   }

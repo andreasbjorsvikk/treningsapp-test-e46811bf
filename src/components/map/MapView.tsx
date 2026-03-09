@@ -20,14 +20,18 @@ interface MapViewProps {
   onLongPress?: (lat: number, lng: number) => void;
   routeGeojson?: any;
   onClearRoute?: () => void;
+  previewWaypoints?: { lat: number; lng: number }[] | null;
+  onWaypointClick?: (index: number) => void;
 }
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
-const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, onClearRoute }: MapViewProps) => {
+const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, onClearRoute, previewWaypoints, onWaypointClick }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const waypointMarkersRef = useRef<mapboxgl.Marker[]>([]);
+  const routeStartMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const { t } = useTranslation();
   const { settings } = useSettings();
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -262,6 +266,63 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       if (m.getSource(sourceId)) m.removeSource(sourceId);
     }
   }, [routeGeojson, mapLoaded]);
+
+  // Handle preview waypoints
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    // Clear existing waypoint markers
+    waypointMarkersRef.current.forEach(m => m.remove());
+    waypointMarkersRef.current = [];
+
+    if (previewWaypoints && previewWaypoints.length > 0) {
+      previewWaypoints.forEach((wp, index) => {
+        const el = document.createElement('div');
+        el.className = 'route-waypoint-marker';
+        el.style.cssText = `
+          width: 16px; height: 16px; cursor: pointer;
+          background: hsl(220, 90%, 56%);
+          border: 2px solid white;
+          border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        `;
+        el.title = 'Trykk for å fjerne waypoint';
+        
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (onWaypointClick) onWaypointClick(index);
+        });
+
+        const marker = new mapboxgl.Marker({ element: el })
+          .setLngLat([wp.lng, wp.lat])
+          .addTo(map.current!);
+          
+        waypointMarkersRef.current.push(marker);
+      });
+    }
+
+    // Handle route start marker (if we have a route, put a green dot at the start)
+    if (routeGeojson && routeGeojson.coordinates && routeGeojson.coordinates.length > 0) {
+      if (!routeStartMarkerRef.current) {
+        const el = document.createElement('div');
+        el.className = 'route-start-marker';
+        el.style.cssText = `
+          width: 20px; height: 20px;
+          background: hsl(152, 60%, 42%);
+          border: 3px solid white;
+          border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        `;
+        routeStartMarkerRef.current = new mapboxgl.Marker({ element: el })
+          .setLngLat(routeGeojson.coordinates[0])
+          .addTo(map.current);
+      } else {
+        routeStartMarkerRef.current.setLngLat(routeGeojson.coordinates[0]);
+      }
+    } else if (routeStartMarkerRef.current) {
+      routeStartMarkerRef.current.remove();
+      routeStartMarkerRef.current = null;
+    }
+
+  }, [previewWaypoints, routeGeojson, mapLoaded, onWaypointClick]);
 
   // Add/update markers
   useEffect(() => {

@@ -29,12 +29,15 @@ const MapPage = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [routeStartPickForPeak, setRouteStartPickForPeak] = useState<DbPeak | null>(null);
   const [routeStartCoords, setRouteStartCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [mapClickEvent, setMapClickEvent] = useState<{lat: number, lng: number, timestamp: number} | null>(null);
+  const [waypointClickEvent, setWaypointClickEvent] = useState<{index: number, timestamp: number} | null>(null);
 
   // User suggestion state
   const [suggestCoords, setSuggestCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   // Active route
   const [activeRouteGeojson, setActiveRouteGeojson] = useState<any>(null);
+  const [previewWaypoints, setPreviewWaypoints] = useState<{lat: number, lng: number}[]>([]);
 
   const loadPeaks = useCallback(async () => {
     try {
@@ -77,6 +80,8 @@ const MapPage = () => {
       setRouteStartCoords({ lat, lng });
       setEditingPeak(routeStartPickForPeak);
       setRouteStartPickForPeak(null);
+    } else if (adminMode && editingPeak) {
+      setMapClickEvent({ lat, lng, timestamp: Date.now() });
     } else if (!adminMode) {
       // Long-press handled in MapView
     }
@@ -199,6 +204,8 @@ const MapPage = () => {
             onLongPress={handleLongPress}
             routeGeojson={activeRouteGeojson}
             onClearRoute={() => setActiveRouteGeojson(null)}
+            previewWaypoints={previewWaypoints}
+            onWaypointClick={(index) => setWaypointClickEvent({ index, timestamp: Date.now() })}
           />
         ) : (
           <div className="h-full overflow-y-auto">
@@ -250,6 +257,9 @@ const MapPage = () => {
           onPickRouteStart={handlePickRouteStart}
           routeStartCoordsProp={routeStartCoords}
           onPreviewRoute={(geojson) => setActiveRouteGeojson(geojson)}
+          mapClickEvent={mapClickEvent}
+          waypointClickEvent={waypointClickEvent}
+          onWaypointsChange={setPreviewWaypoints}
         />
       )}
 
