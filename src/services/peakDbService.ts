@@ -40,6 +40,7 @@ export function dbPeakToLegacy(p: DbPeak) {
     route_distance_m: p.route_distance_m,
     route_duration_s: p.route_duration_s,
     route_status: p.route_status,
+    route_waypoints: p.route_waypoints,
   };
 }
 
