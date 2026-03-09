@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { DbPeak } from '@/services/peakDbService';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Upload, X } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { uploadPeakImage } from '@/services/peakDbService';
+import { toast } from 'sonner';
 
 interface AdminPeakFormProps {
   open: boolean;
