@@ -79,7 +79,7 @@ export interface CheckinWithProfile extends PeakCheckin {
 export async function getAllCheckinsForPeak(peakId: string): Promise<CheckinWithProfile[]> {
   // First get all checkins for this peak
   const { data: checkins, error } = await supabase
-    .from('peak_checkins' as any)
+    .from('peak_checkins')
     .select('*')
     .eq('peak_id', peakId)
     .order('checked_in_at', { ascending: false });
