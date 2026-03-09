@@ -14,6 +14,7 @@ export interface Peak {
   route_distance_m?: number | null;
   route_duration_s?: number | null;
   route_status?: string | null;
+  route_waypoints?: any[] | null;
 }
 
 // Legacy static peaks - kept for reference but app now uses DB
