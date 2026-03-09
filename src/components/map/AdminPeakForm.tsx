@@ -51,6 +51,29 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (!initial?.area && lat && lng && !area) {
+      const fetchArea = async () => {
+        try {
+          const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=place,locality,region&access_token=${MAPBOX_TOKEN}`);
+          const data = await res.json();
+          if (data.features && data.features.length > 0) {
+            const place = data.features.find((f: any) => f.place_type.includes('place') || f.place_type.includes('locality'));
+            if (place) {
+              setArea(place.text);
+            } else {
+              setArea(data.features[0].text);
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      };
+      const t = setTimeout(fetchArea, 600);
+      return () => clearTimeout(t);
+    }
+  }, [lat, lng, initial?.area, area]);
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
