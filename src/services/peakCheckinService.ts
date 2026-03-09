@@ -42,12 +42,23 @@ export async function deleteCheckin(checkinId: string): Promise<void> {
 }
 
 export async function adminCheckinPeak(targetUserId: string, peakId: string, checkedInAt: string): Promise<PeakCheckin> {
+  console.log('adminCheckinPeak called:', { targetUserId, peakId, checkedInAt });
+  
+  // Verify current auth session
+  const { data: { user: currentUser } } = await supabase.auth.getUser();
+  console.log('Current auth user:', currentUser?.id);
+  
   const { data, error } = await supabase
     .from('peak_checkins' as any)
     .insert({ user_id: targetUserId, peak_id: peakId, checked_in_at: checkedInAt })
     .select()
     .single();
-  if (error) throw error;
+  
+  if (error) {
+    console.error('Supabase insert error:', JSON.stringify(error, null, 2));
+    throw error;
+  }
+  console.log('Checkin inserted successfully:', data);
   return data as unknown as PeakCheckin;
 }
 
