@@ -539,7 +539,7 @@ const IndexContent = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20 lg:pb-0 lg:pt-16">
-      <main className={`py-4 space-y-5 ${activeTab === 'kart' ? 'w-full' : 'container'}`}>
+      <main className={`${activeTab === 'kart' ? 'w-full px-0 py-0' : 'container py-4 space-y-5'}`}>
         {activeTab === 'hjem' && (
           <>
             {/* ===== HERO HEADER ===== */}
