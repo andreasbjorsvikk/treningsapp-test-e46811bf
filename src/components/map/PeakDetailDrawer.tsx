@@ -1,5 +1,5 @@
 import { Peak } from '@/data/peaks';
-import { PeakCheckin, checkinPeak, getDistanceMeters, adminCheckinPeak, searchProfiles } from '@/services/peakCheckinService';
+import { PeakCheckin, checkinPeak, getDistanceMeters, adminCheckinPeak, searchProfiles, getAllCheckinsForPeak, CheckinWithProfile, deleteCheckin } from '@/services/peakCheckinService';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
@@ -10,7 +10,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Mountain, MapPin, Check, Loader2, ImageIcon, Pencil, Trash2, CalendarIcon, UserPlus, X, Search } from 'lucide-react';
+import { Mountain, MapPin, Check, Loader2, ImageIcon, Pencil, Trash2, CalendarIcon, UserPlus, X, Search, List } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { RouteElevationChart } from '@/components/map/RouteElevationChart';
@@ -47,6 +47,11 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
   const [checkinDate, setCheckinDate] = useState<Date>(new Date());
   const [searching, setSearching] = useState(false);
   const [submittingCheckin, setSubmittingCheckin] = useState(false);
+
+  // Admin all checkins state
+  const [allCheckinsOpen, setAllCheckinsOpen] = useState(false);
+  const [allCheckins, setAllCheckins] = useState<CheckinWithProfile[]>([]);
+  const [loadingAllCheckins, setLoadingAllCheckins] = useState(false);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -112,9 +117,35 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
       setCheckinDate(new Date());
       onCheckinSuccess();
     } catch (e) {
+      console.error('Manual checkin error:', e);
       toast.error('Kunne ikke registrere innsjekking');
     }
     setSubmittingCheckin(false);
+  };
+
+  const loadAllCheckins = async () => {
+    if (!peak) return;
+    setLoadingAllCheckins(true);
+    try {
+      const data = await getAllCheckinsForPeak(peak.id);
+      setAllCheckins(data);
+    } catch (e) {
+      console.error('Load checkins error:', e);
+      toast.error('Kunne ikke laste innsjekkinger');
+    }
+    setLoadingAllCheckins(false);
+  };
+
+  const handleDeleteCheckin = async (checkinId: string) => {
+    if (!confirm('Er du sikker på at du vil slette denne innsjekkingen?')) return;
+    try {
+      await deleteCheckin(checkinId);
+      toast.success('Innsjekking slettet');
+      loadAllCheckins();
+      onCheckinSuccess();
+    } catch (e) {
+      toast.error('Kunne ikke slette innsjekking');
+    }
   };
 
   return (
@@ -224,8 +255,8 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
             </Button>
           )}
 
-          {/* Admin manual check-in */}
           {adminMode && (
+            <>
             <Dialog open={manualCheckinOpen} onOpenChange={setManualCheckinOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="w-full" size="sm">
@@ -342,6 +373,59 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                 </div>
               </DialogContent>
             </Dialog>
+
+            <Dialog open={allCheckinsOpen} onOpenChange={(open) => {
+              setAllCheckinsOpen(open);
+              if (open) loadAllCheckins();
+            }}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="w-full" size="sm">
+                  <List className="w-4 h-4 mr-2" />
+                  Alle innsjekkinger
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+                <DialogHeader>
+                  <DialogTitle>Innsjekkinger på {peak?.name}</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto">
+                  {loadingAllCheckins ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : allCheckins.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">Ingen innsjekkinger ennå</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {allCheckins.map((checkin) => (
+                        <div key={checkin.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/50">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="w-10 h-10">
+                              <AvatarImage src={checkin.profiles?.avatar_url || undefined} />
+                              <AvatarFallback>{checkin.profiles?.username?.[0]?.toUpperCase() || '?'}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-sm">{checkin.profiles?.username || 'Ukjent bruker'}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(checkin.checked_in_at), "d. MMM yyyy, HH:mm", { locale: nb })}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteCheckin(checkin.id)}
+                            className="p-2 rounded-lg hover:bg-destructive/10 transition-colors text-destructive"
+                            title="Slett innsjekking"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+            </>
           )}
         </div>
       </DrawerContent>

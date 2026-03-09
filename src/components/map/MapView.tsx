@@ -400,16 +400,16 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       });
       
       const statusHtml = isTaken 
-        ? `<span class="text-xl font-black tracking-tight drop-shadow-sm flex items-center gap-1.5" style="color: hsl(152, 60%, 42%);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>${peak.heightMoh} <span class="text-xs font-bold">moh</span></span>`
-        : `<span class="text-xl font-black tracking-tight text-foreground drop-shadow-sm" style="background: linear-gradient(135deg, hsl(var(--foreground)), hsl(var(--muted-foreground))); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${peak.heightMoh} <span class="text-xs font-bold" style="color: hsl(var(--muted-foreground)); -webkit-text-fill-color: initial;">moh</span></span>`;
+        ? `<span class="flex items-center gap-1.5" style="color: hsl(152, 60%, 42%); font-size: 18px; font-weight: 800;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>${peak.heightMoh} moh</span>`
+        : `<span style="font-size: 18px; font-weight: 800; color: hsl(var(--foreground));">${peak.heightMoh} moh</span>`;
 
       popup.setHTML(`
         <div class="peak-popup-inner">
           <div class="peak-popup-header">
             <div class="peak-popup-title">${peak.name}${isUnpublished ? '<br><span class="peak-popup-unpublished">(upublisert)</span>' : ''}</div>
           </div>
-          <div class="peak-popup-area" style="margin-bottom: 4px;">${peak.area}</div>
-          <div class="flex flex-col items-center justify-center py-1 border-y border-border/50 bg-muted/20 rounded-lg" style="margin: 4px 0;">
+          <div class="peak-popup-area" style="margin-bottom: 8px;">${peak.area}</div>
+          <div style="text-align: center; padding: 4px 0; margin-bottom: 8px;">
             ${statusHtml}
           </div>
           ${buttonsHtml}

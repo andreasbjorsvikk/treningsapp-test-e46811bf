@@ -61,6 +61,20 @@ export async function searchProfiles(query: string): Promise<{ id: string; usern
   return data || [];
 }
 
+export interface CheckinWithProfile extends PeakCheckin {
+  profiles?: { username: string | null; avatar_url: string | null } | null;
+}
+
+export async function getAllCheckinsForPeak(peakId: string): Promise<CheckinWithProfile[]> {
+  const { data, error } = await supabase
+    .from('peak_checkins' as any)
+    .select('*, profiles:user_id(username, avatar_url)')
+    .eq('peak_id', peakId)
+    .order('checked_in_at', { ascending: false });
+  if (error) throw error;
+  return (data || []) as unknown as CheckinWithProfile[];
+}
+
 export function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371000;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
