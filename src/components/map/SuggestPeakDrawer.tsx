@@ -49,6 +49,8 @@ const SuggestPeakDrawer = ({ open, onClose, latitude, longitude }: SuggestPeakDr
         comment: comment.trim() || null,
         latitude,
         longitude,
+        user_latitude: userLocation?.lat,
+        user_longitude: userLocation?.lng,
       });
       toast.success('Forslag sendt til godkjenning');
       setName('');

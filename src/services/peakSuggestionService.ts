@@ -24,6 +24,8 @@ export async function submitSuggestion(s: {
   comment?: string | null;
   latitude: number;
   longitude: number;
+  user_latitude?: number | null;
+  user_longitude?: number | null;
 }): Promise<PeakSuggestion> {
   const { data, error } = await supabase
     .from('peak_suggestions' as any)
