@@ -22,6 +22,7 @@ interface MapViewProps {
   onClearRoute?: () => void;
   previewWaypoints?: { lat: number; lng: number }[] | null;
   onWaypointClick?: (index: number) => void;
+  onWaypointDrag?: (index: number, lat: number, lng: number) => void;
 }
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
