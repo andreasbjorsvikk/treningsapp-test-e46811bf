@@ -43,6 +43,8 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
   const [routeDistance, setRouteDistance] = useState<number | null>(initial?.route_distance_m || null);
   const [routeDuration, setRouteDuration] = useState<number | null>(initial?.route_duration_s || null);
   const [routeStatus, setRouteStatus] = useState<string>(initial?.route_status || 'none');
+  const [routeWaypoints, setRouteWaypoints] = useState<{lat: number, lng: number}[]>(initial?.route_waypoints || []);
+  const [addingWaypointMode, setAddingWaypointMode] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
