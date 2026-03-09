@@ -243,22 +243,25 @@
 
 .peak-popup-inner {
   font-family: var(--font-body);
-  padding: 18px;
+  padding: 18px 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
+  align-items: center;
+  text-align: center;
 }
 
 .peak-popup-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
 }
 
 .peak-popup-title {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   line-height: 1.2;
   letter-spacing: -0.01em;
 }
@@ -268,23 +271,32 @@
   color: hsl(var(--warning));
   font-family: var(--font-body);
   font-weight: 500;
-  vertical-align: middle;
   background: hsl(var(--warning) / 0.1);
   padding: 2px 6px;
   border-radius: 6px;
-  margin-left: 6px;
+  display: inline-block;
+  margin-top: 6px;
+}
+
+.peak-popup-area {
+  font-size: 0.8rem;
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+  margin-top: -4px;
 }
 
 .peak-popup-info {
   display: flex;
+  justify-content: center;
   align-items: center;
-  gap: 10px;
+  width: 100%;
+  margin-bottom: 6px;
 }
 
 .peak-popup-status {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  padding: 4px 12px;
+  padding: 4px 14px;
   border-radius: 100px;
   letter-spacing: 0.02em;
 }
