@@ -11,7 +11,7 @@ export interface ActivityColors {
   dark: ActivityColorSet;
 }
 
-export const activityColorMap: Partial<Record<SessionType, ActivityColors>> = {
+export const defaultActivityColorMap: Partial<Record<SessionType, ActivityColors>> = {
   fjelltur: {
     light: { bg: 'rgb(212,242,184)', text: 'rgb(47,107,69)', badge: 'rgb(225,248,206)' },
     dark:  { bg: 'rgb(105,162,85)',  text: '#ffffff',        badge: '#1f3a2a' },
