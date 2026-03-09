@@ -764,7 +764,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
               padding: 10px 16px;
               box-shadow: 0 4px 16px rgba(0,0,0,0.18);
             ">
-              <div style="font-size: 16px; font-weight: 800; color: hsl(var(--foreground)); letter-spacing: -0.02em;">${officialName}</div>
+              <div style="font-size: 16px; font-weight: 800; color: hsl(var(--foreground)); letter-spacing: -0.02em;">${entry.kommuneNavn}</div>
               <div style="font-size: 14px; color: hsl(var(--muted-foreground)); margin-top: 3px; font-weight: 500;">
                 ${entry.checked} / ${entry.total} topper
               </div>
