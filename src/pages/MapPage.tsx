@@ -218,11 +218,6 @@ const MapPage = () => {
               previewWaypoints={previewWaypoints}
               onWaypointClick={(index) => setWaypointClickEvent({ index, timestamp: Date.now() })}
               onWaypointDrag={(index, lat, lng) => setWaypointDragEvent({ index, lat, lng, timestamp: Date.now() })}
-              showHeatmap={showHeatmap}
-              heatmapPeriod={heatmapPeriod}
-              showAreaStats={showAreaStats}
-              allPeaks={peaks}
-              userCheckins={checkins}
             />
             {activeRouteGeojson && (
               <button
