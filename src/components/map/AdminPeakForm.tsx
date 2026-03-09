@@ -79,10 +79,16 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
     }
   }, [routeWaypoints, onWaypointsChange]);
 
-  const handleGenerateRoute = async () => {
+  const generateRouteWithWaypoints = async (waypoints: {lat: number, lng: number}[]) => {
     if (!routeStartLat || !routeStartLng || !lat || !lng) return;
     try {
-      const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${routeStartLng},${routeStartLat};${lng},${lat}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
+      const coords = [
+        `${routeStartLng},${routeStartLat}`,
+        ...waypoints.map(wp => `${wp.lng},${wp.lat}`),
+        `${lng},${lat}`
+      ].join(';');
+      
+      const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${coords}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
       const res = await fetch(url);
       const data = await res.json();
       if (data.routes && data.routes.length > 0) {
@@ -92,7 +98,6 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
         setRouteDuration(route.duration);
         setRouteStatus('preview');
         if (onPreviewRoute) onPreviewRoute(route.geometry);
-        toast.success('Rute generert!');
       } else {
         toast.error('Fant ingen rute');
       }
@@ -101,8 +106,30 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
     }
   };
 
+  const handleGenerateRoute = async () => {
+    await generateRouteWithWaypoints(routeWaypoints);
+    toast.success('Rute generert!');
+  };
+
+  useEffect(() => {
+    if (mapClickEvent && addingWaypointMode) {
+      const newWaypoints = [...routeWaypoints, { lat: mapClickEvent.lat, lng: mapClickEvent.lng }];
+      setRouteWaypoints(newWaypoints);
+      generateRouteWithWaypoints(newWaypoints);
+    }
+  }, [mapClickEvent]);
+
+  useEffect(() => {
+    if (waypointClickEvent) {
+      const newWaypoints = routeWaypoints.filter((_, i) => i !== waypointClickEvent.index);
+      setRouteWaypoints(newWaypoints);
+      generateRouteWithWaypoints(newWaypoints);
+    }
+  }, [waypointClickEvent]);
+
   const handleApproveRoute = () => {
     setRouteStatus('approved');
+    setAddingWaypointMode(false);
     toast.success('Rute godkjent');
   };
 
@@ -113,6 +140,8 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
     setRouteDistance(null);
     setRouteDuration(null);
     setRouteStatus('none');
+    setRouteWaypoints([]);
+    setAddingWaypointMode(false);
     if (onPreviewRoute) onPreviewRoute(null);
   };
 
