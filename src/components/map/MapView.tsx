@@ -119,18 +119,18 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     return () => { m.remove(); map.current = null; };
   }, []);
 
-  // Admin: click to add peak
+  // Admin: click to add peak or waypoint
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
     const m = map.current;
     const handler = (e: mapboxgl.MapMouseEvent) => {
-      if (addMode && onMapClick) {
+      if (onMapClick) {
         onMapClick(e.lngLat.lat, e.lngLat.lng);
       }
     };
     m.on('click', handler);
     return () => { m.off('click', handler); };
-  }, [addMode, onMapClick, mapLoaded]);
+  }, [onMapClick, mapLoaded]);
 
   // User: long press to suggest
   useEffect(() => {
