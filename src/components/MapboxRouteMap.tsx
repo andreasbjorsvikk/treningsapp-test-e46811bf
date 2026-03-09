@@ -209,6 +209,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
         [bounds.sw, bounds.ne],
         { padding: 60, pitch: 60, bearing: -20, duration: 1000 }
       );
+      setMapReady(true);
     });
 
     mapInstanceRef.current = map;
