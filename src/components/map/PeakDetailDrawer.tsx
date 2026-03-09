@@ -373,6 +373,59 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                 </div>
               </DialogContent>
             </Dialog>
+
+            {/* All checkins dialog */}
+            <Dialog open={allCheckinsOpen} onOpenChange={(open) => {
+              setAllCheckinsOpen(open);
+              if (open) loadAllCheckins();
+            }}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="w-full" size="sm">
+                  <List className="w-4 h-4 mr-2" />
+                  Alle innsjekkinger
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+                <DialogHeader>
+                  <DialogTitle>Innsjekkinger på {peak?.name}</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto">
+                  {loadingAllCheckins ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : allCheckins.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">Ingen innsjekkinger ennå</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {allCheckins.map((checkin) => (
+                        <div key={checkin.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/50">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="w-10 h-10">
+                              <AvatarImage src={checkin.profiles?.avatar_url || undefined} />
+                              <AvatarFallback>{checkin.profiles?.username?.[0]?.toUpperCase() || '?'}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-sm">{checkin.profiles?.username || 'Ukjent bruker'}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(checkin.checked_in_at), "d. MMM yyyy, HH:mm", { locale: nb })}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteCheckin(checkin.id)}
+                            className="p-2 rounded-lg hover:bg-destructive/10 transition-colors text-destructive"
+                            title="Slett innsjekking"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
           )}
         </div>
       </DrawerContent>
