@@ -79,7 +79,8 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
         setRouteDistance(route.distance);
         setRouteDuration(route.duration);
         setRouteStatus('preview');
-        toast.success('Rute generert');
+        if (onPreviewRoute) onPreviewRoute(route.geometry);
+        toast.success('Rute generert. Dra ned vinduet for å se ruten på kartet.');
       } else {
         toast.error('Fant ingen rute');
       }
