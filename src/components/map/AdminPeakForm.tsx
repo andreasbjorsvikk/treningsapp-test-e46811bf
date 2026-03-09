@@ -57,9 +57,6 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
     setUploading(false);
   };
 
-  import { useEffect } from 'react';
-  import { toast } from 'sonner';
-
   useEffect(() => {
     if (routeStartCoordsProp) {
       setRouteStartLat(routeStartCoordsProp.lat);
