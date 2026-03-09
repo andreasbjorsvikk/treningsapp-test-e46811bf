@@ -224,6 +224,7 @@ const MapPage = () => {
         adminMode={adminMode}
         onEdit={handleEditPeak}
         onDelete={handleDeletePeak}
+        onShowRoute={handleShowRoute}
       />
 
       {/* Admin: Add new peak form */}
