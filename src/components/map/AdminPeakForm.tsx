@@ -251,27 +251,6 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
               </div>
             )}
 
-            {routeStatus === 'preview' && routeGeojson && (
-              <div className="space-y-3 bg-muted/30 p-3 rounded-lg border border-border">
-                <p className="text-xs font-medium text-warning">Rute i forhåndsvisning</p>
-                <div className="text-sm">
-                  Distanse: {(routeDistance! / 1000).toFixed(1)} km<br/>
-                  Estimert tid: {Math.round(routeDuration! / 60)} min
-                </div>
-                <div className="flex gap-2">
-                  <Button type="button" onClick={handleApproveRoute} className="flex-1 bg-success hover:bg-success/90">
-                    Godkjenn rute
-                  </Button>
-                  <Button type="button" variant="outline" onClick={handleClearRoute}>
-                    Fjern rute
-                  </Button>
-                </div>
-                <Button type="button" variant="ghost" className="w-full" onClick={onPickRouteStart}>
-                  Prøv nytt startpunkt
-                </Button>
-              </div>
-            )}
-
             {routeStatus === 'approved' && routeGeojson && (
               <div className="space-y-3 bg-success/10 p-3 rounded-lg border border-success/30">
                 <p className="text-xs font-medium text-success flex items-center gap-1">
