@@ -8,6 +8,8 @@ export interface PeakSuggestion {
   comment: string | null;
   latitude: number;
   longitude: number;
+  user_latitude?: number | null;
+  user_longitude?: number | null;
   status: 'pending' | 'approved' | 'rejected';
   admin_comment: string | null;
   created_at: string;
