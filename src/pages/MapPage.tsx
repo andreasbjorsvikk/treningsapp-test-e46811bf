@@ -160,7 +160,7 @@ const MapPage = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-[calc(100vh-3.5rem)] -mx-4 sm:-mx-6 lg:-mx-8">
+    <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-[calc(100vh-3.5rem)] -mx-4 sm:-mx-6 lg:-mx-8 lg:w-[calc(100%+4rem)]">
       {/* Sub-tab bar */}
       <div className="px-4 pt-3 pb-2">
         <MapSubTabs active={subTab} onChange={setSubTab} />
