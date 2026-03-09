@@ -129,6 +129,24 @@ const MapPage = () => {
     }
   };
 
+  const handlePickRouteStart = () => {
+    setRouteStartPickForPeak(editingPeak);
+    setEditingPeak(null);
+    toast.info('Trykk på kartet for å velge startpunkt for ruten.');
+  };
+
+  const handleShowRoute = (peak: Peak) => {
+    if (peak.route_status === 'approved' && peak.route_geojson) {
+      setSubTab('kart');
+      setActiveRouteGeojson(peak.route_geojson);
+      // Wait for tab switch
+      setTimeout(() => {
+        const evt = new CustomEvent('zoom-to-route', { detail: peak.route_geojson });
+        window.dispatchEvent(evt);
+      }, 300);
+    }
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-[calc(100vh-3.5rem)] -mx-4 sm:-mx-6 lg:-mx-8 w-[calc(100%+2rem)] sm:w-[calc(100%+3rem)] lg:w-[100vw] lg:relative lg:left-[calc(-50vw+50%)]">
       {/* Sub-tab bar */}
