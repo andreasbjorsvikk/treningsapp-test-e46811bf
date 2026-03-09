@@ -12,22 +12,17 @@ import { uploadPeakImage } from '@/services/peakDbService';
 interface AdminPeakFormProps {
   open: boolean;
   onClose: () => void;
-  onSave: (data: {
-    name_no: string;
-    elevation_moh: number;
-    area: string;
-    description_no: string;
-    latitude: number;
-    longitude: number;
-    is_published: boolean;
-    image_url: string | null;
-  }) => Promise<void>;
+  onSave: (data: any) => Promise<void>;
   initial?: Partial<DbPeak>;
   title: string;
   peakId?: string;
+  onPickRouteStart?: () => void;
+  routeStartCoordsProp?: { lat: number; lng: number } | null;
 }
 
-const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId }: AdminPeakFormProps) => {
+const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
+
+const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRouteStart, routeStartCoordsProp }: AdminPeakFormProps) => {
   const [name, setName] = useState(initial?.name_no || '');
   const [elevation, setElevation] = useState(String(initial?.elevation_moh ?? ''));
   const [area, setArea] = useState(initial?.area || '');
@@ -36,6 +31,14 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId }: AdminP
   const [lng, setLng] = useState(String(initial?.longitude ?? ''));
   const [published, setPublished] = useState(initial?.is_published ?? true);
   const [imageUrl, setImageUrl] = useState(initial?.image_url || null);
+  
+  const [routeStartLat, setRouteStartLat] = useState<number | null>(initial?.route_start_lat || null);
+  const [routeStartLng, setRouteStartLng] = useState<number | null>(initial?.route_start_lng || null);
+  const [routeGeojson, setRouteGeojson] = useState<any | null>(initial?.route_geojson || null);
+  const [routeDistance, setRouteDistance] = useState<number | null>(initial?.route_distance_m || null);
+  const [routeDuration, setRouteDuration] = useState<number | null>(initial?.route_duration_s || null);
+  const [routeStatus, setRouteStatus] = useState<string>(initial?.route_status || 'none');
+
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
