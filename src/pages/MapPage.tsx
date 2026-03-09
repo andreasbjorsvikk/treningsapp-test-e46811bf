@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { Peak } from '@/data/peaks';
@@ -11,7 +11,14 @@ import PeakDetailDrawer from '@/components/map/PeakDetailDrawer';
 import AdminPeakForm from '@/components/map/AdminPeakForm';
 import AdminSuggestionsDrawer from '@/components/map/AdminSuggestionsDrawer';
 import SuggestPeakDrawer from '@/components/map/SuggestPeakDrawer';
+import MapSettingsSheet from '@/components/map/MapSettingsSheet';
+import PeakFeed from '@/components/map/PeakFeed';
+import GlobalLeaderboard from '@/components/map/GlobalLeaderboard';
+import { Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
+
+type PeakFilter = 'all' | 'taken' | 'not_taken';
+type HeatmapPeriod = 'year' | 'total';
 
 const MapPage = () => {
   const { user } = useAuth();
@@ -41,6 +48,22 @@ const MapPage = () => {
   const [activeRoutePeakId, setActiveRoutePeakId] = useState<string | null>(null);
   const [previewWaypoints, setPreviewWaypoints] = useState<{lat: number, lng: number}[]>([]);
 
+  // Map settings
+  const [showSettings, setShowSettings] = useState(false);
+  const [peakFilter, setPeakFilter] = useState<PeakFilter>('all');
+  const [showAreaStats, setShowAreaStats] = useState(false);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  const [heatmapPeriod, setHeatmapPeriod] = useState<HeatmapPeriod>('year');
+
+  const checkedPeakIds = useMemo(() => new Set(checkins.map(c => c.peak_id)), [checkins]);
+
+  // Filter peaks for map display
+  const filteredPeaks = useMemo(() => {
+    if (peakFilter === 'all') return peaks;
+    if (peakFilter === 'taken') return peaks.filter(p => checkedPeakIds.has(p.id));
+    return peaks.filter(p => !checkedPeakIds.has(p.id));
+  }, [peaks, peakFilter, checkedPeakIds]);
+
   const loadPeaks = useCallback(async () => {
     try {
       const data = await fetchPeaks();
@@ -61,19 +84,11 @@ const MapPage = () => {
     }
   }, [user]);
 
-  useEffect(() => {
-    loadPeaks();
-  }, [loadPeaks]);
+  useEffect(() => { loadPeaks(); }, [loadPeaks]);
+  useEffect(() => { fetchCheckins(); }, [fetchCheckins]);
 
-  useEffect(() => {
-    fetchCheckins();
-  }, [fetchCheckins]);
+  const handleSelectPeak = (peak: Peak) => setSelectedPeak(peak);
 
-  const handleSelectPeak = (peak: Peak) => {
-    setSelectedPeak(peak);
-  };
-
-  // Admin: map click to add peak
   const handleMapClick = (lat: number, lng: number) => {
     if (adminMode && addMode) {
       setAddCoords({ lat, lng });
@@ -84,12 +99,9 @@ const MapPage = () => {
       setRouteStartPickForPeak(null);
     } else if (adminMode && editingPeak) {
       setMapClickEvent({ lat, lng, timestamp: Date.now() });
-    } else if (!adminMode) {
-      // Long-press handled in MapView
     }
   };
 
-  // Admin: save new peak
   const handleCreatePeak = async (data: any) => {
     if (!user) return;
     await createPeak({ ...data, created_by: user.id });
@@ -97,7 +109,6 @@ const MapPage = () => {
     loadPeaks();
   };
 
-  // Admin: save edited peak
   const handleUpdatePeak = async (data: any) => {
     if (!editingPeak) return;
     await updatePeak(editingPeak.id, data);
@@ -105,7 +116,6 @@ const MapPage = () => {
     loadPeaks();
   };
 
-  // Admin: delete peak
   const handleDeletePeak = async (peakId: string) => {
     if (!confirm('Er du sikker på at du vil slette denne toppen?')) return;
     await deletePeak(peakId);
@@ -113,7 +123,6 @@ const MapPage = () => {
     loadPeaks();
   };
 
-  // Admin: edit peak from detail
   const handleEditPeak = (peak: Peak) => {
     const dbPeak = dbPeaks.find(p => p.id === peak.id);
     if (dbPeak) {
@@ -122,18 +131,14 @@ const MapPage = () => {
     }
   };
 
-  // Admin: marker dragged to new position
   const handleMarkerDrag = async (peakId: string, lat: number, lng: number) => {
     await updatePeak(peakId, { latitude: lat, longitude: lng });
     toast.success('Posisjon oppdatert');
     loadPeaks();
   };
 
-  // User long-press to suggest
   const handleLongPress = (lat: number, lng: number) => {
-    if (!adminMode) {
-      setSuggestCoords({ lat, lng });
-    }
+    if (!adminMode) setSuggestCoords({ lat, lng });
   };
 
   const handlePickRouteStart = () => {
@@ -172,9 +177,7 @@ const MapPage = () => {
           <button
             onClick={() => setAddMode(!addMode)}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
-              addMode
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-background border-border text-foreground hover:bg-muted'
+              addMode ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border text-foreground hover:bg-muted'
             }`}
           >
             {addMode ? '✕ Avbryt' : '+ Legg til topp'}
@@ -197,36 +200,50 @@ const MapPage = () => {
 
       {/* Content */}
       <div className="flex-1 min-h-0">
-        {subTab === 'kart' ? (
+        {subTab === 'kart' && (
           <div className="relative w-full h-full">
-          <MapView
-            peaks={peaks}
-            checkins={checkins}
-            onSelectPeak={handleSelectPeak}
-            adminMode={adminMode}
-            addMode={addMode || !!routeStartPickForPeak}
-            onMapClick={handleMapClick}
-            onMarkerDrag={handleMarkerDrag}
-            onEditPeak={handleEditPeak}
-            onDeletePeak={handleDeletePeak}
-            onLongPress={handleLongPress}
-            routeGeojson={activeRouteGeojson}
-            onClearRoute={() => setActiveRouteGeojson(null)}
-            previewWaypoints={previewWaypoints}
-            onWaypointClick={(index) => setWaypointClickEvent({ index, timestamp: Date.now() })}
-            onWaypointDrag={(index, lat, lng) => setWaypointDragEvent({ index, lat, lng, timestamp: Date.now() })}
-          />
-          {activeRouteGeojson && (
+            <MapView
+              peaks={filteredPeaks}
+              checkins={checkins}
+              onSelectPeak={handleSelectPeak}
+              adminMode={adminMode}
+              addMode={addMode || !!routeStartPickForPeak}
+              onMapClick={handleMapClick}
+              onMarkerDrag={handleMarkerDrag}
+              onEditPeak={handleEditPeak}
+              onDeletePeak={handleDeletePeak}
+              onLongPress={handleLongPress}
+              routeGeojson={activeRouteGeojson}
+              onClearRoute={() => setActiveRouteGeojson(null)}
+              previewWaypoints={previewWaypoints}
+              onWaypointClick={(index) => setWaypointClickEvent({ index, timestamp: Date.now() })}
+              onWaypointDrag={(index, lat, lng) => setWaypointDragEvent({ index, lat, lng, timestamp: Date.now() })}
+              showHeatmap={showHeatmap}
+              heatmapPeriod={heatmapPeriod}
+              showAreaStats={showAreaStats}
+              allPeaks={peaks}
+              userCheckins={checkins}
+            />
+            {activeRouteGeojson && (
+              <button
+                onClick={handleHideRoute}
+                className="absolute top-3 left-1/2 -translate-x-1/2 z-20 px-4 py-2 rounded-full text-xs font-semibold shadow-lg border border-border bg-background/95 backdrop-blur-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                Skjul rute
+              </button>
+            )}
+            {/* Settings button bottom-left */}
             <button
-              onClick={handleHideRoute}
-              className="absolute top-3 left-1/2 -translate-x-1/2 z-20 px-4 py-2 rounded-full text-xs font-semibold shadow-lg border border-border bg-background/95 backdrop-blur-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2"
+              onClick={() => setShowSettings(true)}
+              className="absolute bottom-4 left-4 z-20 p-3 rounded-full shadow-lg border border-border bg-background/95 backdrop-blur-sm text-foreground hover:bg-muted transition-colors"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              Skjul rute
+              <Settings2 className="w-5 h-5" />
             </button>
-          )}
           </div>
-        ) : (
+        )}
+
+        {subTab === 'topper' && (
           <div className="h-full overflow-y-auto">
             <PeaksList
               peaks={peaks}
@@ -238,7 +255,33 @@ const MapPage = () => {
             />
           </div>
         )}
+
+        {subTab === 'feed' && (
+          <div className="h-full overflow-y-auto">
+            <PeakFeed />
+          </div>
+        )}
+
+        {subTab === 'lederliste' && (
+          <div className="h-full overflow-y-auto">
+            <GlobalLeaderboard />
+          </div>
+        )}
       </div>
+
+      {/* Map settings sheet */}
+      <MapSettingsSheet
+        open={showSettings}
+        onOpenChange={setShowSettings}
+        peakFilter={peakFilter}
+        onPeakFilterChange={setPeakFilter}
+        showAreaStats={showAreaStats}
+        onShowAreaStatsChange={setShowAreaStats}
+        showHeatmap={showHeatmap}
+        onShowHeatmapChange={setShowHeatmap}
+        heatmapPeriod={heatmapPeriod}
+        onHeatmapPeriodChange={setHeatmapPeriod}
+      />
 
       {/* Peak detail drawer */}
       <PeakDetailDrawer
