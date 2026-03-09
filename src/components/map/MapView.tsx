@@ -513,8 +513,10 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     const layerId = 'heatmap-layer';
 
     if (!showHeatmap) {
-      if (m.getLayer(layerId)) m.removeLayer(layerId);
-      if (m.getSource(sourceId)) m.removeSource(sourceId);
+      whenStyleReady(m, () => {
+        if (m.getLayer(layerId)) m.removeLayer(layerId);
+        if (m.getSource(sourceId)) m.removeSource(sourceId);
+      });
       return;
     }
 
