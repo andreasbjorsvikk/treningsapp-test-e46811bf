@@ -491,7 +491,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     });
   }, [peaks, checkins, mapLoaded, t, adminMode]);
 
-  // === HEATMAP: Load from summary_polyline in workout_sessions ===
+  // === HEATMAP: Lines from summary_polyline, thicker/redder where more overlap ===
   useEffect(() => {
     if (!map.current || !mapLoaded || !user) return;
     const m = map.current;
@@ -517,7 +517,6 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           query = query.gte('date', startOfYear);
         }
 
-        // Fetch all pages (bypass 1000 row limit)
         let allSessions: any[] = [];
         let page = 0;
         const pageSize = 1000;
@@ -535,31 +534,70 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           return;
         }
 
+        // Build a grid to count segment frequency
+        const segmentCounts = new Map<string, number>();
+        const gridSize = 0.0005; // ~50m grid cells
+        const gridKey = (lat: number, lng: number) =>
+          `${Math.round(lat / gridSize)},${Math.round(lng / gridSize)}`;
+        const segKey = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+          const k1 = gridKey(lat1, lng1);
+          const k2 = gridKey(lat2, lng2);
+          return k1 < k2 ? `${k1}|${k2}` : `${k2}|${k1}`;
+        };
+
+        // First pass: count segment frequency
+        allSessions.forEach((session: any) => {
+          if (!session.summary_polyline) return;
+          try {
+            const points = decodePolyline(session.summary_polyline);
+            for (let i = 0; i < points.length - 1; i++) {
+              const key = segKey(points[i][0], points[i][1], points[i + 1][0], points[i + 1][1]);
+              segmentCounts.set(key, (segmentCounts.get(key) || 0) + 1);
+            }
+          } catch {}
+        });
+
+        // Find max frequency for normalization
+        let maxFreq = 1;
+        segmentCounts.forEach(v => { if (v > maxFreq) maxFreq = v; });
+
+        // Build line features with frequency property
         const features: any[] = [];
         allSessions.forEach((session: any) => {
           if (!session.summary_polyline) return;
           try {
             const points = decodePolyline(session.summary_polyline);
-            // Sample every Nth point per polyline for performance
-            const step = points.length > 200 ? Math.ceil(points.length / 200) : 1;
-            for (let i = 0; i < points.length; i += step) {
+            if (points.length < 2) return;
+            // Build segments with frequency
+            for (let i = 0; i < points.length - 1; i++) {
+              const key = segKey(points[i][0], points[i][1], points[i + 1][0], points[i + 1][1]);
+              const freq = segmentCounts.get(key) || 1;
               features.push({
                 type: 'Feature',
-                geometry: { type: 'Point', coordinates: [points[i][1], points[i][0]] },
-                properties: {},
+                geometry: {
+                  type: 'LineString',
+                  coordinates: [
+                    [points[i][1], points[i][0]],
+                    [points[i + 1][1], points[i + 1][0]],
+                  ],
+                },
+                properties: { freq, normFreq: freq / maxFreq },
               });
             }
           } catch {}
         });
 
-        const maxPoints = 80000;
-        let sampledFeatures = features;
-        if (features.length > maxPoints) {
-          const step = Math.ceil(features.length / maxPoints);
-          sampledFeatures = features.filter((_, i) => i % step === 0);
-        }
+        // Deduplicate: keep only unique grid segments with max frequency
+        const dedupMap = new Map<string, any>();
+        features.forEach(f => {
+          const coords = f.geometry.coordinates;
+          const key = segKey(coords[0][1], coords[0][0], coords[1][1], coords[1][0]);
+          if (!dedupMap.has(key) || dedupMap.get(key).properties.freq < f.properties.freq) {
+            dedupMap.set(key, f);
+          }
+        });
 
-        const geojson = { type: 'FeatureCollection', features: sampledFeatures };
+        const geojson = { type: 'FeatureCollection', features: Array.from(dedupMap.values()) };
 
         if (m.getSource(sourceId)) {
           (m.getSource(sourceId) as mapboxgl.GeoJSONSource).setData(geojson as any);
@@ -570,22 +608,28 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         if (!m.getLayer(layerId)) {
           m.addLayer({
             id: layerId,
-            type: 'heatmap',
+            type: 'line',
             source: sourceId,
             paint: {
-              'heatmap-weight': 1,
-              'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 8, 0.5, 15, 3],
-              'heatmap-color': [
-                'interpolate', ['linear'], ['heatmap-density'],
-                0, 'rgba(33,102,172,0)',
-                0.2, 'hsl(210, 80%, 60%)',
-                0.4, 'hsl(180, 70%, 50%)',
-                0.6, 'hsl(130, 70%, 50%)',
-                0.8, 'hsl(50, 90%, 55%)',
-                1, 'hsl(0, 80%, 55%)',
+              'line-color': [
+                'interpolate', ['linear'], ['get', 'normFreq'],
+                0, 'hsla(210, 80%, 60%, 0.5)',
+                0.15, 'hsla(30, 90%, 55%, 0.7)',
+                0.4, 'hsla(10, 90%, 55%, 0.8)',
+                1, 'hsla(0, 85%, 50%, 0.95)',
               ],
-              'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 8, 4, 13, 12, 16, 20],
-              'heatmap-opacity': 0.7,
+              'line-width': [
+                'interpolate', ['linear'], ['get', 'normFreq'],
+                0, 2,
+                0.3, 3.5,
+                0.7, 5,
+                1, 7,
+              ],
+              'line-opacity': 0.85,
+            },
+            layout: {
+              'line-cap': 'round',
+              'line-join': 'round',
             },
           });
         }
@@ -675,12 +719,12 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
 
           const pct = entry.total > 0 ? Math.round((entry.checked / entry.total) * 100) : 0;
           // Color based on progress
-          const fillColor = pct >= 75 ? 'hsla(152, 60%, 42%, 0.2)' :
-                            pct >= 25 ? 'hsla(210, 70%, 55%, 0.15)' :
-                                        'hsla(220, 50%, 60%, 0.1)';
-          const outlineColor = pct >= 75 ? 'hsla(152, 60%, 42%, 0.6)' :
-                               pct >= 25 ? 'hsla(210, 70%, 55%, 0.4)' :
-                                           'hsla(220, 50%, 60%, 0.3)';
+          const fillColor = pct >= 75 ? 'hsla(152, 65%, 40%, 0.45)' :
+                            pct >= 25 ? 'hsla(210, 70%, 50%, 0.35)' :
+                                        'hsla(250, 55%, 55%, 0.28)';
+          const outlineColor = pct >= 75 ? 'hsla(152, 65%, 35%, 0.85)' :
+                               pct >= 25 ? 'hsla(210, 70%, 45%, 0.75)' :
+                                           'hsla(250, 55%, 50%, 0.6)';
 
           if (!m.getSource(sourceId)) {
             m.addSource(sourceId, { type: 'geojson', data: boundaryData.omrade as any });
@@ -703,8 +747,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
               source: sourceId,
               paint: {
                 'line-color': outlineColor,
-                'line-width': 2.5,
-                'line-dasharray': [3, 2],
+                'line-width': 3,
               },
             });
           }
