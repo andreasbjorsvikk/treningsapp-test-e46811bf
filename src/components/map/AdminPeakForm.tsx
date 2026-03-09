@@ -101,6 +101,7 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
     setRouteDistance(null);
     setRouteDuration(null);
     setRouteStatus('none');
+    if (onPreviewRoute) onPreviewRoute(null);
   };
 
   const handleSubmit = async () => {
