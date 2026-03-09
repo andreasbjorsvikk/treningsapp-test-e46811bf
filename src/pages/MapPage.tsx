@@ -79,6 +79,8 @@ const MapPage = () => {
       setRouteStartCoords({ lat, lng });
       setEditingPeak(routeStartPickForPeak);
       setRouteStartPickForPeak(null);
+    } else if (adminMode && editingPeak) {
+      setMapClickEvent({ lat, lng, timestamp: Date.now() });
     } else if (!adminMode) {
       // Long-press handled in MapView
     }
