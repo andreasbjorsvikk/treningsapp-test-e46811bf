@@ -204,7 +204,7 @@ const MapPage = () => {
             onLongPress={handleLongPress}
             routeGeojson={activeRouteGeojson}
             onClearRoute={() => setActiveRouteGeojson(null)}
-            previewWaypoints={editingPeak ? undefined : null} // Will be passed from AdminPeakForm
+            previewWaypoints={previewWaypoints}
             onWaypointClick={(index) => setWaypointClickEvent({ index, timestamp: Date.now() })}
           />
         ) : (
