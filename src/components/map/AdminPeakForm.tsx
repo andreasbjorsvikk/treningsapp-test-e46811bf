@@ -28,7 +28,7 @@ interface AdminPeakFormProps {
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
-const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRouteStart, routeStartCoordsProp, onPreviewRoute, mapClickEvent, waypointClickEvent, onWaypointsChange }: AdminPeakFormProps) => {
+const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRouteStart, routeStartCoordsProp, onPreviewRoute, mapClickEvent, waypointClickEvent, waypointDragEvent, onWaypointsChange }: AdminPeakFormProps) => {
   const [name, setName] = useState(initial?.name_no || '');
   const [elevation, setElevation] = useState(String(initial?.elevation_moh ?? ''));
   const [area, setArea] = useState(initial?.area || '');
