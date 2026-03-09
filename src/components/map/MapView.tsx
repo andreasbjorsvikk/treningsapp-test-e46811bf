@@ -400,7 +400,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       });
       
       const statusHtml = isTaken 
-        ? `<span class="text-base font-bold tracking-tight text-emerald-600 drop-shadow-sm flex items-center gap-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Besøkt</span>`
+        ? `<span class="text-xl font-black tracking-tight drop-shadow-sm flex items-center gap-1.5" style="color: hsl(152, 60%, 42%);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>${peak.heightMoh} <span class="text-xs font-bold">moh</span></span>`
         : `<span class="text-xl font-black tracking-tight text-foreground drop-shadow-sm" style="background: linear-gradient(135deg, hsl(var(--foreground)), hsl(var(--muted-foreground))); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${peak.heightMoh} <span class="text-xs font-bold" style="color: hsl(var(--muted-foreground)); -webkit-text-fill-color: initial;">moh</span></span>`;
 
       popup.setHTML(`
