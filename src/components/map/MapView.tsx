@@ -43,29 +43,52 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     if (!mapContainer.current || map.current) return;
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
-    const center: [number, number] = peaks.length > 0
-      ? [peaks[0].longitude, peaks[0].latitude]
-      : [5.7, 59.9];
+    const lastCenterStr = localStorage.getItem('map_last_center');
+    const lastZoomStr = localStorage.getItem('map_last_zoom');
+    
+    let center: [number, number] = [5.7, 59.9];
+    let zoom = 11;
+    let hasStoredPos = false;
+
+    if (lastCenterStr && lastZoomStr) {
+      try {
+        center = JSON.parse(lastCenterStr);
+        zoom = parseFloat(lastZoomStr);
+        hasStoredPos = true;
+      } catch (e) {}
+    } else if (peaks.length > 0) {
+      center = [peaks[0].longitude, peaks[0].latitude];
+    }
 
     const m = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/outdoors-v12',
       center,
-      zoom: 11,
+      zoom,
       pitch: 60,
       bearing: -20,
       antialias: true,
     });
 
     m.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    m.addControl(
-      new mapboxgl.GeolocateControl({
-        positionOptions: { enableHighAccuracy: true },
-        trackUserLocation: true,
-        showUserHeading: true,
-      }),
-      'top-right'
-    );
+    const geolocate = new mapboxgl.GeolocateControl({
+      positionOptions: { enableHighAccuracy: true },
+      trackUserLocation: true,
+      showUserHeading: true,
+    });
+    m.addControl(geolocate, 'top-right');
+
+    m.on('moveend', () => {
+      const c = m.getCenter();
+      localStorage.setItem('map_last_center', JSON.stringify([c.lng, c.lat]));
+      localStorage.setItem('map_last_zoom', m.getZoom().toString());
+    });
+    
+    m.on('load', () => {
+      if (!hasStoredPos) {
+        geolocate.trigger();
+      }
+    });
 
     m.on('style.load', () => {
       m.addSource('mapbox-dem', {
