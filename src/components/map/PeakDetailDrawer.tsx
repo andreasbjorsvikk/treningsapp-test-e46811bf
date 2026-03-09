@@ -101,6 +101,20 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
               <MapPin className="w-4 h-4 text-muted-foreground" />
               <span>{peak.area}</span>
             </div>
+            
+            {peak.route_status === 'approved' && onShowRoute && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full mt-2"
+                onClick={() => {
+                  onClose();
+                  onShowRoute(peak);
+                }}
+              >
+                Vis rute ({(peak.route_distance_m || 0) / 1000} km, {Math.round((peak.route_duration_s || 0) / 60)} min)
+              </Button>
+            )}
           </div>
 
           {peak.description && (
