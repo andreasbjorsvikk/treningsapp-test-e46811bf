@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { PeakSuggestion, fetchSuggestions, reviewSuggestion } from '@/services/peakSuggestionService';
 import { createPeak } from '@/services/peakDbService';
+import { checkinPeak, getDistanceMeters } from '@/services/peakCheckinService';
 import { useAuth } from '@/hooks/useAuth';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
@@ -56,7 +57,7 @@ const AdminSuggestionsDrawer = ({ open, onClose, onApproved }: AdminSuggestionsD
     try {
       await reviewSuggestion(selected.id, status, user.id, adminComment || undefined);
       if (status === 'approved') {
-        await createPeak({
+        const newPeak = await createPeak({
           name_no: selected.name,
           elevation_moh: selected.elevation_moh || 0,
           area: '',
@@ -73,7 +74,27 @@ const AdminSuggestionsDrawer = ({ open, onClose, onApproved }: AdminSuggestionsD
           route_duration_s: null,
           route_status: 'none',
         });
-        toast.success('Toppen ble godkjent og opprettet');
+
+        let autoCheckedIn = false;
+        let dist = 0;
+        if (selected.user_latitude && selected.user_longitude) {
+          dist = getDistanceMeters(selected.latitude, selected.longitude, selected.user_latitude, selected.user_longitude);
+          if (dist <= 100) {
+            try {
+              await checkinPeak(selected.submitted_by, newPeak.id, selected.created_at);
+              autoCheckedIn = true;
+            } catch (e) {
+              console.error("Failed to auto checkin", e);
+            }
+          }
+        }
+
+        if (autoCheckedIn) {
+          toast.success(`Toppen ble godkjent, og brukeren ble sjekket inn automatisk (${Math.round(dist)}m unna)`);
+        } else {
+          toast.success('Toppen ble godkjent og opprettet');
+        }
+        
         onApproved();
       } else {
         toast.success('Forslaget ble avslått');

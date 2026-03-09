@@ -363,22 +363,24 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   return (
     <div className={`relative w-full h-full ${is3D ? 'map-is-3d' : ''}`}>
       <div ref={mapContainer} className="w-full h-full" />
-      <button
-        onClick={() => setIs3D(prev => !prev)}
-        className="absolute top-2 left-2 z-10 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-md border border-border bg-background text-foreground"
-      >
-        {is3D ? '2D' : '3D'}
-      </button>
-      <select
-        value={mapStyle}
-        onChange={(e) => setMapStyle(e.target.value as 'outdoors' | 'satellite' | 'streets')}
-        className="absolute top-12 left-2 z-10 px-2.5 py-1.5 rounded-lg text-xs font-semibold shadow-md border border-border bg-background text-foreground appearance-none pr-8 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary"
-        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 4-4H2z'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
-      >
-        <option value="streets">🗺️ Standard</option>
-        <option value="outdoors">⛰️ Terreng</option>
-        <option value="satellite">🛰️ Satelitt</option>
-      </select>
+      <div className="absolute top-2 left-2 z-10 flex items-center gap-2">
+        <button
+          onClick={() => setIs3D(prev => !prev)}
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold shadow-md border border-border bg-background text-foreground hover:bg-muted transition-colors h-[34px]"
+        >
+          {is3D ? '2D' : '3D'}
+        </button>
+        <select
+          value={mapStyle}
+          onChange={(e) => setMapStyle(e.target.value as 'outdoors' | 'satellite' | 'streets')}
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold shadow-md border border-border bg-background text-foreground appearance-none pr-8 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary hover:bg-muted transition-colors h-[34px]"
+          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 4-4H2z'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
+        >
+          <option value="streets">🗺️ Standard</option>
+          <option value="outdoors">⛰️ Terreng</option>
+          <option value="satellite">🛰️ Satelitt</option>
+        </select>
+      </div>
     </div>
   );
 };
