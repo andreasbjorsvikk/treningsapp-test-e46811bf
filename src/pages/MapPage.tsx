@@ -198,6 +198,7 @@ const MapPage = () => {
       {/* Content */}
       <div className="flex-1 min-h-0">
         {subTab === 'kart' ? (
+          <div className="relative w-full h-full">
           <MapView
             peaks={peaks}
             checkins={checkins}
