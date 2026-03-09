@@ -66,24 +66,34 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
     <Drawer open={open} onOpenChange={(o) => !o && onClose()}>
       <DrawerContent className="max-h-[90vh]">
         <DrawerHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <DrawerTitle className="font-display text-lg">{peak.name}</DrawerTitle>
-            {adminMode && (
-              <div className="flex gap-1">
-                <button
-                  onClick={() => { onClose(); onEdit?.(peak); }}
-                  className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => { onClose(); onDelete?.(peak.id); }}
-                  className="p-2 rounded-lg hover:bg-destructive/10 transition-colors text-destructive"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            )}
+          <div className="flex flex-col items-center text-center">
+            <div className="flex items-center justify-between w-full">
+              <div className="w-8" />
+              <DrawerTitle className="font-display text-2xl">{peak.name}</DrawerTitle>
+              {adminMode ? (
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => { onClose(); onEdit?.(peak); }}
+                    className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => { onClose(); onDelete?.(peak.id); }}
+                    className="p-2 rounded-lg hover:bg-destructive/10 transition-colors text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : <div className="w-8" />}
+            </div>
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mt-1">
+              <Mountain className="w-4 h-4" />
+              <span className="font-medium">{peak.heightMoh} moh</span>
+              <span className="text-border">•</span>
+              <MapPin className="w-4 h-4" />
+              <span>{peak.area}</span>
+            </div>
           </div>
         </DrawerHeader>
         <div className="px-4 pb-6 space-y-4 overflow-y-auto">
@@ -92,16 +102,8 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
             <img src={staticMapUrl} alt={`Kart over ${peak.name}`} className="w-full h-[160px] object-cover" loading="lazy" />
           </div>
 
-          {/* Info */}
+          {/* Route info */}
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-sm">
-              <Mountain className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium">{peak.heightMoh} moh</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <MapPin className="w-4 h-4 text-muted-foreground" />
-              <span>{peak.area}</span>
-            </div>
             
             {peak.route_status === 'approved' && onShowRoute && (
               <Button 
