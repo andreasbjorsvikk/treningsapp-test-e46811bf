@@ -62,6 +62,8 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     }
   }, []);
 
+  const checkedPeakIds = new Set(checkins.map(c => c.peak_id));
+
   // Map initialization
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
