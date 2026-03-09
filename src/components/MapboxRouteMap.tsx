@@ -10,6 +10,8 @@ interface MapboxRouteMapProps {
   lineColor: string;
   height: number;
   isDark: boolean;
+  totalDistance?: number;
+  totalElevation?: number;
 }
 
 function simplifyPoints(points: [number, number][], maxPoints: number): [number, number][] {
