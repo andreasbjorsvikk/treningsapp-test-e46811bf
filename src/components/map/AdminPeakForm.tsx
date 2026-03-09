@@ -260,7 +260,7 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
         <DrawerHeader>
           <DrawerTitle className="font-display">{title}</DrawerTitle>
         </DrawerHeader>
-        <div className="px-4 pb-6 space-y-4 overflow-y-auto">
+        <div className="px-4 pb-24 space-y-4 overflow-y-auto">
           <div className="space-y-2">
             <Label>Navn</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Fjelltopp-navn" />

@@ -57,10 +57,20 @@ const AdminSuggestionsDrawer = ({ open, onClose, onApproved }: AdminSuggestionsD
     try {
       await reviewSuggestion(selected.id, status, user.id, adminComment || undefined);
       if (status === 'approved') {
+        let resolvedArea = '';
+        try {
+          const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${selected.longitude},${selected.latitude}.json?types=place,locality,region&access_token=${mapboxToken}`);
+          const data = await res.json();
+          if (data.features && data.features.length > 0) {
+            const place = data.features.find((f: any) => f.place_type.includes('place') || f.place_type.includes('locality'));
+            resolvedArea = place ? place.text : data.features[0].text;
+          }
+        } catch (e) {}
+
         const newPeak = await createPeak({
           name_no: selected.name,
           elevation_moh: selected.elevation_moh || 0,
-          area: '',
+          area: resolvedArea,
           description_no: selected.comment || '',
           image_url: null,
           latitude: selected.latitude,

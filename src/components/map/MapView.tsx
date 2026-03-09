@@ -483,6 +483,11 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
 
   return (
     <div className={`relative w-full h-full ${is3D ? 'map-is-3d' : ''}`}>
+      <style>{`
+        .show-peak-labels .peak-marker-label {
+          opacity: 1 !important;
+        }
+      `}</style>
       <div ref={mapContainer} className="w-full h-full" />
       <div className="absolute top-2 left-2 z-10 flex items-center gap-2">
         <button
