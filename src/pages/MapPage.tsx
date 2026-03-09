@@ -191,12 +191,14 @@ const MapPage = () => {
             checkins={checkins}
             onSelectPeak={handleSelectPeak}
             adminMode={adminMode}
-            addMode={addMode}
+            addMode={addMode || !!routeStartPickForPeak}
             onMapClick={handleMapClick}
             onMarkerDrag={handleMarkerDrag}
             onEditPeak={handleEditPeak}
             onDeletePeak={handleDeletePeak}
             onLongPress={handleLongPress}
+            routeGeojson={activeRouteGeojson}
+            onClearRoute={() => setActiveRouteGeojson(null)}
           />
         ) : (
           <div className="h-full overflow-y-auto">
