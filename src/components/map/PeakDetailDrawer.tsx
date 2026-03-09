@@ -255,8 +255,8 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
             </Button>
           )}
 
-          {/* Admin manual check-in */}
           {adminMode && (
+            <>
             <Dialog open={manualCheckinOpen} onOpenChange={setManualCheckinOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="w-full" size="sm">
