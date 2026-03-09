@@ -330,6 +330,7 @@ export type Database = {
           route_status: string | null
           route_updated_at: string | null
           route_updated_by: string | null
+          route_waypoints: Json | null
           updated_at: string
         }
         Insert: {
@@ -352,6 +353,7 @@ export type Database = {
           route_status?: string | null
           route_updated_at?: string | null
           route_updated_by?: string | null
+          route_waypoints?: Json | null
           updated_at?: string
         }
         Update: {
@@ -374,6 +376,7 @@ export type Database = {
           route_status?: string | null
           route_updated_at?: string | null
           route_updated_by?: string | null
+          route_waypoints?: Json | null
           updated_at?: string
         }
         Relationships: []
