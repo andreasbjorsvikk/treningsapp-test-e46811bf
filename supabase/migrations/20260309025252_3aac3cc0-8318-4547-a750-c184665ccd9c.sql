@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS public.peak_checkins_user_peak_unique;
