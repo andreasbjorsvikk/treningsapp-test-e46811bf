@@ -5,7 +5,11 @@ import { Peak } from '@/data/peaks';
 import { PeakCheckin } from '@/services/peakCheckinService';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+type HeatmapPeriod = 'year' | 'total';
 
 interface MapViewProps {
   peaks: Peak[];
@@ -23,18 +27,23 @@ interface MapViewProps {
   previewWaypoints?: { lat: number; lng: number }[] | null;
   onWaypointClick?: (index: number) => void;
   onWaypointDrag?: (index: number, lat: number, lng: number) => void;
+  showHeatmap?: boolean;
+  heatmapPeriod?: HeatmapPeriod;
+  showAreaStats?: boolean;
 }
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
-const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, onClearRoute, previewWaypoints, onWaypointClick, onWaypointDrag }: MapViewProps) => {
+const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, onClearRoute, previewWaypoints, onWaypointClick, onWaypointDrag, showHeatmap, heatmapPeriod, showAreaStats }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const waypointMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const routeStartMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const areaMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const { t } = useTranslation();
   const { settings } = useSettings();
+  const { user } = useAuth();
   const [mapLoaded, setMapLoaded] = useState(false);
   const [is3D, setIs3D] = useState(true);
   const [mapStyle, setMapStyle] = useState<'outdoors' | 'satellite' | 'streets'>('outdoors');
@@ -480,6 +489,153 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       markersRef.current.push(marker);
     });
   }, [peaks, checkins, mapLoaded, t, adminMode]);
+
+  // === HEATMAP: Load user workout streams and display as heatmap ===
+  useEffect(() => {
+    if (!map.current || !mapLoaded || !user) return;
+    const m = map.current;
+    const sourceId = 'heatmap-source';
+    const layerId = 'heatmap-layer';
+
+    if (!showHeatmap) {
+      if (m.getLayer(layerId)) m.removeLayer(layerId);
+      if (m.getSource(sourceId)) m.removeSource(sourceId);
+      return;
+    }
+
+    const loadHeatmapData = async () => {
+      try {
+        let query = supabase
+          .from('workout_streams')
+          .select('latlng_data, created_at')
+          .eq('user_id', user.id)
+          .not('latlng_data', 'is', null);
+
+        if (heatmapPeriod === 'year') {
+          const startOfYear = new Date(new Date().getFullYear(), 0, 1).toISOString();
+          query = query.gte('created_at', startOfYear);
+        }
+
+        const { data: streams } = await query;
+        if (!streams || streams.length === 0) {
+          if (m.getLayer(layerId)) m.removeLayer(layerId);
+          if (m.getSource(sourceId)) m.removeSource(sourceId);
+          return;
+        }
+
+        const features: any[] = [];
+        streams.forEach((stream: any) => {
+          const latlngs = stream.latlng_data as number[][];
+          if (!Array.isArray(latlngs)) return;
+          latlngs.forEach((point: number[]) => {
+            if (Array.isArray(point) && point.length >= 2) {
+              features.push({
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [point[1], point[0]] },
+                properties: {},
+              });
+            }
+          });
+        });
+
+        const maxPoints = 50000;
+        let sampledFeatures = features;
+        if (features.length > maxPoints) {
+          const step = Math.ceil(features.length / maxPoints);
+          sampledFeatures = features.filter((_, i) => i % step === 0);
+        }
+
+        const geojson = { type: 'FeatureCollection', features: sampledFeatures };
+
+        if (m.getSource(sourceId)) {
+          (m.getSource(sourceId) as mapboxgl.GeoJSONSource).setData(geojson as any);
+        } else {
+          m.addSource(sourceId, { type: 'geojson', data: geojson as any });
+        }
+
+        if (!m.getLayer(layerId)) {
+          m.addLayer({
+            id: layerId,
+            type: 'heatmap',
+            source: sourceId,
+            paint: {
+              'heatmap-weight': 1,
+              'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 8, 0.5, 15, 3],
+              'heatmap-color': [
+                'interpolate', ['linear'], ['heatmap-density'],
+                0, 'rgba(33,102,172,0)',
+                0.2, 'hsl(210, 80%, 60%)',
+                0.4, 'hsl(180, 70%, 50%)',
+                0.6, 'hsl(130, 70%, 50%)',
+                0.8, 'hsl(50, 90%, 55%)',
+                1, 'hsl(0, 80%, 55%)',
+              ],
+              'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 8, 4, 13, 12, 16, 20],
+              'heatmap-opacity': 0.7,
+            },
+          });
+        }
+      } catch (e) {
+        console.error('Heatmap load error:', e);
+      }
+    };
+
+    loadHeatmapData();
+  }, [showHeatmap, heatmapPeriod, mapLoaded, user]);
+
+  // === AREA STATS: Show municipality labels with peak stats ===
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    areaMarkersRef.current.forEach(m => m.remove());
+    areaMarkersRef.current = [];
+
+    if (!showAreaStats) return;
+
+    const checkedIds = new Set(checkins.map(c => c.peak_id));
+    const areaMap = new Map<string, { peaks: Peak[]; checked: number; total: number }>();
+
+    peaks.forEach(peak => {
+      const area = peak.area?.trim();
+      if (!area) return;
+      if (!areaMap.has(area)) areaMap.set(area, { peaks: [], checked: 0, total: 0 });
+      const entry = areaMap.get(area)!;
+      entry.peaks.push(peak);
+      entry.total++;
+      if (checkedIds.has(peak.id)) entry.checked++;
+    });
+
+    areaMap.forEach((entry, areaName) => {
+      if (!map.current) return;
+      const avgLat = entry.peaks.reduce((s, p) => s + p.latitude, 0) / entry.peaks.length;
+      const avgLng = entry.peaks.reduce((s, p) => s + p.longitude, 0) / entry.peaks.length;
+      const pct = entry.total > 0 ? Math.round((entry.checked / entry.total) * 100) : 0;
+
+      const el = document.createElement('div');
+      el.style.cssText = 'pointer-events: none; text-align: center; white-space: nowrap;';
+      el.innerHTML = `
+        <div style="
+          background: hsl(var(--background) / 0.9);
+          backdrop-filter: blur(6px);
+          border: 1px solid hsl(var(--border));
+          border-radius: 10px;
+          padding: 6px 10px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        ">
+          <div style="font-size: 12px; font-weight: 700; color: hsl(var(--foreground));">${areaName}</div>
+          <div style="font-size: 11px; color: hsl(var(--muted-foreground)); margin-top: 1px;">
+            ${entry.checked} / ${entry.total} topper · <span style="font-weight: 600; color: ${pct >= 50 ? 'hsl(152, 60%, 42%)' : 'hsl(var(--muted-foreground))'};">${pct}%</span>
+          </div>
+        </div>
+      `;
+
+      const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
+        .setLngLat([avgLng, avgLat])
+        .addTo(map.current!);
+
+      areaMarkersRef.current.push(marker);
+    });
+  }, [showAreaStats, peaks, checkins, mapLoaded]);
 
   return (
     <div className={`relative w-full h-full ${is3D ? 'map-is-3d' : ''}`}>
