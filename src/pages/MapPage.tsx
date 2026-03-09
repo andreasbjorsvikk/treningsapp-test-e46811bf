@@ -207,6 +207,7 @@ const MapPage = () => {
             onClearRoute={() => setActiveRouteGeojson(null)}
             previewWaypoints={previewWaypoints}
             onWaypointClick={(index) => setWaypointClickEvent({ index, timestamp: Date.now() })}
+            onWaypointDrag={(index, lat, lng) => setWaypointDragEvent({ index, lat, lng, timestamp: Date.now() })}
           />
         ) : (
           <div className="h-full overflow-y-auto">
