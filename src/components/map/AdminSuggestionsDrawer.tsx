@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { PeakSuggestion, fetchSuggestions, reviewSuggestion } from '@/services/peakSuggestionService';
 import { createPeak } from '@/services/peakDbService';
+import { checkinPeak, getDistanceMeters } from '@/services/peakCheckinService';
 import { useAuth } from '@/hooks/useAuth';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
