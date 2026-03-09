@@ -617,10 +617,10 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
             paint: {
               'line-color': [
                 'interpolate', ['linear'], ['get', 'normFreq'],
-                0, 'hsla(200, 85%, 55%, 0.7)',
-                0.15, 'hsla(30, 95%, 55%, 0.85)',
-                0.4, 'hsla(10, 95%, 50%, 0.9)',
-                1, 'hsla(0, 90%, 45%, 1)',
+                0, 'hsla(0, 80%, 60%, 0.7)',
+                0.15, 'hsla(0, 85%, 55%, 0.85)',
+                0.4, 'hsla(0, 90%, 48%, 0.9)',
+                1, 'hsla(0, 95%, 40%, 1)',
               ],
               'line-width': [
                 'interpolate', ['linear'], ['get', 'normFreq'],
