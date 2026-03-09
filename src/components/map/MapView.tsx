@@ -230,6 +230,8 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     if (mapStyle === 'satellite') styleUrl = 'mapbox://styles/mapbox/satellite-streets-v12';
     else if (mapStyle === 'streets') styleUrl = 'mapbox://styles/mapbox/streets-v12';
     
+    // Mark as not loaded while style changes
+    setMapLoaded(false);
     m.setStyle(styleUrl);
     m.once('style.load', () => {
       if (!m.getSource('mapbox-dem')) {
@@ -239,8 +241,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       if (!m.getLayer('sky')) {
         m.addLayer({ id: 'sky', type: 'sky', paint: { 'sky-type': 'atmosphere', 'sky-atmosphere-sun': [0.0, 90.0], 'sky-atmosphere-sun-intensity': 15 } });
       }
-      setMapLoaded(prev => !prev);
-      setTimeout(() => setMapLoaded(true), 50);
+      setMapLoaded(true);
     });
   }, [mapStyle]);
 
