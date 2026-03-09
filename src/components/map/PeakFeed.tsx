@@ -81,7 +81,7 @@ const PeakFeed = () => {
 
       // Get recent checkins from visible friends
       const { data: checkins } = await supabase
-        .from('peak_checkins' as any)
+        .from('peak_checkins')
         .select('*')
         .in('user_id', visibleFriendIds)
         .order('checked_in_at', { ascending: false })
