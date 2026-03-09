@@ -73,6 +73,10 @@ const MapPage = () => {
     if (adminMode && addMode) {
       setAddCoords({ lat, lng });
       setAddMode(false);
+    } else if (adminMode && routeStartPickForPeak) {
+      setRouteStartCoords({ lat, lng });
+      setEditingPeak(routeStartPickForPeak);
+      setRouteStartPickForPeak(null);
     } else if (!adminMode) {
       // Long-press handled in MapView
     }
