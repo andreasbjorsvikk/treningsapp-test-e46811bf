@@ -16,7 +16,7 @@ import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { SessionType } from '@/types/workout';
 import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw, Loader2, Check, Pencil, Dumbbell, Lock, HelpCircle, Target, BarChart3, Calendar, Users, Zap, ShieldCheck } from 'lucide-react';
-import { getActivityColors, activityColorMap } from '@/utils/activityColors';
+import { getActivityColors, activityColorMap, saveActivityColors } from '@/utils/activityColors';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
 import { stravaService } from '@/services/stravaService';
@@ -288,6 +288,7 @@ const SettingsPage = () => {
                             key={idx}
                             onClick={() => {
                               (activityColorMap as any)[type] = { light: preset.light, dark: preset.dark };
+                              saveActivityColors();
                               updateSettings({
                                 sessionTypeColors: { ...settings.sessionTypeColors, [type]: preset.light.bg },
                               });

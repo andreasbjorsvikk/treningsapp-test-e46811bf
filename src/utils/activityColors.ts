@@ -11,7 +11,7 @@ export interface ActivityColors {
   dark: ActivityColorSet;
 }
 
-export const activityColorMap: Partial<Record<SessionType, ActivityColors>> = {
+export const defaultActivityColorMap: Partial<Record<SessionType, ActivityColors>> = {
   fjelltur: {
     light: { bg: 'rgb(212,242,184)', text: 'rgb(47,107,69)', badge: 'rgb(225,248,206)' },
     dark:  { bg: 'rgb(105,162,85)',  text: '#ffffff',        badge: '#1f3a2a' },
@@ -53,6 +53,36 @@ export const activityColorMap: Partial<Record<SessionType, ActivityColors>> = {
     dark:  { bg: 'rgb(90,90,94)',    text: '#ffffff',         badge: '#2a2a2e' },
   },
 };
+
+// Mutable runtime map – initialized from defaults, overridden by user settings
+export const activityColorMap: Partial<Record<SessionType, ActivityColors>> = { ...defaultActivityColorMap };
+
+// Restore saved color overrides from localStorage
+export function restoreActivityColors() {
+  try {
+    const saved = localStorage.getItem('treningslogg_activity_colors');
+    if (saved) {
+      const parsed = JSON.parse(saved) as Partial<Record<SessionType, ActivityColors>>;
+      Object.assign(activityColorMap, parsed);
+    }
+  } catch {}
+}
+
+// Save current color overrides to localStorage (only non-default entries)
+export function saveActivityColors() {
+  const overrides: Partial<Record<SessionType, ActivityColors>> = {};
+  for (const [type, colors] of Object.entries(activityColorMap)) {
+    const def = defaultActivityColorMap[type as SessionType];
+    if (colors && (!def || JSON.stringify(colors) !== JSON.stringify(def))) {
+      overrides[type as SessionType] = colors;
+    }
+  }
+  if (Object.keys(overrides).length > 0) {
+    localStorage.setItem('treningslogg_activity_colors', JSON.stringify(overrides));
+  } else {
+    localStorage.removeItem('treningslogg_activity_colors');
+  }
+}
 
 export function getActivityColors(type: SessionType, isDark: boolean): ActivityColorSet {
   const colors = activityColorMap[type];
