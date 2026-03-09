@@ -1,5 +1,5 @@
 import { Peak } from '@/data/peaks';
-import { PeakCheckin, checkinPeak, getDistanceMeters, adminCheckinPeak, searchProfiles } from '@/services/peakCheckinService';
+import { PeakCheckin, checkinPeak, getDistanceMeters, adminCheckinPeak, searchProfiles, getAllCheckinsForPeak, CheckinWithProfile, deleteCheckin } from '@/services/peakCheckinService';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
@@ -10,7 +10,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Mountain, MapPin, Check, Loader2, ImageIcon, Pencil, Trash2, CalendarIcon, UserPlus, X, Search } from 'lucide-react';
+import { Mountain, MapPin, Check, Loader2, ImageIcon, Pencil, Trash2, CalendarIcon, UserPlus, X, Search, List } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { RouteElevationChart } from '@/components/map/RouteElevationChart';
@@ -47,6 +47,11 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
   const [checkinDate, setCheckinDate] = useState<Date>(new Date());
   const [searching, setSearching] = useState(false);
   const [submittingCheckin, setSubmittingCheckin] = useState(false);
+
+  // Admin all checkins state
+  const [allCheckinsOpen, setAllCheckinsOpen] = useState(false);
+  const [allCheckins, setAllCheckins] = useState<CheckinWithProfile[]>([]);
+  const [loadingAllCheckins, setLoadingAllCheckins] = useState(false);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
