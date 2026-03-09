@@ -164,6 +164,7 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
         route_distance_m: routeDistance ? Math.round(routeDistance) : null,
         route_duration_s: routeDuration ? Math.round(routeDuration) : null,
         route_status: routeStatus,
+        route_waypoints: routeWaypoints.length > 0 ? routeWaypoints : null,
       });
       onClose();
     } catch {
