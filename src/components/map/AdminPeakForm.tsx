@@ -56,6 +56,53 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
     setUploading(false);
   };
 
+  import { useEffect } from 'react';
+  import { toast } from 'sonner';
+
+  useEffect(() => {
+    if (routeStartCoordsProp) {
+      setRouteStartLat(routeStartCoordsProp.lat);
+      setRouteStartLng(routeStartCoordsProp.lng);
+      setRouteGeojson(null);
+      setRouteStatus('none');
+    }
+  }, [routeStartCoordsProp]);
+
+  const handleGenerateRoute = async () => {
+    if (!routeStartLat || !routeStartLng || !lat || !lng) return;
+    try {
+      const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${routeStartLng},${routeStartLat};${lng},${lat}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.routes && data.routes.length > 0) {
+        const route = data.routes[0];
+        setRouteGeojson(route.geometry);
+        setRouteDistance(route.distance);
+        setRouteDuration(route.duration);
+        setRouteStatus('preview');
+        toast.success('Rute generert');
+      } else {
+        toast.error('Fant ingen rute');
+      }
+    } catch (e) {
+      toast.error('Kunne ikke generere rute');
+    }
+  };
+
+  const handleApproveRoute = () => {
+    setRouteStatus('approved');
+    toast.success('Rute godkjent');
+  };
+
+  const handleClearRoute = () => {
+    setRouteStartLat(null);
+    setRouteStartLng(null);
+    setRouteGeojson(null);
+    setRouteDistance(null);
+    setRouteDuration(null);
+    setRouteStatus('none');
+  };
+
   const handleSubmit = async () => {
     if (!name.trim() || !lat || !lng) return;
     setSaving(true);
