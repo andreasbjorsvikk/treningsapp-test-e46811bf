@@ -53,7 +53,14 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressCoords = useRef<{ lat: number; lng: number } | null>(null);
 
-  const checkedPeakIds = new Set(checkins.map(c => c.peak_id));
+  // Helper: safely run map operations only when style is loaded
+  const whenStyleReady = useCallback((m: mapboxgl.Map, fn: () => void) => {
+    if (m.isStyleLoaded()) {
+      fn();
+    } else {
+      m.once('style.load', fn);
+    }
+  }, []);
 
   // Map initialization
   useEffect(() => {
