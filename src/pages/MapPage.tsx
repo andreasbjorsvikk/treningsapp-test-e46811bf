@@ -146,12 +146,17 @@ const MapPage = () => {
     if (peak.route_status === 'approved' && peak.route_geojson) {
       setSubTab('kart');
       setActiveRouteGeojson(peak.route_geojson);
-      // Wait for tab switch
+      setActiveRoutePeakId(peak.id);
       setTimeout(() => {
         const evt = new CustomEvent('zoom-to-route', { detail: peak.route_geojson });
         window.dispatchEvent(evt);
       }, 300);
     }
+  };
+
+  const handleHideRoute = () => {
+    setActiveRouteGeojson(null);
+    setActiveRoutePeakId(null);
   };
 
   return (
