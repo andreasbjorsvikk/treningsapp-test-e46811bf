@@ -779,7 +779,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
             .addTo(map.current!);
           areaMarkersRef.current.push(marker);
         } catch (e) {
-          console.error('Failed to load municipality boundary for', kommuneName, e);
+          console.error('Failed to load municipality boundary for', kommuneNr, e);
         }
       }
     };
