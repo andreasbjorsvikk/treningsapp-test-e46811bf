@@ -48,6 +48,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   const [mapLoaded, setMapLoaded] = useState(false);
   const [is3D, setIs3D] = useState(true);
   const [mapStyle, setMapStyle] = useState<'outdoors' | 'satellite' | 'streets'>('outdoors');
+  const appliedStyleRef = useRef<string>('outdoors');
   const [showStyleMenu, setShowStyleMenu] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressCoords = useRef<{ lat: number; lng: number } | null>(null);
@@ -221,16 +222,18 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     }
   }, [is3D, mapLoaded]);
 
-  // Toggle map style
+  // Toggle map style — only when user actually changes it
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
+    // Skip if style hasn't actually changed
+    if (mapStyle === appliedStyleRef.current) return;
+    appliedStyleRef.current = mapStyle;
     const m = map.current;
     
     let styleUrl = 'mapbox://styles/mapbox/outdoors-v12';
     if (mapStyle === 'satellite') styleUrl = 'mapbox://styles/mapbox/satellite-streets-v12';
     else if (mapStyle === 'streets') styleUrl = 'mapbox://styles/mapbox/streets-v12';
     
-    // Mark as not loaded while style changes
     setMapLoaded(false);
     m.setStyle(styleUrl);
     m.once('style.load', () => {
@@ -243,7 +246,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       }
       setMapLoaded(true);
     });
-  }, [mapStyle]);
+  }, [mapStyle, mapLoaded]);
 
   // Draw route if provided
   useEffect(() => {
