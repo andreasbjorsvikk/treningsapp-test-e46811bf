@@ -17,11 +17,12 @@ interface PeakDetailDrawerProps {
   adminMode?: boolean;
   onEdit?: (peak: Peak) => void;
   onDelete?: (peakId: string) => void;
+  onShowRoute?: (peak: Peak) => void;
 }
 
 const CHECKIN_RADIUS_METERS = 100;
 
-const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adminMode, onEdit, onDelete }: PeakDetailDrawerProps) => {
+const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adminMode, onEdit, onDelete, onShowRoute }: PeakDetailDrawerProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
