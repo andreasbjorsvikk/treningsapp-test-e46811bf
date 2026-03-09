@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Mountain, MapPin, Check, Loader2, ImageIcon, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { RouteElevationChart } from '@/components/map/RouteElevationChart';
 
 interface PeakDetailDrawerProps {
   peak: Peak | null;
@@ -116,6 +117,12 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
               </Button>
             )}
           </div>
+
+          {peak.route_status === 'approved' && peak.route_geojson && (
+            <div className="bg-muted/10 p-3 rounded-xl border border-border/50">
+              <RouteElevationChart geojson={peak.route_geojson} />
+            </div>
+          )}
 
           {peak.description && (
             <p className="text-sm text-muted-foreground">{peak.description}</p>

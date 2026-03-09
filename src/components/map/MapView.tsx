@@ -22,11 +22,12 @@ interface MapViewProps {
   onClearRoute?: () => void;
   previewWaypoints?: { lat: number; lng: number }[] | null;
   onWaypointClick?: (index: number) => void;
+  onWaypointDrag?: (index: number, lat: number, lng: number) => void;
 }
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
-const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, onClearRoute, previewWaypoints, onWaypointClick }: MapViewProps) => {
+const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, onClearRoute, previewWaypoints, onWaypointClick, onWaypointDrag }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -119,18 +120,18 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     return () => { m.remove(); map.current = null; };
   }, []);
 
-  // Admin: click to add peak
+  // Admin: click to add peak or waypoint
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
     const m = map.current;
     const handler = (e: mapboxgl.MapMouseEvent) => {
-      if (addMode && onMapClick) {
+      if (onMapClick) {
         onMapClick(e.lngLat.lat, e.lngLat.lng);
       }
     };
     m.on('click', handler);
     return () => { m.off('click', handler); };
-  }, [addMode, onMapClick, mapLoaded]);
+  }, [onMapClick, mapLoaded]);
 
   // User: long press to suggest
   useEffect(() => {
@@ -285,16 +286,21 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           border: 2px solid white;
           border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         `;
-        el.title = 'Trykk for å fjerne waypoint';
+        el.title = 'Trykk for å fjerne waypoint. Dra for å flytte.';
         
         el.addEventListener('click', (e) => {
           e.stopPropagation();
           if (onWaypointClick) onWaypointClick(index);
         });
 
-        const marker = new mapboxgl.Marker({ element: el })
+        const marker = new mapboxgl.Marker({ element: el, draggable: true })
           .setLngLat([wp.lng, wp.lat])
           .addTo(map.current!);
+          
+        marker.on('dragend', () => {
+          const lngLat = marker.getLngLat();
+          if (onWaypointDrag) onWaypointDrag(index, lngLat.lat, lngLat.lng);
+        });
           
         waypointMarkersRef.current.push(marker);
       });

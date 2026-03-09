@@ -31,6 +31,7 @@ const MapPage = () => {
   const [routeStartCoords, setRouteStartCoords] = useState<{lat: number, lng: number} | null>(null);
   const [mapClickEvent, setMapClickEvent] = useState<{lat: number, lng: number, timestamp: number} | null>(null);
   const [waypointClickEvent, setWaypointClickEvent] = useState<{index: number, timestamp: number} | null>(null);
+  const [waypointDragEvent, setWaypointDragEvent] = useState<{index: number, lat: number, lng: number, timestamp: number} | null>(null);
 
   // User suggestion state
   const [suggestCoords, setSuggestCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -206,6 +207,7 @@ const MapPage = () => {
             onClearRoute={() => setActiveRouteGeojson(null)}
             previewWaypoints={previewWaypoints}
             onWaypointClick={(index) => setWaypointClickEvent({ index, timestamp: Date.now() })}
+            onWaypointDrag={(index, lat, lng) => setWaypointDragEvent({ index, lat, lng, timestamp: Date.now() })}
           />
         ) : (
           <div className="h-full overflow-y-auto">
@@ -259,6 +261,7 @@ const MapPage = () => {
           onPreviewRoute={(geojson) => setActiveRouteGeojson(geojson)}
           mapClickEvent={mapClickEvent}
           waypointClickEvent={waypointClickEvent}
+          waypointDragEvent={waypointDragEvent}
           onWaypointsChange={setPreviewWaypoints}
         />
       )}
