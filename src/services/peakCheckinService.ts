@@ -11,7 +11,7 @@ export interface PeakCheckin {
 
 export async function getUserCheckins(userId: string): Promise<PeakCheckin[]> {
   const { data, error } = await supabase
-    .from('peak_checkins' as any)
+    .from('peak_checkins')
     .select('*')
     .eq('user_id', userId);
   if (error) throw error;
@@ -25,7 +25,7 @@ export async function checkinPeak(userId: string, peakId: string, checkedInAt?: 
   }
   
   const { data, error } = await supabase
-    .from('peak_checkins' as any)
+    .from('peak_checkins')
     .insert(payload)
     .select()
     .single();
@@ -35,7 +35,7 @@ export async function checkinPeak(userId: string, peakId: string, checkedInAt?: 
 
 export async function deleteCheckin(checkinId: string): Promise<void> {
   const { error } = await supabase
-    .from('peak_checkins' as any)
+    .from('peak_checkins')
     .delete()
     .eq('id', checkinId);
   if (error) throw error;
@@ -49,7 +49,7 @@ export async function adminCheckinPeak(targetUserId: string, peakId: string, che
   console.log('Current auth user:', currentUser?.id);
   
   const { data, error } = await supabase
-    .from('peak_checkins' as any)
+    .from('peak_checkins')
     .insert({ user_id: targetUserId, peak_id: peakId, checked_in_at: checkedInAt })
     .select()
     .single();
@@ -79,7 +79,7 @@ export interface CheckinWithProfile extends PeakCheckin {
 export async function getAllCheckinsForPeak(peakId: string): Promise<CheckinWithProfile[]> {
   // First get all checkins for this peak
   const { data: checkins, error } = await supabase
-    .from('peak_checkins' as any)
+    .from('peak_checkins')
     .select('*')
     .eq('peak_id', peakId)
     .order('checked_in_at', { ascending: false });

@@ -32,7 +32,7 @@ const GlobalLeaderboard = () => {
   const loadLeaderboard = async () => {
     setLoading(true);
     try {
-      let query = supabase.from('peak_checkins' as any).select('user_id, peak_id, checked_in_at');
+      let query = supabase.from('peak_checkins').select('user_id, peak_id, checked_in_at');
 
       if (period === 'month') {
         const now = new Date();
