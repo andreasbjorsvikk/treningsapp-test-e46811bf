@@ -425,6 +425,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                 </div>
               </DialogContent>
             </Dialog>
+            </>
           )}
         </div>
       </DrawerContent>
