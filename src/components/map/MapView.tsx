@@ -304,16 +304,16 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       });
       
       const statusHtml = isTaken 
-        ? `<span class="text-xl font-bold tracking-tight text-emerald-600 drop-shadow-sm flex items-center gap-1"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Besøkt</span>`
-        : `<span class="text-3xl font-black tracking-tight text-foreground drop-shadow-sm" style="background: linear-gradient(135deg, hsl(var(--foreground)), hsl(var(--muted-foreground))); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${peak.heightMoh} <span class="text-lg font-bold" style="color: hsl(var(--muted-foreground)); -webkit-text-fill-color: initial;">moh</span></span>`;
+        ? `<span class="text-lg font-bold tracking-tight text-emerald-600 drop-shadow-sm flex items-center gap-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Besøkt</span>`
+        : `<span class="text-2xl font-black tracking-tight text-foreground drop-shadow-sm" style="background: linear-gradient(135deg, hsl(var(--foreground)), hsl(var(--muted-foreground))); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${peak.heightMoh} <span class="text-sm font-bold" style="color: hsl(var(--muted-foreground)); -webkit-text-fill-color: initial;">moh</span></span>`;
 
       popup.setHTML(`
         <div class="peak-popup-inner">
           <div class="peak-popup-header">
             <div class="peak-popup-title">${peak.name}${isUnpublished ? '<br><span class="peak-popup-unpublished">(upublisert)</span>' : ''}</div>
           </div>
-          <div class="peak-popup-area">${peak.area}</div>
-          <div class="flex flex-col items-center justify-center my-4 py-3 border-y border-border/50 bg-muted/20 rounded-lg">
+          <div class="peak-popup-area mb-1">${peak.area}</div>
+          <div class="flex flex-col items-center justify-center my-2 py-1.5 border-y border-border/50 bg-muted/20 rounded-lg">
             ${statusHtml}
           </div>
           ${buttonsHtml}
