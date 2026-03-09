@@ -49,7 +49,7 @@ export async function adminCheckinPeak(targetUserId: string, peakId: string, che
   console.log('Current auth user:', currentUser?.id);
   
   const { data, error } = await supabase
-    .from('peak_checkins' as any)
+    .from('peak_checkins')
     .insert({ user_id: targetUserId, peak_id: peakId, checked_in_at: checkedInAt })
     .select()
     .single();
