@@ -132,7 +132,6 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
 
   const handleGenerateRoute = async () => {
     await generateRouteWithWaypoints(routeWaypoints);
-    toast.success('Rute generert!');
   };
 
   useEffect(() => {
@@ -163,7 +162,6 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
   const handleApproveRoute = () => {
     setRouteStatus('approved');
     setAddingWaypointMode(false);
-    toast.success('Rute godkjent');
   };
 
   const handleClearRoute = () => {
