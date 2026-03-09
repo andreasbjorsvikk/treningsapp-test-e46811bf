@@ -244,6 +244,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
       mapInstanceRef.current.remove();
       mapInstanceRef.current = null;
     }
+    setMapReady(false);
     setFullscreen(false);
   };
 
