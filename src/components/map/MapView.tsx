@@ -33,6 +33,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   const [mapLoaded, setMapLoaded] = useState(false);
   const [is3D, setIs3D] = useState(true);
   const [mapStyle, setMapStyle] = useState<'outdoors' | 'satellite' | 'streets'>('outdoors');
+  const [showStyleMenu, setShowStyleMenu] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressCoords = useRef<{ lat: number; lng: number } | null>(null);
 
@@ -304,16 +305,16 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       });
       
       const statusHtml = isTaken 
-        ? `<span class="text-lg font-bold tracking-tight text-emerald-600 drop-shadow-sm flex items-center gap-1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Besøkt</span>`
-        : `<span class="text-2xl font-black tracking-tight text-foreground drop-shadow-sm" style="background: linear-gradient(135deg, hsl(var(--foreground)), hsl(var(--muted-foreground))); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${peak.heightMoh} <span class="text-sm font-bold" style="color: hsl(var(--muted-foreground)); -webkit-text-fill-color: initial;">moh</span></span>`;
+        ? `<span class="text-base font-bold tracking-tight text-emerald-600 drop-shadow-sm flex items-center gap-1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Besøkt</span>`
+        : `<span class="text-xl font-black tracking-tight text-foreground drop-shadow-sm" style="background: linear-gradient(135deg, hsl(var(--foreground)), hsl(var(--muted-foreground))); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${peak.heightMoh} <span class="text-xs font-bold" style="color: hsl(var(--muted-foreground)); -webkit-text-fill-color: initial;">moh</span></span>`;
 
       popup.setHTML(`
         <div class="peak-popup-inner">
           <div class="peak-popup-header">
             <div class="peak-popup-title">${peak.name}${isUnpublished ? '<br><span class="peak-popup-unpublished">(upublisert)</span>' : ''}</div>
           </div>
-          <div class="peak-popup-area mb-1">${peak.area}</div>
-          <div class="flex flex-col items-center justify-center my-2 py-1.5 border-y border-border/50 bg-muted/20 rounded-lg">
+          <div class="peak-popup-area" style="margin-bottom: 4px;">${peak.area}</div>
+          <div class="flex flex-col items-center justify-center py-1 border-y border-border/50 bg-muted/20 rounded-lg" style="margin: 4px 0;">
             ${statusHtml}
           </div>
           ${buttonsHtml}
@@ -395,16 +396,41 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         >
           {is3D ? '2D' : '3D'}
         </button>
-        <select
-          value={mapStyle}
-          onChange={(e) => setMapStyle(e.target.value as 'outdoors' | 'satellite' | 'streets')}
-          className="px-3 py-1.5 rounded-lg text-xs font-semibold shadow-md border border-border bg-background text-foreground appearance-none pr-8 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary hover:bg-muted transition-colors h-[34px]"
-          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 4-4H2z'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
-        >
-          <option value="streets">🗺️ Standard</option>
-          <option value="outdoors">⛰️ Terreng</option>
-          <option value="satellite">🛰️ Satelitt</option>
-        </select>
+        <div className="relative">
+          <button
+            onClick={() => setShowStyleMenu(prev => !prev)}
+            className="p-2 rounded-lg shadow-md border border-border bg-background text-foreground hover:bg-muted transition-colors h-[34px] w-[34px] flex items-center justify-center"
+            title="Endre karttype"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+              <line x1="8" y1="2" x2="8" y2="18" />
+              <line x1="16" y1="6" x2="16" y2="22" />
+            </svg>
+          </button>
+          {showStyleMenu && (
+            <div className="absolute top-full left-0 mt-1 bg-background border border-border rounded-lg shadow-lg overflow-hidden min-w-[140px]">
+              <button
+                onClick={() => { setMapStyle('streets'); setShowStyleMenu(false); }}
+                className={`w-full px-3 py-2 text-xs font-medium text-left hover:bg-muted transition-colors flex items-center gap-2 ${mapStyle === 'streets' ? 'bg-muted' : ''}`}
+              >
+                🗺️ Standard
+              </button>
+              <button
+                onClick={() => { setMapStyle('outdoors'); setShowStyleMenu(false); }}
+                className={`w-full px-3 py-2 text-xs font-medium text-left hover:bg-muted transition-colors flex items-center gap-2 ${mapStyle === 'outdoors' ? 'bg-muted' : ''}`}
+              >
+                ⛰️ Terreng
+              </button>
+              <button
+                onClick={() => { setMapStyle('satellite'); setShowStyleMenu(false); }}
+                className={`w-full px-3 py-2 text-xs font-medium text-left hover:bg-muted transition-colors flex items-center gap-2 ${mapStyle === 'satellite' ? 'bg-muted' : ''}`}
+              >
+                🛰️ Satellitt
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
