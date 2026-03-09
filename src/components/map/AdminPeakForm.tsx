@@ -120,8 +120,8 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
         route_start_lat: routeStartLat,
         route_start_lng: routeStartLng,
         route_geojson: routeGeojson,
-        route_distance_m: routeDistance,
-        route_duration_s: routeDuration,
+        route_distance_m: routeDistance ? Math.round(routeDistance) : null,
+        route_duration_s: routeDuration ? Math.round(routeDuration) : null,
         route_status: routeStatus,
       });
       onClose();
