@@ -121,11 +121,9 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
     <Drawer open={open} onOpenChange={(o) => !o && onClose()}>
       <DrawerContent className="max-h-[90vh]">
         <DrawerHeader className="pb-2">
-          <div className="flex flex-col items-center text-center">
-            <div className="flex items-center justify-between w-full">
-              <div className="w-8" />
-              <DrawerTitle className="font-display text-2xl">{peak.name}</DrawerTitle>
-              {adminMode ? (
+          <div className="flex flex-col items-center text-center w-full">
+            {adminMode && (
+              <div className="flex justify-end w-full mb-1">
                 <div className="flex gap-1">
                   <button
                     onClick={() => { onClose(); onEdit?.(peak); }}
@@ -140,8 +138,9 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
-              ) : <div className="w-8" />}
-            </div>
+              </div>
+            )}
+            <DrawerTitle className="font-display text-3xl w-full text-center">{peak.name}</DrawerTitle>
             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mt-1">
               <Mountain className="w-4 h-4" />
               <span className="font-medium">{peak.heightMoh} moh</span>

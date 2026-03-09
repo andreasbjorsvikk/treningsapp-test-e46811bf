@@ -198,6 +198,7 @@ const MapPage = () => {
       {/* Content */}
       <div className="flex-1 min-h-0">
         {subTab === 'kart' ? (
+          <div className="relative w-full h-full">
           <MapView
             peaks={peaks}
             checkins={checkins}
@@ -215,6 +216,16 @@ const MapPage = () => {
             onWaypointClick={(index) => setWaypointClickEvent({ index, timestamp: Date.now() })}
             onWaypointDrag={(index, lat, lng) => setWaypointDragEvent({ index, lat, lng, timestamp: Date.now() })}
           />
+          {activeRouteGeojson && (
+            <button
+              onClick={handleHideRoute}
+              className="absolute top-3 left-1/2 -translate-x-1/2 z-20 px-4 py-2 rounded-full text-xs font-semibold shadow-lg border border-border bg-background/95 backdrop-blur-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Skjul rute
+            </button>
+          )}
+          </div>
         ) : (
           <div className="h-full overflow-y-auto">
             <PeaksList
