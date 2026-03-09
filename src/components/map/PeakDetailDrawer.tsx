@@ -374,7 +374,6 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
               </DialogContent>
             </Dialog>
 
-            {/* All checkins dialog */}
             <Dialog open={allCheckinsOpen} onOpenChange={(open) => {
               setAllCheckinsOpen(open);
               if (open) loadAllCheckins();
