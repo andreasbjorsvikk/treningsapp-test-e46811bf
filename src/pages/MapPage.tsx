@@ -257,6 +257,9 @@ const MapPage = () => {
           onPickRouteStart={handlePickRouteStart}
           routeStartCoordsProp={routeStartCoords}
           onPreviewRoute={(geojson) => setActiveRouteGeojson(geojson)}
+          mapClickEvent={mapClickEvent}
+          waypointClickEvent={waypointClickEvent}
+          onWaypointsChange={setPreviewWaypoints}
         />
       )}
 
