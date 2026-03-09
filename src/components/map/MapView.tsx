@@ -719,12 +719,12 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
 
           const pct = entry.total > 0 ? Math.round((entry.checked / entry.total) * 100) : 0;
           // Color based on progress
-          const fillColor = pct >= 75 ? 'hsla(152, 60%, 42%, 0.2)' :
-                            pct >= 25 ? 'hsla(210, 70%, 55%, 0.15)' :
-                                        'hsla(220, 50%, 60%, 0.1)';
-          const outlineColor = pct >= 75 ? 'hsla(152, 60%, 42%, 0.6)' :
-                               pct >= 25 ? 'hsla(210, 70%, 55%, 0.4)' :
-                                           'hsla(220, 50%, 60%, 0.3)';
+          const fillColor = pct >= 75 ? 'hsla(152, 65%, 40%, 0.45)' :
+                            pct >= 25 ? 'hsla(210, 70%, 50%, 0.35)' :
+                                        'hsla(250, 55%, 55%, 0.28)';
+          const outlineColor = pct >= 75 ? 'hsla(152, 65%, 35%, 0.85)' :
+                               pct >= 25 ? 'hsla(210, 70%, 45%, 0.75)' :
+                                           'hsla(250, 55%, 50%, 0.6)';
 
           if (!m.getSource(sourceId)) {
             m.addSource(sourceId, { type: 'geojson', data: boundaryData.omrade as any });
@@ -747,8 +747,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
               source: sourceId,
               paint: {
                 'line-color': outlineColor,
-                'line-width': 2.5,
-                'line-dasharray': [3, 2],
+                'line-width': 3,
               },
             });
           }
