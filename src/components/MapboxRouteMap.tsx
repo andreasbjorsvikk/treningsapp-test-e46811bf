@@ -315,6 +315,15 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
             ref={mapContainerRef}
             className="flex-1 w-full"
           />
+          {mapReady && mapInstanceRef.current && (
+            <RouteReplay
+              map={mapInstanceRef.current}
+              routePoints={routePoints}
+              lineColor={lineColor}
+              totalDistance={totalDistance}
+              totalElevation={totalElevation}
+            />
+          )}
         </div>,
         document.body
       )}
