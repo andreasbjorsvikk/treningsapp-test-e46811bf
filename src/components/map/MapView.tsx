@@ -745,25 +745,27 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
                                pct >= 25 ? 'hsla(210, 70%, 45%, 0.75)' :
                                            'hsla(250, 55%, 50%, 0.6)';
 
-          if (!m.getSource(sourceId)) {
-            m.addSource(sourceId, { type: 'geojson', data: boundaryData.omrade as any });
-          }
-          if (!m.getLayer(fillLayerId)) {
-            m.addLayer({
-              id: fillLayerId,
-              type: 'fill',
-              source: sourceId,
-              paint: { 'fill-color': fillColor, 'fill-opacity': 1 },
-            });
-          }
-          if (!m.getLayer(outlineLayerId)) {
-            m.addLayer({
-              id: outlineLayerId,
-              type: 'line',
-              source: sourceId,
-              paint: { 'line-color': outlineColor, 'line-width': 3 },
-            });
-          }
+          whenStyleReady(m, () => {
+            if (!m.getSource(sourceId)) {
+              m.addSource(sourceId, { type: 'geojson', data: boundaryData.omrade as any });
+            }
+            if (!m.getLayer(fillLayerId)) {
+              m.addLayer({
+                id: fillLayerId,
+                type: 'fill',
+                source: sourceId,
+                paint: { 'fill-color': fillColor, 'fill-opacity': 1 },
+              });
+            }
+            if (!m.getLayer(outlineLayerId)) {
+              m.addLayer({
+                id: outlineLayerId,
+                type: 'line',
+                source: sourceId,
+                paint: { 'line-color': outlineColor, 'line-width': 3 },
+              });
+            }
+          });
 
           // Add label marker
           const avgLat = entry.peaks.reduce((s, p) => s + p.latitude, 0) / entry.peaks.length;
