@@ -240,6 +240,8 @@ const MapPage = () => {
         onEdit={handleEditPeak}
         onDelete={handleDeletePeak}
         onShowRoute={handleShowRoute}
+        onHideRoute={handleHideRoute}
+        isRouteShown={!!activeRoutePeakId && activeRoutePeakId === selectedPeak?.id}
       />
 
       {/* Admin: Add new peak form */}
