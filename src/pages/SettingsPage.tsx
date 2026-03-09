@@ -425,6 +425,7 @@ const SettingsPage = () => {
       { key: 'privacyWorkouts' as const, label: t('privacy.workouts'), desc: t('privacy.workoutsDesc') },
       { key: 'privacyStats' as const, label: t('privacy.stats'), desc: t('privacy.statsDesc') },
       { key: 'privacyGoals' as const, label: t('privacy.goals'), desc: t('privacy.goalsDesc') },
+      { key: 'privacyPeakCheckins' as const, label: 'Fjelltopp-innsjekkinger', desc: 'Hvem kan se dine innsjekkinger på fjelltopper' },
     ];
     const friends = mockUsers.filter(u => u.id !== 'me');
     return (

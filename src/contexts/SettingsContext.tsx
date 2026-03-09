@@ -25,6 +25,7 @@ export interface AppSettings {
   privacyWorkouts: PrivacyLevel;
   privacyStats: PrivacyLevel;
   privacyGoals: PrivacyLevel;
+  privacyPeakCheckins: PrivacyLevel;
   pinnedChallengeIds: string[];
   homeSectionOrder: string[];
 }
@@ -171,6 +172,7 @@ const defaultSettings: AppSettings = {
   privacyWorkouts: 'me',
   privacyStats: 'me',
   privacyGoals: 'me',
+  privacyPeakCheckins: 'friends',
   pinnedChallengeIds: [],
   homeSectionOrder: ['wheels', 'activity', 'stats', 'challenges', 'extraGoals'],
 };
