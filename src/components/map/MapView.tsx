@@ -667,14 +667,16 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     // Cleanup
     areaMarkersRef.current.forEach(mk => mk.remove());
     areaMarkersRef.current = [];
-    // Remove old boundary layers/sources
-    const existingSources = Object.keys((m.getStyle()?.sources) || {}).filter(s => s.startsWith('kommune-boundary-'));
-    existingSources.forEach(sid => {
-      const lid = sid.replace('boundary', 'fill');
-      const lidOutline = sid.replace('boundary', 'outline');
-      if (m.getLayer(lid)) m.removeLayer(lid);
-      if (m.getLayer(lidOutline)) m.removeLayer(lidOutline);
-      if (m.getSource(sid)) m.removeSource(sid);
+    // Remove old boundary layers/sources safely
+    whenStyleReady(m, () => {
+      const existingSources = Object.keys((m.getStyle()?.sources) || {}).filter(s => s.startsWith('kommune-boundary-'));
+      existingSources.forEach(sid => {
+        const lid = sid.replace('boundary', 'fill');
+        const lidOutline = sid.replace('boundary', 'outline');
+        if (m.getLayer(lid)) m.removeLayer(lid);
+        if (m.getLayer(lidOutline)) m.removeLayer(lidOutline);
+        if (m.getSource(sid)) m.removeSource(sid);
+      });
     });
 
     if (!showAreaStats) return;
