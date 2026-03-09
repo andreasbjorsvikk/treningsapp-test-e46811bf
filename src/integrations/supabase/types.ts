@@ -272,6 +272,8 @@ export type Database = {
           reviewed_by: string | null
           status: string
           submitted_by: string
+          user_latitude: number | null
+          user_longitude: number | null
         }
         Insert: {
           admin_comment?: string | null
@@ -286,6 +288,8 @@ export type Database = {
           reviewed_by?: string | null
           status?: string
           submitted_by: string
+          user_latitude?: number | null
+          user_longitude?: number | null
         }
         Update: {
           admin_comment?: string | null
@@ -300,6 +304,8 @@ export type Database = {
           reviewed_by?: string | null
           status?: string
           submitted_by?: string
+          user_latitude?: number | null
+          user_longitude?: number | null
         }
         Relationships: []
       }
