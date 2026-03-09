@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Mountain, MapPin, Check, Loader2, ImageIcon, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { RouteElevationChart } from '@/components/map/RouteElevationChart';
 
 interface PeakDetailDrawerProps {
   peak: Peak | null;
