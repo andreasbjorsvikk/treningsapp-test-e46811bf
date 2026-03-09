@@ -597,58 +597,154 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     loadHeatmapData();
   }, [showHeatmap, heatmapPeriod, mapLoaded, user]);
 
-  // === AREA STATS: Show municipality labels with peak stats ===
+  // === AREA STATS: Show municipality boundaries + labels ===
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
+    const m = map.current;
 
-    areaMarkersRef.current.forEach(m => m.remove());
+    // Cleanup
+    areaMarkersRef.current.forEach(mk => mk.remove());
     areaMarkersRef.current = [];
+    // Remove old boundary layers/sources
+    const existingSources = Object.keys((m.getStyle()?.sources) || {}).filter(s => s.startsWith('kommune-boundary-'));
+    existingSources.forEach(sid => {
+      const lid = sid.replace('boundary', 'fill');
+      const lidOutline = sid.replace('boundary', 'outline');
+      if (m.getLayer(lid)) m.removeLayer(lid);
+      if (m.getLayer(lidOutline)) m.removeLayer(lidOutline);
+      if (m.getSource(sid)) m.removeSource(sid);
+    });
 
     if (!showAreaStats) return;
 
     const checkedIds = new Set(checkins.map(c => c.peak_id));
-    const areaMap = new Map<string, { peaks: Peak[]; checked: number; total: number }>();
+    // Group peaks by area, then aggregate to kommune level
+    const kommuneMap = new Map<string, { peaks: Peak[]; checked: number; total: number; areas: Set<string> }>();
 
+    // Map area names to kommune names
+    const areaToKommune: Record<string, string> = {};
     peaks.forEach(peak => {
       const area = peak.area?.trim();
       if (!area) return;
-      if (!areaMap.has(area)) areaMap.set(area, { peaks: [], checked: 0, total: 0 });
-      const entry = areaMap.get(area)!;
+      // Use area as kommune name unless we detect sub-areas
+      // Known mappings (add more as needed)
+      const knownMappings: Record<string, string> = {
+        'Husnes': 'Kvinnherad',
+        'Rosendal': 'Kvinnherad',
+        'Uskedalen': 'Kvinnherad',
+        'Valen, Kvinnherad': 'Kvinnherad',
+      };
+      const kommune = knownMappings[area] || area;
+      areaToKommune[area] = kommune;
+
+      if (!kommuneMap.has(kommune)) kommuneMap.set(kommune, { peaks: [], checked: 0, total: 0, areas: new Set() });
+      const entry = kommuneMap.get(kommune)!;
       entry.peaks.push(peak);
       entry.total++;
+      entry.areas.add(area);
       if (checkedIds.has(peak.id)) entry.checked++;
     });
 
-    areaMap.forEach((entry, areaName) => {
-      if (!map.current) return;
-      const avgLat = entry.peaks.reduce((s, p) => s + p.latitude, 0) / entry.peaks.length;
-      const avgLng = entry.peaks.reduce((s, p) => s + p.longitude, 0) / entry.peaks.length;
-      const pct = entry.total > 0 ? Math.round((entry.checked / entry.total) * 100) : 0;
+    // For each kommune, fetch boundary from GeoNorge and add to map
+    const fetchBoundaries = async () => {
+      for (const [kommuneName, entry] of kommuneMap.entries()) {
+        if (!map.current) return;
+        try {
+          // Use a peak's coordinates to find the municipality number
+          const samplePeak = entry.peaks[0];
+          const punktRes = await fetch(
+            `https://ws.geonorge.no/kommuneinfo/v1/punkt?nord=${samplePeak.latitude}&ost=${samplePeak.longitude}&koordsys=4326`
+          );
+          if (!punktRes.ok) continue;
+          const punktData = await punktRes.json();
+          const kommuneNr = punktData.kommunenummer;
+          const officialName = punktData.kommunenavn || kommuneName;
+          if (!kommuneNr) continue;
 
-      const el = document.createElement('div');
-      el.style.cssText = 'pointer-events: none; text-align: center; white-space: nowrap;';
-      el.innerHTML = `
-        <div style="
-          background: hsl(var(--background) / 0.9);
-          backdrop-filter: blur(6px);
-          border: 1px solid hsl(var(--border));
-          border-radius: 10px;
-          padding: 6px 10px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        ">
-          <div style="font-size: 12px; font-weight: 700; color: hsl(var(--foreground));">${areaName}</div>
-          <div style="font-size: 11px; color: hsl(var(--muted-foreground)); margin-top: 1px;">
-            ${entry.checked} / ${entry.total} topper · <span style="font-weight: 600; color: ${pct >= 50 ? 'hsl(152, 60%, 42%)' : 'hsl(var(--muted-foreground))'};">${pct}%</span>
-          </div>
-        </div>
-      `;
+          // Fetch municipality boundary
+          const boundaryRes = await fetch(
+            `https://ws.geonorge.no/kommuneinfo/v1/kommuner/${kommuneNr}/omrade`
+          );
+          if (!boundaryRes.ok) continue;
+          const boundaryData = await boundaryRes.json();
 
-      const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
-        .setLngLat([avgLng, avgLat])
-        .addTo(map.current!);
+          if (!map.current) return;
+          const sourceId = `kommune-boundary-${kommuneNr}`;
+          const fillLayerId = `kommune-fill-${kommuneNr}`;
+          const outlineLayerId = `kommune-outline-${kommuneNr}`;
 
-      areaMarkersRef.current.push(marker);
-    });
+          const pct = entry.total > 0 ? Math.round((entry.checked / entry.total) * 100) : 0;
+          // Color based on progress
+          const fillColor = pct >= 75 ? 'hsla(152, 60%, 42%, 0.2)' :
+                            pct >= 25 ? 'hsla(210, 70%, 55%, 0.15)' :
+                                        'hsla(220, 50%, 60%, 0.1)';
+          const outlineColor = pct >= 75 ? 'hsla(152, 60%, 42%, 0.6)' :
+                               pct >= 25 ? 'hsla(210, 70%, 55%, 0.4)' :
+                                           'hsla(220, 50%, 60%, 0.3)';
+
+          if (!m.getSource(sourceId)) {
+            m.addSource(sourceId, { type: 'geojson', data: boundaryData.omrade as any });
+          }
+          if (!m.getLayer(fillLayerId)) {
+            m.addLayer({
+              id: fillLayerId,
+              type: 'fill',
+              source: sourceId,
+              paint: {
+                'fill-color': fillColor,
+                'fill-opacity': 1,
+              },
+            });
+          }
+          if (!m.getLayer(outlineLayerId)) {
+            m.addLayer({
+              id: outlineLayerId,
+              type: 'line',
+              source: sourceId,
+              paint: {
+                'line-color': outlineColor,
+                'line-width': 2.5,
+                'line-dasharray': [3, 2],
+              },
+            });
+          }
+
+          // Add label marker
+          const avgLat = entry.peaks.reduce((s, p) => s + p.latitude, 0) / entry.peaks.length;
+          const avgLng = entry.peaks.reduce((s, p) => s + p.longitude, 0) / entry.peaks.length;
+
+          const el = document.createElement('div');
+          el.style.cssText = 'pointer-events: none; text-align: center; white-space: nowrap; z-index: 5;';
+          el.innerHTML = `
+            <div style="
+              background: hsl(var(--background) / 0.92);
+              backdrop-filter: blur(8px);
+              border: 1.5px solid hsl(var(--border));
+              border-radius: 14px;
+              padding: 10px 16px;
+              box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+            ">
+              <div style="font-size: 16px; font-weight: 800; color: hsl(var(--foreground)); letter-spacing: -0.02em;">${officialName}</div>
+              <div style="font-size: 14px; color: hsl(var(--muted-foreground)); margin-top: 3px; font-weight: 500;">
+                ${entry.checked} / ${entry.total} topper
+              </div>
+              <div style="font-size: 18px; font-weight: 800; margin-top: 2px; color: ${pct >= 50 ? 'hsl(152, 60%, 42%)' : 'hsl(var(--muted-foreground))'};">
+                ${pct}%
+              </div>
+            </div>
+          `;
+
+          const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
+            .setLngLat([avgLng, avgLat])
+            .addTo(map.current!);
+          areaMarkersRef.current.push(marker);
+        } catch (e) {
+          console.error('Failed to load municipality boundary for', kommuneName, e);
+        }
+      }
+    };
+
+    fetchBoundaries();
   }, [showAreaStats, peaks, checkins, mapLoaded]);
 
   return (
