@@ -168,12 +168,16 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     }
   }, [is3D, mapLoaded]);
 
-  // Toggle satellite/outdoors
+  // Toggle map style
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
     const m = map.current;
-    const style = isSatellite ? 'mapbox://styles/mapbox/satellite-streets-v12' : 'mapbox://styles/mapbox/outdoors-v12';
-    m.setStyle(style);
+    
+    let styleUrl = 'mapbox://styles/mapbox/outdoors-v12';
+    if (mapStyle === 'satellite') styleUrl = 'mapbox://styles/mapbox/satellite-streets-v12';
+    else if (mapStyle === 'streets') styleUrl = 'mapbox://styles/mapbox/streets-v12';
+    
+    m.setStyle(styleUrl);
     m.once('style.load', () => {
       if (!m.getSource('mapbox-dem')) {
         m.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
@@ -185,7 +189,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       setMapLoaded(prev => !prev);
       setTimeout(() => setMapLoaded(true), 50);
     });
-  }, [isSatellite]);
+  }, [mapStyle]);
 
   // Add/update markers
   useEffect(() => {
