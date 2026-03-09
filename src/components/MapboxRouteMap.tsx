@@ -73,6 +73,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
   const previewMapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const previewMapRef = useRef<any>(null);
+  const [mapReady, setMapReady] = useState(false);
 
   const staticUrl = useMemo(() => {
     if (routePoints.length < 2) return null;
