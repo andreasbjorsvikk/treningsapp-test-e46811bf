@@ -617,19 +617,19 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
             paint: {
               'line-color': [
                 'interpolate', ['linear'], ['get', 'normFreq'],
-                0, 'hsla(210, 80%, 60%, 0.5)',
-                0.15, 'hsla(30, 90%, 55%, 0.7)',
-                0.4, 'hsla(10, 90%, 55%, 0.8)',
-                1, 'hsla(0, 85%, 50%, 0.95)',
+                0, 'hsla(200, 85%, 55%, 0.7)',
+                0.15, 'hsla(30, 95%, 55%, 0.85)',
+                0.4, 'hsla(10, 95%, 50%, 0.9)',
+                1, 'hsla(0, 90%, 45%, 1)',
               ],
               'line-width': [
                 'interpolate', ['linear'], ['get', 'normFreq'],
-                0, 2,
-                0.3, 3.5,
-                0.7, 5,
-                1, 7,
+                0, 4,
+                0.2, 6,
+                0.5, 9,
+                1, 13,
               ],
-              'line-opacity': 0.85,
+              'line-opacity': 1,
             },
             layout: {
               'line-cap': 'round',
@@ -666,50 +666,50 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     if (!showAreaStats) return;
 
     const checkedIds = new Set(checkins.map(c => c.peak_id));
-    // Group peaks by area, then aggregate to kommune level
-    const kommuneMap = new Map<string, { peaks: Peak[]; checked: number; total: number; areas: Set<string> }>();
 
-    // Map area names to kommune names
-    const areaToKommune: Record<string, string> = {};
-    peaks.forEach(peak => {
-      const area = peak.area?.trim();
-      if (!area) return;
-      // Use area as kommune name unless we detect sub-areas
-      // Known mappings (add more as needed)
-      const knownMappings: Record<string, string> = {
-        'Husnes': 'Kvinnherad',
-        'Rosendal': 'Kvinnherad',
-        'Uskedalen': 'Kvinnherad',
-        'Valen, Kvinnherad': 'Kvinnherad',
-      };
-      const kommune = knownMappings[area] || area;
-      areaToKommune[area] = kommune;
-
-      if (!kommuneMap.has(kommune)) kommuneMap.set(kommune, { peaks: [], checked: 0, total: 0, areas: new Set() });
-      const entry = kommuneMap.get(kommune)!;
-      entry.peaks.push(peak);
-      entry.total++;
-      entry.areas.add(area);
-      if (checkedIds.has(peak.id)) entry.checked++;
-    });
-
-    // For each kommune, fetch boundary from GeoNorge and add to map
+    // For each peak, reverse-geocode to get kommune number, then aggregate
     const fetchBoundaries = async () => {
-      for (const [kommuneName, entry] of kommuneMap.entries()) {
+      // Step 1: Resolve each unique area to a kommuneNr via reverse geocoding
+      const areaKommuneMap = new Map<string, { kommuneNr: string; kommuneNavn: string }>();
+      const uniqueAreas = new Map<string, Peak>(); // area -> sample peak
+      peaks.forEach(peak => {
+        const area = peak.area?.trim();
+        if (area && !uniqueAreas.has(area)) uniqueAreas.set(area, peak);
+      });
+
+      // Fetch kommune info for each unique area in parallel
+      await Promise.all(Array.from(uniqueAreas.entries()).map(async ([area, peak]) => {
+        try {
+          const res = await fetch(
+            `https://ws.geonorge.no/kommuneinfo/v1/punkt?nord=${peak.latitude}&ost=${peak.longitude}&koordsys=4326`
+          );
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data.kommunenummer) {
+            areaKommuneMap.set(area, { kommuneNr: data.kommunenummer, kommuneNavn: data.kommunenavn || area });
+          }
+        } catch {}
+      }));
+
+      // Step 2: Aggregate peaks by kommuneNr
+      const kommuneMap = new Map<string, { kommuneNavn: string; peaks: Peak[]; checked: number; total: number }>();
+      peaks.forEach(peak => {
+        const area = peak.area?.trim();
+        if (!area) return;
+        const info = areaKommuneMap.get(area);
+        if (!info) return;
+        const { kommuneNr, kommuneNavn } = info;
+        if (!kommuneMap.has(kommuneNr)) kommuneMap.set(kommuneNr, { kommuneNavn, peaks: [], checked: 0, total: 0 });
+        const entry = kommuneMap.get(kommuneNr)!;
+        entry.peaks.push(peak);
+        entry.total++;
+        if (checkedIds.has(peak.id)) entry.checked++;
+      });
+
+      // Step 3: Fetch boundaries and render
+      for (const [kommuneNr, entry] of kommuneMap.entries()) {
         if (!map.current) return;
         try {
-          // Use a peak's coordinates to find the municipality number
-          const samplePeak = entry.peaks[0];
-          const punktRes = await fetch(
-            `https://ws.geonorge.no/kommuneinfo/v1/punkt?nord=${samplePeak.latitude}&ost=${samplePeak.longitude}&koordsys=4326`
-          );
-          if (!punktRes.ok) continue;
-          const punktData = await punktRes.json();
-          const kommuneNr = punktData.kommunenummer;
-          const officialName = punktData.kommunenavn || kommuneName;
-          if (!kommuneNr) continue;
-
-          // Fetch municipality boundary
           const boundaryRes = await fetch(
             `https://ws.geonorge.no/kommuneinfo/v1/kommuner/${kommuneNr}/omrade`
           );
@@ -722,7 +722,6 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           const outlineLayerId = `kommune-outline-${kommuneNr}`;
 
           const pct = entry.total > 0 ? Math.round((entry.checked / entry.total) * 100) : 0;
-          // Color based on progress
           const fillColor = pct >= 75 ? 'hsla(152, 65%, 40%, 0.45)' :
                             pct >= 25 ? 'hsla(210, 70%, 50%, 0.35)' :
                                         'hsla(250, 55%, 55%, 0.28)';
@@ -738,10 +737,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
               id: fillLayerId,
               type: 'fill',
               source: sourceId,
-              paint: {
-                'fill-color': fillColor,
-                'fill-opacity': 1,
-              },
+              paint: { 'fill-color': fillColor, 'fill-opacity': 1 },
             });
           }
           if (!m.getLayer(outlineLayerId)) {
@@ -749,10 +745,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
               id: outlineLayerId,
               type: 'line',
               source: sourceId,
-              paint: {
-                'line-color': outlineColor,
-                'line-width': 3,
-              },
+              paint: { 'line-color': outlineColor, 'line-width': 3 },
             });
           }
 
@@ -771,7 +764,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
               padding: 10px 16px;
               box-shadow: 0 4px 16px rgba(0,0,0,0.18);
             ">
-              <div style="font-size: 16px; font-weight: 800; color: hsl(var(--foreground)); letter-spacing: -0.02em;">${officialName}</div>
+              <div style="font-size: 16px; font-weight: 800; color: hsl(var(--foreground)); letter-spacing: -0.02em;">${entry.kommuneNavn}</div>
               <div style="font-size: 14px; color: hsl(var(--muted-foreground)); margin-top: 3px; font-weight: 500;">
                 ${entry.checked} / ${entry.total} topper
               </div>
@@ -786,7 +779,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
             .addTo(map.current!);
           areaMarkersRef.current.push(marker);
         } catch (e) {
-          console.error('Failed to load municipality boundary for', kommuneName, e);
+          console.error('Failed to load municipality boundary for', kommuneNr, e);
         }
       }
     };
