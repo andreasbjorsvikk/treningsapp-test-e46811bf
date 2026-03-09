@@ -217,10 +217,11 @@
 .map-is-3d .peak-popup .mapboxgl-popup-content {
   transform-origin: bottom center;
   transform: rotateX(25deg) translateY(-8px);
-  box-shadow: 0 25px 40px -10px rgba(0, 0, 0, 0.4);
-  border: 1px solid hsl(var(--border) / 0.3);
-  backdrop-filter: blur(12px);
-  background: hsl(var(--card) / 0.85);
+  box-shadow: 0 25px 40px -10px rgba(0, 0, 0, 0.4), inset 0 1px 1px hsl(var(--primary) / 0.1);
+  border: 1px solid hsl(var(--border) / 0.2);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: hsl(var(--card) / 0.65);
 }
 
 .map-is-3d .peak-popup .mapboxgl-popup-tip {
@@ -229,22 +230,23 @@
 
 .peak-popup .mapboxgl-popup-content {
   padding: 0;
-  border-radius: 16px;
-  background: hsl(var(--card));
+  border-radius: 20px;
+  background: hsl(var(--card) / 0.75);
   color: hsl(var(--card-foreground));
-  border: 1px solid hsl(var(--border) / 0.5);
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.2);
+  border: 1px solid hsl(var(--border) / 0.3);
+  box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.2), inset 0 1px 1px hsl(var(--primary) / 0.1);
   overflow: hidden;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .peak-popup-inner {
   font-family: var(--font-body);
-  padding: 16px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .peak-popup-header {
@@ -256,8 +258,9 @@
 .peak-popup-title {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.125rem;
+  font-size: 1.15rem;
   line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
 .peak-popup-unpublished {
@@ -266,80 +269,95 @@
   font-family: var(--font-body);
   font-weight: 500;
   vertical-align: middle;
+  background: hsl(var(--warning) / 0.1);
+  padding: 2px 6px;
+  border-radius: 6px;
+  margin-left: 6px;
 }
 
 .peak-popup-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .peak-popup-status {
   font-size: 0.7rem;
   font-weight: 600;
-  padding: 4px 10px;
+  padding: 4px 12px;
   border-radius: 100px;
+  letter-spacing: 0.02em;
 }
 
 .peak-popup-status.taken {
   color: hsl(var(--success-foreground));
-  background: hsl(var(--success));
+  background: hsl(var(--success) / 0.9);
+  box-shadow: 0 2px 10px hsl(var(--success) / 0.3);
 }
 
 .peak-popup-status.untaken {
   color: hsl(var(--muted-foreground));
-  background: hsl(var(--muted));
-  border: 1px solid hsl(var(--border));
+  background: hsl(var(--muted) / 0.5);
+  border: 1px solid hsl(var(--border) / 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .peak-popup-area {
   font-size: 0.75rem;
   color: hsl(var(--muted-foreground));
+  font-weight: 500;
 }
 
 .peak-popup-actions {
   display: flex;
   gap: 8px;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .peak-popup-btn {
   font-family: var(--font-body);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  padding: 8px 16px;
-  border-radius: 10px;
+  padding: 10px 16px;
+  border-radius: 12px;
   cursor: pointer;
   width: 100%;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .peak-popup-btn.primary {
-  background: hsl(var(--primary));
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.8));
   color: hsl(var(--primary-foreground));
+  box-shadow: 0 4px 15px hsl(var(--primary) / 0.2);
 }
 
 .peak-popup-btn.primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px hsl(var(--primary) / 0.3);
 }
 
 .peak-popup-btn.secondary {
   flex: 1;
-  background: hsl(var(--secondary));
+  background: hsl(var(--secondary) / 0.8);
   color: hsl(var(--secondary-foreground));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .peak-popup-btn.edit {
   flex: 1;
-  background: hsl(210, 80%, 50%);
+  background: hsl(210, 80%, 50% / 0.9);
   color: white;
 }
 
 .peak-popup-btn.delete {
   flex: 1;
-  background: hsl(var(--destructive));
+  background: hsl(var(--destructive) / 0.9);
   color: hsl(var(--destructive-foreground));
 }
 
@@ -348,7 +366,7 @@
 }
 
 .peak-popup .mapboxgl-popup-tip {
-  border-top-color: hsl(var(--card));
+  border-top-color: hsl(var(--card) / 0.75);
   z-index: 2;
   transition: all 0.4s ease;
 }
