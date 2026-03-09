@@ -11,7 +11,7 @@ export interface PeakCheckin {
 
 export async function getUserCheckins(userId: string): Promise<PeakCheckin[]> {
   const { data, error } = await supabase
-    .from('peak_checkins' as any)
+    .from('peak_checkins')
     .select('*')
     .eq('user_id', userId);
   if (error) throw error;
