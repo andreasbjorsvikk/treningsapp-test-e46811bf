@@ -54,6 +54,36 @@ export const defaultActivityColorMap: Partial<Record<SessionType, ActivityColors
   },
 };
 
+// Mutable runtime map – initialized from defaults, overridden by user settings
+export const activityColorMap: Partial<Record<SessionType, ActivityColors>> = { ...defaultActivityColorMap };
+
+// Restore saved color overrides from localStorage
+export function restoreActivityColors() {
+  try {
+    const saved = localStorage.getItem('treningslogg_activity_colors');
+    if (saved) {
+      const parsed = JSON.parse(saved) as Partial<Record<SessionType, ActivityColors>>;
+      Object.assign(activityColorMap, parsed);
+    }
+  } catch {}
+}
+
+// Save current color overrides to localStorage (only non-default entries)
+export function saveActivityColors() {
+  const overrides: Partial<Record<SessionType, ActivityColors>> = {};
+  for (const [type, colors] of Object.entries(activityColorMap)) {
+    const def = defaultActivityColorMap[type as SessionType];
+    if (colors && (!def || JSON.stringify(colors) !== JSON.stringify(def))) {
+      overrides[type as SessionType] = colors;
+    }
+  }
+  if (Object.keys(overrides).length > 0) {
+    localStorage.setItem('treningslogg_activity_colors', JSON.stringify(overrides));
+  } else {
+    localStorage.removeItem('treningslogg_activity_colors');
+  }
+}
+
 export function getActivityColors(type: SessionType, isDark: boolean): ActivityColorSet {
   const colors = activityColorMap[type];
   if (!colors) {
