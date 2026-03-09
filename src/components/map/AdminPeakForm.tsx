@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { DbPeak } from '@/services/peakDbService';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,26 +8,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Upload, X } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { uploadPeakImage } from '@/services/peakDbService';
+import { toast } from 'sonner';
 
 interface AdminPeakFormProps {
   open: boolean;
   onClose: () => void;
-  onSave: (data: {
-    name_no: string;
-    elevation_moh: number;
-    area: string;
-    description_no: string;
-    latitude: number;
-    longitude: number;
-    is_published: boolean;
-    image_url: string | null;
-  }) => Promise<void>;
+  onSave: (data: any) => Promise<void>;
   initial?: Partial<DbPeak>;
   title: string;
   peakId?: string;
+  onPickRouteStart?: () => void;
+  routeStartCoordsProp?: { lat: number; lng: number } | null;
 }
 
-const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId }: AdminPeakFormProps) => {
+const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
+
+const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRouteStart, routeStartCoordsProp }: AdminPeakFormProps) => {
   const [name, setName] = useState(initial?.name_no || '');
   const [elevation, setElevation] = useState(String(initial?.elevation_moh ?? ''));
   const [area, setArea] = useState(initial?.area || '');
@@ -36,6 +32,14 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId }: AdminP
   const [lng, setLng] = useState(String(initial?.longitude ?? ''));
   const [published, setPublished] = useState(initial?.is_published ?? true);
   const [imageUrl, setImageUrl] = useState(initial?.image_url || null);
+  
+  const [routeStartLat, setRouteStartLat] = useState<number | null>(initial?.route_start_lat || null);
+  const [routeStartLng, setRouteStartLng] = useState<number | null>(initial?.route_start_lng || null);
+  const [routeGeojson, setRouteGeojson] = useState<any | null>(initial?.route_geojson || null);
+  const [routeDistance, setRouteDistance] = useState<number | null>(initial?.route_distance_m || null);
+  const [routeDuration, setRouteDuration] = useState<number | null>(initial?.route_duration_s || null);
+  const [routeStatus, setRouteStatus] = useState<string>(initial?.route_status || 'none');
+
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -53,6 +57,50 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId }: AdminP
     setUploading(false);
   };
 
+  useEffect(() => {
+    if (routeStartCoordsProp) {
+      setRouteStartLat(routeStartCoordsProp.lat);
+      setRouteStartLng(routeStartCoordsProp.lng);
+      setRouteGeojson(null);
+      setRouteStatus('none');
+    }
+  }, [routeStartCoordsProp]);
+
+  const handleGenerateRoute = async () => {
+    if (!routeStartLat || !routeStartLng || !lat || !lng) return;
+    try {
+      const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${routeStartLng},${routeStartLat};${lng},${lat}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.routes && data.routes.length > 0) {
+        const route = data.routes[0];
+        setRouteGeojson(route.geometry);
+        setRouteDistance(route.distance);
+        setRouteDuration(route.duration);
+        setRouteStatus('preview');
+        toast.success('Rute generert');
+      } else {
+        toast.error('Fant ingen rute');
+      }
+    } catch (e) {
+      toast.error('Kunne ikke generere rute');
+    }
+  };
+
+  const handleApproveRoute = () => {
+    setRouteStatus('approved');
+    toast.success('Rute godkjent');
+  };
+
+  const handleClearRoute = () => {
+    setRouteStartLat(null);
+    setRouteStartLng(null);
+    setRouteGeojson(null);
+    setRouteDistance(null);
+    setRouteDuration(null);
+    setRouteStatus('none');
+  };
+
   const handleSubmit = async () => {
     if (!name.trim() || !lat || !lng) return;
     setSaving(true);
@@ -66,6 +114,12 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId }: AdminP
         longitude: Number(lng),
         is_published: published,
         image_url: imageUrl,
+        route_start_lat: routeStartLat,
+        route_start_lng: routeStartLng,
+        route_geojson: routeGeojson,
+        route_distance_m: routeDistance,
+        route_duration_s: routeDuration,
+        route_status: routeStatus,
       });
       onClose();
     } catch {
@@ -141,7 +195,72 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId }: AdminP
             <Switch checked={published} onCheckedChange={setPublished} />
           </div>
 
-          <Button onClick={handleSubmit} disabled={saving || !name.trim()} className="w-full" size="lg">
+          <div className="space-y-3 pt-4 border-t border-border">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">ANBEFALT RUTE</h3>
+            
+            {(!routeStartLat || !routeStartLng) && (
+              <Button type="button" variant="outline" className="w-full" onClick={onPickRouteStart}>
+                Velg startpunkt i kart
+              </Button>
+            )}
+
+            {routeStartLat && routeStartLng && routeStatus === 'none' && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Startpunkt valgt: {routeStartLat.toFixed(4)}, {routeStartLng.toFixed(4)}</p>
+                <div className="flex gap-2">
+                  <Button type="button" onClick={handleGenerateRoute} className="flex-1">
+                    Generer rute
+                  </Button>
+                  <Button type="button" variant="outline" onClick={onPickRouteStart}>
+                    Endre start
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {routeStatus === 'preview' && routeGeojson && (
+              <div className="space-y-3 bg-muted/30 p-3 rounded-lg border border-border">
+                <p className="text-xs font-medium text-warning">Rute i forhåndsvisning</p>
+                <div className="text-sm">
+                  Distanse: {(routeDistance! / 1000).toFixed(1)} km<br/>
+                  Estimert tid: {Math.round(routeDuration! / 60)} min
+                </div>
+                <div className="flex gap-2">
+                  <Button type="button" onClick={handleApproveRoute} className="flex-1 bg-success hover:bg-success/90">
+                    Godkjenn rute
+                  </Button>
+                  <Button type="button" variant="outline" onClick={handleClearRoute}>
+                    Fjern rute
+                  </Button>
+                </div>
+                <Button type="button" variant="ghost" className="w-full" onClick={onPickRouteStart}>
+                  Prøv nytt startpunkt
+                </Button>
+              </div>
+            )}
+
+            {routeStatus === 'approved' && routeGeojson && (
+              <div className="space-y-3 bg-success/10 p-3 rounded-lg border border-success/30">
+                <p className="text-xs font-medium text-success flex items-center gap-1">
+                  ✓ Rute godkjent
+                </p>
+                <div className="text-sm">
+                  Distanse: {(routeDistance! / 1000).toFixed(1)} km<br/>
+                  Estimert tid: {Math.round(routeDuration! / 60)} min
+                </div>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" className="flex-1 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={handleClearRoute}>
+                    Fjern rute
+                  </Button>
+                  <Button type="button" variant="outline" className="flex-1" onClick={onPickRouteStart}>
+                    Endre start
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <Button onClick={handleSubmit} disabled={saving || !name.trim()} className="w-full mt-4" size="lg">
             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Lagre
           </Button>

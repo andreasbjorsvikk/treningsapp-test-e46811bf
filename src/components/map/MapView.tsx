@@ -18,11 +18,13 @@ interface MapViewProps {
   onEditPeak?: (peak: Peak) => void;
   onDeletePeak?: (peakId: string) => void;
   onLongPress?: (lat: number, lng: number) => void;
+  routeGeojson?: any;
+  onClearRoute?: () => void;
 }
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
-const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress }: MapViewProps) => {
+const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, onClearRoute }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -190,6 +192,52 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       setTimeout(() => setMapLoaded(true), 50);
     });
   }, [mapStyle]);
+
+  // Draw route if provided
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    const m = map.current;
+
+    const sourceId = 'peak-route-source';
+    const layerId = 'peak-route-layer';
+
+    if (routeGeojson) {
+      if (!m.getSource(sourceId)) {
+        m.addSource(sourceId, {
+          type: 'geojson',
+          data: routeGeojson,
+        });
+        m.addLayer({
+          id: layerId,
+          type: 'line',
+          source: sourceId,
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round',
+          },
+          paint: {
+            'line-color': '#10b981', // Tailwind success color
+            'line-width': 6,
+            'line-opacity': 0.8,
+          },
+        });
+      } else {
+        (m.getSource(sourceId) as mapboxgl.GeoJSONSource).setData(routeGeojson);
+      }
+
+      // Zoom to route
+      const bounds = new mapboxgl.LngLatBounds();
+      if (routeGeojson.coordinates) {
+        routeGeojson.coordinates.forEach((coord: [number, number]) => {
+          bounds.extend(coord);
+        });
+        m.fitBounds(bounds, { padding: 50, duration: 1000 });
+      }
+    } else {
+      if (m.getLayer(layerId)) m.removeLayer(layerId);
+      if (m.getSource(sourceId)) m.removeSource(sourceId);
+    }
+  }, [routeGeojson, mapLoaded]);
 
   // Add/update markers
   useEffect(() => {

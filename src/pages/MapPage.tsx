@@ -27,9 +27,14 @@ const MapPage = () => {
   const [addCoords, setAddCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [editingPeak, setEditingPeak] = useState<DbPeak | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [routeStartPickForPeak, setRouteStartPickForPeak] = useState<DbPeak | null>(null);
+  const [routeStartCoords, setRouteStartCoords] = useState<{lat: number, lng: number} | null>(null);
 
   // User suggestion state
   const [suggestCoords, setSuggestCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Active route
+  const [activeRouteGeojson, setActiveRouteGeojson] = useState<any>(null);
 
   const loadPeaks = useCallback(async () => {
     try {
@@ -68,6 +73,10 @@ const MapPage = () => {
     if (adminMode && addMode) {
       setAddCoords({ lat, lng });
       setAddMode(false);
+    } else if (adminMode && routeStartPickForPeak) {
+      setRouteStartCoords({ lat, lng });
+      setEditingPeak(routeStartPickForPeak);
+      setRouteStartPickForPeak(null);
     } else if (!adminMode) {
       // Long-press handled in MapView
     }
@@ -120,6 +129,24 @@ const MapPage = () => {
     }
   };
 
+  const handlePickRouteStart = () => {
+    setRouteStartPickForPeak(editingPeak);
+    setEditingPeak(null);
+    toast.info('Trykk på kartet for å velge startpunkt for ruten.');
+  };
+
+  const handleShowRoute = (peak: Peak) => {
+    if (peak.route_status === 'approved' && peak.route_geojson) {
+      setSubTab('kart');
+      setActiveRouteGeojson(peak.route_geojson);
+      // Wait for tab switch
+      setTimeout(() => {
+        const evt = new CustomEvent('zoom-to-route', { detail: peak.route_geojson });
+        window.dispatchEvent(evt);
+      }, 300);
+    }
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-[calc(100vh-3.5rem)] -mx-4 sm:-mx-6 lg:-mx-8 w-[calc(100%+2rem)] sm:w-[calc(100%+3rem)] lg:w-[100vw] lg:relative lg:left-[calc(-50vw+50%)]">
       {/* Sub-tab bar */}
@@ -164,12 +191,14 @@ const MapPage = () => {
             checkins={checkins}
             onSelectPeak={handleSelectPeak}
             adminMode={adminMode}
-            addMode={addMode}
+            addMode={addMode || !!routeStartPickForPeak}
             onMapClick={handleMapClick}
             onMarkerDrag={handleMarkerDrag}
             onEditPeak={handleEditPeak}
             onDeletePeak={handleDeletePeak}
             onLongPress={handleLongPress}
+            routeGeojson={activeRouteGeojson}
+            onClearRoute={() => setActiveRouteGeojson(null)}
           />
         ) : (
           <div className="h-full overflow-y-auto">
@@ -195,6 +224,7 @@ const MapPage = () => {
         adminMode={adminMode}
         onEdit={handleEditPeak}
         onDelete={handleDeletePeak}
+        onShowRoute={handleShowRoute}
       />
 
       {/* Admin: Add new peak form */}
@@ -212,11 +242,13 @@ const MapPage = () => {
       {editingPeak && (
         <AdminPeakForm
           open={!!editingPeak}
-          onClose={() => setEditingPeak(null)}
+          onClose={() => { setEditingPeak(null); setRouteStartCoords(null); }}
           onSave={handleUpdatePeak}
           initial={editingPeak}
           title="Rediger topp"
           peakId={editingPeak.id}
+          onPickRouteStart={handlePickRouteStart}
+          routeStartCoordsProp={routeStartCoords}
         />
       )}
 
