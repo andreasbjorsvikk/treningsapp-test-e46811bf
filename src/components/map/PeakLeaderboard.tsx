@@ -38,7 +38,7 @@ const PeakLeaderboard = ({ peakId }: PeakLeaderboardProps) => {
     setLoading(true);
     try {
       let query = supabase
-        .from('peak_checkins' as any)
+        .from('peak_checkins')
         .select('user_id, checked_in_at')
         .eq('peak_id', peakId);
 
