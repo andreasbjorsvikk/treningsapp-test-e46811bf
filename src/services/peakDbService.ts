@@ -13,6 +13,12 @@ export interface DbPeak {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  route_start_lat: number | null;
+  route_start_lng: number | null;
+  route_geojson: any | null;
+  route_distance_m: number | null;
+  route_duration_s: number | null;
+  route_status: string | null;
 }
 
 // Convert DB peak to the Peak interface used by map components
@@ -27,6 +33,12 @@ export function dbPeakToLegacy(p: DbPeak) {
     description: p.description_no || '',
     imageUrl: p.image_url,
     isPublished: p.is_published,
+    route_start_lat: p.route_start_lat,
+    route_start_lng: p.route_start_lng,
+    route_geojson: p.route_geojson,
+    route_distance_m: p.route_distance_m,
+    route_duration_s: p.route_duration_s,
+    route_status: p.route_status,
   };
 }
 
