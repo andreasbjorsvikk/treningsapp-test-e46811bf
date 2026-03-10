@@ -252,7 +252,7 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
         type: 'line',
         source: 'replay-progress',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': DARK_GREEN, 'line-width': 5, 'line-opacity': 0.9 },
+        paint: { 'line-color': DARK_GREEN, 'line-width': 8, 'line-opacity': 0.9 },
       });
     }
 
