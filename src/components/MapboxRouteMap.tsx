@@ -177,6 +177,12 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     };
   }, [imgError, initPreviewMap]);
 
+  // Pre-compute simplified route outside of map init to avoid blocking
+  const simplifiedRoute = useMemo(() => {
+    if (routePoints.length < 2) return [];
+    return simplifyRoute(routePoints, 300);
+  }, [routePoints]);
+
   const initInteractiveMap = useCallback(async () => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
@@ -184,10 +190,12 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     await import('mapbox-gl/dist/mapbox-gl.css');
     (mapboxgl as any).accessToken = MAPBOX_TOKEN;
 
-    const bounds = getBounds(routePoints);
-    const coords = routePoints.map(([lat, lng]) => [lng, lat]);
+    // Use simplified route for bounds calculation
+    const boundsPoints = simplifiedRoute.length > 0 ? simplifiedRoute : routePoints;
+    const bounds = getBounds(boundsPoints);
+    // Use simplified coordinates for rendering — this is the key fix
+    const coords = simplifiedRoute.map(([lat, lng]) => [lng, lat]);
 
-    // Create map with 3D pitch — interactive immediately
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: 'mapbox://styles/mapbox/outdoors-v12',
@@ -205,51 +213,41 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
 
     mapInstanceRef.current = map;
-    setMapReady(true);
 
-    // Use rAF to break up work so browser can process user input between steps
     map.once('style.load', () => {
-      // Step 1: Add route source (next frame)
-      requestAnimationFrame(() => {
-        if (!mapInstanceRef.current) return;
-        map.addSource('route', {
-          type: 'geojson',
-          data: {
-            type: 'Feature',
-            properties: {},
-            geometry: { type: 'LineString', coordinates: coords },
-          },
-        });
-
-        // Step 2: Add route layer (next frame)
-        requestAnimationFrame(() => {
-          if (!mapInstanceRef.current) return;
-          map.addLayer({
-            id: 'route-line',
-            type: 'line',
-            source: 'route',
-            layout: { 'line-join': 'round', 'line-cap': 'round' },
-            paint: { 'line-color': lineColor, 'line-width': 4, 'line-opacity': 0.95 },
-          });
-
-          // Step 3: fitBounds (next frame)
-          requestAnimationFrame(() => {
-            if (!mapInstanceRef.current) return;
-            map.fitBounds([bounds.sw, bounds.ne], { padding: 60, pitch: 60, bearing: -20, duration: 0 });
-          });
-        });
+      if (!mapInstanceRef.current) return;
+      
+      map.addSource('route', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: {},
+          geometry: { type: 'LineString', coordinates: coords },
+        },
       });
+
+      map.addLayer({
+        id: 'route-line',
+        type: 'line',
+        source: 'route',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': lineColor, 'line-width': 4, 'line-opacity': 0.95 },
+      });
+
+      map.fitBounds([bounds.sw, bounds.ne], { padding: 60, pitch: 60, bearing: -20, duration: 0 });
+      
+      // Only set map ready AFTER route is rendered
+      setMapReady(true);
     });
 
-    // Defer terrain to well after map is interactive
+    // Defer terrain to after map is idle and interactive
     map.once('idle', () => {
-      // Wait 500ms after idle to ensure user can interact
       setTimeout(() => {
         if (!mapInstanceRef.current) return;
         addEnhancedTerrain(map, { exaggeration: 1.4 });
       }, 500);
     });
-  }, [routePoints, lineColor]);
+  }, [simplifiedRoute, routePoints, lineColor]);
 
   // Init map when fullscreen opens — no delay for instant responsiveness
   useEffect(() => {
