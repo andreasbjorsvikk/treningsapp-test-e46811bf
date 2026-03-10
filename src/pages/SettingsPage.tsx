@@ -21,7 +21,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
 import { stravaService } from '@/services/stravaService';
 import { toast } from 'sonner';
-import { mockUsers } from '@/data/mockCommunity';
+import { getFriends, Friend } from '@/services/communityService';
 import { useAdmin } from '@/hooks/useAdmin';
 
 // Predefined color options for activity types
@@ -67,6 +67,7 @@ const SettingsPage = () => {
   const [showFriendPicker, setShowFriendPicker] = useState(false);
   const [selectedPrivacyKey, setSelectedPrivacyKey] = useState<string | null>(null);
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
+  const [realFriends, setRealFriends] = useState<Friend[]>([]);
 
   // Check Strava connection on mount & after callback
   useEffect(() => {
@@ -85,6 +86,12 @@ const SettingsPage = () => {
         if (data?.username) setUsername(data.username);
         if (data?.avatar_url) setAvatarUrl(data.avatar_url);
       });
+  }, [user]);
+  
+  // Load real friends for privacy settings
+  useEffect(() => {
+    if (!user) return;
+    getFriends().then(setRealFriends).catch(() => {});
   }, [user]);
 
   // Listen for navigate-to-profile event
@@ -428,7 +435,7 @@ const SettingsPage = () => {
       { key: 'privacyGoals' as const, label: t('privacy.goals'), desc: t('privacy.goalsDesc') },
       { key: 'privacyPeakCheckins' as const, label: 'Fjelltopp-innsjekkinger', desc: 'Hvem kan se dine innsjekkinger på fjelltopper' },
     ];
-    const friends = mockUsers.filter(u => u.id !== 'me');
+    const friends = realFriends;
     return (
       <div className="space-y-4">
         {backButton(t('privacy.title'))}
@@ -495,9 +502,9 @@ const SettingsPage = () => {
                     }}
                   />
                   <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center shrink-0">
-                    <span className="text-xs font-medium">{u.username[0]}</span>
+                    <span className="text-xs font-medium">{(u.username || '?')[0]}</span>
                   </div>
-                  <span className="text-sm font-medium">{u.username}</span>
+                  <span className="text-sm font-medium">{u.username || t('common.unknown')}</span>
                 </label>
               ))}
             </div>

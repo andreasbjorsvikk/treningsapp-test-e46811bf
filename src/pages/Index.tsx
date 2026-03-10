@@ -250,7 +250,7 @@ const IndexContent = () => {
       setPinnedChallenges(enriched);
     };
     loadPinned();
-  }, [user, settings.pinnedChallengeIds]);
+  }, [user, settings.pinnedChallengeIds, appData.sessions]);
 
   const handleDelete = async (id: string) => { await appData.deleteSession(id); };
   const handleEdit = (session: WorkoutSession) => { setEditSession(session); setDialogOpen(true); };
