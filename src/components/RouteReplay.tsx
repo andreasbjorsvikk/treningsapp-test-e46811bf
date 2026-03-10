@@ -295,6 +295,10 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
 
     startTimeRef.current = performance.now();
 
+    const smoothed = smoothedRef.current;
+    const smoothedCumDist = smoothedCumDistRef.current;
+    const smoothedTotalDist = smoothedCumDist[smoothedCumDist.length - 1] || totalDist;
+
     const animate = (now: number) => {
       if (stoppedRef.current) return;
       const elapsed = now - startTimeRef.current;
@@ -308,6 +312,7 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
         eased = 1 - Math.pow(-2 * rawProgress + 2, 3) / 2;
       }
 
+      // Use original points for marker position (accurate GPS)
       const currentDist = eased * totalDist;
       const pos = sampleAtDistance(routePoints, cumDist, currentDist);
 
@@ -315,12 +320,14 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
       markerRef.current?.setLngLat(lngLat);
       glowMarkerRef.current?.setLngLat(lngLat);
 
-      // Update progress line (draw behind marker)
+      // Use smoothed points for the drawn line
+      const smoothedTargetDist = eased * smoothedTotalDist;
+      const smoothPos = sampleAtDistance(smoothed, smoothedCumDist, smoothedTargetDist);
       const progressCoords: [number, number][] = [];
-      for (let i = 0; i <= pos.segIdx; i++) {
-        progressCoords.push([routePoints[i][1], routePoints[i][0]]);
+      for (let i = 0; i <= smoothPos.segIdx; i++) {
+        progressCoords.push([smoothed[i][1], smoothed[i][0]]);
       }
-      progressCoords.push([pos.lng, pos.lat]);
+      progressCoords.push([smoothPos.lng, smoothPos.lat]);
 
       try {
         const src = map.getSource('replay-progress');
