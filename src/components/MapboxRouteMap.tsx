@@ -337,12 +337,6 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
       {fullscreen && createPortal(
         <div
           className="fixed inset-0 z-[9999] bg-background flex flex-col"
-          onTouchStart={e => e.stopPropagation()}
-          onTouchMove={e => e.stopPropagation()}
-          onTouchEnd={e => e.stopPropagation()}
-          onPointerDown={e => e.stopPropagation()}
-          onPointerMove={e => e.stopPropagation()}
-          onPointerUp={e => e.stopPropagation()}
         >
           <button
             onClick={() => setFullscreen(false)}
