@@ -68,8 +68,71 @@ function sampleAtDistance(
   };
 }
 
+// Catmull-Rom spline interpolation for smooth GPS lines
+function catmullRomSpline(points: [number, number][], numPointsPerSegment: number = 3): [number, number][] {
+  if (points.length < 3) return points;
+  const result: [number, number][] = [points[0]];
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[Math.max(i - 1, 0)];
+    const p1 = points[i];
+    const p2 = points[Math.min(i + 1, points.length - 1)];
+    const p3 = points[Math.min(i + 2, points.length - 1)];
+    for (let j = 1; j <= numPointsPerSegment; j++) {
+      const t = j / numPointsPerSegment;
+      const t2 = t * t;
+      const t3 = t2 * t;
+      const lat = 0.5 * (
+        (2 * p1[0]) +
+        (-p0[0] + p2[0]) * t +
+        (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 +
+        (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3
+      );
+      const lng = 0.5 * (
+        (2 * p1[1]) +
+        (-p0[1] + p2[1]) * t +
+        (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 +
+        (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3
+      );
+      result.push([lat, lng]);
+    }
+  }
+  return result;
+}
+
+// Simplify points using Ramer-Douglas-Peucker before smoothing
+function rdpSimplify(points: [number, number][], epsilon: number): [number, number][] {
+  if (points.length < 3) return points;
+  let maxDist = 0;
+  let maxIdx = 0;
+  const start = points[0];
+  const end = points[points.length - 1];
+  for (let i = 1; i < points.length - 1; i++) {
+    const d = perpendicularDist(points[i], start, end);
+    if (d > maxDist) { maxDist = d; maxIdx = i; }
+  }
+  if (maxDist > epsilon) {
+    const left = rdpSimplify(points.slice(0, maxIdx + 1), epsilon);
+    const right = rdpSimplify(points.slice(maxIdx), epsilon);
+    return [...left.slice(0, -1), ...right];
+  }
+  return [start, end];
+}
+
+function perpendicularDist(point: [number, number], start: [number, number], end: [number, number]): number {
+  const dx = end[1] - start[1];
+  const dy = end[0] - start[0];
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len === 0) return Math.sqrt((point[0] - start[0]) ** 2 + (point[1] - start[1]) ** 2);
+  return Math.abs(dy * point[1] - dx * point[0] + end[1] * start[0] - end[0] * start[1]) / len;
+}
+
+function smoothRoute(points: [number, number][]): [number, number][] {
+  // Simplify to remove GPS jitter, then spline-interpolate for smooth curves
+  const simplified = rdpSimplify(points, 0.00003); // ~3m tolerance
+  return catmullRomSpline(simplified, 4);
+}
+
 function getReplayDuration(totalDistKm: number): number {
-  // Slower: 25s min, 60s max
   const base = 25000;
   const perKm = 2000;
   return Math.min(60000, Math.max(base, base + totalDistKm * perKm));
@@ -86,12 +149,18 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
   const startTimeRef = useRef<number>(0);
   const cumDistRef = useRef<number[]>([]);
   const totalDistRef = useRef(0);
+  const smoothedRef = useRef<[number, number][]>([]);
+  const smoothedCumDistRef = useRef<number[]>([]);
   const stoppedRef = useRef(false);
   const routeHiddenRef = useRef(false);
 
   useEffect(() => {
     cumDistRef.current = buildCumulativeDistances(routePoints);
     totalDistRef.current = cumDistRef.current[cumDistRef.current.length - 1];
+    // Pre-compute smoothed route for replay drawing
+    const smoothed = smoothRoute(routePoints);
+    smoothedRef.current = smoothed;
+    smoothedCumDistRef.current = buildCumulativeDistances(smoothed);
   }, [routePoints]);
 
   const cleanup = useCallback(() => {
@@ -183,7 +252,7 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
         type: 'line',
         source: 'replay-progress',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': DARK_GREEN, 'line-width': 5, 'line-opacity': 0.9 },
+        paint: { 'line-color': DARK_GREEN, 'line-width': 8, 'line-opacity': 0.9 },
       });
     }
 
@@ -226,6 +295,10 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
 
     startTimeRef.current = performance.now();
 
+    const smoothed = smoothedRef.current;
+    const smoothedCumDist = smoothedCumDistRef.current;
+    const smoothedTotalDist = smoothedCumDist[smoothedCumDist.length - 1] || totalDist;
+
     const animate = (now: number) => {
       if (stoppedRef.current) return;
       const elapsed = now - startTimeRef.current;
@@ -239,6 +312,7 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
         eased = 1 - Math.pow(-2 * rawProgress + 2, 3) / 2;
       }
 
+      // Use original points for marker position (accurate GPS)
       const currentDist = eased * totalDist;
       const pos = sampleAtDistance(routePoints, cumDist, currentDist);
 
@@ -246,12 +320,14 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
       markerRef.current?.setLngLat(lngLat);
       glowMarkerRef.current?.setLngLat(lngLat);
 
-      // Update progress line (draw behind marker)
+      // Use smoothed points for the drawn line
+      const smoothedTargetDist = eased * smoothedTotalDist;
+      const smoothPos = sampleAtDistance(smoothed, smoothedCumDist, smoothedTargetDist);
       const progressCoords: [number, number][] = [];
-      for (let i = 0; i <= pos.segIdx; i++) {
-        progressCoords.push([routePoints[i][1], routePoints[i][0]]);
+      for (let i = 0; i <= smoothPos.segIdx; i++) {
+        progressCoords.push([smoothed[i][1], smoothed[i][0]]);
       }
-      progressCoords.push([pos.lng, pos.lat]);
+      progressCoords.push([smoothPos.lng, smoothPos.lat]);
 
       try {
         const src = map.getSource('replay-progress');

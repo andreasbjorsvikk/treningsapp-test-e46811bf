@@ -158,18 +158,22 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
       zoom: 12,
       pitch: 60,
       bearing: -20,
-      antialias: true,
+      antialias: false,
+      fadeDuration: 0,
     });
 
-    // Explicitly enable all touch interactions
+    // Enable touch interactions immediately
     map.dragRotate.enable();
     map.touchZoomRotate.enable();
     map.touchPitch.enable();
 
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
 
-    map.on('style.load', () => {
-      // Add route immediately so map is usable right away
+    // Mark ready immediately — map is interactive before tiles finish loading
+    mapInstanceRef.current = map;
+    setMapReady(true);
+
+    map.once('style.load', () => {
       map.addSource('route', {
         type: 'geojson',
         data: {
@@ -192,14 +196,13 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
 
       map.fitBounds(
         [bounds.sw, bounds.ne],
-        { padding: 60, pitch: 60, bearing: -20, duration: 1000 }
+        { padding: 60, pitch: 60, bearing: -20, duration: 0 }
       );
+    });
 
-      // Map is interactive now — terrain loads in the background
-      setMapReady(true);
-
-      // Defer heavy terrain + sky to after map is idle
-      map.once('idle', () => {
+    // Defer heavy terrain + sky until map is idle
+    map.once('idle', () => {
+      try {
         if (!map.getSource('mapbox-dem')) {
           map.addSource('mapbox-dem', {
             type: 'raster-dem',
@@ -221,10 +224,8 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
             },
           });
         }
-      });
+      } catch {}
     });
-
-    mapInstanceRef.current = map;
   }, [routePoints, lineColor]);
 
   // Init map when fullscreen opens — no delay for instant responsiveness
