@@ -119,22 +119,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
 
 
     m.on('style.load', () => {
-      m.addSource('mapbox-dem', {
-        type: 'raster-dem',
-        url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
-        tileSize: 512,
-        maxzoom: 14,
-      });
-      m.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
-      m.addLayer({
-        id: 'sky',
-        type: 'sky',
-        paint: {
-          'sky-type': 'atmosphere',
-          'sky-atmosphere-sun': [0.0, 90.0],
-          'sky-atmosphere-sun-intensity': 15,
-        },
-      });
+      addEnhancedTerrain(m, { exaggeration: 1.4 });
       setMapLoaded(true);
     });
 
