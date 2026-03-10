@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Maximize2, ArrowLeft, MapPin } from 'lucide-react';
+import { Maximize2, ArrowLeft } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import RouteReplay from '@/components/RouteReplay';
 import { addEnhancedTerrain } from '@/utils/mapTerrain';
@@ -114,7 +114,6 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     persistentMapDiv.current.style.height = '100%';
   }
 
-  // Wrapper ref — we'll append the persistent div here
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Move the persistent map div into the current wrapper whenever it changes
@@ -122,14 +121,29 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     const div = persistentMapDiv.current;
     if (!div || !wrapperRef.current) return;
     wrapperRef.current.appendChild(div);
-    // Resize map to fit new container
+    // Resize map to fit new container after DOM settles
     requestAnimationFrame(() => {
-      mapInstanceRef.current?.resize();
+      requestAnimationFrame(() => {
+        if (!mapInstanceRef.current) return;
+        mapInstanceRef.current.resize();
+        // fitBounds to match new container size
+        if (boundsRef.current) {
+          mapInstanceRef.current.fitBounds(
+            [boundsRef.current.sw, boundsRef.current.ne],
+            {
+              padding: fullscreen ? 60 : 20,
+              pitch: fullscreen ? 60 : 0,
+              bearing: fullscreen ? -20 : 0,
+              duration: 0,
+            }
+          );
+        }
+      });
     });
     return () => {
       if (div.parentNode) div.parentNode.removeChild(div);
     };
-  }, [fullscreen, imgError]); // Re-run when wrapper location changes
+  }, [fullscreen, imgError]);
 
   const staticUrl = useMemo(() => {
     if (routePoints.length < 2) return null;
@@ -141,7 +155,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     return simplifyRoute(routePoints, 300);
   }, [routePoints]);
 
-  // Pre-initialize map on mount (hidden) to cache tiles
+  // Pre-initialize map on mount — starts FLAT (pitch:0) for fast tile loading
   const initMap = useCallback(async () => {
     if (mapInitStarted.current || !persistentMapDiv.current || routePoints.length < 2) return;
     mapInitStarted.current = true;
@@ -155,13 +169,14 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     boundsRef.current = { sw: bounds.sw, ne: bounds.ne };
     const coords = simplifiedRoute.map(([lat, lng]) => [lng, lat]);
 
+    // Start FLAT — pitch:0 loads far fewer tiles than pitch:60
     const map = new mapboxgl.Map({
       container: persistentMapDiv.current!,
       style: 'mapbox://styles/mapbox/outdoors-v12',
       center: bounds.center,
       zoom: 12,
-      pitch: 60,
-      bearing: -20,
+      pitch: 0,
+      bearing: 0,
       antialias: false,
       fadeDuration: 0,
       attributionControl: false,
@@ -189,16 +204,12 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
         paint: { 'line-color': lineColor, 'line-width': 4, 'line-opacity': 0.95 },
       });
 
+      // fitBounds flat for initial pre-cache
+      map.fitBounds([bounds.sw, bounds.ne], { padding: 20, pitch: 0, bearing: 0, duration: 0 });
       setMapReady(true);
     });
 
-    map.once('idle', () => {
-      setTimeout(() => {
-        if (!mapInstanceRef.current || terrainAdded.current) return;
-        terrainAdded.current = true;
-        addEnhancedTerrain(map, { exaggeration: 1.4 });
-      }, 300);
-    });
+    // NO terrain on init — terrain is added only after first user interaction in fullscreen
   }, [simplifiedRoute, routePoints, lineColor]);
 
   // Start pre-loading immediately
@@ -216,7 +227,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     };
   }, [initMap]);
 
-  // When entering fullscreen: resize + fitBounds
+  // When entering fullscreen: add controls + add terrain after first interaction
   useEffect(() => {
     if (!fullscreen || !mapInstanceRef.current) return;
 
@@ -233,19 +244,39 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
       }
     });
 
-    // After the persistent div is moved into the fullscreen wrapper, resize + fitBounds
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (!mapInstanceRef.current) return;
-        map.resize();
-        if (boundsRef.current) {
-          map.fitBounds(
-            [boundsRef.current.sw, boundsRef.current.ne],
-            { padding: 60, pitch: 60, bearing: -20, duration: 0 }
-          );
+    // Add terrain only after the user's first interaction (move/zoom/rotate)
+    // This ensures the map is fully responsive before the heavy terrain load
+    if (!terrainAdded.current) {
+      const addTerrainOnInteraction = () => {
+        if (terrainAdded.current || !mapInstanceRef.current) return;
+        terrainAdded.current = true;
+        // Small delay so the interaction itself isn't blocked
+        setTimeout(() => {
+          if (mapInstanceRef.current) {
+            addEnhancedTerrain(mapInstanceRef.current, { exaggeration: 1.4 });
+          }
+        }, 100);
+      };
+
+      // Also add terrain after a generous timeout as fallback (user might just look)
+      const fallbackTimer = setTimeout(() => {
+        if (!terrainAdded.current && mapInstanceRef.current) {
+          terrainAdded.current = true;
+          addEnhancedTerrain(mapInstanceRef.current, { exaggeration: 1.4 });
         }
-      });
-    });
+      }, 3000);
+
+      map.once('movestart', addTerrainOnInteraction);
+      map.once('zoomstart', addTerrainOnInteraction);
+      map.once('rotatestart', addTerrainOnInteraction);
+
+      return () => {
+        clearTimeout(fallbackTimer);
+        map.off('movestart', addTerrainOnInteraction);
+        map.off('zoomstart', addTerrainOnInteraction);
+        map.off('rotatestart', addTerrainOnInteraction);
+      };
+    }
   }, [fullscreen]);
 
   // Lock body scroll in fullscreen
@@ -257,6 +288,11 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
   }, [fullscreen]);
 
   if (routePoints.length < 2) return null;
+
+  // Determine where the map's hidden pre-load wrapper should be
+  // If static image failed, map shows as thumbnail (no separate hidden container needed)
+  const needsHiddenPreload = !fullscreen && !imgError;
+  const thumbnailShowsMap = imgError && !fullscreen;
 
   return (
     <>
@@ -281,10 +317,10 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
           />
         )}
 
-        {/* Fallback when static image fails: show the pre-loaded map as thumbnail */}
-        {imgError && (
+        {/* Fallback: show pre-loaded map as thumbnail */}
+        {thumbnailShowsMap && (
           <div
-            ref={imgError && !fullscreen ? wrapperRef : undefined}
+            ref={wrapperRef}
             className="w-full h-full"
             style={{ pointerEvents: 'none' }}
           />
@@ -302,8 +338,8 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
         </button>
       </div>
 
-      {/* Hidden pre-load: only when static image works (otherwise map is shown as thumbnail above) */}
-      {!fullscreen && !imgError && createPortal(
+      {/* Hidden pre-load wrapper (only when static image works) */}
+      {needsHiddenPreload && createPortal(
         <div
           ref={wrapperRef}
           style={{
@@ -320,7 +356,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
         document.body
       )}
 
-      {/* Fullscreen map — portal to body */}
+      {/* Fullscreen map */}
       {fullscreen && createPortal(
         <div
           className="fixed inset-0 z-[9999] bg-background flex flex-col"
@@ -338,7 +374,6 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
             <ArrowLeft className="w-5 h-5 text-foreground" />
             <span className="text-sm font-medium text-foreground">Tilbake</span>
           </button>
-          {/* The persistent map div gets moved here via DOM manipulation */}
           <div ref={wrapperRef} className="flex-1 w-full" />
           {mapReady && mapInstanceRef.current && (
             <RouteReplay
