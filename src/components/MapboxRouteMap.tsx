@@ -92,6 +92,77 @@ export const useMapFullscreen = () => {
   return { isMapFullscreen: fullscreen, setMapFullscreen: setFullscreen };
 };
 
+/**
+ * Tile cache warmer — creates a hidden map to pre-download tiles.
+ * Destroyed after tiles are cached. The fullscreen map benefits from browser cache.
+ */
+function useTileCacheWarmer(routePoints: [number, number][], simplifiedRoute: [number, number][]) {
+  const warmerRef = useRef<any>(null);
+  const warmerContainerRef = useRef<HTMLDivElement | null>(null);
+  const warmedRef = useRef(false);
+
+  useEffect(() => {
+    if (warmedRef.current || routePoints.length < 2) return;
+    warmedRef.current = true;
+
+    // Create off-screen container
+    const container = document.createElement('div');
+    container.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;opacity:0;pointer-events:none;z-index:-1;';
+    document.body.appendChild(container);
+    warmerContainerRef.current = container;
+
+    const boundsPoints = simplifiedRoute.length > 0 ? simplifiedRoute : routePoints;
+    const bounds = getBounds(boundsPoints);
+
+    import('mapbox-gl').then(m => {
+      const mapboxgl = m.default;
+      (mapboxgl as any).accessToken = MAPBOX_TOKEN;
+
+      const map = new mapboxgl.Map({
+        container,
+        style: 'mapbox://styles/mapbox/outdoors-v12',
+        center: bounds.center,
+        zoom: 12,
+        pitch: 60,
+        bearing: -20,
+        antialias: false,
+        fadeDuration: 0,
+        attributionControl: false,
+        interactive: false, // No interaction needed — just cache tiles
+      });
+
+      warmerRef.current = map;
+
+      map.once('style.load', () => {
+        map.fitBounds([bounds.sw, bounds.ne], { padding: 60, pitch: 60, bearing: -20, duration: 0 });
+      });
+
+      // Destroy warmer after tiles are loaded — they stay in browser cache
+      map.once('idle', () => {
+        setTimeout(() => {
+          map.remove();
+          warmerRef.current = null;
+          if (warmerContainerRef.current) {
+            document.body.removeChild(warmerContainerRef.current);
+            warmerContainerRef.current = null;
+          }
+        }, 500);
+      });
+    });
+
+    return () => {
+      if (warmerRef.current) {
+        warmerRef.current.remove();
+        warmerRef.current = null;
+      }
+      if (warmerContainerRef.current) {
+        try { document.body.removeChild(warmerContainerRef.current); } catch {}
+        warmerContainerRef.current = null;
+      }
+    };
+  }, [routePoints, simplifiedRoute]);
+}
+
 const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenChange, totalDistance, totalElevation, averageHeartrate, maxHeartrate }: MapboxRouteMapProps & { onFullscreenChange?: (fs: boolean) => void }) => {
   const [fullscreen, setFullscreenState] = useState(false);
   const setFullscreen = (fs: boolean) => {
@@ -100,50 +171,9 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
   };
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const [mapReady, setMapReady] = useState(false);
-  const mapInitStarted = useRef(false);
-  const terrainAdded = useRef(false);
-  const boundsRef = useRef<{ sw: [number, number]; ne: [number, number] } | null>(null);
-
-  // Create a persistent DOM node for the map that never gets unmounted by React
-  const persistentMapDiv = useRef<HTMLDivElement | null>(null);
-  if (!persistentMapDiv.current) {
-    persistentMapDiv.current = document.createElement('div');
-    persistentMapDiv.current.style.width = '100%';
-    persistentMapDiv.current.style.height = '100%';
-  }
-
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  // Move the persistent map div into the current wrapper whenever it changes
-  useEffect(() => {
-    const div = persistentMapDiv.current;
-    if (!div || !wrapperRef.current) return;
-    wrapperRef.current.appendChild(div);
-    // Resize map to fit new container after DOM settles
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (!mapInstanceRef.current) return;
-        mapInstanceRef.current.resize();
-        // fitBounds to match new container size
-        if (boundsRef.current) {
-          mapInstanceRef.current.fitBounds(
-            [boundsRef.current.sw, boundsRef.current.ne],
-            {
-              padding: fullscreen ? 60 : 20,
-              pitch: fullscreen ? 60 : 0,
-              bearing: fullscreen ? -20 : 0,
-              duration: 0,
-            }
-          );
-        }
-      });
-    });
-    return () => {
-      if (div.parentNode) div.parentNode.removeChild(div);
-    };
-  }, [fullscreen, imgError]);
 
   const staticUrl = useMemo(() => {
     if (routePoints.length < 2) return null;
@@ -155,10 +185,12 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     return simplifyRoute(routePoints, 300);
   }, [routePoints]);
 
-  // Pre-initialize map on mount — starts FLAT (pitch:0) for fast tile loading
-  const initMap = useCallback(async () => {
-    if (mapInitStarted.current || !persistentMapDiv.current || routePoints.length < 2) return;
-    mapInitStarted.current = true;
+  // Pre-warm the tile cache in the background
+  useTileCacheWarmer(routePoints, simplifiedRoute);
+
+  // Create a FRESH interactive map when fullscreen opens — no DOM reparenting
+  const initInteractiveMap = useCallback(async () => {
+    if (!mapContainerRef.current || mapInstanceRef.current) return;
 
     const mapboxgl = (await import('mapbox-gl')).default;
     await import('mapbox-gl/dist/mapbox-gl.css');
@@ -166,23 +198,27 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
 
     const boundsPoints = simplifiedRoute.length > 0 ? simplifiedRoute : routePoints;
     const bounds = getBounds(boundsPoints);
-    boundsRef.current = { sw: bounds.sw, ne: bounds.ne };
     const coords = simplifiedRoute.map(([lat, lng]) => [lng, lat]);
 
-    // Start FLAT — pitch:0 loads far fewer tiles than pitch:60
     const map = new mapboxgl.Map({
-      container: persistentMapDiv.current!,
+      container: mapContainerRef.current,
       style: 'mapbox://styles/mapbox/outdoors-v12',
       center: bounds.center,
       zoom: 12,
-      pitch: 0,
-      bearing: 0,
+      pitch: 60,
+      bearing: -20,
       antialias: false,
       fadeDuration: 0,
-      attributionControl: false,
     });
 
+    // Enable all interactions immediately
+    map.dragRotate.enable();
+    map.touchZoomRotate.enable();
+    map.touchPitch.enable();
+    map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
+
     mapInstanceRef.current = map;
+    setMapReady(true);
 
     map.once('style.load', () => {
       if (!mapInstanceRef.current) return;
@@ -204,80 +240,47 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
         paint: { 'line-color': lineColor, 'line-width': 4, 'line-opacity': 0.95 },
       });
 
-      // fitBounds flat for initial pre-cache
-      map.fitBounds([bounds.sw, bounds.ne], { padding: 20, pitch: 0, bearing: 0, duration: 0 });
-      setMapReady(true);
+      map.fitBounds([bounds.sw, bounds.ne], { padding: 60, pitch: 60, bearing: -20, duration: 0 });
     });
 
-    // NO terrain on init — terrain is added only after first user interaction in fullscreen
-  }, [simplifiedRoute, routePoints, lineColor]);
-
-  // Start pre-loading immediately
-  useEffect(() => {
-    if (routePoints.length >= 2) {
-      initMap();
-    }
-    return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-        mapInitStarted.current = false;
-        terrainAdded.current = false;
-      }
-    };
-  }, [initMap]);
-
-  // When entering fullscreen: add controls + add terrain after first interaction
-  useEffect(() => {
-    if (!fullscreen || !mapInstanceRef.current) return;
-
-    const map = mapInstanceRef.current;
-
-    import('mapbox-gl').then(m => {
-      if (!mapInstanceRef.current) return;
-      map.dragRotate.enable();
-      map.touchZoomRotate.enable();
-      map.touchPitch.enable();
-      const hasNav = map._controls?.some((c: any) => c instanceof m.default.NavigationControl);
-      if (!hasNav) {
-        map.addControl(new m.default.NavigationControl({ visualizePitch: true }), 'top-right');
-      }
-    });
-
-    // Add terrain only after the user's first interaction (move/zoom/rotate)
-    // This ensures the map is fully responsive before the heavy terrain load
-    if (!terrainAdded.current) {
-      const addTerrainOnInteraction = () => {
-        if (terrainAdded.current || !mapInstanceRef.current) return;
-        terrainAdded.current = true;
-        // Small delay so the interaction itself isn't blocked
-        setTimeout(() => {
-          if (mapInstanceRef.current) {
-            addEnhancedTerrain(mapInstanceRef.current, { exaggeration: 1.4 });
-          }
-        }, 100);
-      };
-
-      // Also add terrain after a generous timeout as fallback (user might just look)
-      const fallbackTimer = setTimeout(() => {
-        if (!terrainAdded.current && mapInstanceRef.current) {
-          terrainAdded.current = true;
+    // Add terrain after first interaction or after 3s fallback
+    let terrainAdded = false;
+    const addTerrain = () => {
+      if (terrainAdded || !mapInstanceRef.current) return;
+      terrainAdded = true;
+      setTimeout(() => {
+        if (mapInstanceRef.current) {
           addEnhancedTerrain(mapInstanceRef.current, { exaggeration: 1.4 });
         }
-      }, 3000);
+      }, 100);
+    };
 
-      map.once('movestart', addTerrainOnInteraction);
-      map.once('zoomstart', addTerrainOnInteraction);
-      map.once('rotatestart', addTerrainOnInteraction);
+    map.once('movestart', addTerrain);
+    map.once('zoomstart', addTerrain);
+    const fallback = setTimeout(addTerrain, 3000);
 
-      return () => {
-        clearTimeout(fallbackTimer);
-        map.off('movestart', addTerrainOnInteraction);
-        map.off('zoomstart', addTerrainOnInteraction);
-        map.off('rotatestart', addTerrainOnInteraction);
-      };
+    // Store cleanup ref
+    (map as any).__terrainCleanup = () => {
+      clearTimeout(fallback);
+      map.off('movestart', addTerrain);
+      map.off('zoomstart', addTerrain);
+    };
+  }, [routePoints, simplifiedRoute, lineColor]);
+
+  // Init/destroy map with fullscreen state
+  useEffect(() => {
+    if (fullscreen) {
+      initInteractiveMap();
     }
-  }, [fullscreen]);
+    return () => {
+      if (!fullscreen && mapInstanceRef.current) {
+        (mapInstanceRef.current as any).__terrainCleanup?.();
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+        setMapReady(false);
+      }
+    };
+  }, [fullscreen, initInteractiveMap]);
 
   // Lock body scroll in fullscreen
   useEffect(() => {
@@ -288,11 +291,6 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
   }, [fullscreen]);
 
   if (routePoints.length < 2) return null;
-
-  // Determine where the map's hidden pre-load wrapper should be
-  // If static image failed, map shows as thumbnail (no separate hidden container needed)
-  const needsHiddenPreload = !fullscreen && !imgError;
-  const thumbnailShowsMap = imgError && !fullscreen;
 
   return (
     <>
@@ -317,13 +315,10 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
           />
         )}
 
-        {/* Fallback: show pre-loaded map as thumbnail */}
-        {thumbnailShowsMap && (
-          <div
-            ref={wrapperRef}
-            className="w-full h-full"
-            style={{ pointerEvents: 'none' }}
-          />
+        {imgError && (
+          <div className="w-full h-full bg-muted/50 flex items-center justify-center text-muted-foreground">
+            <Maximize2 className="w-6 h-6 opacity-50" />
+          </div>
         )}
 
         {!imgLoaded && !imgError && (
@@ -338,25 +333,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
         </button>
       </div>
 
-      {/* Hidden pre-load wrapper (only when static image works) */}
-      {needsHiddenPreload && createPortal(
-        <div
-          ref={wrapperRef}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            opacity: 0,
-            pointerEvents: 'none',
-            zIndex: -1,
-          }}
-        />,
-        document.body
-      )}
-
-      {/* Fullscreen map */}
+      {/* Fullscreen map — fresh instance in portal, no DOM reparenting */}
       {fullscreen && createPortal(
         <div
           className="fixed inset-0 z-[9999] bg-background flex flex-col"
@@ -374,7 +351,10 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
             <ArrowLeft className="w-5 h-5 text-foreground" />
             <span className="text-sm font-medium text-foreground">Tilbake</span>
           </button>
-          <div ref={wrapperRef} className="flex-1 w-full" />
+          <div
+            ref={mapContainerRef}
+            className="flex-1 w-full"
+          />
           {mapReady && mapInstanceRef.current && (
             <RouteReplay
               map={mapInstanceRef.current}
