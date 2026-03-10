@@ -86,8 +86,6 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
 
   if (!peak) return null;
 
-  const mapboxToken = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
-  const staticMapUrl = `https://api.mapbox.com/styles/v1/mapbox/outdoors-v12/static/pin-s+ef4444(${peak.longitude},${peak.latitude})/${peak.longitude},${peak.latitude},13,0/400x200@2x?access_token=${mapboxToken}`;
 
   const handleCheckin = async () => {
     if (!user) return;
