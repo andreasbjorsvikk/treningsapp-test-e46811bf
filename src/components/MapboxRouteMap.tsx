@@ -26,6 +26,40 @@ function simplifyPoints(points: [number, number][], maxPoints: number): [number,
   return result;
 }
 
+// Douglas-Peucker simplification for route rendering
+function dpSimplify(points: [number, number][], epsilon: number): [number, number][] {
+  if (points.length < 3) return points;
+  let maxDist = 0, maxIdx = 0;
+  const [startLat, startLng] = points[0];
+  const [endLat, endLng] = points[points.length - 1];
+  for (let i = 1; i < points.length - 1; i++) {
+    const d = Math.abs(
+      (endLng - startLng) * (startLat - points[i][0]) -
+      (startLng - points[i][1]) * (endLat - startLat)
+    ) / Math.sqrt((endLng - startLng) ** 2 + (endLat - startLat) ** 2);
+    if (d > maxDist) { maxDist = d; maxIdx = i; }
+  }
+  if (maxDist > epsilon) {
+    const left = dpSimplify(points.slice(0, maxIdx + 1), epsilon);
+    const right = dpSimplify(points.slice(maxIdx), epsilon);
+    return [...left.slice(0, -1), ...right];
+  }
+  return [points[0], points[points.length - 1]];
+}
+
+function simplifyRoute(points: [number, number][], target: number = 400): [number, number][] {
+  if (points.length <= target) return points;
+  // Adaptive epsilon based on point count
+  let epsilon = 0.00002;
+  let result = dpSimplify(points, epsilon);
+  // Increase epsilon until we're under target
+  while (result.length > target && epsilon < 0.01) {
+    epsilon *= 2;
+    result = dpSimplify(points, epsilon);
+  }
+  return result;
+}
+
 function getBounds(routePoints: [number, number][]): { sw: [number, number]; ne: [number, number]; center: [number, number] } {
   const lats = routePoints.map(p => p[0]);
   const lngs = routePoints.map(p => p[1]);
