@@ -299,8 +299,8 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
         </button>
       </div>
 
-      {/* Hidden wrapper for tile pre-loading — full viewport size, invisible but renderable */}
-      {!fullscreen && createPortal(
+      {/* Hidden pre-load: only when static image works (otherwise map is shown as thumbnail above) */}
+      {!fullscreen && !imgError && createPortal(
         <div
           ref={wrapperRef}
           style={{
