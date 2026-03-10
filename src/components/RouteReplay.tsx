@@ -194,7 +194,7 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
   const stopReplay = useCallback(() => {
     cleanup();
     setPhase('idle');
-    setStats({ distance: 0, elevation: 0 });
+    setStats({ distance: 0, elevation: 0, altitude: 0 });
     resetCamera();
   }, [cleanup, resetCamera]);
 
