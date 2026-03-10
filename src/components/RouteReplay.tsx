@@ -7,9 +7,10 @@ interface RouteReplayProps {
   lineColor: string;
   totalDistance?: number; // km
   totalElevation?: number; // m
+  averageHeartrate?: number | null;
+  maxHeartrate?: number | null;
 }
 
-// Haversine distance in km
 function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -67,76 +68,30 @@ function sampleAtDistance(
   };
 }
 
-// Detect elevation peaks from GPS points (simple local maxima detection)
-function detectHighPoints(points: [number, number][], cumDist: number[], totalDist: number): number[] {
-  // Return normalized distances (0-1) of likely high points
-  // Use latitude as a rough proxy (higher lat != higher elev, but we detect
-  // points where the route "turns around" at extremes which often are peaks)
-  if (points.length < 20) return [];
-  const highPoints: number[] = [];
-  const windowSize = Math.max(10, Math.floor(points.length / 20));
-  
-  for (let i = windowSize; i < points.length - windowSize; i++) {
-    const before = points.slice(i - windowSize, i);
-    const after = points.slice(i + 1, i + windowSize + 1);
-    const curLat = points[i][0];
-    const isLocalMax = before.every(p => p[0] <= curLat + 0.0001) && after.every(p => p[0] <= curLat + 0.0001);
-    // Also check longitude extremes as peaks can be at any direction
-    const curLng = points[i][1];
-    const isLngExtreme = before.every(p => p[1] <= curLng + 0.0001) && after.every(p => p[1] <= curLng + 0.0001);
-    
-    if (isLocalMax || isLngExtreme) {
-      const normalizedDist = cumDist[i] / totalDist;
-      // Don't add points too close to start/end or to each other
-      if (normalizedDist > 0.15 && normalizedDist < 0.85) {
-        if (highPoints.length === 0 || normalizedDist - highPoints[highPoints.length - 1] > 0.15) {
-          highPoints.push(normalizedDist);
-        }
-      }
-    }
-  }
-  return highPoints.slice(0, 3); // max 3 peaks
-}
-
-// Smooth bearing to avoid jumps
-function smoothBearing(current: number, target: number, factor: number): number {
-  let diff = target - current;
-  // Normalize to [-180, 180]
-  while (diff > 180) diff -= 360;
-  while (diff < -180) diff += 360;
-  return current + diff * factor;
-}
-
-// Duration scales with route distance
 function getReplayDuration(totalDistKm: number): number {
-  // Min 20s, max 45s, scales linearly
-  const base = 20000;
-  const perKm = 1500;
-  return Math.min(45000, Math.max(base, base + totalDistKm * perKm));
+  // Slower: 25s min, 60s max
+  const base = 25000;
+  const perKm = 2000;
+  return Math.min(60000, Math.max(base, base + totalDistKm * perKm));
 }
 
-const INTRO_DURATION_MS = 2500;
-const OUTRO_DURATION_MS = 3500;
+const DARK_GREEN = '#1a6b3c';
 
-const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevation }: RouteReplayProps) => {
+const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevation, averageHeartrate, maxHeartrate }: RouteReplayProps) => {
   const [phase, setPhase] = useState<'idle' | 'intro' | 'playing' | 'outro'>('idle');
   const [stats, setStats] = useState({ distance: 0, elevation: 0 });
-  const [showFinish, setShowFinish] = useState(false);
   const markerRef = useRef<any>(null);
   const glowMarkerRef = useRef<any>(null);
-  const pulseMarkerRef = useRef<any>(null);
   const rafRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
   const cumDistRef = useRef<number[]>([]);
   const totalDistRef = useRef(0);
-  const highPointsRef = useRef<number[]>([]);
-  const currentBearingRef = useRef(0);
   const stoppedRef = useRef(false);
+  const routeHiddenRef = useRef(false);
 
   useEffect(() => {
     cumDistRef.current = buildCumulativeDistances(routePoints);
     totalDistRef.current = cumDistRef.current[cumDistRef.current.length - 1];
-    highPointsRef.current = detectHighPoints(routePoints, cumDistRef.current, totalDistRef.current);
   }, [routePoints]);
 
   const cleanup = useCallback(() => {
@@ -144,13 +99,19 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     if (markerRef.current) { markerRef.current.remove(); markerRef.current = null; }
     if (glowMarkerRef.current) { glowMarkerRef.current.remove(); glowMarkerRef.current = null; }
-    if (pulseMarkerRef.current) { pulseMarkerRef.current.remove(); pulseMarkerRef.current = null; }
     try {
       if (map.getLayer('replay-progress')) map.removeLayer('replay-progress');
       if (map.getSource('replay-progress')) map.removeSource('replay-progress');
-      if (map.getLayer('replay-glow')) map.removeLayer('replay-glow');
-      if (map.getSource('replay-glow')) map.removeSource('replay-glow');
     } catch {}
+    // Restore original route visibility
+    if (routeHiddenRef.current) {
+      try {
+        if (map.getLayer('route-line')) {
+          map.setLayoutProperty('route-line', 'visibility', 'visible');
+        }
+      } catch {}
+      routeHiddenRef.current = false;
+    }
   }, [map]);
 
   const resetCamera = useCallback(() => {
@@ -164,7 +125,6 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
   const stopReplay = useCallback(() => {
     cleanup();
     setPhase('idle');
-    setShowFinish(false);
     setStats({ distance: 0, elevation: 0 });
     resetCamera();
   }, [cleanup, resetCamera]);
@@ -174,7 +134,6 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
     cleanup();
     stoppedRef.current = false;
     setPhase('intro');
-    setShowFinish(false);
     setStats({ distance: 0, elevation: 0 });
 
     const mapboxgl = (await import('mapbox-gl')).default;
@@ -184,55 +143,36 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
     const reportedElev = totalElevation ?? 0;
     const replayDuration = getReplayDuration(reportedDist);
 
-    // --- INTRO: Show full route, then fly to start ---
-    // Step 1: Zoom out to show entire route
-    const lats = routePoints.map(p => p[0]);
-    const lngs = routePoints.map(p => p[1]);
-    const sw: [number, number] = [Math.min(...lngs) - 0.008, Math.min(...lats) - 0.004];
-    const ne: [number, number] = [Math.max(...lngs) + 0.008, Math.max(...lats) + 0.004];
-    
-    map.fitBounds([sw, ne], { padding: 50, pitch: 45, bearing: -15, duration: 1200 });
-    await new Promise(r => setTimeout(r, 1400));
-    if (stoppedRef.current) return;
+    // Hide the existing route line
+    try {
+      if (map.getLayer('route-line')) {
+        map.setLayoutProperty('route-line', 'visibility', 'none');
+        routeHiddenRef.current = true;
+      }
+    } catch {}
 
-    // Step 2: Fly to start point
+    // Fly camera to start point with a nice zoom
     const startBearing = bearing(
       routePoints[0][0], routePoints[0][1],
-      routePoints[Math.min(10, routePoints.length - 1)][0],
-      routePoints[Math.min(10, routePoints.length - 1)][1]
+      routePoints[Math.min(15, routePoints.length - 1)][0],
+      routePoints[Math.min(15, routePoints.length - 1)][1]
     );
-    currentBearingRef.current = startBearing;
 
     map.flyTo({
       center: [routePoints[0][1], routePoints[0][0]],
       zoom: 15,
-      pitch: 70,
+      pitch: 65,
       bearing: startBearing,
-      duration: 1800,
+      duration: 2200,
       essential: true,
     });
-    await new Promise(r => setTimeout(r, 2000));
+
+    await new Promise(r => setTimeout(r, 2400));
     if (stoppedRef.current) return;
 
     setPhase('playing');
 
-    // --- Setup markers and layers ---
-    // Glow route layer
-    if (!map.getSource('replay-glow')) {
-      map.addSource('replay-glow', {
-        type: 'geojson',
-        data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } },
-      });
-      map.addLayer({
-        id: 'replay-glow',
-        type: 'line',
-        source: 'replay-glow',
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': '#ffffff', 'line-width': 10, 'line-opacity': 0.15, 'line-blur': 6 },
-      });
-    }
-
-    // Progress line
+    // Add progress line (dark green, drawn as marker moves)
     if (!map.getSource('replay-progress')) {
       map.addSource('replay-progress', {
         type: 'geojson',
@@ -243,40 +183,28 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
         type: 'line',
         source: 'replay-progress',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': '#ffffff', 'line-width': 5, 'line-opacity': 0.85 },
+        paint: { 'line-color': DARK_GREEN, 'line-width': 5, 'line-opacity': 0.9 },
       });
     }
 
-    // Pulse marker (large outer glow)
-    const pulseEl = document.createElement('div');
-    pulseEl.className = 'replay-pulse-marker';
-    pulseEl.style.cssText = `
-      width: 36px; height: 36px; border-radius: 50%;
-      background: radial-gradient(circle, ${lineColor}44 0%, transparent 70%);
-      pointer-events: none;
-      animation: replay-pulse 2s ease-in-out infinite;
-    `;
-    pulseMarkerRef.current = new mapboxgl.Marker({ element: pulseEl, anchor: 'center' })
-      .setLngLat([routePoints[0][1], routePoints[0][0]])
-      .addTo(map);
-
-    // Glow marker
+    // Glow marker (outer pulse)
     const glowEl = document.createElement('div');
     glowEl.style.cssText = `
-      width: 22px; height: 22px; border-radius: 50%;
-      background: radial-gradient(circle, ${lineColor}66 0%, transparent 70%);
+      width: 28px; height: 28px; border-radius: 50%;
+      background: radial-gradient(circle, ${DARK_GREEN}55 0%, transparent 70%);
       pointer-events: none;
+      animation: replay-pulse 2s ease-in-out infinite;
     `;
     glowMarkerRef.current = new mapboxgl.Marker({ element: glowEl, anchor: 'center' })
       .setLngLat([routePoints[0][1], routePoints[0][0]])
       .addTo(map);
 
-    // Main marker
+    // Main marker dot
     const el = document.createElement('div');
     el.style.cssText = `
-      width: 12px; height: 12px; border-radius: 50%;
-      background: ${lineColor}; border: 2.5px solid white;
-      box-shadow: 0 0 16px ${lineColor}cc, 0 0 6px ${lineColor}88, 0 2px 8px rgba(0,0,0,0.3);
+      width: 14px; height: 14px; border-radius: 50%;
+      background: ${DARK_GREEN}; border: 3px solid white;
+      box-shadow: 0 0 12px ${DARK_GREEN}aa, 0 2px 8px rgba(0,0,0,0.3);
       pointer-events: none;
     `;
     markerRef.current = new mapboxgl.Marker({ element: el, anchor: 'center' })
@@ -290,54 +218,35 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
       style.textContent = `
         @keyframes replay-pulse {
           0%, 100% { transform: scale(1); opacity: 0.6; }
-          50% { transform: scale(1.5); opacity: 0.2; }
+          50% { transform: scale(1.6); opacity: 0.15; }
         }
       `;
       document.head.appendChild(style);
     }
 
     startTimeRef.current = performance.now();
-    const highPoints = highPointsRef.current;
 
     const animate = (now: number) => {
       if (stoppedRef.current) return;
       const elapsed = now - startTimeRef.current;
       const rawProgress = Math.min(elapsed / replayDuration, 1);
 
-      // Smooth ease: cubic ease-in-out
+      // Smooth cubic ease-in-out
       let eased: number;
-      if (rawProgress < 0.05) {
-        // Slow start
-        eased = rawProgress * rawProgress * (1 / 0.05) * 0.05;
-      } else if (rawProgress > 0.92) {
-        // Slow end
-        const t = (rawProgress - 0.92) / 0.08;
-        const base = 0.92;
-        eased = base + (1 - base) * (1 - (1 - t) * (1 - t));
+      if (rawProgress < 0.5) {
+        eased = 4 * rawProgress * rawProgress * rawProgress;
       } else {
-        eased = rawProgress;
+        eased = 1 - Math.pow(-2 * rawProgress + 2, 3) / 2;
       }
 
-      // Check if near a high point — slow down
-      let speedMultiplier = 1;
-      for (const hp of highPoints) {
-        const dist = Math.abs(eased - hp);
-        if (dist < 0.04) {
-          speedMultiplier = 0.5; // slow at peaks
-        }
-      }
-
-      // Apply speed multiplier by adjusting effective progress
-      // (This is approximate — for true speed control we'd need a different approach)
       const currentDist = eased * totalDist;
       const pos = sampleAtDistance(routePoints, cumDist, currentDist);
 
       const lngLat: [number, number] = [pos.lng, pos.lat];
       markerRef.current?.setLngLat(lngLat);
       glowMarkerRef.current?.setLngLat(lngLat);
-      pulseMarkerRef.current?.setLngLat(lngLat);
 
-      // Update progress line
+      // Update progress line (draw behind marker)
       const progressCoords: [number, number][] = [];
       for (let i = 0; i <= pos.segIdx; i++) {
         progressCoords.push([routePoints[i][1], routePoints[i][0]]);
@@ -352,13 +261,6 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
             geometry: { type: 'LineString', coordinates: progressCoords },
           });
         }
-        const glowSrc = map.getSource('replay-glow');
-        if (glowSrc) {
-          glowSrc.setData({
-            type: 'Feature', properties: {},
-            geometry: { type: 'LineString', coordinates: progressCoords },
-          });
-        }
       } catch {}
 
       // Stats
@@ -366,35 +268,7 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
       const elev = Math.round(eased * reportedElev);
       setStats({ distance: Math.round(distKm * 10) / 10, elevation: elev });
 
-      // Camera: smooth bearing with gentle look-ahead
-      const lookAheadFraction = 0.03;
-      const lookAheadDist = Math.min(currentDist + totalDist * lookAheadFraction, totalDist);
-      const ahead = sampleAtDistance(routePoints, cumDist, lookAheadDist);
-      const targetBearing = bearing(pos.lat, pos.lng, ahead.lat, ahead.lng);
-
-      // Very smooth bearing interpolation
-      const bearingSmoothing = 0.03; // very gentle
-      currentBearingRef.current = smoothBearing(currentBearingRef.current, targetBearing, bearingSmoothing);
-
-      // Check if near a high point for orbit effect
-      let orbitOffset = 0;
-      for (const hp of highPoints) {
-        const dist = Math.abs(eased - hp);
-        if (dist < 0.03) {
-          // Gentle orbit: add a slow rotation
-          const orbitProgress = (eased - (hp - 0.03)) / 0.06;
-          orbitOffset = Math.sin(orbitProgress * Math.PI) * 25; // max 25 degree orbit
-        }
-      }
-
-      map.easeTo({
-        center: lngLat,
-        bearing: currentBearingRef.current + orbitOffset,
-        pitch: 70,
-        zoom: 15,
-        duration: 200,
-        easing: (t: number) => t,
-      });
+      // NO camera auto-follow — user controls the map freely
 
       if (rawProgress < 1) {
         rafRef.current = requestAnimationFrame(animate);
@@ -402,23 +276,26 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
         // --- OUTRO ---
         setPhase('outro');
         setStats({ distance: reportedDist, elevation: reportedElev });
-        setShowFinish(true);
 
-        // Gentle zoom out to show full route
+        // Zoom out to show full route after a moment
+        const lats = routePoints.map(p => p[0]);
+        const lngs = routePoints.map(p => p[1]);
+        const sw: [number, number] = [Math.min(...lngs) - 0.008, Math.min(...lats) - 0.004];
+        const ne: [number, number] = [Math.max(...lngs) + 0.008, Math.max(...lats) + 0.004];
+
         setTimeout(() => {
           if (stoppedRef.current) return;
           map.fitBounds([sw, ne], {
             padding: 50,
-            pitch: 50,
-            bearing: currentBearingRef.current,
-            duration: 2000,
+            pitch: 55,
+            duration: 2500,
           });
-        }, 800);
+        }, 600);
 
-        // Auto-close after delay
+        // Auto-close after showing stats
         setTimeout(() => {
           if (!stoppedRef.current) stopReplay();
-        }, OUTRO_DURATION_MS + 1500);
+        }, 7000);
       }
     };
 
@@ -434,6 +311,9 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
   }, [cleanup]);
 
   if (!map) return null;
+
+  const reportedDist = totalDistance ?? totalDistRef.current;
+  const reportedElev = totalElevation ?? 0;
 
   if (phase === 'idle') {
     return (
@@ -457,27 +337,18 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
         <X className="w-5 h-5 text-foreground" />
       </button>
 
-      {/* Intro overlay */}
-      {phase === 'intro' && (
-        <div className="absolute inset-0 z-[10002] flex items-center justify-center pointer-events-none">
-          <div className="bg-background/80 backdrop-blur-md rounded-2xl px-6 py-4 shadow-xl border border-border text-center animate-fade-in">
-            <p className="text-sm font-semibold text-foreground animate-pulse">Forbereder replay…</p>
-          </div>
-        </div>
-      )}
-
-      {/* Stats panel */}
-      {(phase === 'playing' || phase === 'outro') && (
+      {/* Live stats during playing */}
+      {phase === 'playing' && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[10001] flex gap-6 rounded-2xl bg-background/85 backdrop-blur-md px-6 py-3 shadow-xl border border-border animate-fade-in">
           <div className="text-center">
-            <p className="text-lg font-display font-bold text-foreground leading-tight">
+            <p className="text-lg font-bold text-foreground leading-tight">
               {stats.distance.toFixed(1)} <span className="text-xs font-normal text-muted-foreground">km</span>
             </p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Distanse</p>
           </div>
-          {(totalElevation ?? 0) > 0 && (
+          {reportedElev > 0 && (
             <div className="text-center">
-              <p className="text-lg font-display font-bold text-foreground leading-tight">
+              <p className="text-lg font-bold text-foreground leading-tight">
                 {stats.elevation} <span className="text-xs font-normal text-muted-foreground">m</span>
               </p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Stigning</p>
@@ -486,17 +357,48 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
         </div>
       )}
 
-      {/* Finish overlay */}
-      {showFinish && (
-        <div className="absolute inset-0 z-[10002] flex items-center justify-center pointer-events-none">
-          <div className="bg-background/90 backdrop-blur-md rounded-2xl px-8 py-6 shadow-2xl border border-border text-center animate-scale-in">
-            <p className="text-2xl font-display font-bold text-foreground mb-2">🏁</p>
-            <p className="text-base font-semibold text-foreground">
-              {(totalDistance ?? totalDistRef.current).toFixed(1)} km
-            </p>
-            {(totalElevation ?? 0) > 0 && (
-              <p className="text-sm text-muted-foreground mt-1">{totalElevation} m stigning</p>
-            )}
+      {/* Outro: 3D stats card */}
+      {phase === 'outro' && (
+        <div className="absolute inset-0 z-[10002] flex items-end justify-center pb-10 pointer-events-none animate-fade-in">
+          <div
+            className="pointer-events-auto rounded-2xl px-8 py-6 shadow-2xl border border-border/50 text-center"
+            style={{
+              background: 'linear-gradient(145deg, hsl(var(--background) / 0.92), hsl(var(--card) / 0.88))',
+              backdropFilter: 'blur(16px)',
+              transform: 'perspective(800px) rotateX(4deg) rotateY(-2deg)',
+              boxShadow: `
+                0 25px 50px -12px rgba(0,0,0,0.4),
+                0 12px 24px -8px rgba(0,0,0,0.2),
+                inset 0 1px 0 rgba(255,255,255,0.15),
+                inset 0 -1px 0 rgba(0,0,0,0.1)
+              `,
+            }}
+          >
+            <p className="text-2xl mb-3">🏁</p>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+              <div className="text-center">
+                <p className="text-xl font-bold text-foreground">{reportedDist.toFixed(1)}<span className="text-xs font-normal text-muted-foreground ml-1">km</span></p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Distanse</p>
+              </div>
+              {reportedElev > 0 && (
+                <div className="text-center">
+                  <p className="text-xl font-bold text-foreground">{reportedElev}<span className="text-xs font-normal text-muted-foreground ml-1">m</span></p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Stigning</p>
+                </div>
+              )}
+              {averageHeartrate && averageHeartrate > 0 && (
+                <div className="text-center">
+                  <p className="text-xl font-bold text-foreground">{Math.round(averageHeartrate)}<span className="text-xs font-normal text-muted-foreground ml-1">bpm</span></p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Gj.sn. puls</p>
+                </div>
+              )}
+              {maxHeartrate && maxHeartrate > 0 && (
+                <div className="text-center">
+                  <p className="text-xl font-bold text-foreground">{Math.round(maxHeartrate)}<span className="text-xs font-normal text-muted-foreground ml-1">bpm</span></p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Maks puls</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
