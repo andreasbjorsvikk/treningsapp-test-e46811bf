@@ -149,12 +149,18 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
   const startTimeRef = useRef<number>(0);
   const cumDistRef = useRef<number[]>([]);
   const totalDistRef = useRef(0);
+  const smoothedRef = useRef<[number, number][]>([]);
+  const smoothedCumDistRef = useRef<number[]>([]);
   const stoppedRef = useRef(false);
   const routeHiddenRef = useRef(false);
 
   useEffect(() => {
     cumDistRef.current = buildCumulativeDistances(routePoints);
     totalDistRef.current = cumDistRef.current[cumDistRef.current.length - 1];
+    // Pre-compute smoothed route for replay drawing
+    const smoothed = smoothRoute(routePoints);
+    smoothedRef.current = smoothed;
+    smoothedCumDistRef.current = buildCumulativeDistances(smoothed);
   }, [routePoints]);
 
   const cleanup = useCallback(() => {
