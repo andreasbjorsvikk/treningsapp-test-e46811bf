@@ -56,12 +56,12 @@ export function addEnhancedTerrain(map: any, options?: { exaggeration?: number }
       });
     }
 
-    // Directional lighting for soft terrain shadows
+    // Directional sunlight – warm golden hour feel with visible shadows
     map.setLight({
       anchor: 'viewport',
-      position: [1.5, 315, 30],
-      color: '#fff8f0',
-      intensity: 0.35,
+      position: [1.5, 315, 35],
+      color: '#fff4e0',
+      intensity: 0.5,
     });
   } catch (e) {
     console.warn('Failed to add enhanced terrain:', e);
