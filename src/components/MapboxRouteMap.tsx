@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Maximize2, ArrowLeft } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import RouteReplay from '@/components/RouteReplay';
+import { addEnhancedTerrain } from '@/utils/mapTerrain';
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
@@ -186,17 +187,16 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     const bounds = getBounds(routePoints);
     const coords = routePoints.map(([lat, lng]) => [lng, lat]);
 
-    // Phase 1: Create map FLAT (pitch:0) — renders far fewer tiles, instant interactivity
+    // Create map with 3D pitch — interactive immediately
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: 'mapbox://styles/mapbox/outdoors-v12',
       center: bounds.center,
       zoom: 12,
-      pitch: 0,
-      bearing: 0,
+      pitch: 60,
+      bearing: -20,
       antialias: false,
       fadeDuration: 0,
-      maxTileCacheSize: 50,
     });
 
     map.dragRotate.enable();
@@ -207,59 +207,47 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     mapInstanceRef.current = map;
     setMapReady(true);
 
-    // Phase 2: Once style is ready, add route and fit bounds (still flat)
+    // Use rAF to break up work so browser can process user input between steps
     map.once('style.load', () => {
-      map.addSource('route', {
-        type: 'geojson',
-        data: {
-          type: 'Feature',
-          properties: {},
-          geometry: { type: 'LineString', coordinates: coords },
-        },
-      });
-      map.addLayer({
-        id: 'route-line',
-        type: 'line',
-        source: 'route',
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': lineColor, 'line-width': 4, 'line-opacity': 0.95 },
-      });
+      // Step 1: Add route source (next frame)
+      requestAnimationFrame(() => {
+        if (!mapInstanceRef.current) return;
+        map.addSource('route', {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            properties: {},
+            geometry: { type: 'LineString', coordinates: coords },
+          },
+        });
 
-      // Fit bounds flat — very fast, no 3D tile loading
-      map.fitBounds([bounds.sw, bounds.ne], { padding: 60, duration: 0 });
+        // Step 2: Add route layer (next frame)
+        requestAnimationFrame(() => {
+          if (!mapInstanceRef.current) return;
+          map.addLayer({
+            id: 'route-line',
+            type: 'line',
+            source: 'route',
+            layout: { 'line-join': 'round', 'line-cap': 'round' },
+            paint: { 'line-color': lineColor, 'line-width': 4, 'line-opacity': 0.95 },
+          });
+
+          // Step 3: fitBounds (next frame)
+          requestAnimationFrame(() => {
+            if (!mapInstanceRef.current) return;
+            map.fitBounds([bounds.sw, bounds.ne], { padding: 60, pitch: 60, bearing: -20, duration: 0 });
+          });
+        });
+      });
     });
 
-    // Phase 3: After map is idle (tiles loaded, interactive), animate to 3D
+    // Defer terrain to well after map is interactive
     map.once('idle', () => {
-      // Smoothly transition to 3D view
-      map.easeTo({ pitch: 60, bearing: -20, duration: 1200 });
-
-      // Phase 4: Add terrain AFTER the 3D transition starts
+      // Wait 500ms after idle to ensure user can interact
       setTimeout(() => {
-        try {
-          if (!map.getSource('mapbox-dem')) {
-            map.addSource('mapbox-dem', {
-              type: 'raster-dem',
-              url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
-              tileSize: 512,
-              maxzoom: 14,
-            });
-          }
-          map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
-
-          if (!map.getLayer('sky')) {
-            map.addLayer({
-              id: 'sky',
-              type: 'sky',
-              paint: {
-                'sky-type': 'atmosphere',
-                'sky-atmosphere-sun': [0.0, 90.0],
-                'sky-atmosphere-sun-intensity': 15,
-              },
-            });
-          }
-        } catch {}
-      }, 800);
+        if (!mapInstanceRef.current) return;
+        addEnhancedTerrain(map, { exaggeration: 1.4 });
+      }, 500);
     });
   }, [routePoints, lineColor]);
 
