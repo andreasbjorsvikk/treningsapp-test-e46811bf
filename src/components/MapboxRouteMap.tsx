@@ -122,6 +122,10 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     const div = persistentMapDiv.current;
     if (!div || !wrapperRef.current) return;
     wrapperRef.current.appendChild(div);
+    // Resize map to fit new container
+    requestAnimationFrame(() => {
+      mapInstanceRef.current?.resize();
+    });
     return () => {
       if (div.parentNode) div.parentNode.removeChild(div);
     };
