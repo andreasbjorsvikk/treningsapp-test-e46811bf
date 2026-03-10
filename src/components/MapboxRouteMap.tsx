@@ -361,9 +361,10 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
         )}
 
         {imgError && (
-          <div className="w-full h-full bg-muted/50 flex items-center justify-center text-muted-foreground">
-            <Maximize2 className="w-6 h-6 opacity-50" />
-          </div>
+          <div
+            ref={previewMapContainerRef}
+            className="w-full h-full"
+          />
         )}
 
         {!imgLoaded && !imgError && (
