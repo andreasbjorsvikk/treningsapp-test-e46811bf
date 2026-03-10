@@ -142,7 +142,7 @@ const DARK_GREEN = '#1a6b3c';
 
 const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevation, averageHeartrate, maxHeartrate }: RouteReplayProps) => {
   const [phase, setPhase] = useState<'idle' | 'intro' | 'playing' | 'outro'>('idle');
-  const [stats, setStats] = useState({ distance: 0, elevation: 0 });
+  const [stats, setStats] = useState({ distance: 0, elevation: 0, altitude: 0 });
   const markerRef = useRef<any>(null);
   const glowMarkerRef = useRef<any>(null);
   const rafRef = useRef<number>(0);
