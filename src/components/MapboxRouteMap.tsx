@@ -179,12 +179,22 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
   const initInteractiveMap = useCallback(async () => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
+    console.time('[MapPerf] import mapbox');
     const mapboxgl = (await import('mapbox-gl')).default;
     await import('mapbox-gl/dist/mapbox-gl.css');
     (mapboxgl as any).accessToken = MAPBOX_TOKEN;
+    console.timeEnd('[MapPerf] import mapbox');
 
-    const bounds = getBounds(routePoints);
+    // Pre-simplify route BEFORE creating map
+    console.time('[MapPerf] simplify route');
+    const rawCount = routePoints.length;
+    const simplified = simplifyRoute(routePoints, 400);
+    console.timeEnd('[MapPerf] simplify route');
+    console.log(`[MapPerf] Route: ${rawCount} raw → ${simplified.length} simplified`);
 
+    const bounds = getBounds(simplified);
+
+    console.time('[MapPerf] create map');
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: 'mapbox://styles/mapbox/outdoors-v12',
@@ -194,32 +204,33 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
       bearing: -20,
       antialias: false,
       fadeDuration: 0,
+      trackResize: false,
+      refreshExpiredTiles: false,
     });
+    console.timeEnd('[MapPerf] create map');
 
-    // Enable touch interactions immediately
     map.dragRotate.enable();
     map.touchZoomRotate.enable();
     map.touchPitch.enable();
 
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
 
-    // Mark ready immediately — map is interactive before tiles finish loading
     mapInstanceRef.current = map;
+    // Set ready immediately so user can interact with base map
     setMapReady(true);
 
+    // Phase 2: Add route after style loads — use simplified data
     map.once('style.load', () => {
+      console.time('[MapPerf] add route');
+      const coords = simplified.map(([lat, lng]) => [lng, lat]);
       map.addSource('route', {
         type: 'geojson',
         data: {
           type: 'Feature',
           properties: {},
-          geometry: {
-            type: 'LineString',
-            coordinates: routePoints.map(([lat, lng]) => [lng, lat]),
-          },
+          geometry: { type: 'LineString', coordinates: coords },
         },
       });
-
       map.addLayer({
         id: 'route-line',
         type: 'line',
@@ -227,16 +238,21 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: { 'line-color': lineColor, 'line-width': 4, 'line-opacity': 0.95 },
       });
+      console.timeEnd('[MapPerf] add route');
 
+      // Phase 3: fitBounds with no animation
+      console.time('[MapPerf] fitBounds');
       map.fitBounds(
         [bounds.sw, bounds.ne],
         { padding: 60, pitch: 60, bearing: -20, duration: 0 }
       );
+      console.timeEnd('[MapPerf] fitBounds');
     });
 
-    // Defer heavy terrain + sky until map is idle
-    map.once('idle', () => {
+    // Phase 4: Defer terrain to idle — use requestIdleCallback if available
+    const addTerrain = () => {
       try {
+        console.time('[MapPerf] add terrain');
         if (!map.getSource('mapbox-dem')) {
           map.addSource('mapbox-dem', {
             type: 'raster-dem',
@@ -258,7 +274,19 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
             },
           });
         }
+        console.timeEnd('[MapPerf] add terrain');
+        // Re-enable resize tracking after everything is loaded
+        (map as any)._trackResize = true;
       } catch {}
+    };
+
+    map.once('idle', () => {
+      // Use requestIdleCallback to avoid blocking interaction
+      if ('requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(addTerrain);
+      } else {
+        setTimeout(addTerrain, 200);
+      }
     });
   }, [routePoints, lineColor]);
 
