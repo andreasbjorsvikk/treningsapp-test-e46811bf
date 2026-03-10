@@ -296,19 +296,20 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
         </button>
       </div>
 
-      {/* Hidden wrapper for tile pre-loading — portal to body */}
+      {/* Hidden wrapper for tile pre-loading — full viewport size but invisible */}
       {!fullscreen && createPortal(
         <div
           ref={wrapperRef}
           style={{
             position: 'fixed',
-            width: '1px',
-            height: '1px',
-            overflow: 'hidden',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
             opacity: 0,
             pointerEvents: 'none',
-            left: '-9999px',
-            top: '-9999px',
+            zIndex: -1,
+            visibility: 'hidden',
           }}
         />,
         document.body
