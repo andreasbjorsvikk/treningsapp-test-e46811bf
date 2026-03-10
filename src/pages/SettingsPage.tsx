@@ -502,9 +502,9 @@ const SettingsPage = () => {
                     }}
                   />
                   <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center shrink-0">
-                    <span className="text-xs font-medium">{u.username[0]}</span>
+                    <span className="text-xs font-medium">{(u.username || '?')[0]}</span>
                   </div>
-                  <span className="text-sm font-medium">{u.username}</span>
+                  <span className="text-sm font-medium">{u.username || t('common.unknown')}</span>
                 </label>
               ))}
             </div>
