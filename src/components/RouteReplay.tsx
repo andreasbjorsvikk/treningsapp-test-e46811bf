@@ -154,13 +154,13 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
   const stoppedRef = useRef(false);
   const routeHiddenRef = useRef(false);
 
+  // Only compute cumulative distances eagerly (lightweight)
   useEffect(() => {
     cumDistRef.current = buildCumulativeDistances(routePoints);
     totalDistRef.current = cumDistRef.current[cumDistRef.current.length - 1];
-    // Pre-compute smoothed route for replay drawing
-    const smoothed = smoothRoute(routePoints);
-    smoothedRef.current = smoothed;
-    smoothedCumDistRef.current = buildCumulativeDistances(smoothed);
+    // Clear smoothed data — will be computed lazily when replay starts
+    smoothedRef.current = [];
+    smoothedCumDistRef.current = [];
   }, [routePoints]);
 
   const cleanup = useCallback(() => {
@@ -211,6 +211,13 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
     const reportedDist = totalDistance ?? totalDist;
     const reportedElev = totalElevation ?? 0;
     const replayDuration = getReplayDuration(reportedDist);
+
+    // Compute smoothed route lazily (only when replay starts)
+    if (smoothedRef.current.length === 0) {
+      const smoothed = smoothRoute(routePoints);
+      smoothedRef.current = smoothed;
+      smoothedCumDistRef.current = buildCumulativeDistances(smoothed);
+    }
 
     // Hide the existing route line
     try {
