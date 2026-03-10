@@ -426,12 +426,12 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
             </p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Distanse</p>
           </div>
-          {reportedElev > 0 && (
+          {stats.altitude > 0 && (
             <div className="text-center">
               <p className="text-lg font-bold text-foreground leading-tight">
-                {stats.elevation} <span className="text-xs font-normal text-muted-foreground">m</span>
+                {stats.altitude} <span className="text-xs font-normal text-muted-foreground">moh</span>
               </p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Stigning</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Høyde</p>
             </div>
           )}
         </div>
