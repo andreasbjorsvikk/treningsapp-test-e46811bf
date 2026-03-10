@@ -172,6 +172,8 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const previewMapContainerRef = useRef<HTMLDivElement>(null);
+  const previewMapRef = useRef<any>(null);
   const mapInstanceRef = useRef<any>(null);
   const [mapReady, setMapReady] = useState(false);
 
