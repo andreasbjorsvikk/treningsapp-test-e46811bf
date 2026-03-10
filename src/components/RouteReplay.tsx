@@ -212,6 +212,13 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
     const reportedElev = totalElevation ?? 0;
     const replayDuration = getReplayDuration(reportedDist);
 
+    // Compute smoothed route lazily (only when replay starts)
+    if (smoothedRef.current.length === 0) {
+      const smoothed = smoothRoute(routePoints);
+      smoothedRef.current = smoothed;
+      smoothedCumDistRef.current = buildCumulativeDistances(smoothed);
+    }
+
     // Hide the existing route line
     try {
       if (map.getLayer('route-line')) {
