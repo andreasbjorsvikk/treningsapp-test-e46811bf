@@ -203,7 +203,7 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
     cleanup();
     stoppedRef.current = false;
     setPhase('intro');
-    setStats({ distance: 0, elevation: 0 });
+    setStats({ distance: 0, elevation: 0, altitude: 0 });
 
     const mapboxgl = (await import('mapbox-gl')).default;
     const cumDist = cumDistRef.current;
