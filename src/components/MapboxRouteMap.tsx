@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Maximize2, ArrowLeft } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import RouteReplay from '@/components/RouteReplay';
 import { addEnhancedTerrain } from '@/utils/mapTerrain';
 
@@ -99,12 +100,12 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
   };
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
-  // Single persistent container — the map lives here its entire lifetime
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const [mapReady, setMapReady] = useState(false);
   const mapInitStarted = useRef(false);
   const terrainAdded = useRef(false);
+  const boundsRef = useRef<{ sw: [number, number]; ne: [number, number] } | null>(null);
 
   const staticUrl = useMemo(() => {
     if (routePoints.length < 2) return null;
@@ -116,7 +117,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     return simplifyRoute(routePoints, 300);
   }, [routePoints]);
 
-  // Initialize map immediately on mount in a hidden container to pre-cache tiles
+  // Pre-initialize map on mount in hidden container (pre-caches tiles)
   const initMap = useCallback(async () => {
     if (mapInitStarted.current || !mapContainerRef.current || routePoints.length < 2) return;
     mapInitStarted.current = true;
@@ -127,6 +128,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
 
     const boundsPoints = simplifiedRoute.length > 0 ? simplifiedRoute : routePoints;
     const bounds = getBounds(boundsPoints);
+    boundsRef.current = { sw: bounds.sw, ne: bounds.ne };
     const coords = simplifiedRoute.map(([lat, lng]) => [lng, lat]);
 
     const map = new mapboxgl.Map({
@@ -163,7 +165,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
         paint: { 'line-color': lineColor, 'line-width': 4, 'line-opacity': 0.95 },
       });
 
-      map.fitBounds([bounds.sw, bounds.ne], { padding: 60, pitch: 60, bearing: -20, duration: 0 });
+      // Don't fitBounds here — container is 1x1px. Will fitBounds on fullscreen.
       setMapReady(true);
     });
 
@@ -176,7 +178,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     });
   }, [simplifiedRoute, routePoints, lineColor]);
 
-  // Start map loading on mount
+  // Start pre-loading immediately
   useEffect(() => {
     if (routePoints.length >= 2) {
       initMap();
@@ -191,38 +193,37 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     };
   }, [initMap]);
 
-  // When entering/exiting fullscreen, resize the map to match new container size
+  // When entering fullscreen: resize map and fitBounds properly
   useEffect(() => {
-    if (mapInstanceRef.current) {
-      // Wait for CSS transition to apply, then tell Mapbox to recalculate size
-      requestAnimationFrame(() => {
-        mapInstanceRef.current?.resize();
-      });
-    }
+    if (!fullscreen || !mapInstanceRef.current) return;
+
+    const map = mapInstanceRef.current;
+    // Enable full interaction
+    import('mapbox-gl').then(m => {
+      if (!mapInstanceRef.current) return;
+      map.dragRotate.enable();
+      map.touchZoomRotate.enable();
+      map.touchPitch.enable();
+      const hasNav = map._controls?.some((c: any) => c instanceof m.default.NavigationControl);
+      if (!hasNav) {
+        map.addControl(new m.default.NavigationControl({ visualizePitch: true }), 'top-right');
+      }
+    });
+
+    // Resize after portal renders, then fitBounds to correct zoom
+    requestAnimationFrame(() => {
+      if (!mapInstanceRef.current) return;
+      map.resize();
+      if (boundsRef.current) {
+        map.fitBounds(
+          [boundsRef.current.sw, boundsRef.current.ne],
+          { padding: 60, pitch: 60, bearing: -20, duration: 0 }
+        );
+      }
+    });
   }, [fullscreen]);
 
-  // Add nav controls when going fullscreen
-  useEffect(() => {
-    if (fullscreen && mapInstanceRef.current) {
-      import('mapbox-gl').then(m => {
-        if (!mapInstanceRef.current) return;
-        // Enable interaction (in case it was limited)
-        mapInstanceRef.current.dragRotate.enable();
-        mapInstanceRef.current.touchZoomRotate.enable();
-        mapInstanceRef.current.touchPitch.enable();
-        // Add nav control if not already present
-        const existing = mapInstanceRef.current._controls?.find(
-          (c: any) => c instanceof m.default.NavigationControl
-        );
-        if (!existing) {
-          mapInstanceRef.current.addControl(
-            new m.default.NavigationControl({ visualizePitch: true }),
-            'top-right'
-          );
-        }
-      });
-    }
-  }, [fullscreen]);
+  // When exiting fullscreen, no need to do anything — map stays hidden
 
   // Lock body scroll in fullscreen
   useEffect(() => {
@@ -236,94 +237,104 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
 
   return (
     <>
-      {/* Static preview thumbnail — only shown when NOT fullscreen */}
-      {!fullscreen && (
-        <div
-          className="w-full rounded-t-lg overflow-hidden relative cursor-pointer"
-          style={{ height: `${height}px` }}
-          onClick={() => setFullscreen(true)}
+      {/* Static preview thumbnail — always visible when not fullscreen */}
+      <div
+        className="w-full rounded-t-lg overflow-hidden relative cursor-pointer"
+        style={{ height: `${height}px` }}
+        onClick={() => setFullscreen(true)}
+      >
+        {isDark && (
+          <div className="absolute inset-0 bg-black/30 z-[1] pointer-events-none rounded-t-lg" />
+        )}
+
+        {staticUrl && !imgError && (
+          <img
+            src={staticUrl}
+            alt="Kartrute"
+            className={`w-full h-full object-cover transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+            loading="lazy"
+            onLoad={() => setImgLoaded(true)}
+            onError={() => setImgError(true)}
+          />
+        )}
+
+        {imgError && (
+          <div className="w-full h-full bg-secondary/30 flex items-center justify-center">
+            <MapPin className="w-8 h-8 text-muted-foreground/50" />
+          </div>
+        )}
+
+        {!imgLoaded && !imgError && (
+          <div className="absolute inset-0 bg-secondary/50 animate-pulse" />
+        )}
+
+        <button
+          className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm rounded-lg p-1.5 shadow-md hover:bg-background transition-colors z-10"
+          title="Utforsk kartet"
         >
-          {isDark && (
-            <div className="absolute inset-0 bg-black/30 z-[1] pointer-events-none rounded-t-lg" />
-          )}
+          <Maximize2 className="w-4 h-4 text-foreground" />
+        </button>
+      </div>
 
-          {staticUrl && !imgError && (
-            <img
-              src={staticUrl}
-              alt="Kartrute"
-              className={`w-full h-full object-cover transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
-              loading="lazy"
-              onLoad={() => setImgLoaded(true)}
-              onError={() => setImgError(true)}
-            />
-          )}
-
-          {!imgLoaded && !imgError && (
-            <div className="absolute inset-0 bg-secondary/50 animate-pulse" />
-          )}
-
-          <button
-            className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm rounded-lg p-1.5 shadow-md hover:bg-background transition-colors z-10"
-            title="Utforsk kartet"
-          >
-            <Maximize2 className="w-4 h-4 text-foreground" />
-          </button>
-        </div>
+      {/* Hidden map container for tile pre-loading — rendered via portal at body level */}
+      {!fullscreen && createPortal(
+        <div
+          ref={mapContainerRef}
+          style={{
+            position: 'fixed',
+            width: '1px',
+            height: '1px',
+            overflow: 'hidden',
+            opacity: 0,
+            pointerEvents: 'none',
+            left: '-9999px',
+            top: '-9999px',
+          }}
+        />,
+        document.body
       )}
 
-      {/*
-        Persistent map container — SAME DOM node always.
-        When not fullscreen: tiny hidden container (pre-loads tiles in background).
-        When fullscreen: fixed full-screen overlay.
-      */}
-      <div
-        ref={mapContainerRef}
-        className={fullscreen ? 'fixed inset-0 z-[9999]' : ''}
-        style={!fullscreen ? {
-          position: 'absolute',
-          width: '1px',
-          height: '1px',
-          overflow: 'hidden',
-          opacity: 0,
-          pointerEvents: 'none',
-          left: '-9999px',
-          top: '-9999px',
-        } : undefined}
-        onTouchStart={fullscreen ? e => e.stopPropagation() : undefined}
-        onTouchMove={fullscreen ? e => e.stopPropagation() : undefined}
-        onTouchEnd={fullscreen ? e => e.stopPropagation() : undefined}
-        onPointerDown={fullscreen ? e => e.stopPropagation() : undefined}
-        onPointerMove={fullscreen ? e => e.stopPropagation() : undefined}
-        onPointerUp={fullscreen ? e => e.stopPropagation() : undefined}
-      />
-
-      {/* Fullscreen UI overlay */}
-      {fullscreen && (
-        <div className="fixed inset-0 z-[10000] pointer-events-none">
+      {/* Fullscreen map — portal to body with the actual map container */}
+      {fullscreen && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] bg-background flex flex-col"
+          onTouchStart={e => e.stopPropagation()}
+          onTouchMove={e => e.stopPropagation()}
+          onTouchEnd={e => e.stopPropagation()}
+          onPointerDown={e => e.stopPropagation()}
+          onPointerMove={e => e.stopPropagation()}
+          onPointerUp={e => e.stopPropagation()}
+        >
           <button
             onClick={() => setFullscreen(false)}
-            className="pointer-events-auto absolute top-4 left-4 flex items-center gap-2 bg-background/90 backdrop-blur-sm rounded-full py-2 px-3 shadow-lg hover:bg-background transition-colors"
+            className="absolute top-4 left-4 z-[10000] flex items-center gap-2 bg-background/90 backdrop-blur-sm rounded-full py-2 px-3 shadow-lg hover:bg-background transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-foreground" />
             <span className="text-sm font-medium text-foreground">Tilbake</span>
           </button>
+          <div
+            ref={mapContainerRef}
+            className="flex-1 w-full"
+          />
           {mapReady && mapInstanceRef.current && (
-            <div className="pointer-events-auto">
-              <RouteReplay
-                map={mapInstanceRef.current}
-                routePoints={routePoints}
-                lineColor={lineColor}
-                totalDistance={totalDistance}
-                totalElevation={totalElevation}
-                averageHeartrate={averageHeartrate}
-                maxHeartrate={maxHeartrate}
-              />
-            </div>
+            <RouteReplay
+              map={mapInstanceRef.current}
+              routePoints={routePoints}
+              lineColor={lineColor}
+              totalDistance={totalDistance}
+              totalElevation={totalElevation}
+              averageHeartrate={averageHeartrate}
+              maxHeartrate={maxHeartrate}
+            />
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
 };
+
+// Need MapPin for fallback
+import { MapPin } from 'lucide-react';
 
 export default MapboxRouteMap;
