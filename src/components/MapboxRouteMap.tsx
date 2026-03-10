@@ -334,6 +334,8 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
               lineColor={lineColor}
               totalDistance={totalDistance}
               totalElevation={totalElevation}
+              averageHeartrate={averageHeartrate}
+              maxHeartrate={maxHeartrate}
             />
           )}
         </div>,
