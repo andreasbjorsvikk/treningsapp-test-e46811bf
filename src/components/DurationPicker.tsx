@@ -88,7 +88,7 @@ const ScrollColumn = ({
           onScroll={handleScroll}
           className="h-full overflow-y-auto scrollbar-hide touch-pan-y"
           style={{
-            scrollSnapType: 'y proximity',
+            // No CSS scroll-snap — JS handles snapping to avoid conflicts
             WebkitOverflowScrolling: 'touch',
             paddingTop: CENTER_INDEX * ITEM_HEIGHT,
             paddingBottom: CENTER_INDEX * ITEM_HEIGHT,
