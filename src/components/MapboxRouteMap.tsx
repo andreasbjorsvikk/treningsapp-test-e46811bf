@@ -12,6 +12,8 @@ interface MapboxRouteMapProps {
   isDark: boolean;
   totalDistance?: number;
   totalElevation?: number;
+  averageHeartrate?: number | null;
+  maxHeartrate?: number | null;
 }
 
 function simplifyPoints(points: [number, number][], maxPoints: number): [number, number][] {
