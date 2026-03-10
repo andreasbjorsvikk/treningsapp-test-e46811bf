@@ -1,11 +1,13 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { WorkoutSession, WorkoutStreams } from '@/types/workout';
 import { sessionTypeConfig, formatDuration } from '@/utils/workoutUtils';
 import { getActivityColors } from '@/utils/activityColors';
 import { decodePolyline } from '@/utils/polyline';
 import { useSettings } from '@/contexts/SettingsContext';
 import ActivityIcon from '@/components/ActivityIcon';
-import MapboxRouteMap from '@/components/MapboxRouteMap';
+import MapboxRouteMap, { getBounds, simplifyRoute, MAPBOX_TOKEN } from '@/components/MapboxRouteMap';
+import RouteReplay from '@/components/RouteReplay';
+import { addEnhancedTerrain } from '@/utils/mapTerrain';
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter,
 } from '@/components/ui/drawer';
@@ -14,7 +16,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  Clock, MapPin, MountainSnow, Heart, Activity, Pencil, Trash2, ChevronDown, Loader2,
+  Clock, MapPin, MountainSnow, Heart, Activity, Pencil, Trash2, ChevronDown, Loader2, ArrowLeft,
 } from 'lucide-react';
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { stravaService } from '@/services/stravaService';
@@ -27,6 +29,155 @@ interface Props {
   onClose: () => void;
   onEdit?: (session: WorkoutSession) => void;
   onDelete?: (id: string) => void;
+}
+
+/**
+ * Standalone fullscreen map — rendered OUTSIDE the Drawer so vaul
+ * cannot intercept pointer/touch events.
+ */
+function FullscreenMap({
+  routePoints,
+  lineColor,
+  onClose,
+  totalDistance,
+  totalElevation,
+  averageHeartrate,
+  maxHeartrate,
+}: {
+  routePoints: [number, number][];
+  lineColor: string;
+  onClose: () => void;
+  totalDistance?: number;
+  totalElevation?: number;
+  averageHeartrate?: number | null;
+  maxHeartrate?: number | null;
+}) {
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const [mapReady, setMapReady] = useState(false);
+
+  const simplifiedRoute = useMemo(() => simplifyRoute(routePoints, 300), [routePoints]);
+
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+
+    let map: any = null;
+    let cancelled = false;
+
+    (async () => {
+      const mapboxgl = (await import('mapbox-gl')).default;
+      await import('mapbox-gl/dist/mapbox-gl.css');
+      (mapboxgl as any).accessToken = MAPBOX_TOKEN;
+
+      if (cancelled || !mapContainerRef.current) return;
+
+      const boundsPoints = simplifiedRoute.length > 0 ? simplifiedRoute : routePoints;
+      const bounds = getBounds(boundsPoints);
+      const coords = (simplifiedRoute.length > 0 ? simplifiedRoute : routePoints).map(([lat, lng]) => [lng, lat]);
+
+      map = new mapboxgl.Map({
+        container: mapContainerRef.current,
+        style: 'mapbox://styles/mapbox/outdoors-v12',
+        center: bounds.center,
+        zoom: 12,
+        pitch: 60,
+        bearing: -20,
+        antialias: false,
+        fadeDuration: 0,
+      });
+
+      // All interactions enabled by default — no portal, no vaul interference
+      map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
+
+      mapInstanceRef.current = map;
+
+      map.once('style.load', () => {
+        if (cancelled) return;
+
+        map.addSource('route', {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            properties: {},
+            geometry: { type: 'LineString', coordinates: coords },
+          },
+        });
+
+        map.addLayer({
+          id: 'route-line',
+          type: 'line',
+          source: 'route',
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: { 'line-color': lineColor, 'line-width': 4, 'line-opacity': 0.95 },
+        });
+
+        map.fitBounds([bounds.sw, bounds.ne], { padding: 60, pitch: 60, bearing: -20, duration: 0 });
+        setMapReady(true);
+      });
+
+      // Defer terrain to first interaction or 3s fallback
+      let terrainAdded = false;
+      const addTerrain = () => {
+        if (terrainAdded || cancelled) return;
+        terrainAdded = true;
+        setTimeout(() => {
+          if (!cancelled && mapInstanceRef.current) {
+            addEnhancedTerrain(mapInstanceRef.current, { exaggeration: 1.4 });
+          }
+        }, 100);
+      };
+      map.once('movestart', addTerrain);
+      map.once('zoomstart', addTerrain);
+      const fallback = setTimeout(addTerrain, 3000);
+
+      (map as any).__terrainCleanup = () => {
+        clearTimeout(fallback);
+        map.off('movestart', addTerrain);
+        map.off('zoomstart', addTerrain);
+      };
+    })();
+
+    // Lock body scroll
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      cancelled = true;
+      document.body.style.overflow = '';
+      if (mapInstanceRef.current) {
+        (mapInstanceRef.current as any).__terrainCleanup?.();
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+      setMapReady(false);
+    };
+  }, [routePoints, simplifiedRoute, lineColor]);
+
+  return (
+    <div className="fixed inset-0 z-[9999] bg-background flex flex-col">
+      <button
+        onClick={onClose}
+        className="absolute top-4 left-4 z-[10000] flex items-center gap-2 bg-background/90 backdrop-blur-sm rounded-full py-2 px-3 shadow-lg hover:bg-background transition-colors"
+      >
+        <ArrowLeft className="w-5 h-5 text-foreground" />
+        <span className="text-sm font-medium text-foreground">Tilbake</span>
+      </button>
+      <div
+        ref={mapContainerRef}
+        className="flex-1 w-full"
+      />
+      {mapReady && mapInstanceRef.current && (
+        <RouteReplay
+          map={mapInstanceRef.current}
+          routePoints={routePoints}
+          lineColor={lineColor}
+          totalDistance={totalDistance}
+          totalElevation={totalElevation}
+          averageHeartrate={averageHeartrate}
+          maxHeartrate={maxHeartrate}
+        />
+      )}
+    </div>
+  );
 }
 
 const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props) => {
@@ -92,7 +243,8 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
 
   return (
     <>
-      <Drawer open={open} onOpenChange={(o) => { if (mapFullscreen) return; if (!o) handleClose(); }}>
+      {/* Drawer — hidden when map is fullscreen */}
+      <Drawer open={open && !mapFullscreen} onOpenChange={(o) => { if (!o) handleClose(); }}>
         <DrawerContent className="max-h-[92vh]">
           <div className="overflow-y-auto scrollbar-hide pb-4">
             <DrawerHeader className="sr-only">
@@ -100,7 +252,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
               <DrawerDescription>{t('workoutDetail.sessionDetails')}</DrawerDescription>
             </DrawerHeader>
 
-            {/* Mapbox Route Map */}
+            {/* Mapbox Route Map — thumbnail only */}
             {routePoints && (
               <MapboxRouteMap
                 routePoints={routePoints}
@@ -108,10 +260,6 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
                 height={192}
                 isDark={isDark}
                 onFullscreenChange={setMapFullscreen}
-                totalDistance={session.distance}
-                totalElevation={session.elevationGain}
-                averageHeartrate={session.averageHeartrate}
-                maxHeartrate={session.maxHeartrate}
               />
             )}
 
@@ -155,7 +303,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
               </div>
             </div>
 
-            {/* Load details button (Strava sessions only, not for strength) */}
+            {/* Load details button */}
             {session.stravaActivityId && !streamsLoaded && session.type !== 'styrke' && (
               <div className="px-4 pb-3">
                 <button
@@ -245,6 +393,19 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
           </div>
         </DrawerContent>
       </Drawer>
+
+      {/* Fullscreen map — rendered COMPLETELY OUTSIDE the Drawer component */}
+      {mapFullscreen && routePoints && (
+        <FullscreenMap
+          routePoints={routePoints}
+          lineColor={getActivityColors(session.type, false).text}
+          onClose={() => setMapFullscreen(false)}
+          totalDistance={session.distance}
+          totalElevation={session.elevationGain}
+          averageHeartrate={session.averageHeartrate}
+          maxHeartrate={session.maxHeartrate}
+        />
+      )}
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
