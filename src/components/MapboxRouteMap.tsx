@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Maximize2, ArrowLeft } from 'lucide-react';
-import { createPortal } from 'react-dom';
 import RouteReplay from '@/components/RouteReplay';
 import { addEnhancedTerrain } from '@/utils/mapTerrain';
 
@@ -27,7 +26,6 @@ function simplifyPoints(points: [number, number][], maxPoints: number): [number,
   return result;
 }
 
-// Douglas-Peucker simplification for route rendering
 function dpSimplify(points: [number, number][], epsilon: number): [number, number][] {
   if (points.length < 3) return points;
   let maxDist = 0, maxIdx = 0;
@@ -50,10 +48,8 @@ function dpSimplify(points: [number, number][], epsilon: number): [number, numbe
 
 function simplifyRoute(points: [number, number][], target: number = 400): [number, number][] {
   if (points.length <= target) return points;
-  // Adaptive epsilon based on point count
   let epsilon = 0.00002;
   let result = dpSimplify(points, epsilon);
-  // Increase epsilon until we're under target
   while (result.length > target && epsilon < 0.01) {
     epsilon *= 2;
     result = dpSimplify(points, epsilon);
@@ -80,13 +76,11 @@ function getGeoJsonUrl(routePoints: [number, number][], lineColor: string, width
   const simplified = simplifyPoints(routePoints, 80);
   const coordinates = simplified.map(([lat, lng]) => [lng, lat]);
   const color = lineColor.startsWith('#') ? lineColor : `#${lineColor}`;
-  
   const geojson = {
     type: 'Feature',
     properties: { stroke: color, 'stroke-width': 4, 'stroke-opacity': 0.95 },
     geometry: { type: 'LineString', coordinates },
   };
-  
   const overlay = `geojson(${encodeURIComponent(JSON.stringify(geojson))})`;
   const retina = window.devicePixelRatio >= 2 ? '@2x' : '';
   return `https://api.mapbox.com/styles/v1/mapbox/${style}/static/${overlay}/auto/${width}x${height}${retina}?padding=40&access_token=${MAPBOX_TOKEN}`;
@@ -105,95 +99,34 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
   };
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
-  const [previewMapReady, setPreviewMapReady] = useState(false);
+  // Single persistent container — the map lives here its entire lifetime
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const previewMapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
-  const previewMapRef = useRef<any>(null);
   const [mapReady, setMapReady] = useState(false);
+  const mapInitStarted = useRef(false);
+  const terrainAdded = useRef(false);
 
   const staticUrl = useMemo(() => {
     if (routePoints.length < 2) return null;
     return getGeoJsonUrl(routePoints, lineColor, 600, Math.round(height * 1.5));
   }, [routePoints, lineColor, height]);
 
-  // Initialize a small static preview map as fallback when image fails
-  const initPreviewMap = useCallback(async () => {
-    if (!previewMapContainerRef.current || previewMapRef.current) return;
-
-    const mapboxgl = (await import('mapbox-gl')).default;
-    await import('mapbox-gl/dist/mapbox-gl.css');
-    (mapboxgl as any).accessToken = MAPBOX_TOKEN;
-
-    const bounds = getBounds(routePoints);
-
-    const map = new mapboxgl.Map({
-      container: previewMapContainerRef.current,
-      style: 'mapbox://styles/mapbox/outdoors-v12',
-      center: bounds.center,
-      zoom: 11,
-      interactive: false,
-      attributionControl: false,
-    });
-
-    map.on('style.load', () => {
-      map.addSource('route', {
-        type: 'geojson',
-        data: {
-          type: 'Feature',
-          properties: {},
-          geometry: {
-            type: 'LineString',
-            coordinates: routePoints.map(([lat, lng]) => [lng, lat]),
-          },
-        },
-      });
-
-      map.addLayer({
-        id: 'route-line',
-        type: 'line',
-        source: 'route',
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': lineColor, 'line-width': 3, 'line-opacity': 0.9 },
-      });
-
-      map.fitBounds([bounds.sw, bounds.ne], { padding: 30, duration: 0 });
-      setPreviewMapReady(true);
-    });
-
-    previewMapRef.current = map;
-  }, [routePoints, lineColor]);
-
-  // If static image fails, render a small non-interactive map preview
-  useEffect(() => {
-    if (imgError && !previewMapRef.current) {
-      initPreviewMap();
-    }
-    return () => {
-      if (previewMapRef.current) {
-        previewMapRef.current.remove();
-        previewMapRef.current = null;
-      }
-    };
-  }, [imgError, initPreviewMap]);
-
-  // Pre-compute simplified route outside of map init to avoid blocking
   const simplifiedRoute = useMemo(() => {
     if (routePoints.length < 2) return [];
     return simplifyRoute(routePoints, 300);
   }, [routePoints]);
 
-  const initInteractiveMap = useCallback(async () => {
-    if (!mapContainerRef.current || mapInstanceRef.current) return;
+  // Initialize map immediately on mount in a hidden container to pre-cache tiles
+  const initMap = useCallback(async () => {
+    if (mapInitStarted.current || !mapContainerRef.current || routePoints.length < 2) return;
+    mapInitStarted.current = true;
 
     const mapboxgl = (await import('mapbox-gl')).default;
     await import('mapbox-gl/dist/mapbox-gl.css');
     (mapboxgl as any).accessToken = MAPBOX_TOKEN;
 
-    // Use simplified route for bounds calculation
     const boundsPoints = simplifiedRoute.length > 0 ? simplifiedRoute : routePoints;
     const bounds = getBounds(boundsPoints);
-    // Use simplified coordinates for rendering — this is the key fix
     const coords = simplifiedRoute.map(([lat, lng]) => [lng, lat]);
 
     const map = new mapboxgl.Map({
@@ -205,18 +138,14 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
       bearing: -20,
       antialias: false,
       fadeDuration: 0,
+      attributionControl: false,
     });
-
-    map.dragRotate.enable();
-    map.touchZoomRotate.enable();
-    map.touchPitch.enable();
-    map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
 
     mapInstanceRef.current = map;
 
     map.once('style.load', () => {
       if (!mapInstanceRef.current) return;
-      
+
       map.addSource('route', {
         type: 'geojson',
         data: {
@@ -235,33 +164,65 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
       });
 
       map.fitBounds([bounds.sw, bounds.ne], { padding: 60, pitch: 60, bearing: -20, duration: 0 });
-      
-      // Only set map ready AFTER route is rendered
       setMapReady(true);
     });
 
-    // Defer terrain to after map is idle and interactive
     map.once('idle', () => {
       setTimeout(() => {
-        if (!mapInstanceRef.current) return;
+        if (!mapInstanceRef.current || terrainAdded.current) return;
+        terrainAdded.current = true;
         addEnhancedTerrain(map, { exaggeration: 1.4 });
-      }, 500);
+      }, 300);
     });
   }, [simplifiedRoute, routePoints, lineColor]);
 
-  // Init map when fullscreen opens — no delay for instant responsiveness
+  // Start map loading on mount
   useEffect(() => {
-    if (fullscreen) {
-      initInteractiveMap();
+    if (routePoints.length >= 2) {
+      initMap();
     }
     return () => {
-      if (!fullscreen && mapInstanceRef.current) {
+      if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
-        setMapReady(false);
+        mapInitStarted.current = false;
+        terrainAdded.current = false;
       }
     };
-  }, [fullscreen, initInteractiveMap]);
+  }, [initMap]);
+
+  // When entering/exiting fullscreen, resize the map to match new container size
+  useEffect(() => {
+    if (mapInstanceRef.current) {
+      // Wait for CSS transition to apply, then tell Mapbox to recalculate size
+      requestAnimationFrame(() => {
+        mapInstanceRef.current?.resize();
+      });
+    }
+  }, [fullscreen]);
+
+  // Add nav controls when going fullscreen
+  useEffect(() => {
+    if (fullscreen && mapInstanceRef.current) {
+      import('mapbox-gl').then(m => {
+        if (!mapInstanceRef.current) return;
+        // Enable interaction (in case it was limited)
+        mapInstanceRef.current.dragRotate.enable();
+        mapInstanceRef.current.touchZoomRotate.enable();
+        mapInstanceRef.current.touchPitch.enable();
+        // Add nav control if not already present
+        const existing = mapInstanceRef.current._controls?.find(
+          (c: any) => c instanceof m.default.NavigationControl
+        );
+        if (!existing) {
+          mapInstanceRef.current.addControl(
+            new m.default.NavigationControl({ visualizePitch: true }),
+            'top-right'
+          );
+        }
+      });
+    }
+  }, [fullscreen]);
 
   // Lock body scroll in fullscreen
   useEffect(() => {
@@ -273,95 +234,93 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
 
   if (routePoints.length < 2) return null;
 
-  const closeFullscreen = () => {
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.remove();
-      mapInstanceRef.current = null;
-    }
-    setMapReady(false);
-    setFullscreen(false);
-  };
-
   return (
     <>
-      {/* Static preview thumbnail */}
-      <div
-        className="w-full rounded-t-lg overflow-hidden relative cursor-pointer"
-        style={{ height: `${height}px` }}
-        onClick={() => setFullscreen(true)}
-      >
-        {isDark && (
-          <div className="absolute inset-0 bg-black/30 z-[1] pointer-events-none rounded-t-lg" />
-        )}
-        
-        {/* Static image (primary) */}
-        {staticUrl && !imgError && (
-          <img
-            src={staticUrl}
-            alt="Kartrute"
-            className={`w-full h-full object-cover transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
-            loading="lazy"
-            onLoad={() => setImgLoaded(true)}
-            onError={() => setImgError(true)}
-          />
-        )}
-        
-        {/* Fallback: non-interactive mini map */}
-        {imgError && (
-          <div
-            ref={previewMapContainerRef}
-            className="w-full h-full"
-          />
-        )}
-        
-        {/* Loading state */}
-        {!imgLoaded && !imgError && (
-          <div className="absolute inset-0 bg-secondary/50 animate-pulse" />
-        )}
-        
-        <button
-          className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm rounded-lg p-1.5 shadow-md hover:bg-background transition-colors z-10"
-          title="Utforsk kartet"
-        >
-          <Maximize2 className="w-4 h-4 text-foreground" />
-        </button>
-      </div>
-
-      {/* Fullscreen map portal */}
-      {fullscreen && createPortal(
+      {/* Static preview thumbnail — only shown when NOT fullscreen */}
+      {!fullscreen && (
         <div
-          className="fixed inset-0 z-[9999] bg-background flex flex-col"
-          onTouchStart={e => e.stopPropagation()}
-          onTouchMove={e => e.stopPropagation()}
-          onTouchEnd={e => e.stopPropagation()}
-          onPointerDown={e => e.stopPropagation()}
-          onPointerMove={e => e.stopPropagation()}
-          onPointerUp={e => e.stopPropagation()}
+          className="w-full rounded-t-lg overflow-hidden relative cursor-pointer"
+          style={{ height: `${height}px` }}
+          onClick={() => setFullscreen(true)}
         >
+          {isDark && (
+            <div className="absolute inset-0 bg-black/30 z-[1] pointer-events-none rounded-t-lg" />
+          )}
+
+          {staticUrl && !imgError && (
+            <img
+              src={staticUrl}
+              alt="Kartrute"
+              className={`w-full h-full object-cover transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+              loading="lazy"
+              onLoad={() => setImgLoaded(true)}
+              onError={() => setImgError(true)}
+            />
+          )}
+
+          {!imgLoaded && !imgError && (
+            <div className="absolute inset-0 bg-secondary/50 animate-pulse" />
+          )}
+
           <button
-            onClick={closeFullscreen}
-            className="absolute top-4 left-4 z-[10000] flex items-center gap-2 bg-background/90 backdrop-blur-sm rounded-full py-2 px-3 shadow-lg hover:bg-background transition-colors"
+            className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm rounded-lg p-1.5 shadow-md hover:bg-background transition-colors z-10"
+            title="Utforsk kartet"
+          >
+            <Maximize2 className="w-4 h-4 text-foreground" />
+          </button>
+        </div>
+      )}
+
+      {/*
+        Persistent map container — SAME DOM node always.
+        When not fullscreen: tiny hidden container (pre-loads tiles in background).
+        When fullscreen: fixed full-screen overlay.
+      */}
+      <div
+        ref={mapContainerRef}
+        className={fullscreen ? 'fixed inset-0 z-[9999]' : ''}
+        style={!fullscreen ? {
+          position: 'absolute',
+          width: '1px',
+          height: '1px',
+          overflow: 'hidden',
+          opacity: 0,
+          pointerEvents: 'none',
+          left: '-9999px',
+          top: '-9999px',
+        } : undefined}
+        onTouchStart={fullscreen ? e => e.stopPropagation() : undefined}
+        onTouchMove={fullscreen ? e => e.stopPropagation() : undefined}
+        onTouchEnd={fullscreen ? e => e.stopPropagation() : undefined}
+        onPointerDown={fullscreen ? e => e.stopPropagation() : undefined}
+        onPointerMove={fullscreen ? e => e.stopPropagation() : undefined}
+        onPointerUp={fullscreen ? e => e.stopPropagation() : undefined}
+      />
+
+      {/* Fullscreen UI overlay */}
+      {fullscreen && (
+        <div className="fixed inset-0 z-[10000] pointer-events-none">
+          <button
+            onClick={() => setFullscreen(false)}
+            className="pointer-events-auto absolute top-4 left-4 flex items-center gap-2 bg-background/90 backdrop-blur-sm rounded-full py-2 px-3 shadow-lg hover:bg-background transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-foreground" />
             <span className="text-sm font-medium text-foreground">Tilbake</span>
           </button>
-          <div
-            ref={mapContainerRef}
-            className="flex-1 w-full"
-          />
           {mapReady && mapInstanceRef.current && (
-            <RouteReplay
-              map={mapInstanceRef.current}
-              routePoints={routePoints}
-              lineColor={lineColor}
-              totalDistance={totalDistance}
-              totalElevation={totalElevation}
-              averageHeartrate={averageHeartrate}
-              maxHeartrate={maxHeartrate}
-            />
+            <div className="pointer-events-auto">
+              <RouteReplay
+                map={mapInstanceRef.current}
+                routePoints={routePoints}
+                lineColor={lineColor}
+                totalDistance={totalDistance}
+                totalElevation={totalElevation}
+                averageHeartrate={averageHeartrate}
+                maxHeartrate={maxHeartrate}
+              />
+            </div>
           )}
-        </div>,
-        document.body
+        </div>
       )}
     </>
   );
