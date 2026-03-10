@@ -110,6 +110,8 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
                 onFullscreenChange={setMapFullscreen}
                 totalDistance={session.distance}
                 totalElevation={session.elevationGain}
+                averageHeartrate={session.averageHeartrate}
+                maxHeartrate={session.maxHeartrate}
               />
             )}
 
