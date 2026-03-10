@@ -21,7 +21,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
 import { stravaService } from '@/services/stravaService';
 import { toast } from 'sonner';
-import { mockUsers } from '@/data/mockCommunity';
+import { getFriends, Friend } from '@/services/communityService';
 import { useAdmin } from '@/hooks/useAdmin';
 
 // Predefined color options for activity types
