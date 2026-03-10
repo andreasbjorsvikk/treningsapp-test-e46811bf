@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { decodePolyline } from '@/utils/polyline';
+import { addEnhancedTerrain } from '@/utils/mapTerrain';
 
 type HeatmapPeriod = 'year' | 'total';
 
