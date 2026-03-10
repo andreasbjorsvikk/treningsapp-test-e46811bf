@@ -355,7 +355,7 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
       } else {
         // --- OUTRO ---
         setPhase('outro');
-        setStats({ distance: reportedDist, elevation: reportedElev });
+        setStats({ distance: reportedDist, elevation: reportedElev, altitude: 0 });
 
         // Zoom out to show full route after a moment
         const lats = routePoints.map(p => p[0]);
