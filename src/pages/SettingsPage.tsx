@@ -67,6 +67,7 @@ const SettingsPage = () => {
   const [showFriendPicker, setShowFriendPicker] = useState(false);
   const [selectedPrivacyKey, setSelectedPrivacyKey] = useState<string | null>(null);
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
+  const [realFriends, setRealFriends] = useState<Friend[]>([]);
 
   // Check Strava connection on mount & after callback
   useEffect(() => {
