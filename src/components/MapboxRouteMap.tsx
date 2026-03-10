@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Maximize2, ArrowLeft } from 'lucide-react';
+import { Maximize2, ArrowLeft, MapPin } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import RouteReplay from '@/components/RouteReplay';
 import { addEnhancedTerrain } from '@/utils/mapTerrain';
@@ -100,12 +100,33 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
   };
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
-  const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const [mapReady, setMapReady] = useState(false);
   const mapInitStarted = useRef(false);
   const terrainAdded = useRef(false);
   const boundsRef = useRef<{ sw: [number, number]; ne: [number, number] } | null>(null);
+
+  // Create a persistent DOM node for the map that never gets unmounted by React
+  const persistentMapDiv = useRef<HTMLDivElement | null>(null);
+  if (!persistentMapDiv.current) {
+    persistentMapDiv.current = document.createElement('div');
+    persistentMapDiv.current.style.width = '100%';
+    persistentMapDiv.current.style.height = '100%';
+  }
+
+  // Wrapper ref — we'll append the persistent div here
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Move the persistent map div into the current wrapper whenever it changes
+  useEffect(() => {
+    const div = persistentMapDiv.current;
+    if (!div || !wrapperRef.current) return;
+    wrapperRef.current.appendChild(div);
+    return () => {
+      // Don't remove from DOM entirely — just detach
+      if (div.parentNode) div.parentNode.removeChild(div);
+    };
+  }, [fullscreen]); // Re-run when wrapper changes (hidden vs fullscreen)
 
   const staticUrl = useMemo(() => {
     if (routePoints.length < 2) return null;
@@ -117,9 +138,9 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     return simplifyRoute(routePoints, 300);
   }, [routePoints]);
 
-  // Pre-initialize map on mount in hidden container (pre-caches tiles)
+  // Pre-initialize map on mount (hidden) to cache tiles
   const initMap = useCallback(async () => {
-    if (mapInitStarted.current || !mapContainerRef.current || routePoints.length < 2) return;
+    if (mapInitStarted.current || !persistentMapDiv.current || routePoints.length < 2) return;
     mapInitStarted.current = true;
 
     const mapboxgl = (await import('mapbox-gl')).default;
@@ -132,7 +153,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     const coords = simplifiedRoute.map(([lat, lng]) => [lng, lat]);
 
     const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
+      container: persistentMapDiv.current!,
       style: 'mapbox://styles/mapbox/outdoors-v12',
       center: bounds.center,
       zoom: 12,
@@ -165,7 +186,6 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
         paint: { 'line-color': lineColor, 'line-width': 4, 'line-opacity': 0.95 },
       });
 
-      // Don't fitBounds here — container is 1x1px. Will fitBounds on fullscreen.
       setMapReady(true);
     });
 
@@ -193,12 +213,12 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     };
   }, [initMap]);
 
-  // When entering fullscreen: resize map and fitBounds properly
+  // When entering fullscreen: resize + fitBounds
   useEffect(() => {
     if (!fullscreen || !mapInstanceRef.current) return;
 
     const map = mapInstanceRef.current;
-    // Enable full interaction
+
     import('mapbox-gl').then(m => {
       if (!mapInstanceRef.current) return;
       map.dragRotate.enable();
@@ -210,20 +230,20 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
       }
     });
 
-    // Resize after portal renders, then fitBounds to correct zoom
+    // After the persistent div is moved into the fullscreen wrapper, resize + fitBounds
     requestAnimationFrame(() => {
-      if (!mapInstanceRef.current) return;
-      map.resize();
-      if (boundsRef.current) {
-        map.fitBounds(
-          [boundsRef.current.sw, boundsRef.current.ne],
-          { padding: 60, pitch: 60, bearing: -20, duration: 0 }
-        );
-      }
+      requestAnimationFrame(() => {
+        if (!mapInstanceRef.current) return;
+        map.resize();
+        if (boundsRef.current) {
+          map.fitBounds(
+            [boundsRef.current.sw, boundsRef.current.ne],
+            { padding: 60, pitch: 60, bearing: -20, duration: 0 }
+          );
+        }
+      });
     });
   }, [fullscreen]);
-
-  // When exiting fullscreen, no need to do anything — map stays hidden
 
   // Lock body scroll in fullscreen
   useEffect(() => {
@@ -237,7 +257,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
 
   return (
     <>
-      {/* Static preview thumbnail — always visible when not fullscreen */}
+      {/* Static preview thumbnail */}
       <div
         className="w-full rounded-t-lg overflow-hidden relative cursor-pointer"
         style={{ height: `${height}px` }}
@@ -276,10 +296,10 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
         </button>
       </div>
 
-      {/* Hidden map container for tile pre-loading — rendered via portal at body level */}
+      {/* Hidden wrapper for tile pre-loading — portal to body */}
       {!fullscreen && createPortal(
         <div
-          ref={mapContainerRef}
+          ref={wrapperRef}
           style={{
             position: 'fixed',
             width: '1px',
@@ -294,7 +314,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
         document.body
       )}
 
-      {/* Fullscreen map — portal to body with the actual map container */}
+      {/* Fullscreen map — portal to body */}
       {fullscreen && createPortal(
         <div
           className="fixed inset-0 z-[9999] bg-background flex flex-col"
@@ -312,10 +332,8 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
             <ArrowLeft className="w-5 h-5 text-foreground" />
             <span className="text-sm font-medium text-foreground">Tilbake</span>
           </button>
-          <div
-            ref={mapContainerRef}
-            className="flex-1 w-full"
-          />
+          {/* The persistent map div gets moved here via DOM manipulation */}
+          <div ref={wrapperRef} className="flex-1 w-full" />
           {mapReady && mapInstanceRef.current && (
             <RouteReplay
               map={mapInstanceRef.current}
@@ -333,8 +351,5 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     </>
   );
 };
-
-// Need MapPin for fallback
-import { MapPin } from 'lucide-react';
 
 export default MapboxRouteMap;
