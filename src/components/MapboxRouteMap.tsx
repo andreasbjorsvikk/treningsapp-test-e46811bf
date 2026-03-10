@@ -278,10 +278,13 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
           />
         )}
 
+        {/* Fallback when static image fails: show the pre-loaded map as thumbnail */}
         {imgError && (
-          <div className="w-full h-full bg-secondary/30 flex items-center justify-center">
-            <MapPin className="w-8 h-8 text-muted-foreground/50" />
-          </div>
+          <div
+            ref={imgError && !fullscreen ? wrapperRef : undefined}
+            className="w-full h-full"
+            style={{ pointerEvents: 'none' }}
+          />
         )}
 
         {!imgLoaded && !imgError && (
