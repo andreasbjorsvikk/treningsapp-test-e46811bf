@@ -339,10 +339,14 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
         }
       } catch {}
 
-      // Stats
+      // Stats — query terrain elevation at current marker position
       const distKm = eased * reportedDist;
-      const elev = Math.round(eased * reportedElev);
-      setStats({ distance: Math.round(distKm * 10) / 10, elevation: elev });
+      let altitude = 0;
+      try {
+        const terrainElev = map.queryTerrainElevation([pos.lng, pos.lat]);
+        if (terrainElev != null) altitude = Math.round(terrainElev);
+      } catch {}
+      setStats({ distance: Math.round(distKm * 10) / 10, elevation: 0, altitude });
 
       // NO camera auto-follow — user controls the map freely
 
