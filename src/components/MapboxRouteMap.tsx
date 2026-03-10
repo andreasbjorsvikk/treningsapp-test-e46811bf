@@ -169,24 +169,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
 
     map.on('style.load', () => {
-      map.addSource('mapbox-dem', {
-        type: 'raster-dem',
-        url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
-        tileSize: 512,
-        maxzoom: 14,
-      });
-      map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
-
-      map.addLayer({
-        id: 'sky',
-        type: 'sky',
-        paint: {
-          'sky-type': 'atmosphere',
-          'sky-atmosphere-sun': [0.0, 90.0],
-          'sky-atmosphere-sun-intensity': 15,
-        },
-      });
-
+      // Add route immediately so map is usable right away
       map.addSource('route', {
         type: 'geojson',
         data: {
@@ -211,7 +194,34 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
         [bounds.sw, bounds.ne],
         { padding: 60, pitch: 60, bearing: -20, duration: 1000 }
       );
+
+      // Map is interactive now — terrain loads in the background
       setMapReady(true);
+
+      // Defer heavy terrain + sky to after map is idle
+      map.once('idle', () => {
+        if (!map.getSource('mapbox-dem')) {
+          map.addSource('mapbox-dem', {
+            type: 'raster-dem',
+            url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+            tileSize: 512,
+            maxzoom: 14,
+          });
+        }
+        map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+
+        if (!map.getLayer('sky')) {
+          map.addLayer({
+            id: 'sky',
+            type: 'sky',
+            paint: {
+              'sky-type': 'atmosphere',
+              'sky-atmosphere-sun': [0.0, 90.0],
+              'sky-atmosphere-sun-intensity': 15,
+            },
+          });
+        }
+      });
     });
 
     mapInstanceRef.current = map;
