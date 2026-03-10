@@ -179,50 +179,36 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
   const initInteractiveMap = useCallback(async () => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
-    console.time('[MapPerf] import mapbox');
     const mapboxgl = (await import('mapbox-gl')).default;
     await import('mapbox-gl/dist/mapbox-gl.css');
     (mapboxgl as any).accessToken = MAPBOX_TOKEN;
-    console.timeEnd('[MapPerf] import mapbox');
 
-    // Pre-simplify route BEFORE creating map
-    console.time('[MapPerf] simplify route');
-    const rawCount = routePoints.length;
-    const simplified = simplifyRoute(routePoints, 400);
-    console.timeEnd('[MapPerf] simplify route');
-    console.log(`[MapPerf] Route: ${rawCount} raw → ${simplified.length} simplified`);
+    const bounds = getBounds(routePoints);
+    const coords = routePoints.map(([lat, lng]) => [lng, lat]);
 
-    const bounds = getBounds(simplified);
-
-    console.time('[MapPerf] create map');
+    // Phase 1: Create map FLAT (pitch:0) — renders far fewer tiles, instant interactivity
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: 'mapbox://styles/mapbox/outdoors-v12',
       center: bounds.center,
       zoom: 12,
-      pitch: 60,
-      bearing: -20,
+      pitch: 0,
+      bearing: 0,
       antialias: false,
       fadeDuration: 0,
-      trackResize: false,
-      refreshExpiredTiles: false,
+      maxTileCacheSize: 50,
     });
-    console.timeEnd('[MapPerf] create map');
 
     map.dragRotate.enable();
     map.touchZoomRotate.enable();
     map.touchPitch.enable();
-
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
 
     mapInstanceRef.current = map;
-    // Set ready immediately so user can interact with base map
     setMapReady(true);
 
-    // Phase 2: Add route after style loads — use simplified data
+    // Phase 2: Once style is ready, add route and fit bounds (still flat)
     map.once('style.load', () => {
-      console.time('[MapPerf] add route');
-      const coords = simplified.map(([lat, lng]) => [lng, lat]);
       map.addSource('route', {
         type: 'geojson',
         data: {
@@ -238,55 +224,42 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: { 'line-color': lineColor, 'line-width': 4, 'line-opacity': 0.95 },
       });
-      console.timeEnd('[MapPerf] add route');
 
-      // Phase 3: fitBounds with no animation
-      console.time('[MapPerf] fitBounds');
-      map.fitBounds(
-        [bounds.sw, bounds.ne],
-        { padding: 60, pitch: 60, bearing: -20, duration: 0 }
-      );
-      console.timeEnd('[MapPerf] fitBounds');
+      // Fit bounds flat — very fast, no 3D tile loading
+      map.fitBounds([bounds.sw, bounds.ne], { padding: 60, duration: 0 });
     });
 
-    // Phase 4: Defer terrain to idle — use requestIdleCallback if available
-    const addTerrain = () => {
-      try {
-        console.time('[MapPerf] add terrain');
-        if (!map.getSource('mapbox-dem')) {
-          map.addSource('mapbox-dem', {
-            type: 'raster-dem',
-            url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
-            tileSize: 512,
-            maxzoom: 14,
-          });
-        }
-        map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
-
-        if (!map.getLayer('sky')) {
-          map.addLayer({
-            id: 'sky',
-            type: 'sky',
-            paint: {
-              'sky-type': 'atmosphere',
-              'sky-atmosphere-sun': [0.0, 90.0],
-              'sky-atmosphere-sun-intensity': 15,
-            },
-          });
-        }
-        console.timeEnd('[MapPerf] add terrain');
-        // Re-enable resize tracking after everything is loaded
-        (map as any)._trackResize = true;
-      } catch {}
-    };
-
+    // Phase 3: After map is idle (tiles loaded, interactive), animate to 3D
     map.once('idle', () => {
-      // Use requestIdleCallback to avoid blocking interaction
-      if ('requestIdleCallback' in window) {
-        (window as any).requestIdleCallback(addTerrain);
-      } else {
-        setTimeout(addTerrain, 200);
-      }
+      // Smoothly transition to 3D view
+      map.easeTo({ pitch: 60, bearing: -20, duration: 1200 });
+
+      // Phase 4: Add terrain AFTER the 3D transition starts
+      setTimeout(() => {
+        try {
+          if (!map.getSource('mapbox-dem')) {
+            map.addSource('mapbox-dem', {
+              type: 'raster-dem',
+              url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+              tileSize: 512,
+              maxzoom: 14,
+            });
+          }
+          map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+
+          if (!map.getLayer('sky')) {
+            map.addLayer({
+              id: 'sky',
+              type: 'sky',
+              paint: {
+                'sky-type': 'atmosphere',
+                'sky-atmosphere-sun': [0.0, 90.0],
+                'sky-atmosphere-sun-intensity': 15,
+              },
+            });
+          }
+        } catch {}
+      }, 800);
     });
   }, [routePoints, lineColor]);
 

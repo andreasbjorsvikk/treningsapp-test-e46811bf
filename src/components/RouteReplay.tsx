@@ -142,7 +142,7 @@ const DARK_GREEN = '#1a6b3c';
 
 const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevation, averageHeartrate, maxHeartrate }: RouteReplayProps) => {
   const [phase, setPhase] = useState<'idle' | 'intro' | 'playing' | 'outro'>('idle');
-  const [stats, setStats] = useState({ distance: 0, elevation: 0 });
+  const [stats, setStats] = useState({ distance: 0, elevation: 0, altitude: 0 });
   const markerRef = useRef<any>(null);
   const glowMarkerRef = useRef<any>(null);
   const rafRef = useRef<number>(0);
@@ -194,7 +194,7 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
   const stopReplay = useCallback(() => {
     cleanup();
     setPhase('idle');
-    setStats({ distance: 0, elevation: 0 });
+    setStats({ distance: 0, elevation: 0, altitude: 0 });
     resetCamera();
   }, [cleanup, resetCamera]);
 
@@ -203,7 +203,7 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
     cleanup();
     stoppedRef.current = false;
     setPhase('intro');
-    setStats({ distance: 0, elevation: 0 });
+    setStats({ distance: 0, elevation: 0, altitude: 0 });
 
     const mapboxgl = (await import('mapbox-gl')).default;
     const cumDist = cumDistRef.current;
@@ -339,10 +339,14 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
         }
       } catch {}
 
-      // Stats
+      // Stats — query terrain elevation at current marker position
       const distKm = eased * reportedDist;
-      const elev = Math.round(eased * reportedElev);
-      setStats({ distance: Math.round(distKm * 10) / 10, elevation: elev });
+      let altitude = 0;
+      try {
+        const terrainElev = map.queryTerrainElevation([pos.lng, pos.lat]);
+        if (terrainElev != null) altitude = Math.round(terrainElev);
+      } catch {}
+      setStats({ distance: Math.round(distKm * 10) / 10, elevation: 0, altitude });
 
       // NO camera auto-follow — user controls the map freely
 
@@ -351,7 +355,7 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
       } else {
         // --- OUTRO ---
         setPhase('outro');
-        setStats({ distance: reportedDist, elevation: reportedElev });
+        setStats({ distance: reportedDist, elevation: reportedElev, altitude: 0 });
 
         // Zoom out to show full route after a moment
         const lats = routePoints.map(p => p[0]);
@@ -422,12 +426,12 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
             </p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Distanse</p>
           </div>
-          {reportedElev > 0 && (
+          {stats.altitude > 0 && (
             <div className="text-center">
               <p className="text-lg font-bold text-foreground leading-tight">
-                {stats.elevation} <span className="text-xs font-normal text-muted-foreground">m</span>
+                {stats.altitude} <span className="text-xs font-normal text-muted-foreground">moh</span>
               </p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Stigning</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Høyde</p>
             </div>
           )}
         </div>
