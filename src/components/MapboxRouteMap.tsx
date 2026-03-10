@@ -123,10 +123,9 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     if (!div || !wrapperRef.current) return;
     wrapperRef.current.appendChild(div);
     return () => {
-      // Don't remove from DOM entirely — just detach
       if (div.parentNode) div.parentNode.removeChild(div);
     };
-  }, [fullscreen]); // Re-run when wrapper changes (hidden vs fullscreen)
+  }, [fullscreen, imgError]); // Re-run when wrapper location changes
 
   const staticUrl = useMemo(() => {
     if (routePoints.length < 2) return null;
