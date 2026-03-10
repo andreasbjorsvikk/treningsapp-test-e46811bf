@@ -62,7 +62,7 @@ export const useMapFullscreen = () => {
   return { isMapFullscreen: fullscreen, setMapFullscreen: setFullscreen };
 };
 
-const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenChange, totalDistance, totalElevation }: MapboxRouteMapProps & { onFullscreenChange?: (fs: boolean) => void }) => {
+const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenChange, totalDistance, totalElevation, averageHeartrate, maxHeartrate }: MapboxRouteMapProps & { onFullscreenChange?: (fs: boolean) => void }) => {
   const [fullscreen, setFullscreenState] = useState(false);
   const setFullscreen = (fs: boolean) => {
     setFullscreenState(fs);
