@@ -35,10 +35,10 @@ export function addEnhancedTerrain(map: any, options?: { exaggeration?: number }
         paint: {
           'hillshade-illumination-direction': 315,
           'hillshade-illumination-anchor': 'viewport',
-          'hillshade-exaggeration': 0.35,
-          'hillshade-shadow-color': 'rgba(0, 0, 0, 0.18)',
-          'hillshade-highlight-color': 'rgba(255, 255, 255, 0.25)',
-          'hillshade-accent-color': 'rgba(80, 80, 80, 0.12)',
+          'hillshade-exaggeration': 0.5,
+          'hillshade-shadow-color': 'rgba(0, 0, 0, 0.25)',
+          'hillshade-highlight-color': 'rgba(255, 255, 230, 0.4)',
+          'hillshade-accent-color': 'rgba(80, 80, 80, 0.15)',
         },
       }, map.getLayer('route-line') ? 'route-line' : undefined);
     }

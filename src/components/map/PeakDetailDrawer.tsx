@@ -171,9 +171,9 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
             </div>
           </DrawerHeader>
           <div className="px-4 pb-6 space-y-4 overflow-y-auto">
-            {/* Static map */}
+            {/* Rotating 3D orbit map */}
             <div className="rounded-xl overflow-hidden border border-border/50">
-              <img src={staticMapUrl} alt={`Kart over ${peak.name}`} className="w-full h-[160px] object-cover" loading="lazy" />
+              <PeakOrbitMap latitude={peak.latitude} longitude={peak.longitude} heightMoh={peak.heightMoh} className="w-full h-[180px]" />
             </div>
 
             {/* Route info */}
