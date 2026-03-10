@@ -122,11 +122,14 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
     const div = persistentMapDiv.current;
     if (!div || !wrapperRef.current) return;
     wrapperRef.current.appendChild(div);
+    // Resize map to fit new container
+    requestAnimationFrame(() => {
+      mapInstanceRef.current?.resize();
+    });
     return () => {
-      // Don't remove from DOM entirely — just detach
       if (div.parentNode) div.parentNode.removeChild(div);
     };
-  }, [fullscreen]); // Re-run when wrapper changes (hidden vs fullscreen)
+  }, [fullscreen, imgError]); // Re-run when wrapper location changes
 
   const staticUrl = useMemo(() => {
     if (routePoints.length < 2) return null;
@@ -278,10 +281,13 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
           />
         )}
 
+        {/* Fallback when static image fails: show the pre-loaded map as thumbnail */}
         {imgError && (
-          <div className="w-full h-full bg-secondary/30 flex items-center justify-center">
-            <MapPin className="w-8 h-8 text-muted-foreground/50" />
-          </div>
+          <div
+            ref={imgError && !fullscreen ? wrapperRef : undefined}
+            className="w-full h-full"
+            style={{ pointerEvents: 'none' }}
+          />
         )}
 
         {!imgLoaded && !imgError && (
@@ -296,19 +302,19 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
         </button>
       </div>
 
-      {/* Hidden wrapper for tile pre-loading — portal to body */}
-      {!fullscreen && createPortal(
+      {/* Hidden pre-load: only when static image works (otherwise map is shown as thumbnail above) */}
+      {!fullscreen && !imgError && createPortal(
         <div
           ref={wrapperRef}
           style={{
             position: 'fixed',
-            width: '1px',
-            height: '1px',
-            overflow: 'hidden',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
             opacity: 0,
             pointerEvents: 'none',
-            left: '-9999px',
-            top: '-9999px',
+            zIndex: -1,
           }}
         />,
         document.body
