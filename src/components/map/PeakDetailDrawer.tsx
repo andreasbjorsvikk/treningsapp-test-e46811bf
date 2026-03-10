@@ -1,4 +1,5 @@
 import { Peak } from '@/data/peaks';
+import PeakOrbitMap from '@/components/map/PeakOrbitMap';
 import { PeakCheckin, checkinPeak, getDistanceMeters, adminCheckinPeak, searchProfiles, getAllCheckinsForPeak, CheckinWithProfile, deleteCheckin } from '@/services/peakCheckinService';
 import { useAuth } from '@/hooks/useAuth';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
@@ -85,8 +86,6 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
 
   if (!peak) return null;
 
-  const mapboxToken = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
-  const staticMapUrl = `https://api.mapbox.com/styles/v1/mapbox/outdoors-v12/static/pin-s+ef4444(${peak.longitude},${peak.latitude})/${peak.longitude},${peak.latitude},13,0/400x200@2x?access_token=${mapboxToken}`;
 
   const handleCheckin = async () => {
     if (!user) return;
@@ -170,9 +169,9 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
             </div>
           </DrawerHeader>
           <div className="px-4 pb-6 space-y-4 overflow-y-auto">
-            {/* Static map */}
+            {/* Rotating 3D orbit map */}
             <div className="rounded-xl overflow-hidden border border-border/50">
-              <img src={staticMapUrl} alt={`Kart over ${peak.name}`} className="w-full h-[160px] object-cover" loading="lazy" />
+              <PeakOrbitMap latitude={peak.latitude} longitude={peak.longitude} heightMoh={peak.heightMoh} className="w-full h-[180px]" />
             </div>
 
             {/* Route info */}
