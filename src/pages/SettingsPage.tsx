@@ -435,7 +435,7 @@ const SettingsPage = () => {
       { key: 'privacyGoals' as const, label: t('privacy.goals'), desc: t('privacy.goalsDesc') },
       { key: 'privacyPeakCheckins' as const, label: 'Fjelltopp-innsjekkinger', desc: 'Hvem kan se dine innsjekkinger på fjelltopper' },
     ];
-    const friends = mockUsers.filter(u => u.id !== 'me');
+    const friends = realFriends;
     return (
       <div className="space-y-4">
         {backButton(t('privacy.title'))}
