@@ -87,6 +87,12 @@ const SettingsPage = () => {
         if (data?.avatar_url) setAvatarUrl(data.avatar_url);
       });
   }, [user]);
+  
+  // Load real friends for privacy settings
+  useEffect(() => {
+    if (!user) return;
+    getFriends().then(setRealFriends).catch(() => {});
+  }, [user]);
 
   // Listen for navigate-to-profile event
   useEffect(() => {
