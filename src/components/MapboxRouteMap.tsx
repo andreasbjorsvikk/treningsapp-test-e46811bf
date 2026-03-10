@@ -190,6 +190,49 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
   // Pre-warm the tile cache in the background
   useTileCacheWarmer(routePoints, simplifiedRoute);
 
+  // Initialize a non-interactive preview map when static image fails
+  const initPreviewMap = useCallback(async () => {
+    if (!previewMapContainerRef.current || previewMapRef.current) return;
+    const mapboxgl = (await import('mapbox-gl')).default;
+    await import('mapbox-gl/dist/mapbox-gl.css');
+    (mapboxgl as any).accessToken = MAPBOX_TOKEN;
+    const bounds = getBounds(simplifiedRoute.length > 0 ? simplifiedRoute : routePoints);
+    const coords = (simplifiedRoute.length > 0 ? simplifiedRoute : routePoints).map(([lat, lng]) => [lng, lat]);
+    const map = new mapboxgl.Map({
+      container: previewMapContainerRef.current,
+      style: 'mapbox://styles/mapbox/outdoors-v12',
+      center: bounds.center,
+      zoom: 11,
+      interactive: false,
+      attributionControl: false,
+    });
+    map.on('style.load', () => {
+      map.addSource('route', {
+        type: 'geojson',
+        data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } },
+      });
+      map.addLayer({
+        id: 'route-line', type: 'line', source: 'route',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': lineColor, 'line-width': 3, 'line-opacity': 0.9 },
+      });
+      map.fitBounds([bounds.sw, bounds.ne], { padding: 30, duration: 0 });
+    });
+    previewMapRef.current = map;
+  }, [routePoints, simplifiedRoute, lineColor]);
+
+  useEffect(() => {
+    if (imgError && !previewMapRef.current) {
+      initPreviewMap();
+    }
+    return () => {
+      if (previewMapRef.current) {
+        previewMapRef.current.remove();
+        previewMapRef.current = null;
+      }
+    };
+  }, [imgError, initPreviewMap]);
+
   // Create a FRESH interactive map when fullscreen opens — no DOM reparenting
   const initInteractiveMap = useCallback(async () => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
