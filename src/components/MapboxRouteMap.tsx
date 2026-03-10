@@ -296,7 +296,7 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
         </button>
       </div>
 
-      {/* Hidden wrapper for tile pre-loading — full viewport size but invisible */}
+      {/* Hidden wrapper for tile pre-loading — full viewport size, invisible but renderable */}
       {!fullscreen && createPortal(
         <div
           ref={wrapperRef}
@@ -309,7 +309,6 @@ const MapboxRouteMap = ({ routePoints, lineColor, height, isDark, onFullscreenCh
             opacity: 0,
             pointerEvents: 'none',
             zIndex: -1,
-            visibility: 'hidden',
           }}
         />,
         document.body
