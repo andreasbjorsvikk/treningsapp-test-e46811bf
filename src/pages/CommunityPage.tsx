@@ -194,6 +194,7 @@ const CommunityPage = () => {
         open={!!selectedChallenge}
         onClose={() => setSelectedChallenge(null)}
         onEdit={(ch) => { setSelectedChallenge(null); setEditChallenge(ch); setTimeout(() => setShowForm(true), 200); }}
+        onResponded={loadChallenges}
       />
       <ChallengeForm
         open={showForm}
