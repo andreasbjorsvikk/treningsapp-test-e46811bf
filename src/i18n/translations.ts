@@ -709,6 +709,15 @@ const en: Record<string, string> = {
   'goalForm.save': 'Save',
   'goalForm.create': 'Create',
   'goalForm.eg': 'e.g.',
+  'goalForm.repeatWeekly': 'Repeat every week',
+  'goalForm.repeatMonthly': 'Repeat every month',
+  'goalCard.archive': 'Archive',
+  'goals.archivedGoals': 'Completed goals',
+  'goals.noArchivedGoals': 'No archived goals.',
+  'goals.archiveGoal': 'Archive goal',
+  'goals.unarchive': 'Restore',
+  'goals.completed': 'Completed',
+  'goals.notCompleted': 'Not completed',
 
   // Primary goal form
   'primaryGoal.setGoal': 'Set training goal',
