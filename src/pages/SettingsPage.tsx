@@ -469,6 +469,14 @@ const SettingsPage = () => {
                   value={settings[opt.key]}
                   onValueChange={(v) => {
                     updateSettings({ [opt.key]: v });
+                    // Persist to DB
+                    if (user) {
+                      const dbCol = opt.key === 'privacyWorkouts' ? 'privacy_workouts'
+                        : opt.key === 'privacyStats' ? 'privacy_stats'
+                        : opt.key === 'privacyGoals' ? 'privacy_goals'
+                        : 'privacy_peak_checkins';
+                      supabase.from('profiles').update({ [dbCol]: v } as any).eq('id', user.id).then(() => {});
+                    }
                     if (v === 'selected') {
                       setTimeout(() => {
                         setSelectedPrivacyKey(opt.key);
