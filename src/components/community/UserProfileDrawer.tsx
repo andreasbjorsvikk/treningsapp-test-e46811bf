@@ -214,19 +214,7 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
         setRecentSessions(sessions.slice(0, 6));
       }
 
-      // Fetch friend's primary goal periods (only if allowed)
-      if (canSeeG) {
-        try {
-          const { data: goalRows } = await supabase
-            .from('primary_goal_periods')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('valid_from', { ascending: true });
-          setFriendGoalPeriods((goalRows || []).map(rowToPeriod));
-        } catch { setFriendGoalPeriods([]); }
-      } else {
-        setFriendGoalPeriods([]);
-      }
+      // Goal periods already loaded above
 
       // Fetch shared challenges
       try {
