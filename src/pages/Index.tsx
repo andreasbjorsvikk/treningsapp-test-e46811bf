@@ -625,11 +625,8 @@ const IndexContent = () => {
                      <h2 className="font-display font-semibold text-[10px] text-muted-foreground uppercase tracking-wide mb-1.5">
                        {t('home.last7dCalendar')}
                      </h2>
-                      <WeeklySessionIcons sessions={allSessions} onClick={navigateToHistory} />
+                      <Last7Days sessions={allSessions} onClick={navigateToHistory} />
                     </div>
-                  </div>
-                  <div>
-                    <MiniCalendar sessions={allSessions} onClick={navigateToCalendar} />
                   </div>
                 </div>
               )}
