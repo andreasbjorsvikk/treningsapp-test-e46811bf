@@ -20,13 +20,6 @@ import CheckinImageUpload from '@/components/map/CheckinImageUpload';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
-import { RouteElevationChart } from '@/components/map/RouteElevationChart';
-import PeakLeaderboard from '@/components/map/PeakLeaderboard';
-import CheckinSuccessAnimation from '@/components/map/CheckinSuccessAnimation';
-import { format } from 'date-fns';
-import { nb } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
 
 interface PeakDetailDrawerProps {
   peak: Peak | null;
