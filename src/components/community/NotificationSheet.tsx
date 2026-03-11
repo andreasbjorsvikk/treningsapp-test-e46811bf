@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { getNotifications, markAllNotificationsRead, respondToChallenge, NotificationRow } from '@/services/communityService';
-import { Mail, Settings, Trophy, UserPlus, Loader2, Check, X } from 'lucide-react';
+import { Mail, Settings, Trophy, UserPlus, Loader2, Check, X, Eye } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toast } from 'sonner';
 
@@ -9,6 +9,7 @@ interface NotificationSheetProps {
   open: boolean;
   onClose: () => void;
   onNavigateToFriends?: () => void;
+  onViewChallenge?: (challengeId: string) => void;
 }
 const iconMap: Record<string, typeof Mail> = {
   invite: Mail,
