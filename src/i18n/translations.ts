@@ -630,7 +630,7 @@ const en: Record<string, string> = {
   // Activity types
   'activity.styrke': 'Strength', 'activity.løping': 'Running', 'activity.fjelltur': 'Hiking',
   'activity.svømming': 'Swimming', 'activity.sykling': 'Cycling', 'activity.gå': 'Walking',
-  'activity.tennis': 'Tennis', 'activity.yoga': 'Yoga', 'activity.fotball': 'Football', 'activity.annet': 'Other',
+  'activity.tennis': 'Tennis', 'activity.yoga': 'Yoga', 'activity.fotball': 'Football', 'activity.trappemaskin': 'Stair Climber', 'activity.annet': 'Other',
 
   // Metrics
   'metric.sessions': 'workouts', 'metric.minutes': 'hours', 'metric.distance': 'km', 'metric.elevation': 'm',
