@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useSwipe } from '@/hooks/use-swipe';
-import { Plus, ChevronLeft, ChevronRight, ChevronDown, Home, Pencil, Trash2 } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, ChevronDown, Home, Pencil, Trash2, Archive, RotateCcw } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import TargetIcon from '@/components/TargetIcon';
 import { ExtraGoal, PrimaryGoalPeriod, GoalPeriod } from '@/types/workout';
