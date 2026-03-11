@@ -61,7 +61,7 @@ const ChallengeCard = ({ challenge, onClick, onEdit }: ChallengeCardProps) => {
                   className="w-7 h-7 rounded-full flex items-center justify-center"
                   style={{ backgroundColor: colors.bg }}
                 >
-                  <ActivityIcon type={type} className="w-3.5 h-3.5" colorOverride={colors.text} />
+                  <ActivityIcon type={type as SessionType} className="w-3.5 h-3.5" colorOverride={colors.text} />
                 </div>
               );
             })
