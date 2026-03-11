@@ -200,15 +200,39 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
 
           <div>
             <Label className="text-xs">{t('challenge.activityType')}</Label>
-            <Select value={activityType} onValueChange={setActivityType}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('goalForm.all')}</SelectItem>
-                {allSessionTypes.map(tp => (
-                  <SelectItem key={tp} value={tp}>{t(`activity.${tp}`)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex flex-wrap gap-1.5 justify-center mt-1.5">
+              <button
+                type="button"
+                onClick={() => toggleType('all')}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  selectedTypes.includes('all')
+                    ? 'gradient-energy text-primary-foreground'
+                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                {t('goalForm.all')}
+              </button>
+              {allSessionTypes.filter(tp => !disabledTypes.includes(tp)).map(type => {
+                const colors = getActivityColors(type, isDark);
+                const selected = selectedTypes.includes(type);
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => toggleType(type)}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium transition-all"
+                    style={{
+                      backgroundColor: selected ? colors.bg : undefined,
+                      color: selected ? colors.text : undefined,
+                    }}
+                  >
+                    <ActivityIcon type={type} className="w-3.5 h-3.5" colorOverride={selected ? colors.text : undefined} />
+                    {t(`activity.${type}`)}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="flex gap-2">
