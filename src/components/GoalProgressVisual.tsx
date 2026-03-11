@@ -4,7 +4,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 
 interface GoalProgressVisualProps {
   metric: GoalMetric;
-  activityType: SessionType | 'all';
+  activityType: string;
   percent: number; // 0-100
   current: number;
   target: number;
@@ -15,7 +15,7 @@ const GoalProgressVisual = ({ metric, activityType, percent, current, target }: 
   const isDark = settings.darkMode;
   
   const type = activityType === 'all' ? 'styrke' : activityType;
-  const colors = getActivityColors(type, isDark);
+  const colors = getActivityColors(type as SessionType, isDark);
   const fillPct = Math.min(percent, 100);
   const done = percent >= 100;
 

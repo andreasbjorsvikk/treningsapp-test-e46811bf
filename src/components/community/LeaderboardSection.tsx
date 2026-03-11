@@ -45,8 +45,8 @@ const LeaderboardSection = () => {
 
   useEffect(() => {
     setLoading(true);
-    getLeaderboard(period, metric).then(d => { setData(d); setLoading(false); });
-  }, [period, metric]);
+    getLeaderboard(period, metric, selectedType).then(d => { setData(d); setLoading(false); });
+  }, [period, metric, selectedType]);
 
   return (
     <div className="space-y-3">

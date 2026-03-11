@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useSwipe } from '@/hooks/use-swipe';
-import { Plus, ChevronLeft, ChevronRight, ChevronDown, Home, Pencil, Trash2 } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, ChevronDown, Home, Pencil, Trash2, Archive, RotateCcw } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import TargetIcon from '@/components/TargetIcon';
 import { ExtraGoal, PrimaryGoalPeriod, GoalPeriod } from '@/types/workout';
@@ -40,6 +40,7 @@ const GoalsSection = () => {
   // Collapsible state
   const [primaryOpen, setPrimaryOpen] = useState(true);
   const [extraOpen, setExtraOpen] = useState(true);
+  const [archivedOpen, setArchivedOpen] = useState(false);
 
   const now = new Date();
   const [wheelMonth, setWheelMonth] = useState(now.getMonth());
@@ -48,7 +49,9 @@ const GoalsSection = () => {
   // Use context data instead of localStorage
   const allPeriods = appData.primaryGoals;
   const currentGoal = appData.currentPrimaryGoal;
-  const extraGoals = appData.goals;
+  const allGoals = appData.goals;
+  const extraGoals = useMemo(() => allGoals.filter(g => !g.archived), [allGoals]);
+  const archivedGoals = useMemo(() => allGoals.filter(g => g.archived), [allGoals]);
   const sessions = appData.sessions;
 
   // Get the active goal for the navigated month
@@ -128,6 +131,14 @@ const GoalsSection = () => {
     if (goal) {
       await appData.updateGoal(id, { showOnHome: !goal.showOnHome });
     }
+  };
+
+  const handleArchiveGoal = async (id: string) => {
+    await appData.updateGoal(id, { archived: true, showOnHome: false });
+  };
+
+  const handleUnarchiveGoal = async (id: string) => {
+    await appData.updateGoal(id, { archived: false });
   };
 
   const handleCancelExtra = () => {
@@ -560,8 +571,59 @@ const GoalsSection = () => {
                 onEdit={handleEditExtra}
                 onDelete={handleDeleteExtra}
                 onToggleHome={handleToggleHome}
+                onArchive={handleArchiveGoal}
                 onReorder={(orderedIds) => appData.reorderGoals(orderedIds)}
               />
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Archived Goals */}
+      <div className="space-y-3">
+        <SectionHeader label={t('goals.archivedGoals')} open={archivedOpen} onToggle={() => setArchivedOpen(o => !o)} />
+
+        {archivedOpen && (
+          <>
+            {archivedGoals.length === 0 ? (
+              <p className="text-center py-4 text-sm text-muted-foreground">{t('goals.noArchivedGoals')}</p>
+            ) : (
+              <div className="space-y-2">
+                {archivedGoals.map(goal => {
+                  const actTypes = goal.activityType === 'all' ? [] : goal.activityType.split(',');
+                  const metricLabel = t(`metric.${goal.metric}`);
+                  const periodLabel = goal.period === 'custom'
+                    ? `${goal.customStart} – ${goal.customEnd}`
+                    : t(`goalCard.this${goal.period.charAt(0).toUpperCase() + goal.period.slice(1)}` as any) || goal.period;
+                  return (
+                    <div key={goal.id} className="flex items-center justify-between bg-secondary/50 rounded-xl px-4 py-3">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-semibold text-sm text-foreground">
+                          {goal.target} {metricLabel}
+                          {goal.repeating && <span className="text-xs text-muted-foreground ml-1">(↻)</span>}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{periodLabel}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleUnarchiveGoal(goal.id)}
+                          className="text-muted-foreground/60 hover:text-foreground p-1.5 rounded-lg hover:bg-secondary transition-colors"
+                          title={t('goals.unarchive')}
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteExtra(goal.id)}
+                          className="text-destructive/60 hover:text-destructive p-1.5 rounded-lg hover:bg-destructive/10 transition-colors"
+                          title={t('common.delete')}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </>
         )}

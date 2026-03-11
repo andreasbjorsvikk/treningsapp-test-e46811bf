@@ -48,6 +48,10 @@ export const defaultActivityColorMap: Partial<Record<SessionType, ActivityColors
     light: { bg: 'rgb(220,240,200)', text: 'rgb(55,100,40)', badge: 'rgb(232,248,215)' },
     dark:  { bg: 'rgb(90,140,70)',   text: '#ffffff',         badge: '#2a4a1f' },
   },
+  trappemaskin: {
+    light: { bg: 'rgb(255,230,180)', text: 'rgb(140,75,5)', badge: 'rgb(255,240,200)' },
+    dark:  { bg: 'rgb(185,130,45)',  text: '#ffffff',        badge: '#4a3510' },
+  },
   annet: {
     light: { bg: 'rgb(220,220,224)', text: '#444444',        badge: 'rgb(232,232,236)' },
     dark:  { bg: 'rgb(90,90,94)',    text: '#ffffff',         badge: '#2a2a2e' },
@@ -82,6 +86,28 @@ export function saveActivityColors() {
   } else {
     localStorage.removeItem('treningslogg_activity_colors');
   }
+}
+
+// Apply overrides from database (full ActivityColors structure)
+export function applyActivityColorOverrides(dbColors: Record<string, any>) {
+  for (const [type, colorData] of Object.entries(dbColors)) {
+    if (colorData && typeof colorData === 'object' && 'light' in colorData && 'dark' in colorData) {
+      // Full ActivityColors structure from DB
+      (activityColorMap as any)[type] = colorData;
+    }
+  }
+}
+
+// Get overrides to save to DB (only non-default entries as full ActivityColors)
+export function getActivityColorOverrides(): Record<string, ActivityColors> {
+  const overrides: Record<string, ActivityColors> = {};
+  for (const [type, colors] of Object.entries(activityColorMap)) {
+    const def = defaultActivityColorMap[type as SessionType];
+    if (colors && (!def || JSON.stringify(colors) !== JSON.stringify(def))) {
+      overrides[type] = colors;
+    }
+  }
+  return overrides;
 }
 
 export function getActivityColors(type: SessionType, isDark: boolean): ActivityColorSet {

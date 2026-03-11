@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pencil, Trash2, Home } from 'lucide-react';
+import { Pencil, Trash2, Home, Archive } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ExtraGoal, WorkoutSession, GoalMetric, GoalPeriod, SessionType } from '@/types/workout';
 import { getSessionsInPeriod, computeProgress, getDaysRemainingInPeriod, getPeriodFractionElapsed } from '@/utils/goalUtils';
@@ -8,7 +8,7 @@ import ActivityIcon from '@/components/ActivityIcon';
 import { getActivityColors } from '@/utils/activityColors';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Layers } from 'lucide-react';
+import { Layers, Repeat } from 'lucide-react';
 
 function formatValue(value: number, metric: GoalMetric): string {
   if (metric === 'distance' || metric === 'minutes') return value.toFixed(1);
@@ -23,19 +23,30 @@ function formatCustomDate(isoDate: string | undefined, locale: string): string {
   return `${day}. ${monthStr}`;
 }
 
+// Parse activityType string into array of types
+function parseActivityTypes(activityType: string): string[] {
+  if (activityType === 'all') return ['all'];
+  return activityType.split(',').filter(Boolean);
+}
+
 interface GoalCardProps {
   goal: ExtraGoal;
   sessions: WorkoutSession[];
   onEdit: (goal: ExtraGoal) => void;
   onDelete: (id: string) => void;
   onToggleHome: (id: string) => void;
+  onArchive?: (id: string) => void;
 }
 
-const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome }: GoalCardProps) => {
+const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome, onArchive }: GoalCardProps) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { settings } = useSettings();
   const { t, locale } = useTranslation();
   const isDark = settings.darkMode;
+
+  const activityTypes = parseActivityTypes(goal.activityType);
+  const isMultiType = activityTypes.length > 1 && !activityTypes.includes('all');
+  const isAll = activityTypes.includes('all');
 
   const periodSessions = useMemo(
     () => getSessionsInPeriod(sessions, goal.period, goal.activityType, goal.customStart, goal.customEnd),
@@ -50,9 +61,9 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome }: GoalCardPr
   const fraction = getPeriodFractionElapsed(goal.period, goal.customStart, goal.customEnd);
   const expected = goal.target * fraction;
 
-  const type = goal.activityType === 'all' ? 'styrke' : goal.activityType;
-  const colors = getActivityColors(type, isDark);
-  const isActivitySpecific = goal.activityType !== 'all';
+  // For single-type goals, use that type's color
+  const singleType = !isAll && !isMultiType ? activityTypes[0] as SessionType : null;
+  const colors = singleType ? getActivityColors(singleType, isDark) : null;
 
   const periodLabels: Record<GoalPeriod | 'custom', string> = {
     week: t('goalCard.thisWeek'),
@@ -76,8 +87,9 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome }: GoalCardPr
 
   const schedule = getScheduleStatus(current, expected, done);
 
-  const parsedRgb = colors.bg.match(/\d+/g);
-  const cardBg = isActivitySpecific && parsedRgb
+  // Card background: single type = tinted, multi/all = neutral
+  const parsedRgb = colors?.bg.match(/\d+/g);
+  const cardBg = singleType && parsedRgb
     ? { backgroundColor: `rgba(${parsedRgb[0]}, ${parsedRgb[1]}, ${parsedRgb[2]}, ${isDark ? 0.15 : 0.25})` }
     : {};
 
@@ -91,6 +103,11 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome }: GoalCardPr
         <button onClick={() => onEdit(goal)} className="p-1 rounded-md hover:bg-secondary transition-colors">
           <Pencil className="w-3 h-3 text-muted-foreground" />
         </button>
+        {onArchive && (
+          <button onClick={() => onArchive(goal.id)} className="p-1 rounded-md hover:bg-secondary transition-colors" title={t('goalCard.archive')}>
+            <Archive className="w-3 h-3 text-muted-foreground" />
+          </button>
+        )}
         <button onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true); }} className="p-1 rounded-md hover:bg-destructive/10 transition-colors">
           <Trash2 className="w-3 h-3 text-destructive" />
         </button>
@@ -100,24 +117,35 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome }: GoalCardPr
       <div className="w-24 h-24">
         <GoalProgressVisual
           metric={goal.metric}
-          activityType={goal.activityType}
+          activityType={singleType || 'all'}
           percent={pct}
           current={current}
           target={goal.target}
         />
       </div>
 
-      {/* Activity icon */}
+      {/* Activity icon(s) */}
       <div className="flex items-center justify-center">
-        {goal.activityType === 'all' ? (
+        {isAll ? (
           <div className="rounded-full p-1 bg-secondary">
             <Layers className="w-5 h-5 text-muted-foreground" />
           </div>
-        ) : (
-          <div className="rounded-full p-1" style={{ backgroundColor: colors.bg }}>
-            <ActivityIcon type={goal.activityType} className="w-5 h-5" colorOverride={!isDark ? colors.text : undefined} />
+        ) : isMultiType ? (
+          <div className="flex items-center -space-x-1">
+            {activityTypes.slice(0, 4).map((type) => {
+              const c = getActivityColors(type as SessionType, isDark);
+              return (
+                <div key={type} className="rounded-full p-0.5 border border-background" style={{ backgroundColor: c.bg }}>
+                  <ActivityIcon type={type as SessionType} className="w-4 h-4" colorOverride={!isDark ? c.text : undefined} />
+                </div>
+              );
+            })}
           </div>
-        )}
+        ) : singleType && colors ? (
+          <div className="rounded-full p-1" style={{ backgroundColor: colors.bg }}>
+            <ActivityIcon type={singleType} className="w-5 h-5" colorOverride={!isDark ? colors.text : undefined} />
+          </div>
+        ) : null}
       </div>
 
       <p className="text-sm font-bold">
@@ -131,7 +159,10 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome }: GoalCardPr
         </p>
       )}
 
-      <p className="text-xs text-muted-foreground">{periodLabel}</p>
+      <div className="flex items-center gap-1">
+        {goal.repeating && <Repeat className="w-3 h-3 text-muted-foreground" />}
+        <p className="text-xs text-muted-foreground">{periodLabel}</p>
+      </div>
 
       {!done && (
         <p className="text-xs text-muted-foreground">{daysLeft} {t('goalCard.daysLeft')}</p>

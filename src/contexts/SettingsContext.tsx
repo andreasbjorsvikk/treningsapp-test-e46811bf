@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { SessionType } from '@/types/workout';
 import { defaultTypeColors, allSessionTypes } from '@/utils/workoutUtils';
 import { supabase } from '@/integrations/supabase/client';
+import { activityColorMap, applyActivityColorOverrides, getActivityColorOverrides, defaultActivityColorMap, saveActivityColors } from '@/utils/activityColors';
 import type { Language } from '@/i18n/translations';
 
 export type AppColorTheme = 'white' | 'orange' | 'blue' | 'green' | 'rose';
@@ -257,11 +258,20 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         .single();
       if (cancelled) return;
       if (data?.session_type_colors && typeof data.session_type_colors === 'object') {
-        const dbColors = data.session_type_colors as Record<string, string>;
-        setSettings(prev => ({
-          ...prev,
-          sessionTypeColors: { ...defaultTypeColors, ...dbColors },
-        }));
+        const dbColors = data.session_type_colors as Record<string, any>;
+        // Check if it's the new format (full ActivityColors with light/dark)
+        const firstValue = Object.values(dbColors)[0];
+        if (firstValue && typeof firstValue === 'object' && 'light' in firstValue) {
+          // New format: full ActivityColors structure
+          applyActivityColorOverrides(dbColors);
+          saveActivityColors(); // sync to localStorage
+        } else {
+          // Old format: simple hex strings - just update sessionTypeColors
+          setSettings(prev => ({
+            ...prev,
+            sessionTypeColors: { ...defaultTypeColors, ...dbColors },
+          }));
+        }
       }
       setDbColorsLoaded(true);
     };
@@ -282,16 +292,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const timer = setTimeout(async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
-      // Only save non-default colors to keep it clean
-      const colorsToSave: Record<string, string> = {};
-      for (const [type, color] of Object.entries(settings.sessionTypeColors)) {
-        if (color !== defaultTypeColors[type as SessionType]) {
-          colorsToSave[type] = color;
-        }
-      }
+      // Save full ActivityColors structure (light/dark) to DB
+      const overrides = getActivityColorOverrides();
       await supabase
         .from('profiles')
-        .update({ session_type_colors: Object.keys(colorsToSave).length > 0 ? colorsToSave : null } as any)
+        .update({ session_type_colors: Object.keys(overrides).length > 0 ? overrides : null } as any)
         .eq('id', session.user.id);
     }, 1000);
     return () => clearTimeout(timer);

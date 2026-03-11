@@ -8,6 +8,7 @@ export type SessionType =
   | 'tennis' 
   | 'yoga'
   | 'fotball'
+  | 'trappemaskin'
   | 'annet';
 
 export interface WorkoutSession {
@@ -81,11 +82,13 @@ export interface ExtraGoal {
   id: string;
   metric: GoalMetric;
   period: GoalPeriod | 'custom';
-  activityType: SessionType | 'all';
+  activityType: string; // 'all' | single SessionType | comma-separated for multi
   target: number;
   customStart?: string;
   customEnd?: string;
   showOnHome?: boolean;
+  repeating?: boolean;
+  archived?: boolean;
   createdAt: string;
 }
 

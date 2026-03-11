@@ -68,6 +68,8 @@ function rowToGoal(row: any): ExtraGoal {
     customStart: row.custom_start || undefined,
     customEnd: row.custom_end || undefined,
     showOnHome: row.show_on_home || false,
+    repeating: row.repeating || false,
+    archived: row.archived || false,
     createdAt: row.created_at,
   };
 }
@@ -95,6 +97,8 @@ export const goalServiceAsync = {
         custom_start: goal.customStart || null,
         custom_end: goal.customEnd || null,
         show_on_home: goal.showOnHome || false,
+        repeating: goal.repeating || false,
+        archived: goal.archived || false,
       })
       .select()
       .single();
@@ -111,6 +115,8 @@ export const goalServiceAsync = {
     if (data.customStart !== undefined) updateObj.custom_start = data.customStart || null;
     if (data.customEnd !== undefined) updateObj.custom_end = data.customEnd || null;
     if (data.showOnHome !== undefined) updateObj.show_on_home = data.showOnHome;
+    if (data.repeating !== undefined) updateObj.repeating = data.repeating;
+    if (data.archived !== undefined) updateObj.archived = data.archived;
     const { error } = await supabase.from('goals').update(updateObj).eq('id', id);
     if (error) throw error;
   },
@@ -121,7 +127,6 @@ export const goalServiceAsync = {
   },
 
   async reorder(userId: string, orderedIds: string[]): Promise<void> {
-    // Update sort_order for each goal
     const updates = orderedIds.map((id, i) =>
       supabase.from('goals').update({ sort_order: i }).eq('id', id)
     );

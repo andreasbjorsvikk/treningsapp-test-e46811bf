@@ -31,17 +31,19 @@ interface WorkoutDialogProps {
 
 function getVisibleFields(type: SessionType) {
   switch (type) {
-    case 'styrke':
     case 'yoga':
     case 'tennis':
     case 'fotball':
       return { distance: false, elevation: false };
+    case 'styrke':
+      return { distance: true, elevation: true }; // optional for styrke
     case 'svømming':
       return { distance: true, elevation: false };
     case 'fjelltur':
     case 'løping':
     case 'sykling':
     case 'gå':
+    case 'trappemaskin':
       return { distance: true, elevation: true };
     default:
       return { distance: true, elevation: true };

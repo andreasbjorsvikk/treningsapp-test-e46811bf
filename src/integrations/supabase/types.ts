@@ -162,12 +162,14 @@ export type Database = {
       goals: {
         Row: {
           activity_type: string
+          archived: boolean | null
           created_at: string
           custom_end: string | null
           custom_start: string | null
           id: string
           metric: string
           period: string
+          repeating: boolean | null
           show_on_home: boolean | null
           sort_order: number | null
           target: number
@@ -175,12 +177,14 @@ export type Database = {
         }
         Insert: {
           activity_type?: string
+          archived?: boolean | null
           created_at?: string
           custom_end?: string | null
           custom_start?: string | null
           id?: string
           metric: string
           period: string
+          repeating?: boolean | null
           show_on_home?: boolean | null
           sort_order?: number | null
           target: number
@@ -188,12 +192,14 @@ export type Database = {
         }
         Update: {
           activity_type?: string
+          archived?: boolean | null
           created_at?: string
           custom_end?: string | null
           custom_start?: string | null
           id?: string
           metric?: string
           period?: string
+          repeating?: boolean | null
           show_on_home?: boolean | null
           sort_order?: number | null
           target?: number

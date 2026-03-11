@@ -43,7 +43,7 @@ const no: Record<string, string> = {
   // Activity types
   'activity.styrke': 'Styrke', 'activity.løping': 'Løping', 'activity.fjelltur': 'Fjelltur',
   'activity.svømming': 'Svømming', 'activity.sykling': 'Sykling', 'activity.gå': 'Gå',
-  'activity.tennis': 'Tennis', 'activity.yoga': 'Yoga', 'activity.fotball': 'Fotball', 'activity.annet': 'Annet',
+  'activity.tennis': 'Tennis', 'activity.yoga': 'Yoga', 'activity.fotball': 'Fotball', 'activity.trappemaskin': 'Trappemaskin', 'activity.annet': 'Annet',
 
   // Metrics
   'metric.sessions': 'økter', 'metric.minutes': 'timer', 'metric.distance': 'km', 'metric.elevation': 'm',
@@ -122,6 +122,15 @@ const no: Record<string, string> = {
   'goalForm.save': 'Lagre',
   'goalForm.create': 'Opprett',
   'goalForm.eg': 'f.eks.',
+  'goalForm.repeatWeekly': 'Gjenta hver uke',
+  'goalForm.repeatMonthly': 'Gjenta hver måned',
+  'goalCard.archive': 'Arkiver',
+  'goals.archivedGoals': 'Fullførte mål',
+  'goals.noArchivedGoals': 'Ingen arkiverte mål.',
+  'goals.archiveGoal': 'Arkiver mål',
+  'goals.unarchive': 'Gjenopprett',
+  'goals.completed': 'Fullført',
+  'goals.notCompleted': 'Ikke fullført',
 
   // Primary goal form
   'primaryGoal.setGoal': 'Sett treningsmål',
@@ -621,7 +630,7 @@ const en: Record<string, string> = {
   // Activity types
   'activity.styrke': 'Strength', 'activity.løping': 'Running', 'activity.fjelltur': 'Hiking',
   'activity.svømming': 'Swimming', 'activity.sykling': 'Cycling', 'activity.gå': 'Walking',
-  'activity.tennis': 'Tennis', 'activity.yoga': 'Yoga', 'activity.fotball': 'Football', 'activity.annet': 'Other',
+  'activity.tennis': 'Tennis', 'activity.yoga': 'Yoga', 'activity.fotball': 'Football', 'activity.trappemaskin': 'Stair Climber', 'activity.annet': 'Other',
 
   // Metrics
   'metric.sessions': 'workouts', 'metric.minutes': 'hours', 'metric.distance': 'km', 'metric.elevation': 'm',
@@ -700,6 +709,15 @@ const en: Record<string, string> = {
   'goalForm.save': 'Save',
   'goalForm.create': 'Create',
   'goalForm.eg': 'e.g.',
+  'goalForm.repeatWeekly': 'Repeat every week',
+  'goalForm.repeatMonthly': 'Repeat every month',
+  'goalCard.archive': 'Archive',
+  'goals.archivedGoals': 'Completed goals',
+  'goals.noArchivedGoals': 'No archived goals.',
+  'goals.archiveGoal': 'Archive goal',
+  'goals.unarchive': 'Restore',
+  'goals.completed': 'Completed',
+  'goals.notCompleted': 'Not completed',
 
   // Primary goal form
   'primaryGoal.setGoal': 'Set training goal',

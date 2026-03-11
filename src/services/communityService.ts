@@ -309,7 +309,7 @@ export async function searchUsers(query: string): Promise<Friend[]> {
 
 export type LeaderboardMetric = 'sessions' | 'distance' | 'duration' | 'elevation';
 
-export async function getLeaderboard(period: 'week' | 'month' | 'all' = 'month', metric: LeaderboardMetric = 'sessions') {
+export async function getLeaderboard(period: 'week' | 'month' | 'all' = 'month', metric: LeaderboardMetric = 'sessions', activityType: string = 'all') {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
@@ -317,7 +317,7 @@ export async function getLeaderboard(period: 'week' | 'month' | 'all' = 'month',
   const friends = await getFriends();
   const userIds = [user.id, ...friends.map(f => f.id)];
 
-  let query = supabase.from('workout_sessions').select('user_id, duration_minutes, distance, elevation_gain');
+  let query = supabase.from('workout_sessions').select('user_id, duration_minutes, distance, elevation_gain, type');
 
   const now = new Date();
   if (period === 'week') {
@@ -335,6 +335,12 @@ export async function getLeaderboard(period: 'week' | 'month' | 'all' = 'month',
   }
 
   query = query.in('user_id', userIds);
+  
+  // Filter by activity type if specified
+  if (activityType !== 'all') {
+    query = query.eq('type', activityType);
+  }
+  
   const { data: sessions } = await query;
 
   // Aggregate by user based on selected metric
