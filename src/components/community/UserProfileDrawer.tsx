@@ -99,14 +99,47 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
     workoutsFriends: string[]; statsFriends: string[]; goalsFriends: string[]; peakCheckinsFriends: string[];
   }>({ workouts: 'me', stats: 'me', goals: 'me', peakCheckins: 'friends', workoutsFriends: [], statsFriends: [], goalsFriends: [], peakCheckinsFriends: [] });
 
+  // Helper to check if current user can see a privacy-protected section
+  const canSee = (level: string, friendsList: string[]): boolean => {
+    if (!me) return false;
+    if (level === 'me') return false;
+    if (level === 'friends') return true; // already friends (RLS ensures this)
+    if (level === 'selected') return friendsList.includes(me.id);
+    return false;
+  };
+
+  const canSeeWorkouts = canSee(friendPrivacy.workouts, friendPrivacy.workoutsFriends);
+  const canSeeStats = canSee(friendPrivacy.stats, friendPrivacy.statsFriends);
+  const canSeeGoals = canSee(friendPrivacy.goals, friendPrivacy.goalsFriends);
+
   useEffect(() => {
     if (!user || !open || !me) return;
 
     const load = async () => {
       setLoading(true);
 
-      const weekStart = getWeekStart();
-      const monthStart = getMonthStart();
+      // Load friend's privacy settings
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('privacy_workouts, privacy_stats, privacy_goals, privacy_peak_checkins, privacy_workouts_friends, privacy_stats_friends, privacy_goals_friends, privacy_peak_checkins_friends')
+        .eq('id', user.id)
+        .single();
+      
+      const privacy = {
+        workouts: (profileData as any)?.privacy_workouts || 'me',
+        stats: (profileData as any)?.privacy_stats || 'me',
+        goals: (profileData as any)?.privacy_goals || 'me',
+        peakCheckins: (profileData as any)?.privacy_peak_checkins || 'friends',
+        workoutsFriends: (profileData as any)?.privacy_workouts_friends || [],
+        statsFriends: (profileData as any)?.privacy_stats_friends || [],
+        goalsFriends: (profileData as any)?.privacy_goals_friends || [],
+        peakCheckinsFriends: (profileData as any)?.privacy_peak_checkins_friends || [],
+      };
+      setFriendPrivacy(privacy);
+
+      const canSeeW = canSee(privacy.workouts, privacy.workoutsFriends);
+      const canSeeS = canSee(privacy.stats, privacy.statsFriends);
+      const canSeeG = canSee(privacy.goals, privacy.goalsFriends);
       const yearStart = getYearStart();
 
       // Fetch friend's sessions
