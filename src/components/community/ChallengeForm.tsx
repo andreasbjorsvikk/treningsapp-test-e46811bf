@@ -5,10 +5,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
+import { getActivityColors } from '@/utils/activityColors';
+import { useSettings } from '@/contexts/SettingsContext';
+import ActivityIcon from '@/components/ActivityIcon';
 import { getFriends, createChallenge, updateChallenge, deleteChallenge, Friend } from '@/services/communityService';
 import { ChallengeWithParticipants } from '@/pages/CommunityPage';
 import { toast } from 'sonner';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Loader2, Trash2, Layers } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface ChallengeFormProps {
