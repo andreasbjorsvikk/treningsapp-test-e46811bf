@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Camera, ImageIcon, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import imageCompression from 'browser-image-compression';
 
 interface CheckinImageUploadProps {
   onImageReady: (file: File | null) => void;
@@ -54,6 +53,7 @@ const CheckinImageUpload = ({ onImageReady }: CheckinImageUploadProps) => {
     if (!rawFile || !preview) return;
     setCompressing(true);
     try {
+      const { default: imageCompression } = await import('browser-image-compression');
       const compressed = await imageCompression(rawFile, {
         maxSizeMB: TARGET_SIZE_KB / 1024,
         maxWidthOrHeight: 1920,
