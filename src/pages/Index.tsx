@@ -27,6 +27,7 @@ import Last7Days from '@/components/Last7Days';
 import DraggableGoalGrid from '@/components/DraggableGoalGrid';
 import ChallengeCard from '@/components/community/ChallengeCard';
 import ChallengeDetail from '@/components/community/ChallengeDetail';
+import GoalCompletionOverlay from '@/components/GoalCompletionOverlay';
 import { Plus, Sun, Moon, Dumbbell, Ambulance, LogIn, RefreshCw, Loader2, GripVertical, Check, User, TrendingUp, Flame, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -212,7 +213,13 @@ const IndexContent = () => {
 
   const homeGoals = appData.goals.filter(g => g.showOnHome);
   const [pinnedChallenges, setPinnedChallenges] = useState<ChallengeWithParticipants[]>([]);
-  const unreadNotifications = 0;
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+
+  // Load unread notification count
+  useEffect(() => {
+    if (!user) return;
+    getUnreadNotificationCount().then(setUnreadNotifications);
+  }, [user, activeTab]);
 
   // Load pinned challenges
   useEffect(() => {
@@ -808,6 +815,12 @@ const IndexContent = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <GoalCompletionOverlay
+        goal={appData.completedGoal}
+        onArchive={(id) => appData.archiveGoal(id)}
+        onDismiss={() => appData.dismissCompletedGoal()}
+      />
     </div>
   );
 };

@@ -67,10 +67,13 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
   const [date, setDate] = useState<Date | undefined>();
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(30);
+  const [seconds, setSeconds] = useState(0);
   const [distance, setDistance] = useState('');
   const [elevationGain, setElevationGain] = useState('');
   const [notes, setNotes] = useState('');
   const [durationPickerOpen, setDurationPickerOpen] = useState(false);
+  
+  const showSeconds = type === 'løping';
 
   useEffect(() => {
     if (open) {
@@ -78,8 +81,10 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
       setTitle(session?.title || '');
       const dateStr = session?.date?.slice(0, 10) || defaultDate || new Date().toISOString().slice(0, 10);
       setDate(new Date(dateStr + 'T12:00:00'));
-      setHours(session ? Math.floor(session.durationMinutes / 60) : 0);
-      setMinutes(session ? (session.durationMinutes % 60) : 30);
+      const totalMinutes = session?.durationMinutes || 30;
+      setHours(Math.floor(totalMinutes / 60));
+      setMinutes(Math.floor(totalMinutes % 60));
+      setSeconds(Math.round((totalMinutes % 1) * 60));
       setDistance(session?.distance?.toString() || '');
       setElevationGain(session?.elevationGain?.toString() || '');
       setNotes(session?.notes || '');
@@ -89,7 +94,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
   const fields = getVisibleFields(type);
 
   const handleSave = () => {
-    const durationMinutes = hours * 60 + minutes;
+    const durationMinutes = hours * 60 + minutes + (showSeconds ? seconds / 60 : 0);
     if (durationMinutes <= 0 || !date) return;
 
     onSave({
@@ -108,6 +113,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
     const parts: string[] = [];
     if (hours > 0) parts.push(`${hours} ${t('workout.h')}`);
     parts.push(`${minutes} ${t('workout.min')}`);
+    if (showSeconds && seconds > 0) parts.push(`${seconds} ${t('workout.sec')}`);
     return parts.join(' ');
   };
 
@@ -207,6 +213,12 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
                   <span className="text-sm text-muted-foreground">{t('workout.h')}</span>
                   <Input type="number" min="0" max="59" value={minutes} onChange={e => setMinutes(parseInt(e.target.value) || 0)} className="w-20" />
                   <span className="text-sm text-muted-foreground">{t('workout.min')}</span>
+                  {showSeconds && (
+                    <>
+                      <Input type="number" min="0" max="59" value={seconds} onChange={e => setSeconds(parseInt(e.target.value) || 0)} className="w-20" />
+                      <span className="text-sm text-muted-foreground">{t('workout.sec')}</span>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -246,7 +258,9 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
         onClose={() => setDurationPickerOpen(false)}
         hours={hours}
         minutes={minutes}
-        onConfirm={(h, m) => { setHours(h); setMinutes(m); }}
+        seconds={showSeconds ? seconds : undefined}
+        showSeconds={showSeconds}
+        onConfirm={(h, m, s) => { setHours(h); setMinutes(m); if (s !== undefined) setSeconds(s); }}
       />
     </>
   );

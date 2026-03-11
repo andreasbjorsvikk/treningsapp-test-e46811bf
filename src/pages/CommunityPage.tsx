@@ -63,8 +63,14 @@ const CommunityPage = () => {
       // Get progress
       const progress = userIds.length > 0 ? await getChallengeProgress(c, userIds) : {};
 
-      const participantData = acceptedParts.map(p => {
-        const profile = profileMap.get(p.user_id);
+      // Include ALL participants (accepted + pending) so we can check status for filtering
+      const allParts = parts;
+      const allUserIds = allParts.map(p => p.user_id);
+      const { data: allProfiles } = await supabase.from('profiles').select('id, username, avatar_url').in('id', allUserIds.length > 0 ? allUserIds : ['none']);
+      const allProfileMap = new Map((allProfiles || []).map(p => [p.id, p]));
+      
+      const participantData = allParts.map(p => {
+        const profile = allProfileMap.get(p.user_id);
         return {
           userId: p.user_id,
           username: profile?.username || 'Ukjent',
@@ -94,10 +100,14 @@ const CommunityPage = () => {
     const now = new Date().toISOString().split('T')[0];
     const isEnded = c.challenge.period_end < now;
     const isMine = c.challenge.created_by === user?.id;
+    
+    // Check if user has accepted the challenge (not pending)
+    const myParticipant = c.participants.find(p => p.userId === user?.id);
+    const isAccepted = isMine || myParticipant?.status === 'accepted';
 
-    if (challengeFilter === 'active') return !isEnded;
+    if (challengeFilter === 'active') return !isEnded && isAccepted;
     if (challengeFilter === 'mine') return isMine && !isEnded;
-    if (challengeFilter === 'archived') return isEnded;
+    if (challengeFilter === 'archived') return isEnded && isAccepted;
     return true;
   });
 

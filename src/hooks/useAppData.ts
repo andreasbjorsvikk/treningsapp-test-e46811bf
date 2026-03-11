@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { WorkoutSession, ExtraGoal, PrimaryGoalPeriod, HealthEvent } from '@/types/workout';
 import { workoutService, workoutServiceAsync, computeStatsFromSessions } from '@/services/workoutService';
@@ -6,6 +6,7 @@ import { goalService, goalServiceAsync } from '@/services/goalService';
 import { primaryGoalService, primaryGoalServiceAsync } from '@/services/primaryGoalService';
 import { healthEventService, healthEventServiceAsync } from '@/services/healthEventService';
 import { checkAllPRs, PRAlert } from '@/utils/prDetection';
+import { getSessionsInPeriod, computeProgress } from '@/utils/goalUtils';
 import { toast } from 'sonner';
 
 export function useAppData() {
@@ -17,6 +18,8 @@ export function useAppData() {
   const [primaryGoals, setPrimaryGoals] = useState<PrimaryGoalPeriod[]>([]);
   const [healthEvents, setHealthEvents] = useState<HealthEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [completedGoal, setCompletedGoal] = useState<ExtraGoal | null>(null);
+  const prevGoalStatesRef = useRef<Map<string, boolean>>(new Map());
 
   // Migrate localStorage data to database on first login
   const migrateLocalData = useCallback(async (userId: string) => {
@@ -101,8 +104,35 @@ export function useAppData() {
 
   useEffect(() => { reload(); }, [reload]);
 
-  // ===== Session operations =====
+  // Detect goal completions after sessions change
+  useEffect(() => {
+    if (prevGoalStatesRef.current.size === 0) return;
+    const prevStates = prevGoalStatesRef.current;
+    for (const g of goals.filter(g => !g.archived)) {
+      const wasDone = prevStates.get(g.id);
+      if (wasDone === false) {
+        const periodSessions = getSessionsInPeriod(sessions, g.period, g.activityType, g.customStart, g.customEnd);
+        const current = computeProgress(periodSessions, g.metric);
+        if (current >= g.target) {
+          setCompletedGoal(g);
+          prevGoalStatesRef.current = new Map();
+          return;
+        }
+      }
+    }
+    prevGoalStatesRef.current = new Map();
+  }, [sessions, goals]);
+
   const addSession = useCallback(async (data: Omit<WorkoutSession, 'id'>) => {
+    // Snapshot goal completion states before adding session
+    const prevStates = new Map<string, boolean>();
+    for (const g of goals.filter(g => !g.archived)) {
+      const periodSessions = getSessionsInPeriod(sessions, g.period, g.activityType, g.customStart, g.customEnd);
+      const current = computeProgress(periodSessions, g.metric);
+      prevStates.set(g.id, current >= g.target);
+    }
+    prevGoalStatesRef.current = prevStates;
+
     let newSession: WorkoutSession | undefined;
     if (isOnline && user) {
       newSession = await workoutServiceAsync.add(user.id, data);
@@ -121,7 +151,7 @@ export function useAppData() {
         });
       }
     }
-  }, [isOnline, user, reload, sessions]);
+  }, [isOnline, user, reload, sessions, goals]);
 
   const updateSession = useCallback(async (id: string, data: Partial<Omit<WorkoutSession, 'id'>>) => {
     if (isOnline && user) {
@@ -269,6 +299,31 @@ export function useAppData() {
       })()
     : null;
 
+  // Archive goal (handles repeating goals)
+  const archiveGoal = useCallback(async (id: string) => {
+    const goal = goals.find(g => g.id === id);
+    if (!goal) return;
+    
+    if (goal.repeating) {
+      // For repeating goals, keep it active but note the period was completed
+      // The goal continues for the next period automatically
+      // We just dismiss the overlay
+    } else {
+      // Non-repeating: archive it
+      if (isOnline && user) {
+        await goalServiceAsync.update(id, { archived: true, showOnHome: false });
+      } else {
+        goalService.update(id, { archived: true, showOnHome: false });
+      }
+      await reload();
+    }
+    setCompletedGoal(null);
+  }, [goals, isOnline, user, reload]);
+
+  const dismissCompletedGoal = useCallback(() => {
+    setCompletedGoal(null);
+  }, []);
+
   return {
     // Data
     sessions,
@@ -280,6 +335,7 @@ export function useAppData() {
     monthStats,
     loading,
     isOnline,
+    completedGoal,
 
     // Session ops
     addSession,
@@ -303,6 +359,10 @@ export function useAppData() {
     addHealthEvent,
     updateHealthEvent,
     deleteHealthEvent,
+
+    // Goal completion
+    archiveGoal,
+    dismissCompletedGoal,
 
     // Reload
     reload,
