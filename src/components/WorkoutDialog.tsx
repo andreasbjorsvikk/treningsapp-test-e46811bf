@@ -67,10 +67,13 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
   const [date, setDate] = useState<Date | undefined>();
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(30);
+  const [seconds, setSeconds] = useState(0);
   const [distance, setDistance] = useState('');
   const [elevationGain, setElevationGain] = useState('');
   const [notes, setNotes] = useState('');
   const [durationPickerOpen, setDurationPickerOpen] = useState(false);
+  
+  const showSeconds = type === 'løping';
 
   useEffect(() => {
     if (open) {
