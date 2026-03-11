@@ -25,13 +25,15 @@ interface ChallengeDetailProps {
   open: boolean;
   onClose: () => void;
   onEdit?: (challenge: ChallengeWithParticipants) => void;
+  onResponded?: () => void;
 }
 
-const ChallengeDetail = ({ challenge, open, onClose, onEdit }: ChallengeDetailProps) => {
+const ChallengeDetail = ({ challenge, open, onClose, onEdit, onResponded }: ChallengeDetailProps) => {
   const { settings, updateSettings } = useSettings();
   const { user } = useAuth();
   const { t } = useTranslation();
   const [profileUser, setProfileUser] = useState<Friend | null>(null);
+  const [responding, setResponding] = useState(false);
 
   if (!challenge) return null;
 
