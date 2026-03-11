@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Friend, getChallenges, getChallengeParticipants, getChallengeProgress, ChallengeRow } from '@/services/communityService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
-import { Swords, Activity, Clock, Mountain, Loader2, TrendingUp, ChevronLeft, Trophy } from 'lucide-react';
+import { Swords, Activity, Clock, Mountain, Loader2, TrendingUp, ChevronLeft, Trophy, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import ActivityIcon from '@/components/ActivityIcon';
 import { SessionType, PrimaryGoalPeriod } from '@/types/workout';
