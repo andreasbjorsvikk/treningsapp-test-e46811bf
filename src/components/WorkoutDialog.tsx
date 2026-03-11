@@ -94,7 +94,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
   const fields = getVisibleFields(type);
 
   const handleSave = () => {
-    const durationMinutes = hours * 60 + minutes;
+    const durationMinutes = hours * 60 + minutes + (showSeconds ? seconds / 60 : 0);
     if (durationMinutes <= 0 || !date) return;
 
     onSave({
