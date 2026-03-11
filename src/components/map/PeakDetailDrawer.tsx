@@ -106,7 +106,8 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
         setLoading(false);
         return;
       }
-      await checkinPeak(user.id, peak.id);
+      await checkinPeak(user.id, peak.id, undefined, checkinImage);
+      setCheckinImage(null);
       setShowSuccessAnim(true);
       onCheckinSuccess();
     } catch (err: any) {
