@@ -45,6 +45,24 @@ export async function checkinPeak(userId: string, peakId: string, checkedInAt?: 
   return data as unknown as PeakCheckin;
 }
 
+export async function updateCheckinImage(checkinId: string, userId: string, imageFile: File): Promise<string> {
+  const ext = imageFile.name.split('.').pop() || 'jpg';
+  const path = `${userId}/${checkinId}/${Date.now()}.${ext}`;
+  const { error: uploadErr } = await supabase.storage
+    .from('peak-images')
+    .upload(path, imageFile, { contentType: imageFile.type, upsert: false });
+  if (uploadErr) throw uploadErr;
+  const { data: urlData } = supabase.storage.from('peak-images').getPublicUrl(path);
+  const imageUrl = urlData.publicUrl;
+
+  const { error } = await supabase
+    .from('peak_checkins')
+    .update({ image_url: imageUrl })
+    .eq('id', checkinId);
+  if (error) throw error;
+  return imageUrl;
+}
+
 export async function deleteCheckin(checkinId: string): Promise<void> {
   const { error } = await supabase
     .from('peak_checkins')

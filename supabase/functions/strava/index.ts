@@ -165,18 +165,29 @@ Deno.serve(async (req) => {
         activities.push(...batch);
         page++;
       }
-      // Upsert all activities – the unique index on (user_id, strava_activity_id) prevents duplicates
-      let synced = 0;
+      // Get existing strava_activity_ids for this user to count only truly new ones
+      const existingIds = new Set<number>();
+      const { data: existingRows } = await admin.from("workout_sessions")
+        .select("strava_activity_id")
+        .eq("user_id", userId)
+        .not("strava_activity_id", "is", null);
+      if (existingRows) {
+        for (const r of existingRows) {
+          if (r.strava_activity_id) existingIds.add(Number(r.strava_activity_id));
+        }
+      }
+      const newCount = activities.filter((a: any) => !existingIds.has(a.id)).length;
+
+      // Upsert all activities – the unique constraint prevents duplicates
       for (let i = 0; i < activities.length; i += 100) {
         const batch = activities.slice(i, i + 100);
         const rows = batch.map((a) => buildActivityRow(a, userId));
-        const { data: upserted, error } = await admin.from("workout_sessions")
+        const { error } = await admin.from("workout_sessions")
           .upsert(rows, { onConflict: "user_id,strava_activity_id", ignoreDuplicates: false })
-          .select("id, strava_activity_id, summary_polyline, average_heartrate");
+          .select("id");
         if (error) { console.error("Upsert error:", error); return new Response(JSON.stringify({ error: "Failed to upsert activities" }), { status: 500, headers: corsHeaders }); }
-        synced += (upserted || []).length;
       }
-      return new Response(JSON.stringify({ synced, total: activities.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ synced: newCount, total: activities.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ===== SYNC-ALL =====
