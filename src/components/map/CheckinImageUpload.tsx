@@ -53,6 +53,7 @@ const CheckinImageUpload = ({ onImageReady }: CheckinImageUploadProps) => {
     if (!rawFile || !preview) return;
     setCompressing(true);
     try {
+      const { default: imageCompression } = await import('browser-image-compression');
       const compressed = await imageCompression(rawFile, {
         maxSizeMB: TARGET_SIZE_KB / 1024,
         maxWidthOrHeight: 1920,
