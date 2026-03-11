@@ -299,6 +299,31 @@ export function useAppData() {
       })()
     : null;
 
+  // Archive goal (handles repeating goals)
+  const archiveGoal = useCallback(async (id: string) => {
+    const goal = goals.find(g => g.id === id);
+    if (!goal) return;
+    
+    if (goal.repeating) {
+      // For repeating goals, keep it active but note the period was completed
+      // The goal continues for the next period automatically
+      // We just dismiss the overlay
+    } else {
+      // Non-repeating: archive it
+      if (isOnline && user) {
+        await goalServiceAsync.update(id, { archived: true, showOnHome: false });
+      } else {
+        goalService.update(id, { archived: true, showOnHome: false });
+      }
+      await reload();
+    }
+    setCompletedGoal(null);
+  }, [goals, isOnline, user, reload]);
+
+  const dismissCompletedGoal = useCallback(() => {
+    setCompletedGoal(null);
+  }, []);
+
   return {
     // Data
     sessions,
@@ -310,6 +335,7 @@ export function useAppData() {
     monthStats,
     loading,
     isOnline,
+    completedGoal,
 
     // Session ops
     addSession,
@@ -333,6 +359,10 @@ export function useAppData() {
     addHealthEvent,
     updateHealthEvent,
     deleteHealthEvent,
+
+    // Goal completion
+    archiveGoal,
+    dismissCompletedGoal,
 
     // Reload
     reload,
