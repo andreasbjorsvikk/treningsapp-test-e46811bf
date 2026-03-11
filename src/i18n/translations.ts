@@ -43,7 +43,7 @@ const no: Record<string, string> = {
   // Activity types
   'activity.styrke': 'Styrke', 'activity.løping': 'Løping', 'activity.fjelltur': 'Fjelltur',
   'activity.svømming': 'Svømming', 'activity.sykling': 'Sykling', 'activity.gå': 'Gå',
-  'activity.tennis': 'Tennis', 'activity.yoga': 'Yoga', 'activity.fotball': 'Fotball', 'activity.annet': 'Annet',
+  'activity.tennis': 'Tennis', 'activity.yoga': 'Yoga', 'activity.fotball': 'Fotball', 'activity.trappemaskin': 'Trappemaskin', 'activity.annet': 'Annet',
 
   // Metrics
   'metric.sessions': 'økter', 'metric.minutes': 'timer', 'metric.distance': 'km', 'metric.elevation': 'm',
