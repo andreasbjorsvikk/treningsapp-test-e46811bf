@@ -51,11 +51,14 @@ function getPeriodDates(period: string): { start: string; end: string } {
 
 const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChallenge }: ChallengeFormProps) => {
   const { t } = useTranslation();
+  const { settings } = useSettings();
+  const isDark = settings.darkMode;
+  const disabledTypes = settings.disabledSessionTypes || [];
   const isEditing = !!editChallenge;
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('');
   const [metric, setMetric] = useState<ChallengeMetric>('sessions');
-  const [activityType, setActivityType] = useState('all');
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(['all']);
   const [period, setPeriod] = useState('month');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
