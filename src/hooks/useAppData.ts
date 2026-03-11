@@ -18,6 +18,8 @@ export function useAppData() {
   const [primaryGoals, setPrimaryGoals] = useState<PrimaryGoalPeriod[]>([]);
   const [healthEvents, setHealthEvents] = useState<HealthEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [completedGoal, setCompletedGoal] = useState<ExtraGoal | null>(null);
+  const prevGoalStatesRef = useRef<Map<string, boolean>>(new Map());
 
   // Migrate localStorage data to database on first login
   const migrateLocalData = useCallback(async (userId: string) => {
