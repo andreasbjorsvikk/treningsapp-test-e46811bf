@@ -1113,6 +1113,7 @@ const en: Record<string, string> = {
   'notifications.daysAgo': '{n}d ago',
   'notifications.accept': 'Accept',
   'notifications.decline': 'Decline',
+  'notifications.viewChallenge': 'View challenge',
   'notifications.challengeAccepted': 'Challenge accepted!',
   'notifications.challengeDeclined': 'Challenge declined',
   'notifications.respondError': 'Could not respond to invitation',
