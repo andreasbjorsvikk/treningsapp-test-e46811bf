@@ -131,9 +131,17 @@ export function getYearExpectedProgress(periods: PrimaryGoalPeriod[], year: numb
       expected += mTarget;
     } else if (refDate >= monthStart) {
       const daysInMonth = monthEnd.getDate();
-      const dayOfMonth = refDate.getDate();
-      const hourFraction = refDate.getHours() / 24;
-      expected += mTarget * ((dayOfMonth + hourFraction) / daysInMonth);
+      // Find the active goal's start day within this month
+      const activeGoal = getActiveGoalForDate(periods, monthEnd);
+      const goalStart = activeGoal ? new Date(activeGoal.validFrom) : null;
+      let goalStartDay = 1;
+      if (goalStart && goalStart.getFullYear() === year && goalStart.getMonth() === m) {
+        goalStartDay = goalStart.getDate();
+      }
+      const activeDaysInMonth = daysInMonth - goalStartDay + 1;
+      if (activeDaysInMonth <= 0) continue;
+      const daysElapsed = Math.max(0, refDate.getDate() - goalStartDay + refDate.getHours() / 24);
+      expected += mTarget * Math.min(1, daysElapsed / activeDaysInMonth);
     }
   }
   const fractionElapsed = target > 0 ? expected / target : 0;

@@ -30,12 +30,24 @@ export function computeMonthWheelData(
   const percent = target === 0 ? 0 : (current / target) * 100;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const isCurrentMonth = month === now.getMonth() && year === now.getFullYear();
-  // Use day-of-month / daysInMonth for marker position
-  // At end of day 3 of 31, marker should be at 3/31 = ~9.7%
-  // This means "by end of today you should have X" — slightly ahead to push the marker forward
-  const expectedFraction = isCurrentMonth
-    ? (now.getDate() + now.getHours() / 24) / daysInMonth
+
+  // Calculate expectedFraction relative to the goal's active period in this month
+  // If goal starts mid-month, only count days from goal start
+  const goalStartDay = goalStart && goalStart.getFullYear() === year && goalStart.getMonth() === month
+    ? goalStart.getDate()
     : 1;
+  const activeDaysInMonth = daysInMonth - goalStartDay + 1;
+
+  let expectedFraction: number;
+  if (!isCurrentMonth) {
+    expectedFraction = 1;
+  } else if (activeDaysInMonth <= 0) {
+    expectedFraction = 0;
+  } else {
+    // Days elapsed since goal became active (including partial current day)
+    const daysElapsed = Math.max(0, now.getDate() - goalStartDay + now.getHours() / 24);
+    expectedFraction = Math.min(1, daysElapsed / activeDaysInMonth);
+  }
   const expected = target * expectedFraction;
   const diff = current - expected;
   return { current, target: Math.round(target), percent, unit: unitLabel, expectedFraction, diff };

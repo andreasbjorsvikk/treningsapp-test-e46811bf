@@ -81,10 +81,21 @@ const SettingsPage = () => {
   // Load profile
   useEffect(() => {
     if (!user) return;
-    supabase.from('profiles').select('username, avatar_url').eq('id', user.id).single()
+    supabase.from('profiles').select('username, avatar_url, privacy_workouts, privacy_stats, privacy_goals, privacy_peak_checkins, privacy_workouts_friends, privacy_stats_friends, privacy_goals_friends, privacy_peak_checkins_friends').eq('id', user.id).single()
       .then(({ data }) => {
         if (data?.username) setUsername(data.username);
         if (data?.avatar_url) setAvatarUrl(data.avatar_url);
+        // Load privacy settings from DB
+        const privacyPatch: Record<string, any> = {};
+        if (data?.privacy_workouts) privacyPatch.privacyWorkouts = data.privacy_workouts;
+        if (data?.privacy_stats) privacyPatch.privacyStats = data.privacy_stats;
+        if (data?.privacy_goals) privacyPatch.privacyGoals = data.privacy_goals;
+        if (data?.privacy_peak_checkins) privacyPatch.privacyPeakCheckins = data.privacy_peak_checkins;
+        if (data?.privacy_workouts_friends) privacyPatch.privacyWorkoutsFriends = data.privacy_workouts_friends;
+        if (data?.privacy_stats_friends) privacyPatch.privacyStatsFriends = data.privacy_stats_friends;
+        if (data?.privacy_goals_friends) privacyPatch.privacyGoalsFriends = data.privacy_goals_friends;
+        if (data?.privacy_peak_checkins_friends) privacyPatch.privacyPeakCheckinsFriends = data.privacy_peak_checkins_friends;
+        if (Object.keys(privacyPatch).length > 0) updateSettings(privacyPatch);
       });
   }, [user]);
   
@@ -458,6 +469,14 @@ const SettingsPage = () => {
                   value={settings[opt.key]}
                   onValueChange={(v) => {
                     updateSettings({ [opt.key]: v });
+                    // Persist to DB
+                    if (user) {
+                      const dbCol = opt.key === 'privacyWorkouts' ? 'privacy_workouts'
+                        : opt.key === 'privacyStats' ? 'privacy_stats'
+                        : opt.key === 'privacyGoals' ? 'privacy_goals'
+                        : 'privacy_peak_checkins';
+                      supabase.from('profiles').update({ [dbCol]: v } as any).eq('id', user.id).then(() => {});
+                    }
                     if (v === 'selected') {
                       setTimeout(() => {
                         setSelectedPrivacyKey(opt.key);
@@ -511,6 +530,14 @@ const SettingsPage = () => {
             <Button onClick={() => {
               if (selectedPrivacyKey) {
                 updateSettings({ [`${selectedPrivacyKey}Friends`]: selectedFriendIds } as any);
+                // Persist selected friends to DB
+                if (user) {
+                  const dbCol = selectedPrivacyKey === 'privacyWorkouts' ? 'privacy_workouts_friends'
+                    : selectedPrivacyKey === 'privacyStats' ? 'privacy_stats_friends'
+                    : selectedPrivacyKey === 'privacyGoals' ? 'privacy_goals_friends'
+                    : 'privacy_peak_checkins_friends';
+                  supabase.from('profiles').update({ [dbCol]: selectedFriendIds } as any).eq('id', user.id).then(() => {});
+                }
               }
               setShowFriendPicker(false);
                toast.success(t('privacy.friendsUpdated'));

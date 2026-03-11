@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { Friend, getChallenges, getChallengeParticipants, getChallengeProgress, ChallengeRow } from '@/services/communityService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
-import { Swords, Activity, Clock, Mountain, Loader2, TrendingUp, ChevronLeft, Trophy } from 'lucide-react';
+import { Swords, Activity, Clock, Mountain, Loader2, TrendingUp, ChevronLeft, Trophy, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import ActivityIcon from '@/components/ActivityIcon';
 import { SessionType, PrimaryGoalPeriod } from '@/types/workout';
 import { useAuth } from '@/hooks/useAuth';
 import { getActivityColors } from '@/utils/activityColors';
 import { useSettings } from '@/contexts/SettingsContext';
-import { getMonthTarget, getYearTarget, convertGoalValue } from '@/services/primaryGoalService';
+import { getMonthTarget, getYearTarget, getActiveGoalForDate, getYearExpectedProgress, convertGoalValue } from '@/services/primaryGoalService';
 import ChallengeDetail from '@/components/community/ChallengeDetail';
 import { ChallengeWithParticipants } from '@/pages/CommunityPage';
 
@@ -94,6 +94,23 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
   const [friendYearSessions, setFriendYearSessions] = useState(0);
   const [challengeDetailData, setChallengeDetailData] = useState<ChallengeWithParticipants | null>(null);
   const [fullChallengeData, setFullChallengeData] = useState<Map<string, ChallengeWithParticipants>>(new Map());
+  const [friendPrivacy, setFriendPrivacy] = useState<{
+    workouts: string; stats: string; goals: string; peakCheckins: string;
+    workoutsFriends: string[]; statsFriends: string[]; goalsFriends: string[]; peakCheckinsFriends: string[];
+  }>({ workouts: 'me', stats: 'me', goals: 'me', peakCheckins: 'friends', workoutsFriends: [], statsFriends: [], goalsFriends: [], peakCheckinsFriends: [] });
+
+  // Helper to check if current user can see a privacy-protected section
+  const canSee = (level: string, friendsList: string[]): boolean => {
+    if (!me) return false;
+    if (level === 'me') return false;
+    if (level === 'friends') return true; // already friends (RLS ensures this)
+    if (level === 'selected') return friendsList.includes(me.id);
+    return false;
+  };
+
+  const canSeeWorkouts = canSee(friendPrivacy.workouts, friendPrivacy.workoutsFriends);
+  const canSeeStats = canSee(friendPrivacy.stats, friendPrivacy.statsFriends);
+  const canSeeGoals = canSee(friendPrivacy.goals, friendPrivacy.goalsFriends);
 
   useEffect(() => {
     if (!user || !open || !me) return;
@@ -101,17 +118,45 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
     const load = async () => {
       setLoading(true);
 
+      // Load friend's privacy settings
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('privacy_workouts, privacy_stats, privacy_goals, privacy_peak_checkins, privacy_workouts_friends, privacy_stats_friends, privacy_goals_friends, privacy_peak_checkins_friends')
+        .eq('id', user.id)
+        .single();
+      
+      const privacy = {
+        workouts: (profileData as any)?.privacy_workouts || 'me',
+        stats: (profileData as any)?.privacy_stats || 'me',
+        goals: (profileData as any)?.privacy_goals || 'me',
+        peakCheckins: (profileData as any)?.privacy_peak_checkins || 'friends',
+        workoutsFriends: (profileData as any)?.privacy_workouts_friends || [],
+        statsFriends: (profileData as any)?.privacy_stats_friends || [],
+        goalsFriends: (profileData as any)?.privacy_goals_friends || [],
+        peakCheckinsFriends: (profileData as any)?.privacy_peak_checkins_friends || [],
+      };
+      setFriendPrivacy(privacy);
+
+      const canSeeW = canSee(privacy.workouts, privacy.workoutsFriends);
+      const canSeeS = canSee(privacy.stats, privacy.statsFriends);
+      const canSeeG = canSee(privacy.goals, privacy.goalsFriends);
       const weekStart = getWeekStart();
       const monthStart = getMonthStart();
       const yearStart = getYearStart();
 
-      // Fetch friend's sessions
-      const { data: sessions } = await supabase
+      // Fetch friend's sessions (only if allowed)
+      if (!canSeeW && !canSeeS) {
+        setPeriodStats({ week: { sessions: 0, duration: 0, distance: 0, elevation: 0 }, month: { sessions: 0, duration: 0, distance: 0, elevation: 0 }, year: { sessions: 0, duration: 0, distance: 0, elevation: 0 } });
+        setRecentSessions([]);
+        setActivityBreakdown([]);
+      }
+
+      const { data: sessions } = canSeeW || canSeeS ? await supabase
         .from('workout_sessions')
         .select('type, date, distance, duration_minutes, elevation_gain, title')
         .eq('user_id', user.id)
         .order('date', { ascending: false })
-        .limit(500);
+        .limit(500) : { data: null };
 
       if (sessions) {
         const week: PeriodStats = { sessions: 0, duration: 0, distance: 0, elevation: 0 };
@@ -147,15 +192,19 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
         setRecentSessions(sessions.slice(0, 6));
       }
 
-      // Fetch friend's primary goal periods
-      try {
-        const { data: goalRows } = await supabase
-          .from('primary_goal_periods')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('valid_from', { ascending: true });
-        setFriendGoalPeriods((goalRows || []).map(rowToPeriod));
-      } catch { setFriendGoalPeriods([]); }
+      // Fetch friend's primary goal periods (only if allowed)
+      if (canSeeG) {
+        try {
+          const { data: goalRows } = await supabase
+            .from('primary_goal_periods')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('valid_from', { ascending: true });
+          setFriendGoalPeriods((goalRows || []).map(rowToPeriod));
+        } catch { setFriendGoalPeriods([]); }
+      } else {
+        setFriendGoalPeriods([]);
+      }
 
       // Fetch shared challenges
       try {
@@ -214,16 +263,20 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
   const monthPct = monthTarget > 0 ? Math.min(100, (friendMonthSessions / monthTarget) * 100) : 0;
   const yearPct = yearTarget > 0 ? Math.min(100, (friendYearSessions / yearTarget) * 100) : 0;
 
-  // Compute pace diff for color matching with ProgressWheel
+  // Compute pace diff accounting for goal start date
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const monthExpectedFraction = (now.getDate() + now.getHours() / 24) / daysInMonth;
+  const monthEnd = new Date(currentYear, currentMonth + 1, 0);
+  const activeGoalForMonth = getActiveGoalForDate(friendGoalPeriods, monthEnd);
+  const goalStartInMonth = activeGoalForMonth ? new Date(activeGoalForMonth.validFrom) : null;
+  const goalStartDay = goalStartInMonth && goalStartInMonth.getFullYear() === currentYear && goalStartInMonth.getMonth() === currentMonth
+    ? goalStartInMonth.getDate() : 1;
+  const activeDaysInMonth = daysInMonth - goalStartDay + 1;
+  const monthDaysElapsed = Math.max(0, now.getDate() - goalStartDay + now.getHours() / 24);
+  const monthExpectedFraction = activeDaysInMonth > 0 ? Math.min(1, monthDaysElapsed / activeDaysInMonth) : 0;
   const monthExpected = monthTarget * monthExpectedFraction;
   const monthDiff = friendMonthSessions - monthExpected;
 
-  const dayOfYear = Math.floor((now.getTime() - new Date(currentYear, 0, 1).getTime()) / 86400000) + 1;
-  const daysInYear = new Date(currentYear, 11, 31).getDate() === 31 ? 365 : 366;
-  const yearExpectedFraction = dayOfYear / (((currentYear % 4 === 0 && currentYear % 100 !== 0) || currentYear % 400 === 0) ? 366 : 365);
-  const yearExpected = yearTarget * yearExpectedFraction;
+  const { expected: yearExpected } = getYearExpectedProgress(friendGoalPeriods, currentYear, now);
   const yearDiff = friendYearSessions - yearExpected;
 
   const formatDuration = (mins: number) => {
@@ -288,34 +341,44 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
             </div>
           ) : (
             <div className="px-4 space-y-5">
-              {/* Period selector */}
-              <div className="flex gap-1">
-                {(['week', 'month', 'year'] as StatPeriod[]).map(p => (
-                  <button
-                    key={p}
-                    onClick={() => setStatPeriod(p)}
-                    className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                      statPeriod === p ? 'bg-primary text-primary-foreground' : 'bg-secondary/60 text-muted-foreground hover:bg-secondary'
-                    }`}
-                  >
-                    {p === 'week' ? 'Uke' : p === 'month' ? 'Måned' : 'År'}
-                  </button>
-                ))}
-              </div>
+              {/* Stats section - requires workouts or stats permission */}
+              {canSeeStats ? (
+                <>
+                  {/* Period selector */}
+                  <div className="flex gap-1">
+                    {(['week', 'month', 'year'] as StatPeriod[]).map(p => (
+                      <button
+                        key={p}
+                        onClick={() => setStatPeriod(p)}
+                        className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                          statPeriod === p ? 'bg-primary text-primary-foreground' : 'bg-secondary/60 text-muted-foreground hover:bg-secondary'
+                        }`}
+                      >
+                        {p === 'week' ? 'Uke' : p === 'month' ? 'Måned' : 'År'}
+                      </button>
+                    ))}
+                  </div>
 
-              {/* Stats grid */}
-              <div className="space-y-2">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{periodLabels[statPeriod]}</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <StatTile icon={<Activity className="w-3.5 h-3.5" />} value={String(stats.sessions)} label="Økter" />
-                  <StatTile icon={<Clock className="w-3.5 h-3.5" />} value={formatDuration(stats.duration)} label="Tid" />
-                  <StatTile icon={<TrendingUp className="w-3.5 h-3.5" />} value={`${stats.distance.toFixed(1)} km`} label="Distanse" />
-                  <StatTile icon={<Mountain className="w-3.5 h-3.5" />} value={`${stats.elevation} m`} label="Høydemeter" />
+                  {/* Stats grid */}
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{periodLabels[statPeriod]}</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      <StatTile icon={<Activity className="w-3.5 h-3.5" />} value={String(stats.sessions)} label="Økter" />
+                      <StatTile icon={<Clock className="w-3.5 h-3.5" />} value={formatDuration(stats.duration)} label="Tid" />
+                      <StatTile icon={<TrendingUp className="w-3.5 h-3.5" />} value={`${stats.distance.toFixed(1)} km`} label="Distanse" />
+                      <StatTile icon={<Mountain className="w-3.5 h-3.5" />} value={`${stats.elevation} m`} label="Høydemeter" />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="rounded-xl bg-secondary/40 p-4 text-center">
+                  <Shield className="w-5 h-5 mx-auto mb-1.5 text-muted-foreground/50" />
+                  <p className="text-xs text-muted-foreground">Statistikk er skjult</p>
                 </div>
-              </div>
+              )}
 
               {/* Goal progress bars - side by side */}
-              {(monthTarget > 0 || yearTarget > 0) && (
+              {canSeeGoals && (monthTarget > 0 || yearTarget > 0) && (
                 <div className="space-y-2">
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Målprogresjon</h3>
                   <div className="grid grid-cols-2 gap-2">
@@ -342,7 +405,8 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
               )}
 
               {/* Recent sessions */}
-              {recentSessions.length > 0 && (
+              {/* Recent sessions */}
+              {canSeeWorkouts && recentSessions.length > 0 && (
                 <div className="space-y-2">
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Siste økter</h3>
                   <div className="space-y-1.5">

@@ -413,8 +413,14 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           id: string
+          privacy_goals: string
+          privacy_goals_friends: Json | null
           privacy_peak_checkins: string
           privacy_peak_checkins_friends: Json | null
+          privacy_stats: string
+          privacy_stats_friends: Json | null
+          privacy_workouts: string
+          privacy_workouts_friends: Json | null
           session_type_colors: Json | null
           updated_at: string
           username: string | null
@@ -423,8 +429,14 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           id: string
+          privacy_goals?: string
+          privacy_goals_friends?: Json | null
           privacy_peak_checkins?: string
           privacy_peak_checkins_friends?: Json | null
+          privacy_stats?: string
+          privacy_stats_friends?: Json | null
+          privacy_workouts?: string
+          privacy_workouts_friends?: Json | null
           session_type_colors?: Json | null
           updated_at?: string
           username?: string | null
@@ -433,8 +445,14 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           id?: string
+          privacy_goals?: string
+          privacy_goals_friends?: Json | null
           privacy_peak_checkins?: string
           privacy_peak_checkins_friends?: Json | null
+          privacy_stats?: string
+          privacy_stats_friends?: Json | null
+          privacy_workouts?: string
+          privacy_workouts_friends?: Json | null
           session_type_colors?: Json | null
           updated_at?: string
           username?: string | null
