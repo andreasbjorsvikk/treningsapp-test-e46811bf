@@ -94,10 +94,14 @@ const CommunityPage = () => {
     const now = new Date().toISOString().split('T')[0];
     const isEnded = c.challenge.period_end < now;
     const isMine = c.challenge.created_by === user?.id;
+    
+    // Check if user has accepted the challenge (not pending)
+    const myParticipant = c.participants.find(p => p.userId === user?.id);
+    const isAccepted = isMine || myParticipant?.status === 'accepted';
 
-    if (challengeFilter === 'active') return !isEnded;
+    if (challengeFilter === 'active') return !isEnded && isAccepted;
     if (challengeFilter === 'mine') return isMine && !isEnded;
-    if (challengeFilter === 'archived') return isEnded;
+    if (challengeFilter === 'archived') return isEnded && isAccepted;
     return true;
   });
 
