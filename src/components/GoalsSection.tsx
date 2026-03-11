@@ -40,6 +40,7 @@ const GoalsSection = () => {
   // Collapsible state
   const [primaryOpen, setPrimaryOpen] = useState(true);
   const [extraOpen, setExtraOpen] = useState(true);
+  const [archivedOpen, setArchivedOpen] = useState(false);
 
   const now = new Date();
   const [wheelMonth, setWheelMonth] = useState(now.getMonth());
