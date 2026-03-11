@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { SessionType } from '@/types/workout';
 import { defaultTypeColors, allSessionTypes } from '@/utils/workoutUtils';
 import { supabase } from '@/integrations/supabase/client';
+import { activityColorMap, applyActivityColorOverrides, getActivityColorOverrides, defaultActivityColorMap, saveActivityColors } from '@/utils/activityColors';
 import type { Language } from '@/i18n/translations';
 
 export type AppColorTheme = 'white' | 'orange' | 'blue' | 'green' | 'rose';
