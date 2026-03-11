@@ -15,6 +15,9 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/i18n/useTranslation';
 import { computeMonthWheelData, computeYearWheelData } from '@/utils/goalWheelData';
 import { useAppDataContext } from '@/contexts/AppDataContext';
+import { getSessionsInPeriod, computeProgress } from '@/utils/goalUtils';
+import ActivityIcon from '@/components/ActivityIcon';
+import { getActivityColors } from '@/utils/activityColors';
 
 const GoalsSection = () => {
   const { settings, updateSettings } = useSettings();
