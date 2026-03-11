@@ -106,7 +106,7 @@ export const sessionTypeConfig: Record<SessionType, SessionTypeConfig> = {
 };
 
 export const allSessionTypes: SessionType[] = [
-  'styrke', 'løping', 'fjelltur', 'svømming', 'sykling', 'gå', 'tennis', 'yoga', 'fotball', 'annet'
+  'styrke', 'løping', 'fjelltur', 'svømming', 'sykling', 'gå', 'tennis', 'yoga', 'fotball', 'trappemaskin', 'annet'
 ];
 
 export function formatDuration(minutes: number): string {
