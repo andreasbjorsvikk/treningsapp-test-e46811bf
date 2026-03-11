@@ -642,7 +642,7 @@ const IndexContent = () => {
             {/* ===== REORDERABLE SECTIONS ===== */}
             <div
               ref={containerRef}
-              className="space-y-4"
+              className={isDragging ? "space-y-2" : "space-y-4"}
               style={isDragging ? { touchAction: 'none', overflowX: 'hidden' } : undefined}
               onTouchMove={(e) => {
                 if (isDragging && dragId) {
