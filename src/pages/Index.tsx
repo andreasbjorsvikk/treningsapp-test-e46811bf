@@ -601,9 +601,9 @@ const IndexContent = () => {
 
             {/* ===== FIXED TOP SECTION (not reorderable) ===== */}
             <div className="space-y-5">
-              {/* Desktop: 4-column layout */}
+              {/* Desktop: 3-column layout */}
               {!isMobile && (
-                <div className="grid grid-cols-4 gap-3 items-stretch">
+                <div className="grid grid-cols-3 gap-3 items-stretch">
                   <ProgressWheel
                     percent={monthData.percent} current={monthData.current} target={monthData.target}
                     unit={monthData.unit} title={t(`month.${new Date().getMonth()}`)}
