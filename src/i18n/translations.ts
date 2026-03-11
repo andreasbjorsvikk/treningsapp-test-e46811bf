@@ -814,7 +814,18 @@ const en: Record<string, string> = {
   'workout.notesPlaceholder': 'Write notes here...',
   'workout.h': 'h',
   'workout.min': 'min',
+  'workout.sec': 'sec',
   'workout.confirm': 'Confirm',
+
+  // Goal completion
+  'goalCompletion.title': 'Goal reached! 🎉',
+  'goalCompletion.description': 'Congratulations! You completed your goal.',
+  'goalCompletion.archive': 'Archive',
+  'goalCompletion.later': 'Later',
+  'goalCompletion.achieved': 'Achieved',
+  'goalCompletion.notAchieved': 'Not achieved',
+  'goalCompletion.folder': 'Periods',
+  'goalCompletion.progress': 'Progress',
 
   // Settings
   'settings.title': 'Settings',
