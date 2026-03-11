@@ -453,10 +453,7 @@ const IndexContent = () => {
         );
       case 'last7dCalendar':
         return (
-          <div className="grid grid-cols-2 gap-3">
-            <WeeklySessionIcons sessions={allSessions} onClick={navigateToHistory} />
-            <MiniCalendar sessions={allSessions} onClick={navigateToCalendar} />
-          </div>
+          <Last7Days sessions={allSessions} onClick={navigateToHistory} />
         );
       case 'statistics':
         return (
