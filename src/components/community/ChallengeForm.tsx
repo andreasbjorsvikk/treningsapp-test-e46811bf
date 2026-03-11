@@ -136,7 +136,7 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
           name,
           emoji: emoji || undefined,
           metric,
-          activityType,
+          activityType: selectedTypes.includes('all') ? 'all' : selectedTypes.join(','),
           target: parseFloat(target) || 0,
           periodStart: dates.start,
           periodEnd: dates.end,
