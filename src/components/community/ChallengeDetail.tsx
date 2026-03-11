@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { ChallengeWithParticipants } from '@/pages/CommunityPage';
-import { Friend } from '@/services/communityService';
+import { Friend, respondToChallenge } from '@/services/communityService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter,
 } from '@/components/ui/drawer';
-import { Trophy, Link2, Home, Pencil } from 'lucide-react';
+import { Trophy, Link2, Home, Pencil, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/hooks/useAuth';
