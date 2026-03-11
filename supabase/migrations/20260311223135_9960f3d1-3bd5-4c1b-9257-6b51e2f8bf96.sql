@@ -1,0 +1,1 @@
+ALTER TABLE public.workout_sessions ALTER COLUMN duration_minutes TYPE double precision;
