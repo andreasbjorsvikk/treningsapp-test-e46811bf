@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Camera, ImageIcon, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import imageCompression from 'browser-image-compression';
 
 interface CheckinImageUploadProps {
   onImageReady: (file: File | null) => void;
