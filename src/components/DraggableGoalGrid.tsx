@@ -140,6 +140,7 @@ const DraggableGoalGrid = ({ goals, sessions, onEdit, onDelete, onToggleHome, on
             onEdit={onEdit}
             onDelete={onDelete}
             onToggleHome={onToggleHome}
+            onArchive={onArchive}
           />
         </div>
       ))}
