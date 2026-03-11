@@ -104,7 +104,25 @@ export function useAppData() {
 
   useEffect(() => { reload(); }, [reload]);
 
-  // ===== Session operations =====
+  // Detect goal completions after sessions change
+  useEffect(() => {
+    if (prevGoalStatesRef.current.size === 0) return;
+    const prevStates = prevGoalStatesRef.current;
+    for (const g of goals.filter(g => !g.archived)) {
+      const wasDone = prevStates.get(g.id);
+      if (wasDone === false) {
+        const periodSessions = getSessionsInPeriod(sessions, g.period, g.activityType, g.customStart, g.customEnd);
+        const current = computeProgress(periodSessions, g.metric);
+        if (current >= g.target) {
+          setCompletedGoal(g);
+          prevGoalStatesRef.current = new Map();
+          return;
+        }
+      }
+    }
+    prevGoalStatesRef.current = new Map();
+  }, [sessions, goals]);
+
   const addSession = useCallback(async (data: Omit<WorkoutSession, 'id'>) => {
     // Snapshot goal completion states before adding session
     const prevStates = new Map<string, boolean>();
