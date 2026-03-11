@@ -58,14 +58,14 @@ const Last7Days = ({ sessions, onClick }: Last7DaysProps) => {
                     <div
                       className={`w-9 h-9 rounded-full flex items-center justify-center border border-white/20 dark:border-white/10 ${today ? 'ring-2 ring-primary/40' : ''}`}
                       style={{
-                        background: `linear-gradient(145deg, ${colors.bg}ee, ${colors.bg}cc)`,
-                        boxShadow: `0 2px 8px ${colors.bg}40, inset 0 1px 2px rgba(255,255,255,0.3)`,
+                        background: colors.bg,
+                        boxShadow: `0 2px 8px ${isDark ? 'rgba(0,0,0,0.4)' : colors.bg.replace('rgb', 'rgba').replace(')', ', 0.4)')}`,
                       }}
                     >
                       <ActivityIcon
                         type={day.sessions[0].type}
                         className="w-5 h-5 drop-shadow-sm"
-                        colorOverride={!isDark ? colors.text : undefined}
+                        colorOverride={colors.text}
                       />
                     </div>
                   );
@@ -81,15 +81,15 @@ const Last7Days = ({ sessions, onClick }: Last7DaysProps) => {
                         style={{
                           left: -2,
                           top: 2,
-                          background: `linear-gradient(145deg, ${c0.bg}ee, ${c0.bg}cc)`,
-                          boxShadow: `0 1px 4px ${c0.bg}30`,
+                          background: c0.bg,
+                          boxShadow: `0 1px 4px ${isDark ? 'rgba(0,0,0,0.3)' : c0.bg.replace('rgb', 'rgba').replace(')', ', 0.3)')}`,
                           zIndex: 1,
                         }}
                       >
                         <ActivityIcon
                           type={day.sessions[0].type}
                           className="w-4 h-4 drop-shadow-sm"
-                          colorOverride={!isDark ? c0.text : undefined}
+                          colorOverride={c0.text}
                         />
                       </div>
                       {/* Front circle - shifted right, overlapping */}
@@ -98,15 +98,15 @@ const Last7Days = ({ sessions, onClick }: Last7DaysProps) => {
                         style={{
                           right: -2,
                           top: 2,
-                          background: `linear-gradient(145deg, ${c1.bg}ee, ${c1.bg}cc)`,
-                          boxShadow: `0 2px 6px ${c1.bg}40, inset 0 1px 2px rgba(255,255,255,0.25)`,
+                          background: c1.bg,
+                          boxShadow: `0 2px 6px ${isDark ? 'rgba(0,0,0,0.35)' : c1.bg.replace('rgb', 'rgba').replace(')', ', 0.35)')}`,
                           zIndex: 2,
                         }}
                       >
                         <ActivityIcon
                           type={day.sessions[1].type}
                           className="w-4 h-4 drop-shadow-sm"
-                          colorOverride={!isDark ? c1.text : undefined}
+                          colorOverride={c1.text}
                         />
                       </div>
                     </>
