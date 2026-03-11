@@ -122,6 +122,15 @@ const no: Record<string, string> = {
   'goalForm.save': 'Lagre',
   'goalForm.create': 'Opprett',
   'goalForm.eg': 'f.eks.',
+  'goalForm.repeatWeekly': 'Gjenta hver uke',
+  'goalForm.repeatMonthly': 'Gjenta hver måned',
+  'goalCard.archive': 'Arkiver',
+  'goals.archivedGoals': 'Fullførte mål',
+  'goals.noArchivedGoals': 'Ingen arkiverte mål.',
+  'goals.archiveGoal': 'Arkiver mål',
+  'goals.unarchive': 'Gjenopprett',
+  'goals.completed': 'Fullført',
+  'goals.notCompleted': 'Ikke fullført',
 
   // Primary goal form
   'primaryGoal.setGoal': 'Sett treningsmål',
