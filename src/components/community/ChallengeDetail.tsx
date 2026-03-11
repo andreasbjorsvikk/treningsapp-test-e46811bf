@@ -173,17 +173,35 @@ const ChallengeDetail = ({ challenge, open, onClose, onEdit, onResponded }: Chal
               </div>
             </div>
 
-            <DrawerFooter className="flex-row gap-2 pt-4">
-              {onEdit && c.created_by === user?.id && (
-                <button
-                  onClick={() => { onEdit(challenge); onClose(); }}
-                  className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-secondary text-sm font-medium hover:bg-secondary/80 transition-colors"
-                >
-                  <Pencil className="w-4 h-4" /> {t('common.edit')}
-                </button>
+            <DrawerFooter className="flex-col gap-2 pt-4">
+              {isPending && (
+                <div className="flex gap-2 w-full">
+                  <button
+                    onClick={() => handleRespond(true)}
+                    disabled={responding}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  >
+                    <Check className="w-4 h-4" /> {t('notifications.accept')}
+                  </button>
+                  <button
+                    onClick={() => handleRespond(false)}
+                    disabled={responding}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-secondary text-foreground text-sm font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50"
+                  >
+                    <X className="w-4 h-4" /> {t('notifications.decline')}
+                  </button>
+                </div>
               )}
-              {!isEnded && (
-                <>
+              <div className="flex gap-2">
+                {onEdit && c.created_by === user?.id && (
+                  <button
+                    onClick={() => { onEdit(challenge); onClose(); }}
+                    className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-secondary text-sm font-medium hover:bg-secondary/80 transition-colors"
+                  >
+                    <Pencil className="w-4 h-4" /> {t('common.edit')}
+                  </button>
+                )}
+                {!isEnded && (
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(`${window.location.origin}/challenge/${c.id}/invite`);
@@ -193,8 +211,8 @@ const ChallengeDetail = ({ challenge, open, onClose, onEdit, onResponded }: Chal
                   >
                     <Link2 className="w-4 h-4" />
                   </button>
-                </>
-              )}
+                )}
+              </div>
             </DrawerFooter>
           </div>
         </DrawerContent>
