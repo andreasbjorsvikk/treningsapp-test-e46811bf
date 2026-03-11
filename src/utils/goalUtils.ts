@@ -3,12 +3,22 @@ import { WorkoutSession, WorkoutGoal, ExtraGoal, GoalMetric, GoalPeriod, Session
 export function getSessionsInPeriod(
   sessions: WorkoutSession[],
   period: GoalPeriod | 'custom',
-  activityType: SessionType | 'all',
+  activityType: string, // 'all' | single type | comma-separated
   customStart?: string,
   customEnd?: string
 ): WorkoutSession[] {
   const now = new Date();
-  let filtered = activityType === 'all' ? sessions : sessions.filter(s => s.type === activityType);
+  
+  // Filter by activity type(s)
+  let filtered: WorkoutSession[];
+  if (activityType === 'all') {
+    filtered = sessions;
+  } else if (activityType.includes(',')) {
+    const types = activityType.split(',');
+    filtered = sessions.filter(s => types.includes(s.type));
+  } else {
+    filtered = sessions.filter(s => s.type === activityType);
+  }
 
   if (period === 'custom' && customStart && customEnd) {
     const start = new Date(customStart);

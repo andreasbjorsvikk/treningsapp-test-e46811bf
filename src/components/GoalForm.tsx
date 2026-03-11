@@ -5,7 +5,9 @@ import { getActivityColors } from '@/utils/activityColors';
 import { useSettings } from '@/contexts/SettingsContext';
 import ActivityIcon from '@/components/ActivityIcon';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Hash, Clock, MapPin, Mountain, Layers } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface GoalFormProps {
   goal?: ExtraGoal;
@@ -14,41 +16,74 @@ interface GoalFormProps {
   embedded?: boolean;
 }
 
-const metricOptions: { id: GoalMetric; label: string; unit: string; icon: typeof Hash }[] = [
-  { id: 'sessions', label: 'Økter', unit: 'økter', icon: Hash },
-  { id: 'minutes', label: 'Tid', unit: 'timer', icon: Clock },
-  { id: 'distance', label: 'Distanse', unit: 'km', icon: MapPin },
-  { id: 'elevation', label: 'Høydemeter', unit: 'm', icon: Mountain },
+const metricOptions: { id: GoalMetric; labelKey: string; unit: string; icon: typeof Hash }[] = [
+  { id: 'sessions', labelKey: 'metric.sessions.label', unit: 'økter', icon: Hash },
+  { id: 'minutes', labelKey: 'metric.minutes.label', unit: 'timer', icon: Clock },
+  { id: 'distance', labelKey: 'metric.distance.label', unit: 'km', icon: MapPin },
+  { id: 'elevation', labelKey: 'metric.elevation.label', unit: 'm', icon: Mountain },
 ];
 
-const periodOptions: { id: GoalPeriod | 'custom'; label: string }[] = [
-  { id: 'week', label: 'Uke' },
-  { id: 'month', label: 'Måned' },
-  { id: 'year', label: 'År' },
-  { id: 'custom', label: 'Egendefinert' },
+const periodOptions: { id: GoalPeriod | 'custom'; labelKey: string }[] = [
+  { id: 'week', labelKey: 'goalForm.week' },
+  { id: 'month', labelKey: 'goalForm.month' },
+  { id: 'year', labelKey: 'goalForm.year' },
+  { id: 'custom', labelKey: 'goalForm.custom' },
 ];
+
+// Parse activityType string into array of selected types
+function parseActivityTypes(activityType: string): string[] {
+  if (activityType === 'all') return ['all'];
+  return activityType.split(',').filter(Boolean);
+}
+
+// Serialize selected types to string
+function serializeActivityTypes(selected: string[]): string {
+  if (selected.includes('all') || selected.length === 0) return 'all';
+  return selected.join(',');
+}
 
 const GoalForm = ({ goal, onSave, onCancel, embedded }: GoalFormProps) => {
   const { settings } = useSettings();
+  const { t } = useTranslation();
   const isDark = settings.darkMode;
+  const disabledTypes = settings.disabledSessionTypes || [];
 
   const [metric, setMetric] = useState<GoalMetric>(goal?.metric || 'sessions');
   const [period, setPeriod] = useState<GoalPeriod | 'custom'>(goal?.period || 'month');
-  const [activityType, setActivityType] = useState<SessionType | 'all'>(goal?.activityType || 'all');
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(
+    goal ? parseActivityTypes(goal.activityType) : ['all']
+  );
   const [target, setTarget] = useState(goal?.target?.toString() || '');
   const [customStart, setCustomStart] = useState(goal?.customStart || '');
   const [customEnd, setCustomEnd] = useState(goal?.customEnd || '');
+  const [repeating, setRepeating] = useState(goal?.repeating || false);
 
   useEffect(() => {
     if (goal) {
       setMetric(goal.metric);
       setPeriod(goal.period);
-      setActivityType(goal.activityType);
+      setSelectedTypes(parseActivityTypes(goal.activityType));
       setTarget(goal.target.toString());
       setCustomStart(goal.customStart || '');
       setCustomEnd(goal.customEnd || '');
+      setRepeating(goal.repeating || false);
     }
   }, [goal]);
+
+  const toggleType = (type: string) => {
+    if (type === 'all') {
+      setSelectedTypes(['all']);
+      return;
+    }
+    setSelectedTypes(prev => {
+      const filtered = prev.filter(t => t !== 'all');
+      if (filtered.includes(type)) {
+        const next = filtered.filter(t => t !== type);
+        return next.length === 0 ? ['all'] : next;
+      }
+      return [...filtered, type];
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,25 +93,27 @@ const GoalForm = ({ goal, onSave, onCancel, embedded }: GoalFormProps) => {
     onSave({
       metric,
       period,
-      activityType,
+      activityType: serializeActivityTypes(selectedTypes),
       target: targetNum,
+      repeating: (period === 'week' || period === 'month') ? repeating : false,
       ...(period === 'custom' ? { customStart, customEnd } : {}),
     });
   };
 
   const selectedMetric = metricOptions.find(m => m.id === metric)!;
+  const showRepeat = period === 'week' || period === 'month';
 
   return (
     <form onSubmit={handleSubmit} className={`space-y-4 overflow-hidden ${embedded ? '' : 'glass-card rounded-lg p-4'}`}>
       {!embedded && (
         <h4 className="font-display font-semibold text-sm">
-          {goal ? 'Rediger mål' : 'Nytt ekstra mål'}
+          {goal ? t('goalForm.editGoal') : t('goalForm.newGoal')}
         </h4>
       )}
 
       {/* Metric - icon buttons */}
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Måltype</label>
+        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('goalForm.metricType')}</label>
         <div className="grid grid-cols-4 gap-2">
           {metricOptions.map(m => {
             const Icon = m.icon;
@@ -93,7 +130,7 @@ const GoalForm = ({ goal, onSave, onCancel, embedded }: GoalFormProps) => {
                 }`}
               >
                 <Icon className="w-5 h-5" />
-                <span>{m.label}</span>
+                <span>{t(m.labelKey)}</span>
               </button>
             );
           })}
@@ -102,7 +139,7 @@ const GoalForm = ({ goal, onSave, onCancel, embedded }: GoalFormProps) => {
 
       {/* Period */}
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Periode</label>
+        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('goalForm.period')}</label>
         <div className="flex gap-2">
           {periodOptions.map(p => (
             <button
@@ -115,17 +152,30 @@ const GoalForm = ({ goal, onSave, onCancel, embedded }: GoalFormProps) => {
                   : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
               }`}
             >
-              {p.label}
+              {t(p.labelKey)}
             </button>
           ))}
         </div>
       </div>
 
+      {/* Repeat checkbox */}
+      {showRepeat && (
+        <label className="flex items-center gap-2 cursor-pointer">
+          <Checkbox
+            checked={repeating}
+            onCheckedChange={(checked) => setRepeating(!!checked)}
+          />
+          <span className="text-sm font-medium">
+            {period === 'week' ? t('goalForm.repeatWeekly') : t('goalForm.repeatMonthly')}
+          </span>
+        </label>
+      )}
+
       {/* Custom date pickers */}
       {period === 'custom' && (
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Fra</label>
+            <label className="text-xs font-medium text-muted-foreground">{t('goalForm.from')}</label>
             <input
               type="date"
               value={customStart}
@@ -135,7 +185,7 @@ const GoalForm = ({ goal, onSave, onCancel, embedded }: GoalFormProps) => {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Til</label>
+            <label className="text-xs font-medium text-muted-foreground">{t('goalForm.to')}</label>
             <input
               type="date"
               value={customEnd}
@@ -147,31 +197,31 @@ const GoalForm = ({ goal, onSave, onCancel, embedded }: GoalFormProps) => {
         </div>
       )}
 
-      {/* Activity type - colored buttons */}
+      {/* Activity type - colored buttons with multi-select */}
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Aktivitetstype</label>
+        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('goalForm.activityType')}</label>
         <div className="flex flex-wrap gap-1.5">
           <button
             type="button"
-            onClick={() => setActivityType('all')}
+            onClick={() => toggleType('all')}
             className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors ${
-              activityType === 'all'
+              selectedTypes.includes('all')
                 ? 'gradient-energy text-primary-foreground'
                 : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
-            Alle
+            {t('goalForm.all')}
           </button>
-          {allSessionTypes.map(type => {
+          {allSessionTypes.filter(tp => !disabledTypes.includes(tp)).map(type => {
             const config = sessionTypeConfig[type];
             const colors = getActivityColors(type, isDark);
-            const selected = activityType === type;
+            const selected = selectedTypes.includes(type);
             return (
               <button
                 key={type}
                 type="button"
-                onClick={() => setActivityType(type)}
+                onClick={() => toggleType(type)}
                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium transition-all"
                 style={{
                   backgroundColor: selected ? colors.bg : undefined,
@@ -179,7 +229,7 @@ const GoalForm = ({ goal, onSave, onCancel, embedded }: GoalFormProps) => {
                 }}
               >
                 <ActivityIcon type={type} className="w-3.5 h-3.5" colorOverride={selected ? colors.text : undefined} />
-                {config.label}
+                {t(`activity.${type}`)}
               </button>
             );
           })}
@@ -189,7 +239,7 @@ const GoalForm = ({ goal, onSave, onCancel, embedded }: GoalFormProps) => {
       {/* Target */}
       <div className="space-y-1.5">
         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          Mål ({selectedMetric.unit})
+          {t('goalForm.target')} ({selectedMetric.unit})
         </label>
         <input
           type="number"
@@ -205,10 +255,10 @@ const GoalForm = ({ goal, onSave, onCancel, embedded }: GoalFormProps) => {
 
       <div className="flex gap-2">
         <Button type="button" variant="secondary" className="flex-1" onClick={onCancel}>
-          Avbryt
+          {t('common.cancel')}
         </Button>
         <Button type="submit" className="flex-1 gradient-energy text-primary-foreground">
-          {goal ? 'Lagre' : 'Opprett'}
+          {goal ? t('common.save') : t('goalForm.create')}
         </Button>
       </div>
     </form>
