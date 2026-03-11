@@ -133,6 +133,14 @@ const GoalsSection = () => {
     }
   };
 
+  const handleArchiveGoal = async (id: string) => {
+    await appData.updateGoal(id, { archived: true, showOnHome: false });
+  };
+
+  const handleUnarchiveGoal = async (id: string) => {
+    await appData.updateGoal(id, { archived: false });
+  };
+
   const handleCancelExtra = () => {
     setEditGoal(undefined);
     setShowExtraForm(false);
