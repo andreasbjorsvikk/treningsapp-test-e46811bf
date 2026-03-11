@@ -236,6 +236,7 @@ export type Database = {
           activity_id: string | null
           checked_in_at: string
           id: string
+          image_url: string | null
           peak_id: string
           user_id: string
           verified: boolean
@@ -244,6 +245,7 @@ export type Database = {
           activity_id?: string | null
           checked_in_at?: string
           id?: string
+          image_url?: string | null
           peak_id: string
           user_id: string
           verified?: boolean
@@ -252,6 +254,7 @@ export type Database = {
           activity_id?: string | null
           checked_in_at?: string
           id?: string
+          image_url?: string | null
           peak_id?: string
           user_id?: string
           verified?: boolean
