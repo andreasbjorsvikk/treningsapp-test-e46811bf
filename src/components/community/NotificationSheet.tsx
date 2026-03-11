@@ -18,7 +18,7 @@ const iconMap: Record<string, typeof Mail> = {
   friend_request: UserPlus,
 };
 
-const NotificationSheet = ({ open, onClose, onNavigateToFriends }: NotificationSheetProps) => {
+const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge }: NotificationSheetProps) => {
   const { t } = useTranslation();
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [loading, setLoading] = useState(true);
