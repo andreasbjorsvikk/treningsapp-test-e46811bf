@@ -213,6 +213,9 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
             )}
 
             {/* Check-in status with count */}
+            {/* Image upload before checkin */}
+            <CheckinImageUpload onImageReady={setCheckinImage} />
+
             {isCheckedIn ? (
               <div className="p-3 rounded-xl bg-success/10 border border-success/20 space-y-2">
                 <div className="flex items-center gap-2">
