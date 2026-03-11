@@ -213,6 +213,12 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
                   <span className="text-sm text-muted-foreground">{t('workout.h')}</span>
                   <Input type="number" min="0" max="59" value={minutes} onChange={e => setMinutes(parseInt(e.target.value) || 0)} className="w-20" />
                   <span className="text-sm text-muted-foreground">{t('workout.min')}</span>
+                  {showSeconds && (
+                    <>
+                      <Input type="number" min="0" max="59" value={seconds} onChange={e => setSeconds(parseInt(e.target.value) || 0)} className="w-20" />
+                      <span className="text-sm text-muted-foreground">{t('workout.sec')}</span>
+                    </>
+                  )}
                 </div>
               )}
             </div>
