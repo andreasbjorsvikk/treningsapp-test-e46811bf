@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Camera, ImageIcon, X, ZoomIn, ZoomOut } from 'lucide-react';
+import { Camera, ImageIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface CheckinImageUploadProps {
   onImageReady: (file: File | null) => void;
@@ -8,25 +9,20 @@ interface CheckinImageUploadProps {
 
 const MAX_FILE_SIZE_MB = 10;
 const TARGET_SIZE_KB = 300;
+const CROP_W = 320;
+const CROP_H = 180; // 16:9
 
 const CheckinImageUpload = ({ onImageReady }: CheckinImageUploadProps) => {
   const [preview, setPreview] = useState<string | null>(null);
-  const [rawFile, setRawFile] = useState<File | null>(null);
-  const [compressing, setCompressing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Pan & zoom state
-  const [scale, setScale] = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [dragging, setDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [confirmed, setConfirmed] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [rawFile, setRawFile] = useState<File | null>(null);
 
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleFile = useCallback(async (file: File) => {
+  const handleFile = useCallback((file: File) => {
     setError(null);
     if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
       setError(`Bildet er for stort (maks ${MAX_FILE_SIZE_MB} MB)`);
@@ -38,9 +34,8 @@ const CheckinImageUpload = ({ onImageReady }: CheckinImageUploadProps) => {
     }
     setRawFile(file);
     setPreview(URL.createObjectURL(file));
-    setScale(1);
-    setOffset({ x: 0, y: 0 });
     setConfirmed(false);
+    setCropOpen(true);
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,10 +44,255 @@ const CheckinImageUpload = ({ onImageReady }: CheckinImageUploadProps) => {
     e.target.value = '';
   };
 
+  const handleCropConfirm = async (croppedFile: File) => {
+    setCropOpen(false);
+    setConfirmed(true);
+    onImageReady(croppedFile);
+  };
+
+  const handleRemove = () => {
+    setPreview(null);
+    setRawFile(null);
+    setConfirmed(false);
+    onImageReady(null);
+  };
+
+  if (confirmed && preview) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-medium text-muted-foreground">✓ Bilde valgt</p>
+          <button onClick={handleRemove} className="p-1 rounded hover:bg-muted transition-colors">
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-medium text-muted-foreground">Legg til bilde (valgfritt)</p>
+      <div className="flex gap-2">
+        <Button type="button" variant="outline" size="sm" className="flex-1 gap-2" onClick={() => cameraRef.current?.click()}>
+          <Camera className="w-4 h-4" />Ta bilde
+        </Button>
+        <Button type="button" variant="outline" size="sm" className="flex-1 gap-2" onClick={() => galleryRef.current?.click()}>
+          <ImageIcon className="w-4 h-4" />Velg fra galleri
+        </Button>
+      </div>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleInputChange} />
+      <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={handleInputChange} />
+
+      {rawFile && preview && (
+        <CheckinCropDialog
+          open={cropOpen}
+          imageUrl={preview}
+          rawFile={rawFile}
+          onConfirm={handleCropConfirm}
+          onCancel={() => { setCropOpen(false); setPreview(null); setRawFile(null); }}
+        />
+      )}
+    </div>
+  );
+};
+
+// ===== Separate crop dialog component =====
+
+interface CheckinCropDialogProps {
+  open: boolean;
+  imageUrl: string;
+  rawFile: File;
+  onConfirm: (file: File) => void;
+  onCancel: () => void;
+}
+
+const CheckinCropDialog = ({ open, imageUrl, rawFile, onConfirm, onCancel }: CheckinCropDialogProps) => {
+  const [imgNatural, setImgNatural] = useState({ w: 0, h: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [compressing, setCompressing] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const zoomRef = useRef(1);
+  const offsetRef = useRef({ x: 0, y: 0 });
+
+  useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+  useEffect(() => { offsetRef.current = offset; }, [offset]);
+
+  // Load natural dimensions
+  useEffect(() => {
+    if (!open) return;
+    const img = new Image();
+    img.onload = () => {
+      imgRef.current = img;
+      setImgNatural({ w: img.width, h: img.height });
+      setZoom(1);
+      setOffset({ x: 0, y: 0 });
+    };
+    img.src = imageUrl;
+  }, [open, imageUrl]);
+
+  // Base scale: fit entire image inside crop area
+  const baseScale = imgNatural.w > 0
+    ? Math.min(CROP_W / imgNatural.w, CROP_H / imgNatural.h)
+    : 1;
+  const baseW = imgNatural.w * baseScale;
+  const baseH = imgNatural.h * baseScale;
+
+  const MIN_ZOOM = 1;
+  const MAX_ZOOM = 5;
+
+  const clampOffset = useCallback((ox: number, oy: number, z: number) => {
+    const scaledW = baseW * z;
+    const scaledH = baseH * z;
+    // Allow panning such that any part of the image can fill the crop area
+    const maxX = Math.max(0, (scaledW - CROP_W) / 2);
+    const maxY = Math.max(0, (scaledH - CROP_H) / 2);
+    return {
+      x: Math.max(-maxX, Math.min(maxX, ox)),
+      y: Math.max(-maxY, Math.min(maxY, oy)),
+    };
+  }, [baseW, baseH]);
+
+  // Touch gestures
+  const gestureRef = useRef<{ dist: number; zoom0: number; ox0: number; oy0: number; cx0: number; cy0: number } | null>(null);
+  const dragRef = useRef<{ x0: number; y0: number; ox0: number; oy0: number } | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const timer = setTimeout(() => {
+      const el = containerRef.current;
+      if (!el) return;
+
+      const pinchDist = (t1: Touch, t2: Touch) => Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+
+      const onTouchStart = (e: TouchEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.touches.length === 2) {
+          gestureRef.current = {
+            dist: pinchDist(e.touches[0], e.touches[1]),
+            zoom0: zoomRef.current,
+            ox0: offsetRef.current.x, oy0: offsetRef.current.y,
+            cx0: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+            cy0: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+          };
+          dragRef.current = null;
+        } else if (e.touches.length === 1) {
+          dragRef.current = { x0: e.touches[0].clientX, y0: e.touches[0].clientY, ox0: offsetRef.current.x, oy0: offsetRef.current.y };
+          gestureRef.current = null;
+        }
+      };
+
+      const onTouchMove = (e: TouchEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.touches.length === 2 && gestureRef.current) {
+          const g = gestureRef.current;
+          const d = pinchDist(e.touches[0], e.touches[1]);
+          const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, g.zoom0 * (d / g.dist)));
+          const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+          const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+          const rawX = g.ox0 + (cx - g.cx0);
+          const rawY = g.oy0 + (cy - g.cy0);
+          setZoom(newZoom);
+          setOffset(clampOffset(rawX, rawY, newZoom));
+        } else if (e.touches.length === 1 && dragRef.current) {
+          const dr = dragRef.current;
+          const rawX = dr.ox0 + (e.touches[0].clientX - dr.x0);
+          const rawY = dr.oy0 + (e.touches[0].clientY - dr.y0);
+          setOffset(clampOffset(rawX, rawY, zoomRef.current));
+        }
+      };
+
+      const onTouchEnd = (e: TouchEvent) => {
+        if (e.touches.length < 2) gestureRef.current = null;
+        if (e.touches.length === 0) dragRef.current = null;
+        if (e.touches.length === 1) {
+          dragRef.current = { x0: e.touches[0].clientX, y0: e.touches[0].clientY, ox0: offsetRef.current.x, oy0: offsetRef.current.y };
+        }
+      };
+
+      el.addEventListener('touchstart', onTouchStart, { passive: false });
+      el.addEventListener('touchmove', onTouchMove, { passive: false });
+      el.addEventListener('touchend', onTouchEnd);
+      el.addEventListener('touchcancel', onTouchEnd);
+
+      return () => {
+        el.removeEventListener('touchstart', onTouchStart);
+        el.removeEventListener('touchmove', onTouchMove);
+        el.removeEventListener('touchend', onTouchEnd);
+        el.removeEventListener('touchcancel', onTouchEnd);
+      };
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [open, clampOffset]);
+
+  // Mouse drag
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX, startY = e.clientY;
+    const startOx = offsetRef.current.x, startOy = offsetRef.current.y;
+    const onMouseMove = (me: MouseEvent) => {
+      setOffset(clampOffset(startOx + (me.clientX - startX), startOy + (me.clientY - startY), zoomRef.current));
+    };
+    const onMouseUp = () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  }, [clampOffset]);
+
+  // Mouse wheel zoom
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoomRef.current - e.deltaY * 0.003));
+    setZoom(newZoom);
+    setOffset(prev => clampOffset(prev.x, prev.y, newZoom));
+  }, [clampOffset]);
+
   const handleConfirm = async () => {
-    if (!rawFile || !preview) return;
+    if (!imgRef.current) return;
     setCompressing(true);
     try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1920;
+      canvas.height = 1080;
+      const ctx = canvas.getContext('2d')!;
+
+      const z = zoomRef.current;
+      const off = clampOffset(offsetRef.current.x, offsetRef.current.y, z);
+      const effectiveLeft = (CROP_W - baseW * z) / 2 + off.x;
+      const effectiveTop = (CROP_H - baseH * z) / 2 + off.y;
+      const effectiveW = baseW * z;
+      const effectiveH = baseH * z;
+
+      const scaleX = 1920 / CROP_W;
+      const scaleY = 1080 / CROP_H;
+      ctx.drawImage(
+        imgRef.current,
+        0, 0, imgRef.current.naturalWidth, imgRef.current.naturalHeight,
+        effectiveLeft * scaleX, effectiveTop * scaleY, effectiveW * scaleX, effectiveH * scaleY
+      );
+
+      const blob = await new Promise<Blob | null>(res => canvas.toBlob(res, 'image/jpeg', 0.85));
+      if (blob) {
+        // Compress further if needed
+        const { default: imageCompression } = await import('browser-image-compression');
+        const file = new File([blob], 'checkin.jpg', { type: 'image/jpeg' });
+        const compressed = await imageCompression(file, {
+          maxSizeMB: TARGET_SIZE_KB / 1024,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+          fileType: 'image/jpeg',
+        });
+        onConfirm(compressed as File);
+      }
+    } catch {
+      // fallback: just compress raw
       const { default: imageCompression } = await import('browser-image-compression');
       const compressed = await imageCompression(rawFile, {
         maxSizeMB: TARGET_SIZE_KB / 1024,
@@ -60,152 +300,73 @@ const CheckinImageUpload = ({ onImageReady }: CheckinImageUploadProps) => {
         useWebWorker: true,
         fileType: 'image/jpeg',
       });
-      setConfirmed(true);
-      onImageReady(compressed as File);
-    } catch {
-      setError('Kunne ikke komprimere bildet');
+      onConfirm(compressed as File);
     }
     setCompressing(false);
   };
 
-  const handleRemove = () => {
-    setPreview(null);
-    setRawFile(null);
-    setConfirmed(false);
-    setScale(1);
-    setOffset({ x: 0, y: 0 });
-    onImageReady(null);
-  };
-
-  // Touch/mouse pan
-  const onPointerDown = (e: React.PointerEvent) => {
-    if (confirmed) return;
-    setDragging(true);
-    setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-  };
-  const onPointerMove = (e: React.PointerEvent) => {
-    if (!dragging || confirmed) return;
-    e.preventDefault();
-    setOffset({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
-  };
-  const onPointerUp = () => setDragging(false);
-
-  // Wheel zoom
-  const onWheel = (e: React.WheelEvent) => {
-    if (confirmed) return;
-    e.preventDefault();
-    e.stopPropagation();
-    setScale(s => Math.min(3, Math.max(0.5, s - e.deltaY * 0.002)));
-  };
-
-  // Touch pinch zoom + prevent parent scroll
-  const lastTouchDist = useRef<number | null>(null);
-  const onTouchStart = useCallback((e: TouchEvent) => {
-    if (confirmed) return;
-    // Prevent parent scroll when touching the image area
-    e.preventDefault();
-  }, [confirmed]);
-
-  const onTouchMove = useCallback((e: TouchEvent) => {
-    if (confirmed) return;
-    // Always prevent scroll when interacting with the crop area
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (e.touches.length < 2) { lastTouchDist.current = null; return; }
-    const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-    if (lastTouchDist.current !== null) {
-      const delta = dist - lastTouchDist.current;
-      setScale(s => Math.min(3, Math.max(0.5, s + delta * 0.005)));
-    }
-    lastTouchDist.current = dist;
-  }, [confirmed]);
-
-  const onTouchEnd = useCallback(() => { lastTouchDist.current = null; }, []);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el || !preview || confirmed) return;
-    el.addEventListener('touchstart', onTouchStart, { passive: false });
-    el.addEventListener('touchmove', onTouchMove, { passive: false });
-    el.addEventListener('touchend', onTouchEnd);
-    return () => {
-      el.removeEventListener('touchstart', onTouchStart);
-      el.removeEventListener('touchmove', onTouchMove);
-      el.removeEventListener('touchend', onTouchEnd);
-    };
-  }, [preview, confirmed, onTouchStart, onTouchMove, onTouchEnd]);
-
-  if (!preview) {
-    return (
-      <div className="space-y-2">
-        <p className="text-xs font-medium text-muted-foreground">Legg til bilde (valgfritt)</p>
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" size="sm" className="flex-1 gap-2" onClick={() => cameraRef.current?.click()}>
-            <Camera className="w-4 h-4" />Ta bilde
-          </Button>
-          <Button type="button" variant="outline" size="sm" className="flex-1 gap-2" onClick={() => galleryRef.current?.click()}>
-            <ImageIcon className="w-4 h-4" />Velg fra galleri
-          </Button>
-        </div>
-        {error && <p className="text-xs text-destructive">{error}</p>}
-        <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleInputChange} />
-        <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={handleInputChange} />
-      </div>
-    );
-  }
+  const imgLeft = (CROP_W - baseW) / 2;
+  const imgTop = (CROP_H - baseH) / 2;
+  const clamped = clampOffset(offset.x, offset.y, zoom);
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-medium text-muted-foreground">
-          {confirmed ? '✓ Bilde valgt' : 'Flytt og zoom bildet, trykk bekreft'}
-        </p>
-        <button onClick={handleRemove} className="p-1 rounded hover:bg-muted transition-colors">
-          <X className="w-4 h-4 text-muted-foreground" />
-        </button>
-      </div>
-
-      {/* Crop area */}
-      <div
-        ref={containerRef}
-        className="relative w-full aspect-[16/9] rounded-xl overflow-hidden border border-border bg-muted cursor-move"
-        style={{ touchAction: 'none' }}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onWheel={onWheel}
-      >
-        <img
-          src={preview}
-          alt="Preview"
-          className="absolute w-full h-full object-cover select-none pointer-events-none"
-          style={{
-            transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
-            transformOrigin: 'center center',
-          }}
-          draggable={false}
-        />
-        {!confirmed && (
-          <div className="absolute bottom-2 right-2 flex gap-1">
-            <button onClick={() => setScale(s => Math.min(3, s + 0.25))} className="p-1.5 rounded-lg bg-background/80 backdrop-blur-sm border border-border/50 text-foreground">
-              <ZoomIn className="w-3.5 h-3.5" />
-            </button>
-            <button onClick={() => setScale(s => Math.max(0.5, s - 0.25))} className="p-1.5 rounded-lg bg-background/80 backdrop-blur-sm border border-border/50 text-foreground">
-              <ZoomOut className="w-3.5 h-3.5" />
-            </button>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onCancel(); }}>
+      <DialogContent className="max-w-[min(calc(100vw-2rem),22rem)] p-4">
+        <DialogHeader>
+          <DialogTitle className="text-base">Juster bilde</DialogTitle>
+        </DialogHeader>
+        <p className="text-xs text-muted-foreground text-center mb-1">Dra og zoom for å velge utsnitt</p>
+        <div className="flex justify-center">
+          <div
+            ref={containerRef}
+            className="relative overflow-hidden rounded-xl border-2 border-primary cursor-grab active:cursor-grabbing bg-muted"
+            style={{ width: CROP_W, height: CROP_H, touchAction: 'none' }}
+            onMouseDown={handleMouseDown}
+            onWheel={handleWheel}
+          >
+            {imgNatural.w > 0 && (
+              <img
+                src={imageUrl}
+                alt=""
+                draggable={false}
+                className="pointer-events-none select-none absolute"
+                style={{
+                  width: baseW,
+                  height: baseH,
+                  left: imgLeft,
+                  top: imgTop,
+                  transformOrigin: 'center center',
+                  transform: `translate(${clamped.x}px, ${clamped.y}px) scale(${zoom})`,
+                }}
+              />
+            )}
           </div>
-        )}
-      </div>
-
-      {!confirmed && (
-        <Button onClick={handleConfirm} disabled={compressing} size="sm" className="w-full">
-          {compressing ? 'Komprimerer...' : 'Bekreft bilde'}
-        </Button>
-      )}
-      {error && <p className="text-xs text-destructive">{error}</p>}
-    </div>
+        </div>
+        <div className="flex items-center gap-2 px-2">
+          <span className="text-xs text-muted-foreground">−</span>
+          <input
+            type="range"
+            min={MIN_ZOOM}
+            max={MAX_ZOOM}
+            step={0.02}
+            value={zoom}
+            onChange={e => {
+              const z = parseFloat(e.target.value);
+              setZoom(z);
+              setOffset(prev => clampOffset(prev.x, prev.y, z));
+            }}
+            className="flex-1"
+          />
+          <span className="text-xs text-muted-foreground">+</span>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="secondary" className="flex-1" onClick={onCancel}>Avbryt</Button>
+          <Button className="flex-1" onClick={handleConfirm} disabled={compressing}>
+            {compressing ? 'Komprimerer...' : 'Bekreft'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
