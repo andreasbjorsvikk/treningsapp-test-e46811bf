@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Mountain, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { Mountain, Loader2, RefreshCw } from 'lucide-react';
+import { format, formatDistanceToNow } from 'date-fns';
 import { nb } from 'date-fns/locale';
 
 interface FeedItem {
@@ -33,12 +33,14 @@ const PeakFeed = () => {
     setLoading(true);
     try {
       // Get accepted friendships
-      const { data: friendships } = await supabase
+      const { data: friendships, error: fError } = await supabase
         .from('friendships')
         .select('user_id, friend_id')
         .eq('status', 'accepted')
         .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`);
       
+      if (fError) { console.error('Feed friendships error:', fError); }
+
       if (!friendships || friendships.length === 0) {
         setItems([]);
         setLoading(false);
@@ -49,11 +51,14 @@ const PeakFeed = () => {
         f.user_id === user.id ? f.friend_id : f.user_id
       );
 
-      // Get friend profiles with privacy settings
+      // Include self in feed
+      const allUserIds = [...friendIds, user.id];
+
+      // Get profiles with privacy settings
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, username, avatar_url, privacy_peak_checkins, privacy_peak_checkins_friends')
-        .in('id', friendIds);
+        .in('id', allUserIds);
 
       if (!profiles) {
         setItems([]);
@@ -61,8 +66,9 @@ const PeakFeed = () => {
         return;
       }
 
-      // Filter friends based on privacy settings
-      const visibleFriendIds = profiles.filter(p => {
+      // Filter based on privacy (self always visible)
+      const visibleUserIds = profiles.filter(p => {
+        if (p.id === user.id) return true;
         const privacy = p.privacy_peak_checkins || 'friends';
         if (privacy === 'me') return false;
         if (privacy === 'friends') return true;
@@ -73,19 +79,21 @@ const PeakFeed = () => {
         return true;
       }).map(p => p.id);
 
-      if (visibleFriendIds.length === 0) {
+      if (visibleUserIds.length === 0) {
         setItems([]);
         setLoading(false);
         return;
       }
 
-      // Get recent checkins from visible friends
-      const { data: checkins } = await supabase
+      // Get recent checkins
+      const { data: checkins, error: cError } = await supabase
         .from('peak_checkins')
         .select('*')
-        .in('user_id', visibleFriendIds)
+        .in('user_id', visibleUserIds)
         .order('checked_in_at', { ascending: false })
         .limit(50);
+
+      if (cError) { console.error('Feed checkins error:', cError); }
 
       if (!checkins || checkins.length === 0) {
         setItems([]);
@@ -137,33 +145,115 @@ const PeakFeed = () => {
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-        <Mountain className="w-10 h-10 text-muted-foreground/50 mb-3" />
-        <p className="text-sm text-muted-foreground">Ingen innsjekkinger fra venner ennå.</p>
-        <p className="text-xs text-muted-foreground/70 mt-1">Legg til venner for å se deres turer!</p>
+        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+          <Mountain className="w-8 h-8 text-primary/60" />
+        </div>
+        <p className="text-sm font-medium text-foreground mb-1">Ingen innsjekkinger ennå</p>
+        <p className="text-xs text-muted-foreground max-w-[240px]">
+          Når du eller vennene dine sjekker inn på fjelltopper, dukker de opp her!
+        </p>
       </div>
     );
   }
 
+  // Group by date
+  const grouped = new Map<string, FeedItem[]>();
+  for (const item of items) {
+    const dateKey = format(new Date(item.checked_in_at), 'yyyy-MM-dd');
+    if (!grouped.has(dateKey)) grouped.set(dateKey, []);
+    grouped.get(dateKey)!.push(item);
+  }
+
+  const formatGroupDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const today = format(now, 'yyyy-MM-dd');
+    const yesterday = format(new Date(now.getTime() - 86400000), 'yyyy-MM-dd');
+    if (dateStr === today) return 'I dag';
+    if (dateStr === yesterday) return 'I går';
+    return format(d, "EEEE d. MMMM", { locale: nb });
+  };
+
   return (
-    <div className="flex flex-col gap-2 p-4">
-      {items.map(item => (
-        <div key={item.id} className="flex items-start gap-3 p-3 rounded-xl bg-card border border-border/50">
-          <Avatar className="w-10 h-10 shrink-0">
-            <AvatarImage src={item.avatar_url || undefined} />
-            <AvatarFallback>{item.username?.[0]?.toUpperCase() || '?'}</AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm">
-              <span className="font-semibold">{item.username || 'Ukjent'}</span>
-              <span className="text-muted-foreground"> sjekket inn på </span>
-              <span className="font-semibold">{item.peak_name}</span>
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {item.peak_elevation} moh {item.peak_area && `· ${item.peak_area}`} · {format(new Date(item.checked_in_at), "d. MMM yyyy", { locale: nb })}
-            </p>
+    <div className="flex flex-col gap-1 p-4">
+      {/* Refresh button */}
+      <div className="flex justify-end mb-2">
+        <button
+          onClick={loadFeed}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          Oppdater
+        </button>
+      </div>
+
+      {Array.from(grouped.entries()).map(([dateKey, dateItems]) => (
+        <div key={dateKey} className="mb-4">
+          {/* Date header */}
+          <div className="flex items-center gap-3 mb-2.5">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider capitalize">
+              {formatGroupDate(dateKey)}
+            </span>
+            <div className="flex-1 h-px bg-border/50" />
           </div>
-          <div className="w-8 h-8 rounded-lg bg-success/15 flex items-center justify-center shrink-0">
-            <Mountain className="w-4 h-4 text-success" />
+
+          <div className="space-y-2.5">
+            {dateItems.map(item => {
+              const isMe = item.user_id === user?.id;
+              const timeAgo = formatDistanceToNow(new Date(item.checked_in_at), { locale: nb, addSuffix: true });
+
+              return (
+                <div
+                  key={item.id}
+                  className="group relative rounded-2xl bg-card border border-border/40 overflow-hidden hover:border-border/80 transition-all duration-200"
+                >
+                  {/* Top accent bar */}
+                  <div className="h-0.5 bg-gradient-to-r from-emerald-500/60 via-emerald-400/30 to-transparent" />
+                  
+                  <div className="p-3.5">
+                    <div className="flex items-start gap-3">
+                      {/* Avatar */}
+                      <Avatar className="w-10 h-10 shrink-0 ring-2 ring-emerald-500/20">
+                        <AvatarImage src={item.avatar_url || undefined} />
+                        <AvatarFallback className="text-sm font-bold bg-emerald-500/10 text-emerald-600">
+                          {item.username?.[0]?.toUpperCase() || '?'}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm leading-snug">
+                          <span className="font-semibold">{isMe ? 'Du' : (item.username || 'Ukjent')}</span>
+                          <span className="text-muted-foreground"> nådde toppen av </span>
+                          <span className="font-semibold">{item.peak_name}</span>
+                        </p>
+                        
+                        {/* Peak info chips */}
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-secondary/60 text-[11px] font-medium text-muted-foreground">
+                            <Mountain className="w-3 h-3" />
+                            {item.peak_elevation} moh
+                          </span>
+                          {item.peak_area && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-secondary/60 text-[11px] font-medium text-muted-foreground">
+                              📍 {item.peak_area}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Timestamp */}
+                        <p className="text-[11px] text-muted-foreground/70 mt-1.5">{timeAgo}</p>
+                      </div>
+
+                      {/* Mountain icon badge */}
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-600/5 border border-emerald-500/10 flex items-center justify-center shrink-0">
+                        <Mountain className="w-5 h-5 text-emerald-500" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       ))}

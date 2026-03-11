@@ -9,7 +9,7 @@ import { SessionType, PrimaryGoalPeriod } from '@/types/workout';
 import { useAuth } from '@/hooks/useAuth';
 import { getActivityColors } from '@/utils/activityColors';
 import { useSettings } from '@/contexts/SettingsContext';
-import { getMonthTarget, getYearTarget, getActiveGoalForDate, getYearExpectedProgress, convertGoalValue } from '@/services/primaryGoalService';
+import { getMonthTarget, getYearTarget, getActiveGoalForDate, getYearExpectedProgress, getEarliestStart, convertGoalValue } from '@/services/primaryGoalService';
 import ChallengeDetail from '@/components/community/ChallengeDetail';
 import { ChallengeWithParticipants } from '@/pages/CommunityPage';
 
@@ -158,11 +158,29 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
         .order('date', { ascending: false })
         .limit(500) : { data: null };
 
+      // We need goal periods loaded first to filter year sessions correctly
+      let loadedGoalPeriods: PrimaryGoalPeriod[] = [];
+      if (canSeeG) {
+        try {
+          const { data: goalRows } = await supabase
+            .from('primary_goal_periods')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('valid_from', { ascending: true });
+          loadedGoalPeriods = (goalRows || []).map(rowToPeriod);
+          setFriendGoalPeriods(loadedGoalPeriods);
+        } catch { setFriendGoalPeriods([]); }
+      } else {
+        setFriendGoalPeriods([]);
+      }
+
       if (sessions) {
         const week: PeriodStats = { sessions: 0, duration: 0, distance: 0, elevation: 0 };
         const month: PeriodStats = { sessions: 0, duration: 0, distance: 0, elevation: 0 };
         const year: PeriodStats = { sessions: 0, duration: 0, distance: 0, elevation: 0 };
         const typeCounts: Record<string, number> = {};
+        const earliestStart = getEarliestStart(loadedGoalPeriods);
+        let yearSessionsForGoal = 0;
 
         for (const s of sessions) {
           const d = new Date(s.date);
@@ -178,12 +196,16 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
           if (d >= yearStart) {
             year.sessions++; year.duration += s.duration_minutes || 0;
             year.distance += s.distance || 0; year.elevation += s.elevation_gain || 0;
+            // Only count sessions from earliest goal start for year goal progress
+            if (!earliestStart || d >= earliestStart) {
+              yearSessionsForGoal++;
+            }
           }
         }
 
         setPeriodStats({ week, month, year });
         setFriendMonthSessions(month.sessions);
-        setFriendYearSessions(year.sessions);
+        setFriendYearSessions(yearSessionsForGoal);
         setActivityBreakdown(
           Object.entries(typeCounts)
             .map(([type, count]) => ({ type, count }))
@@ -192,19 +214,7 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
         setRecentSessions(sessions.slice(0, 6));
       }
 
-      // Fetch friend's primary goal periods (only if allowed)
-      if (canSeeG) {
-        try {
-          const { data: goalRows } = await supabase
-            .from('primary_goal_periods')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('valid_from', { ascending: true });
-          setFriendGoalPeriods((goalRows || []).map(rowToPeriod));
-        } catch { setFriendGoalPeriods([]); }
-      } else {
-        setFriendGoalPeriods([]);
-      }
+      // Goal periods already loaded above
 
       // Fetch shared challenges
       try {
