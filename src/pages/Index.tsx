@@ -815,6 +815,12 @@ const IndexContent = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <GoalCompletionOverlay
+        goal={appData.completedGoal}
+        onArchive={(id) => appData.archiveGoal(id)}
+        onDismiss={() => appData.dismissCompletedGoal()}
+      />
     </div>
   );
 };
