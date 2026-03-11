@@ -1,6 +1,7 @@
 import { ChallengeWithParticipants } from '@/pages/CommunityPage';
+import { SessionType } from '@/types/workout';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { MapPin, Clock, MountainSnow, Activity, Home, Pencil, Trophy } from 'lucide-react';
+import { Activity, Home, Pencil, Trophy } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettings } from '@/contexts/SettingsContext';
 import { getActivityColors } from '@/utils/activityColors';
