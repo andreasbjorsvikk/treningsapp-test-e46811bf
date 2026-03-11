@@ -4,7 +4,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 
 interface GoalProgressVisualProps {
   metric: GoalMetric;
-  activityType: SessionType | 'all';
+  activityType: string;
   percent: number; // 0-100
   current: number;
   target: number;
