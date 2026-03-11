@@ -212,7 +212,13 @@ const IndexContent = () => {
 
   const homeGoals = appData.goals.filter(g => g.showOnHome);
   const [pinnedChallenges, setPinnedChallenges] = useState<ChallengeWithParticipants[]>([]);
-  const unreadNotifications = 0;
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+
+  // Load unread notification count
+  useEffect(() => {
+    if (!user) return;
+    getUnreadNotificationCount().then(setUnreadNotifications);
+  }, [user, activeTab]);
 
   // Load pinned challenges
   useEffect(() => {

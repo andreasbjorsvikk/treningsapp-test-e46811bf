@@ -215,7 +215,18 @@ const no: Record<string, string> = {
   'workout.notesPlaceholder': 'Skriv notater her...',
   'workout.h': 't',
   'workout.min': 'min',
+  'workout.sec': 'sek',
   'workout.confirm': 'Bekreft',
+
+  // Goal completion
+  'goalCompletion.title': 'Mål nådd! 🎉',
+  'goalCompletion.description': 'Gratulerer! Du har fullført målet ditt.',
+  'goalCompletion.archive': 'Arkiver',
+  'goalCompletion.later': 'Senere',
+  'goalCompletion.achieved': 'Oppnådd',
+  'goalCompletion.notAchieved': 'Ikke oppnådd',
+  'goalCompletion.folder': 'Perioder',
+  'goalCompletion.progress': 'Fremgang',
 
   // Settings
   'settings.title': 'Innstillinger',

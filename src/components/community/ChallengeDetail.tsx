@@ -155,7 +155,7 @@ const ChallengeDetail = ({ challenge, open, onClose, onEdit, onResponded }: Chal
                           <span className={`text-base truncate ${isSelf ? 'font-semibold' : 'font-medium'}`}>
                             {isSelf ? t('common.me') : p.username}
                           </span>
-                          <span className="text-sm font-bold tabular-nums">{p.progress}{unit ? ` ${unit}` : ''}</span>
+                          <span className="text-sm font-bold tabular-nums">{(c.metric === 'distance' ? p.progress.toFixed(1) : Math.round(p.progress))}{unit ? ` ${unit}` : ''}</span>
                         </div>
                         <div className="h-2 bg-secondary rounded-full overflow-hidden">
                           <div

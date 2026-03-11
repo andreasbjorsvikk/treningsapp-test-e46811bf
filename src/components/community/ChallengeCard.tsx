@@ -108,7 +108,7 @@ const ChallengeCard = ({ challenge, onClick, onEdit }: ChallengeCardProps) => {
                     {isSelf ? t('common.me') : p.username}
                   </span>
                   <span className="text-xs font-medium ml-1">
-                    {p.progress}{unit ? ` ${unit}` : ''}
+                    {(c.metric === 'distance' ? p.progress.toFixed(1) : Math.round(p.progress))}{unit ? ` ${unit}` : ''}
                   </span>
                 </div>
                 <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
