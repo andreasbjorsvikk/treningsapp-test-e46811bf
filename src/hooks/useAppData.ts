@@ -106,6 +106,15 @@ export function useAppData() {
 
   // ===== Session operations =====
   const addSession = useCallback(async (data: Omit<WorkoutSession, 'id'>) => {
+    // Snapshot goal completion states before adding session
+    const prevStates = new Map<string, boolean>();
+    for (const g of goals.filter(g => !g.archived)) {
+      const periodSessions = getSessionsInPeriod(sessions, g.period, g.activityType, g.customStart, g.customEnd);
+      const current = computeProgress(periodSessions, g.metric);
+      prevStates.set(g.id, current >= g.target);
+    }
+    prevGoalStatesRef.current = prevStates;
+
     let newSession: WorkoutSession | undefined;
     if (isOnline && user) {
       newSession = await workoutServiceAsync.add(user.id, data);
@@ -124,7 +133,7 @@ export function useAppData() {
         });
       }
     }
-  }, [isOnline, user, reload, sessions]);
+  }, [isOnline, user, reload, sessions, goals]);
 
   const updateSession = useCallback(async (id: string, data: Partial<Omit<WorkoutSession, 'id'>>) => {
     if (isOnline && user) {
