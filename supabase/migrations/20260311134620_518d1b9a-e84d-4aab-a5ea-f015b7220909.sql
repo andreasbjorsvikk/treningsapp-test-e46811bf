@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS idx_workout_sessions_user_strava ON public.workout_sessions (user_id, strava_activity_id) WHERE strava_activity_id IS NOT NULL;
