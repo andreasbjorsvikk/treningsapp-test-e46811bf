@@ -200,7 +200,7 @@ const GoalForm = ({ goal, onSave, onCancel, embedded }: GoalFormProps) => {
       {/* Activity type - colored buttons with multi-select */}
       <div className="space-y-1.5">
         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('goalForm.activityType')}</label>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5 justify-center">
           <button
             type="button"
             onClick={() => toggleType('all')}

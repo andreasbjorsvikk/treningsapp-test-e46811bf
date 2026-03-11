@@ -103,11 +103,13 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
                     {isChallengeInvite && n.challenge_id && (
                       <div className="flex items-center gap-2 mt-2">
                         <button
-                          onClick={() => handleRespondChallenge(n.challenge_id!, true)}
-                          disabled={respondingTo === n.challenge_id}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                          onClick={() => {
+                            handleClose();
+                            setTimeout(() => onViewChallenge?.(n.challenge_id!), 150);
+                          }}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
                         >
-                          <Check className="w-3 h-3" /> {t('notifications.accept')}
+                          <Eye className="w-3 h-3" /> {t('notifications.viewChallenge')}
                         </button>
                         <button
                           onClick={() => handleRespondChallenge(n.challenge_id!, false)}

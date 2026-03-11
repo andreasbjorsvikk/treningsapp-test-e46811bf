@@ -113,25 +113,7 @@ const RecordsSection = () => {
   const [hikingRecords, setHikingRecords] = useState<HikingRecord[]>(() => {
     try {
       const stored = localStorage.getItem('treningslogg_hiking_records');
-      return stored ? JSON.parse(stored) : [
-        {
-          id: 'h1',
-          name: 'Galdhøpiggen',
-          entries: [
-            { id: 'e1', time: '3:45', date: '2025-07-15' },
-            { id: 'e2', time: '4:10', date: '2025-08-22' },
-            { id: 'e3', time: '3:30', date: '2026-01-05' },
-          ],
-        },
-        {
-          id: 'h2',
-          name: 'Romsdalseggen',
-          entries: [
-            { id: 'e4', time: '5:20', date: '2025-06-10' },
-            { id: 'e5', time: '4:55', date: '2025-09-01' },
-          ],
-        },
-      ];
+      return stored ? JSON.parse(stored) : [];
     } catch { return []; }
   });
 
