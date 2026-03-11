@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { RouteElevationChart } from '@/components/map/RouteElevationChart';
 import PeakLeaderboard from '@/components/map/PeakLeaderboard';
 import CheckinSuccessAnimation from '@/components/map/CheckinSuccessAnimation';
+import CheckinImageUpload from '@/components/map/CheckinImageUpload';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -41,6 +42,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showSuccessAnim, setShowSuccessAnim] = useState(false);
+  const [checkinImage, setCheckinImage] = useState<File | null>(null);
   
   // Admin manual checkin state
   const [manualCheckinOpen, setManualCheckinOpen] = useState(false);
@@ -104,7 +106,8 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
         setLoading(false);
         return;
       }
-      await checkinPeak(user.id, peak.id);
+      await checkinPeak(user.id, peak.id, undefined, checkinImage);
+      setCheckinImage(null);
       setShowSuccessAnim(true);
       onCheckinSuccess();
     } catch (err: any) {
@@ -210,6 +213,9 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
             )}
 
             {/* Check-in status with count */}
+            {/* Image upload before checkin */}
+            <CheckinImageUpload onImageReady={setCheckinImage} />
+
             {isCheckedIn ? (
               <div className="p-3 rounded-xl bg-success/10 border border-success/20 space-y-2">
                 <div className="flex items-center gap-2">

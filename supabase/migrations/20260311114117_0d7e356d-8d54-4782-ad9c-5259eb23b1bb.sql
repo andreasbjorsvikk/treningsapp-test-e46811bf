@@ -1,0 +1,1 @@
+ALTER TABLE public.peak_checkins ADD COLUMN IF NOT EXISTS image_url text DEFAULT NULL;
