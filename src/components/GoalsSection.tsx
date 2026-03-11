@@ -18,6 +18,7 @@ import { useAppDataContext } from '@/contexts/AppDataContext';
 import { getSessionsInPeriod, computeProgress } from '@/utils/goalUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { getActivityColors } from '@/utils/activityColors';
+import ArchivedGoalsSection from '@/components/ArchivedGoalsSection';
 
 const GoalsSection = () => {
   const { settings, updateSettings } = useSettings();
