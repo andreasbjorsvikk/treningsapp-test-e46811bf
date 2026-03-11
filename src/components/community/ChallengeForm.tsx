@@ -79,15 +79,14 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
         setName(c.name);
         setEmoji(c.emoji || '');
         setMetric(c.metric as ChallengeMetric);
-        setActivityType(c.activity_type);
+        setSelectedTypes(c.activity_type === 'all' ? ['all'] : c.activity_type.split(','));
         setTarget(c.target > 0 ? String(c.target) : '');
-        // Detect period from dates
         setPeriod('month');
       } else {
         setName('');
         setEmoji('');
         setMetric('sessions');
-        setActivityType('all');
+        setSelectedTypes(['all']);
         setPeriod('month');
         setTarget('');
         setSelectedUsers(preselectedUser ? [preselectedUser.id] : []);
