@@ -93,6 +93,11 @@ export const sessionTypeConfig: Record<SessionType, SessionTypeConfig> = {
     icon: CircleDot,
     color: 'bg-success text-success-foreground',
   },
+  trappemaskin: {
+    label: 'Trappemaskin',
+    icon: Dumbbell,
+    color: 'bg-warning text-warning-foreground',
+  },
   annet: {
     label: 'Annet',
     icon: CircleDot,
