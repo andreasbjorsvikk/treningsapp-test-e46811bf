@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { updateCheckinImage } from '@/services/peakCheckinService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Mountain, Loader2, RefreshCw, ImageIcon } from 'lucide-react';
+import { Mountain, Loader2, RefreshCw, Pencil } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { nb } from 'date-fns/locale';
+import CheckinImageUpload from '@/components/map/CheckinImageUpload';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 type FeedFilter = 'all' | 'mine' | 'friends';
 
@@ -27,6 +31,9 @@ const PeakFeed = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FeedFilter>('all');
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [pendingImage, setPendingImage] = useState<File | null>(null);
+  const [savingImage, setSavingImage] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -37,7 +44,6 @@ const PeakFeed = () => {
     if (!user) return;
     setLoading(true);
     try {
-      // Get accepted friendships
       const { data: friendships } = await supabase
         .from('friendships')
         .select('user_id, friend_id')
@@ -50,7 +56,6 @@ const PeakFeed = () => {
 
       const allUserIds = [...friendIds, user.id];
 
-      // Get profiles with privacy settings
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, username, avatar_url, privacy_peak_checkins, privacy_peak_checkins_friends')
@@ -58,7 +63,6 @@ const PeakFeed = () => {
 
       if (!profiles) { setItems([]); setLoading(false); return; }
 
-      // Filter based on privacy
       const visibleUserIds = profiles.filter(p => {
         if (p.id === user.id) return true;
         const privacy = p.privacy_peak_checkins || 'friends';
@@ -73,7 +77,6 @@ const PeakFeed = () => {
 
       if (visibleUserIds.length === 0) { setItems([]); setLoading(false); return; }
 
-      // Get recent checkins
       const { data: checkins } = await supabase
         .from('peak_checkins')
         .select('*')
@@ -83,7 +86,6 @@ const PeakFeed = () => {
 
       if (!checkins || checkins.length === 0) { setItems([]); setLoading(false); return; }
 
-      // Get peak info
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const allPeakIds = [...new Set((checkins as any[]).map((c: any) => c.peak_id))];
       const validUuidPeakIds = allPeakIds.filter(id => uuidRegex.test(id));
@@ -124,7 +126,23 @@ const PeakFeed = () => {
     setLoading(false);
   };
 
-  // Apply client-side filter
+  const handleSaveEditImage = async (itemId: string) => {
+    if (!user || !pendingImage) return;
+    setSavingImage(true);
+    try {
+      const newUrl = await updateCheckinImage(itemId, user.id, pendingImage);
+      setItems(prev => prev.map(item =>
+        item.id === itemId ? { ...item, image_url: newUrl } : item
+      ));
+      setEditingItemId(null);
+      setPendingImage(null);
+      toast.success('Bilde lagret!');
+    } catch {
+      toast.error('Kunne ikke lagre bildet.');
+    }
+    setSavingImage(false);
+  };
+
   const filteredItems = items.filter(item => {
     if (filter === 'mine') return item.user_id === user?.id;
     if (filter === 'friends') return item.user_id !== user?.id;
@@ -139,7 +157,6 @@ const PeakFeed = () => {
     );
   }
 
-  // Group by date
   const grouped = new Map<string, FeedItem[]>();
   for (const item of filteredItems) {
     const dateKey = format(new Date(item.checked_in_at), 'yyyy-MM-dd');
@@ -219,6 +236,7 @@ const PeakFeed = () => {
               {dateItems.map(item => {
                 const isMe = item.user_id === user?.id;
                 const timeAgo = formatDistanceToNow(new Date(item.checked_in_at), { locale: nb, addSuffix: true });
+                const isEditing = editingItemId === item.id;
 
                 return (
                   <div
@@ -259,13 +277,33 @@ const PeakFeed = () => {
                           <p className="text-[11px] text-muted-foreground/70 mt-1.5">{timeAgo}</p>
                         </div>
 
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-600/5 border border-emerald-500/10 flex items-center justify-center shrink-0">
-                          <Mountain className="w-5 h-5 text-emerald-500" />
+                        <div className="flex items-center gap-1 shrink-0">
+                          {/* Edit button for own posts */}
+                          {isMe && (
+                            <button
+                              onClick={() => {
+                                if (isEditing) {
+                                  setEditingItemId(null);
+                                  setPendingImage(null);
+                                } else {
+                                  setEditingItemId(item.id);
+                                  setPendingImage(null);
+                                }
+                              }}
+                              className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
+                              title="Rediger innlegg"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                          )}
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-600/5 border border-emerald-500/10 flex items-center justify-center">
+                            <Mountain className="w-5 h-5 text-emerald-500" />
+                          </div>
                         </div>
                       </div>
 
                       {/* Check-in image */}
-                      {item.image_url && (
+                      {item.image_url && !isEditing && (
                         <div
                           className="mt-3 rounded-xl overflow-hidden border border-border/30 cursor-pointer"
                           onClick={() => setExpandedImage(expandedImage === item.id ? null : item.id)}
@@ -278,6 +316,24 @@ const PeakFeed = () => {
                             }`}
                             loading="lazy"
                           />
+                        </div>
+                      )}
+
+                      {/* Edit mode: image upload */}
+                      {isEditing && (
+                        <div className="mt-3 pt-3 border-t border-border/30">
+                          <CheckinImageUpload onImageReady={setPendingImage} />
+                          {pendingImage && (
+                            <Button
+                              onClick={() => handleSaveEditImage(item.id)}
+                              disabled={savingImage}
+                              size="sm"
+                              className="w-full mt-2"
+                            >
+                              {savingImage ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                              {savingImage ? 'Lagrer...' : 'Lagre bilde'}
+                            </Button>
+                          )}
                         </div>
                       )}
                     </div>

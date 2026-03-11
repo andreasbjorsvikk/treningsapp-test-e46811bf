@@ -1,6 +1,6 @@
 import { Peak } from '@/data/peaks';
 import PeakOrbitMap from '@/components/map/PeakOrbitMap';
-import { PeakCheckin, checkinPeak, getDistanceMeters, adminCheckinPeak, searchProfiles, getAllCheckinsForPeak, CheckinWithProfile, deleteCheckin } from '@/services/peakCheckinService';
+import { PeakCheckin, checkinPeak, getDistanceMeters, adminCheckinPeak, searchProfiles, getAllCheckinsForPeak, CheckinWithProfile, deleteCheckin, updateCheckinImage } from '@/services/peakCheckinService';
 import { useAuth } from '@/hooks/useAuth';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Mountain, MapPin, Check, Loader2, ImageIcon, Pencil, Trash2, CalendarIcon, UserPlus, X, Search, List } from 'lucide-react';
+import { Mountain, MapPin, Check, Loader2, Pencil, Trash2, CalendarIcon, UserPlus, X, Search, List } from 'lucide-react';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { RouteElevationChart } from '@/components/map/RouteElevationChart';
@@ -42,7 +42,8 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showSuccessAnim, setShowSuccessAnim] = useState(false);
-  const [checkinImage, setCheckinImage] = useState<File | null>(null);
+  const [savingImage, setSavingImage] = useState(false);
+  const [pendingImage, setPendingImage] = useState<File | null>(null);
   
   // Admin manual checkin state
   const [manualCheckinOpen, setManualCheckinOpen] = useState(false);
@@ -68,6 +69,13 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Reset pending image when drawer closes or peak changes
+  useEffect(() => {
+    if (!open) {
+      setPendingImage(null);
+    }
+  }, [open, peak?.id]);
+
   // Checkin stats for this peak
   const peakCheckins = useMemo(() => {
     if (!peak) return [];
@@ -86,8 +94,17 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
     return Date.now() - new Date(lastCheckin.checked_in_at).getTime() > CHECKIN_COOLDOWN_MS;
   }, [lastCheckin]);
 
-  if (!peak) return null;
+  // Is within cooldown window (just checked in recently, can add image)
+  const isInCooldownWindow = useMemo(() => {
+    if (!lastCheckin) return false;
+    const elapsed = Date.now() - new Date(lastCheckin.checked_in_at).getTime();
+    return elapsed <= CHECKIN_COOLDOWN_MS;
+  }, [lastCheckin]);
 
+  // Check if last checkin already has an image
+  const lastCheckinHasImage = lastCheckin && (lastCheckin as any).image_url;
+
+  if (!peak) return null;
 
   const handleCheckin = async () => {
     if (!user) return;
@@ -106,8 +123,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
         setLoading(false);
         return;
       }
-      await checkinPeak(user.id, peak.id, undefined, checkinImage);
-      setCheckinImage(null);
+      await checkinPeak(user.id, peak.id);
       setShowSuccessAnim(true);
       onCheckinSuccess();
     } catch (err: any) {
@@ -116,6 +132,20 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSaveImage = async () => {
+    if (!user || !pendingImage || !lastCheckin) return;
+    setSavingImage(true);
+    try {
+      await updateCheckinImage(lastCheckin.id, user.id, pendingImage);
+      toast.success('Bilde lagret!');
+      setPendingImage(null);
+      onCheckinSuccess();
+    } catch {
+      toast.error('Kunne ikke lagre bildet. Prøv igjen.');
+    }
+    setSavingImage(false);
   };
 
   const handleManualCheckin = async () => {
@@ -177,6 +207,46 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
               <PeakOrbitMap latitude={peak.latitude} longitude={peak.longitude} heightMoh={peak.heightMoh} className="w-full h-[180px]" />
             </div>
 
+            {/* Check-in button - right below map */}
+            {isCheckedIn ? (
+              <div className="p-3 rounded-xl bg-success/10 border border-success/20 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Check className="w-5 h-5 text-success" />
+                  <span className="text-sm font-medium text-success">
+                    Du har sjekket inn på denne toppen {checkinCount} {checkinCount === 1 ? 'gang' : 'ganger'}
+                  </span>
+                </div>
+                {lastCheckin && (
+                  <p className="text-xs text-muted-foreground ml-7">
+                    Sist: {format(new Date(lastCheckin.checked_in_at), "d. MMMM yyyy", { locale: nb })}
+                  </p>
+                )}
+                {/* Allow re-checkin */}
+                <Button onClick={handleCheckin} disabled={loading || !canCheckin} variant="outline" size="sm" className="w-full mt-2">
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <MapPin className="w-4 h-4 mr-2" />}
+                  {canCheckin ? 'Sjekk inn igjen' : 'Vent minst 3 timer'}
+                </Button>
+
+                {/* Image upload after checkin - shown during cooldown */}
+                {isInCooldownWindow && !lastCheckinHasImage && (
+                  <div className="mt-3 pt-3 border-t border-border/30">
+                    <CheckinImageUpload onImageReady={setPendingImage} />
+                    {pendingImage && (
+                      <Button onClick={handleSaveImage} disabled={savingImage} size="sm" className="w-full mt-2">
+                        {savingImage ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                        {savingImage ? 'Lagrer...' : 'Lagre bilde'}
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Button onClick={handleCheckin} disabled={loading} className="w-full" size="lg">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <MapPin className="w-4 h-4 mr-2" />}
+                Sjekk inn
+              </Button>
+            )}
+
             {/* Route info */}
             <div className="flex flex-col gap-2">
               {peak.route_status === 'approved' && onShowRoute && (
@@ -200,46 +270,11 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
 
             {peak.description && <p className="text-sm text-muted-foreground">{peak.description}</p>}
 
-            {peak.imageUrl ? (
+            {/* Only show image if it exists */}
+            {peak.imageUrl && (
               <div className="rounded-xl overflow-hidden border border-border/50">
                 <img src={peak.imageUrl} alt={peak.name} className="w-full h-40 object-cover" />
               </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-border/50 bg-muted/30 h-32 flex items-center justify-center">
-                <div className="flex flex-col items-center gap-1 text-muted-foreground">
-                  <ImageIcon className="w-6 h-6" /><span className="text-xs">Bilde kommer</span>
-                </div>
-              </div>
-            )}
-
-            {/* Check-in status with count */}
-            {/* Image upload before checkin */}
-            <CheckinImageUpload onImageReady={setCheckinImage} />
-
-            {isCheckedIn ? (
-              <div className="p-3 rounded-xl bg-success/10 border border-success/20 space-y-2">
-                <div className="flex items-center gap-2">
-                  <Check className="w-5 h-5 text-success" />
-                  <span className="text-sm font-medium text-success">
-                    Du har sjekket inn på denne toppen {checkinCount} {checkinCount === 1 ? 'gang' : 'ganger'}
-                  </span>
-                </div>
-                {lastCheckin && (
-                  <p className="text-xs text-muted-foreground ml-7">
-                    Sist: {format(new Date(lastCheckin.checked_in_at), "d. MMMM yyyy", { locale: nb })}
-                  </p>
-                )}
-                {/* Allow re-checkin */}
-                <Button onClick={handleCheckin} disabled={loading || !canCheckin} variant="outline" size="sm" className="w-full mt-2">
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <MapPin className="w-4 h-4 mr-2" />}
-                  {canCheckin ? 'Sjekk inn igjen' : 'Vent minst 3 timer'}
-                </Button>
-              </div>
-            ) : (
-              <Button onClick={handleCheckin} disabled={loading} className="w-full" size="lg">
-                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <MapPin className="w-4 h-4 mr-2" />}
-                Sjekk inn
-              </Button>
             )}
 
             {/* Peak leaderboard */}

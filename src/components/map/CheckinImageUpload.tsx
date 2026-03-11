@@ -86,6 +86,7 @@ const CheckinImageUpload = ({ onImageReady }: CheckinImageUploadProps) => {
   };
   const onPointerMove = (e: React.PointerEvent) => {
     if (!dragging || confirmed) return;
+    e.preventDefault();
     setOffset({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
   };
   const onPointerUp = () => setDragging(false);
@@ -94,14 +95,25 @@ const CheckinImageUpload = ({ onImageReady }: CheckinImageUploadProps) => {
   const onWheel = (e: React.WheelEvent) => {
     if (confirmed) return;
     e.preventDefault();
+    e.stopPropagation();
     setScale(s => Math.min(3, Math.max(0.5, s - e.deltaY * 0.002)));
   };
 
-  // Touch pinch zoom
+  // Touch pinch zoom + prevent parent scroll
   const lastTouchDist = useRef<number | null>(null);
-  const onTouchMove = useCallback((e: TouchEvent) => {
-    if (confirmed || e.touches.length < 2) { lastTouchDist.current = null; return; }
+  const onTouchStart = useCallback((e: TouchEvent) => {
+    if (confirmed) return;
+    // Prevent parent scroll when touching the image area
     e.preventDefault();
+  }, [confirmed]);
+
+  const onTouchMove = useCallback((e: TouchEvent) => {
+    if (confirmed) return;
+    // Always prevent scroll when interacting with the crop area
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (e.touches.length < 2) { lastTouchDist.current = null; return; }
     const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
     if (lastTouchDist.current !== null) {
       const delta = dist - lastTouchDist.current;
@@ -114,11 +126,16 @@ const CheckinImageUpload = ({ onImageReady }: CheckinImageUploadProps) => {
 
   useEffect(() => {
     const el = containerRef.current;
-    if (!el || !preview) return;
+    if (!el || !preview || confirmed) return;
+    el.addEventListener('touchstart', onTouchStart, { passive: false });
     el.addEventListener('touchmove', onTouchMove, { passive: false });
     el.addEventListener('touchend', onTouchEnd);
-    return () => { el.removeEventListener('touchmove', onTouchMove); el.removeEventListener('touchend', onTouchEnd); };
-  }, [preview, onTouchMove, onTouchEnd]);
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [preview, confirmed, onTouchStart, onTouchMove, onTouchEnd]);
 
   if (!preview) {
     return (
@@ -153,7 +170,8 @@ const CheckinImageUpload = ({ onImageReady }: CheckinImageUploadProps) => {
       {/* Crop area */}
       <div
         ref={containerRef}
-        className="relative w-full aspect-[16/9] rounded-xl overflow-hidden border border-border bg-muted cursor-move touch-none"
+        className="relative w-full aspect-[16/9] rounded-xl overflow-hidden border border-border bg-muted cursor-move"
+        style={{ touchAction: 'none' }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
