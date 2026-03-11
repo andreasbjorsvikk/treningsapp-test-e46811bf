@@ -1,17 +1,13 @@
 import { ChallengeWithParticipants } from '@/pages/CommunityPage';
+import { SessionType } from '@/types/workout';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { MapPin, Clock, MountainSnow, Activity, Home, Pencil, Trophy } from 'lucide-react';
+import { Activity, Home, Pencil, Trophy } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettings } from '@/contexts/SettingsContext';
+import { getActivityColors } from '@/utils/activityColors';
+import ActivityIcon from '@/components/ActivityIcon';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toast } from 'sonner';
-
-const metricIcons: Record<string, typeof Activity> = {
-  sessions: Activity,
-  distance: MapPin,
-  duration: Clock,
-  elevation: MountainSnow,
-};
 
 const metricUnits: Record<string, string> = {
   sessions: '',
@@ -19,6 +15,7 @@ const metricUnits: Record<string, string> = {
   duration: 't',
   elevation: 'm',
 };
+
 
 interface ChallengeCardProps {
   challenge: ChallengeWithParticipants;
@@ -30,10 +27,11 @@ const ChallengeCard = ({ challenge, onClick, onEdit }: ChallengeCardProps) => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const { settings, updateSettings } = useSettings();
+  const isDark = settings.darkMode;
   const c = challenge.challenge;
-  const Icon = metricIcons[c.metric] || Activity;
   const unit = metricUnits[c.metric] || '';
   const myParticipant = challenge.participants.find(p => p.userId === user?.id);
+  const activityTypes = c.activity_type === 'all' ? [] : c.activity_type.split(',');
 
   const locale = t('date.locale');
   const startDate = new Date(c.period_start);
@@ -53,8 +51,25 @@ const ChallengeCard = ({ challenge, onClick, onEdit }: ChallengeCardProps) => {
           {c.emoji && <span className="text-xl">{c.emoji}</span>}
           <h3 className="font-display font-semibold text-base">{c.name}</h3>
         </div>
-        <div className="flex items-center gap-1 text-muted-foreground">
-          <Icon className="w-4 h-4" />
+        <div className="flex items-center gap-1">
+          {activityTypes.length > 0 ? (
+            activityTypes.map(type => {
+              const colors = getActivityColors(type as SessionType, isDark);
+              return (
+                <div
+                  key={type}
+                  className="w-7 h-7 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: colors.bg }}
+                >
+                  <ActivityIcon type={type as SessionType} className="w-3.5 h-3.5" colorOverride={colors.text} />
+                </div>
+              );
+            })
+          ) : (
+            <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center">
+              <Activity className="w-3.5 h-3.5 text-muted-foreground" />
+            </div>
+          )}
         </div>
       </div>
 

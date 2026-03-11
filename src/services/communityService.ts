@@ -377,7 +377,11 @@ export async function getChallengeProgress(challenge: ChallengeRow, participantU
     .lte('date', challenge.period_end);
 
   if (challenge.activity_type !== 'all') {
-    query = query.eq('type', challenge.activity_type);
+    if (challenge.activity_type.includes(',')) {
+      query = query.in('type', challenge.activity_type.split(','));
+    } else {
+      query = query.eq('type', challenge.activity_type);
+    }
   }
 
   const { data: sessions } = await query;

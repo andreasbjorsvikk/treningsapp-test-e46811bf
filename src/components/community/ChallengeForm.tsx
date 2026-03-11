@@ -5,10 +5,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
+import { getActivityColors } from '@/utils/activityColors';
+import { useSettings } from '@/contexts/SettingsContext';
+import ActivityIcon from '@/components/ActivityIcon';
 import { getFriends, createChallenge, updateChallenge, deleteChallenge, Friend } from '@/services/communityService';
 import { ChallengeWithParticipants } from '@/pages/CommunityPage';
 import { toast } from 'sonner';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Loader2, Trash2, Layers } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface ChallengeFormProps {
@@ -48,11 +51,14 @@ function getPeriodDates(period: string): { start: string; end: string } {
 
 const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChallenge }: ChallengeFormProps) => {
   const { t } = useTranslation();
+  const { settings } = useSettings();
+  const isDark = settings.darkMode;
+  const disabledTypes = settings.disabledSessionTypes || [];
   const isEditing = !!editChallenge;
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('');
   const [metric, setMetric] = useState<ChallengeMetric>('sessions');
-  const [activityType, setActivityType] = useState('all');
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(['all']);
   const [period, setPeriod] = useState('month');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
@@ -73,15 +79,14 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
         setName(c.name);
         setEmoji(c.emoji || '');
         setMetric(c.metric as ChallengeMetric);
-        setActivityType(c.activity_type);
+        setSelectedTypes(c.activity_type === 'all' ? ['all'] : c.activity_type.split(','));
         setTarget(c.target > 0 ? String(c.target) : '');
-        // Detect period from dates
         setPeriod('month');
       } else {
         setName('');
         setEmoji('');
         setMetric('sessions');
-        setActivityType('all');
+        setSelectedTypes(['all']);
         setPeriod('month');
         setTarget('');
         setSelectedUsers(preselectedUser ? [preselectedUser.id] : []);
@@ -89,6 +94,21 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
       setShowDeleteConfirm(false);
     }
   }, [open, preselectedUser, editChallenge]);
+
+  const toggleType = (type: string) => {
+    if (type === 'all') {
+      setSelectedTypes(['all']);
+      return;
+    }
+    setSelectedTypes(prev => {
+      const filtered = prev.filter(t => t !== 'all');
+      if (filtered.includes(type)) {
+        const next = filtered.filter(t => t !== type);
+        return next.length === 0 ? ['all'] : next;
+      }
+      return [...filtered, type];
+    });
+  };
 
   const toggleUser = (id: string) => {
     setSelectedUsers(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -105,7 +125,7 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
           name,
           emoji: emoji || undefined,
           metric,
-          activityType,
+          activityType: selectedTypes.includes('all') ? 'all' : selectedTypes.join(','),
           target: parseFloat(target) || 0,
           periodStart: dates.start,
           periodEnd: dates.end,
@@ -116,7 +136,7 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
           name,
           emoji: emoji || undefined,
           metric,
-          activityType,
+          activityType: selectedTypes.includes('all') ? 'all' : selectedTypes.join(','),
           target: parseFloat(target) || 0,
           periodStart: dates.start,
           periodEnd: dates.end,
@@ -180,15 +200,39 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
 
           <div>
             <Label className="text-xs">{t('challenge.activityType')}</Label>
-            <Select value={activityType} onValueChange={setActivityType}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('goalForm.all')}</SelectItem>
-                {allSessionTypes.map(tp => (
-                  <SelectItem key={tp} value={tp}>{t(`activity.${tp}`)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex flex-wrap gap-1.5 justify-center mt-1.5">
+              <button
+                type="button"
+                onClick={() => toggleType('all')}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  selectedTypes.includes('all')
+                    ? 'gradient-energy text-primary-foreground'
+                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                {t('goalForm.all')}
+              </button>
+              {allSessionTypes.filter(tp => !disabledTypes.includes(tp)).map(type => {
+                const colors = getActivityColors(type, isDark);
+                const selected = selectedTypes.includes(type);
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => toggleType(type)}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium transition-all"
+                    style={{
+                      backgroundColor: selected ? colors.bg : undefined,
+                      color: selected ? colors.text : undefined,
+                    }}
+                  >
+                    <ActivityIcon type={type} className="w-3.5 h-3.5" colorOverride={selected ? colors.text : undefined} />
+                    {t(`activity.${type}`)}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="flex gap-2">

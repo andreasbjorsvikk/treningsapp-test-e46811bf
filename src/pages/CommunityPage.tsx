@@ -111,6 +111,14 @@ const CommunityPage = () => {
     setMainTab('friends');
   };
 
+  const handleViewChallenge = (challengeId: string) => {
+    setMainTab('challenges');
+    const found = challenges.find(c => c.challenge.id === challengeId);
+    if (found) {
+      setSelectedChallenge(found);
+    }
+  };
+
   const handleSelectChallenge = (cWithP: ChallengeWithParticipants) => {
     setSelectedChallenge(cWithP);
   };
@@ -186,6 +194,7 @@ const CommunityPage = () => {
         open={!!selectedChallenge}
         onClose={() => setSelectedChallenge(null)}
         onEdit={(ch) => { setSelectedChallenge(null); setEditChallenge(ch); setTimeout(() => setShowForm(true), 200); }}
+        onResponded={loadChallenges}
       />
       <ChallengeForm
         open={showForm}
@@ -198,6 +207,7 @@ const CommunityPage = () => {
         open={showNotifications}
         onClose={() => { setShowNotifications(false); getUnreadNotificationCount().then(setUnreadCount); }}
         onNavigateToFriends={handleNavigateToFriends}
+        onViewChallenge={handleViewChallenge}
       />
       <UserProfileDrawer
         user={profileUser}

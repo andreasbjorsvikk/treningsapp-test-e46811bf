@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { getNotifications, markAllNotificationsRead, respondToChallenge, NotificationRow } from '@/services/communityService';
-import { Mail, Settings, Trophy, UserPlus, Loader2, Check, X } from 'lucide-react';
+import { Mail, Settings, Trophy, UserPlus, Loader2, Check, X, Eye } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toast } from 'sonner';
 
@@ -9,6 +9,7 @@ interface NotificationSheetProps {
   open: boolean;
   onClose: () => void;
   onNavigateToFriends?: () => void;
+  onViewChallenge?: (challengeId: string) => void;
 }
 const iconMap: Record<string, typeof Mail> = {
   invite: Mail,
@@ -17,7 +18,7 @@ const iconMap: Record<string, typeof Mail> = {
   friend_request: UserPlus,
 };
 
-const NotificationSheet = ({ open, onClose, onNavigateToFriends }: NotificationSheetProps) => {
+const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge }: NotificationSheetProps) => {
   const { t } = useTranslation();
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,11 +103,13 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends }: NotificationS
                     {isChallengeInvite && n.challenge_id && (
                       <div className="flex items-center gap-2 mt-2">
                         <button
-                          onClick={() => handleRespondChallenge(n.challenge_id!, true)}
-                          disabled={respondingTo === n.challenge_id}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                          onClick={() => {
+                            handleClose();
+                            setTimeout(() => onViewChallenge?.(n.challenge_id!), 150);
+                          }}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
                         >
-                          <Check className="w-3 h-3" /> {t('notifications.accept')}
+                          <Eye className="w-3 h-3" /> {t('notifications.viewChallenge')}
                         </button>
                         <button
                           onClick={() => handleRespondChallenge(n.challenge_id!, false)}

@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChallengeWithParticipants } from '@/pages/CommunityPage';
-import { Friend } from '@/services/communityService';
+import { Friend, respondToChallenge } from '@/services/communityService';
+import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter,
 } from '@/components/ui/drawer';
-import { Trophy, Link2, Home, Pencil } from 'lucide-react';
+import { Trophy, Link2, Home, Pencil, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -25,13 +26,43 @@ interface ChallengeDetailProps {
   open: boolean;
   onClose: () => void;
   onEdit?: (challenge: ChallengeWithParticipants) => void;
+  onResponded?: () => void;
 }
 
-const ChallengeDetail = ({ challenge, open, onClose, onEdit }: ChallengeDetailProps) => {
+const ChallengeDetail = ({ challenge, open, onClose, onEdit, onResponded }: ChallengeDetailProps) => {
   const { settings, updateSettings } = useSettings();
   const { user } = useAuth();
   const { t } = useTranslation();
   const [profileUser, setProfileUser] = useState<Friend | null>(null);
+  const [responding, setResponding] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+
+  useEffect(() => {
+    if (open && challenge && user) {
+      supabase.from('challenge_participants')
+        .select('status')
+        .eq('challenge_id', challenge.challenge.id)
+        .eq('user_id', user.id)
+        .single()
+        .then(({ data }) => {
+          setIsPending(data?.status === 'pending');
+        });
+    }
+  }, [open, challenge, user]);
+
+  const handleRespond = async (accept: boolean) => {
+    if (!challenge) return;
+    setResponding(true);
+    try {
+      await respondToChallenge(challenge.challenge.id, accept);
+      toast.success(accept ? t('notifications.challengeAccepted') : t('notifications.challengeDeclined'));
+      setIsPending(false);
+      onResponded?.();
+    } catch {
+      toast.error(t('notifications.respondError'));
+    }
+    setResponding(false);
+  };
 
   if (!challenge) return null;
 
@@ -142,17 +173,35 @@ const ChallengeDetail = ({ challenge, open, onClose, onEdit }: ChallengeDetailPr
               </div>
             </div>
 
-            <DrawerFooter className="flex-row gap-2 pt-4">
-              {onEdit && c.created_by === user?.id && (
-                <button
-                  onClick={() => { onEdit(challenge); onClose(); }}
-                  className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-secondary text-sm font-medium hover:bg-secondary/80 transition-colors"
-                >
-                  <Pencil className="w-4 h-4" /> {t('common.edit')}
-                </button>
+            <DrawerFooter className="flex-col gap-2 pt-4">
+              {isPending && (
+                <div className="flex gap-2 w-full">
+                  <button
+                    onClick={() => handleRespond(true)}
+                    disabled={responding}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  >
+                    <Check className="w-4 h-4" /> {t('notifications.accept')}
+                  </button>
+                  <button
+                    onClick={() => handleRespond(false)}
+                    disabled={responding}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-secondary text-foreground text-sm font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50"
+                  >
+                    <X className="w-4 h-4" /> {t('notifications.decline')}
+                  </button>
+                </div>
               )}
-              {!isEnded && (
-                <>
+              <div className="flex gap-2">
+                {onEdit && c.created_by === user?.id && (
+                  <button
+                    onClick={() => { onEdit(challenge); onClose(); }}
+                    className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-secondary text-sm font-medium hover:bg-secondary/80 transition-colors"
+                  >
+                    <Pencil className="w-4 h-4" /> {t('common.edit')}
+                  </button>
+                )}
+                {!isEnded && (
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(`${window.location.origin}/challenge/${c.id}/invite`);
@@ -162,8 +211,8 @@ const ChallengeDetail = ({ challenge, open, onClose, onEdit }: ChallengeDetailPr
                   >
                     <Link2 className="w-4 h-4" />
                   </button>
-                </>
-              )}
+                )}
+              </div>
             </DrawerFooter>
           </div>
         </DrawerContent>
