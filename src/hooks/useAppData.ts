@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { WorkoutSession, ExtraGoal, PrimaryGoalPeriod, HealthEvent } from '@/types/workout';
 import { workoutService, workoutServiceAsync, computeStatsFromSessions } from '@/services/workoutService';
@@ -6,6 +6,7 @@ import { goalService, goalServiceAsync } from '@/services/goalService';
 import { primaryGoalService, primaryGoalServiceAsync } from '@/services/primaryGoalService';
 import { healthEventService, healthEventServiceAsync } from '@/services/healthEventService';
 import { checkAllPRs, PRAlert } from '@/utils/prDetection';
+import { getSessionsInPeriod, computeProgress } from '@/utils/goalUtils';
 import { toast } from 'sonner';
 
 export function useAppData() {
