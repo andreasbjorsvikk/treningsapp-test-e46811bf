@@ -8,6 +8,7 @@ export type SessionType =
   | 'tennis' 
   | 'yoga'
   | 'fotball'
+  | 'trappemaskin'
   | 'annet';
 
 export interface WorkoutSession {
