@@ -258,11 +258,20 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         .single();
       if (cancelled) return;
       if (data?.session_type_colors && typeof data.session_type_colors === 'object') {
-        const dbColors = data.session_type_colors as Record<string, string>;
-        setSettings(prev => ({
-          ...prev,
-          sessionTypeColors: { ...defaultTypeColors, ...dbColors },
-        }));
+        const dbColors = data.session_type_colors as Record<string, any>;
+        // Check if it's the new format (full ActivityColors with light/dark)
+        const firstValue = Object.values(dbColors)[0];
+        if (firstValue && typeof firstValue === 'object' && 'light' in firstValue) {
+          // New format: full ActivityColors structure
+          applyActivityColorOverrides(dbColors);
+          saveActivityColors(); // sync to localStorage
+        } else {
+          // Old format: simple hex strings - just update sessionTypeColors
+          setSettings(prev => ({
+            ...prev,
+            sessionTypeColors: { ...defaultTypeColors, ...dbColors },
+          }));
+        }
       }
       setDbColorsLoaded(true);
     };
