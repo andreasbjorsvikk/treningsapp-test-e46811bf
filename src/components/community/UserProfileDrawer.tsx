@@ -140,15 +140,23 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
       const canSeeW = canSee(privacy.workouts, privacy.workoutsFriends);
       const canSeeS = canSee(privacy.stats, privacy.statsFriends);
       const canSeeG = canSee(privacy.goals, privacy.goalsFriends);
+      const weekStart = getWeekStart();
+      const monthStart = getMonthStart();
       const yearStart = getYearStart();
 
-      // Fetch friend's sessions
-      const { data: sessions } = await supabase
+      // Fetch friend's sessions (only if allowed)
+      if (!canSeeW && !canSeeS) {
+        setPeriodStats({ week: { sessions: 0, duration: 0, distance: 0, elevation: 0 }, month: { sessions: 0, duration: 0, distance: 0, elevation: 0 }, year: { sessions: 0, duration: 0, distance: 0, elevation: 0 } });
+        setRecentSessions([]);
+        setActivityBreakdown([]);
+      }
+
+      const { data: sessions } = canSeeW || canSeeS ? await supabase
         .from('workout_sessions')
         .select('type, date, distance, duration_minutes, elevation_gain, title')
         .eq('user_id', user.id)
         .order('date', { ascending: false })
-        .limit(500);
+        .limit(500) : { data: null };
 
       if (sessions) {
         const week: PeriodStats = { sessions: 0, duration: 0, distance: 0, elevation: 0 };
