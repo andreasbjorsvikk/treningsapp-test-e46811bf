@@ -95,6 +95,21 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
     }
   }, [open, preselectedUser, editChallenge]);
 
+  const toggleType = (type: string) => {
+    if (type === 'all') {
+      setSelectedTypes(['all']);
+      return;
+    }
+    setSelectedTypes(prev => {
+      const filtered = prev.filter(t => t !== 'all');
+      if (filtered.includes(type)) {
+        const next = filtered.filter(t => t !== type);
+        return next.length === 0 ? ['all'] : next;
+      }
+      return [...filtered, type];
+    });
+  };
+
   const toggleUser = (id: string) => {
     setSelectedUsers(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
