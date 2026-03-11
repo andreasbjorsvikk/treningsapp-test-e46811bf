@@ -8,10 +8,11 @@ interface DraggableGoalGridProps {
   onEdit: (goal: ExtraGoal) => void;
   onDelete: (id: string) => void | Promise<void>;
   onToggleHome: (id: string) => void | Promise<void>;
+  onArchive?: (id: string) => void | Promise<void>;
   onReorder: (orderedIds?: string[]) => void | Promise<void>;
 }
 
-const DraggableGoalGrid = ({ goals, sessions, onEdit, onDelete, onToggleHome, onReorder }: DraggableGoalGridProps) => {
+const DraggableGoalGrid = ({ goals, sessions, onEdit, onDelete, onToggleHome, onArchive, onReorder }: DraggableGoalGridProps) => {
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
