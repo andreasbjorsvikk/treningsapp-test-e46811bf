@@ -588,48 +588,15 @@ const GoalsSection = () => {
         <SectionHeader label={t('goals.archivedGoals')} open={archivedOpen} onToggle={() => setArchivedOpen(o => !o)} />
 
         {archivedOpen && (
-          <>
-            {archivedGoals.length === 0 ? (
-              <p className="text-center py-4 text-sm text-muted-foreground">{t('goals.noArchivedGoals')}</p>
-            ) : (
-              <div className="space-y-2">
-                {archivedGoals.map(goal => {
-                  const actTypes = goal.activityType === 'all' ? [] : goal.activityType.split(',');
-                  const metricLabel = t(`metric.${goal.metric}`);
-                  const periodLabel = goal.period === 'custom'
-                    ? `${goal.customStart} – ${goal.customEnd}`
-                    : t(`goalCard.this${goal.period.charAt(0).toUpperCase() + goal.period.slice(1)}` as any) || goal.period;
-                  return (
-                    <div key={goal.id} className="flex items-center justify-between bg-secondary/50 rounded-xl px-4 py-3">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="font-semibold text-sm text-foreground">
-                          {goal.target} {metricLabel}
-                          {goal.repeating && <span className="text-xs text-muted-foreground ml-1">(↻)</span>}
-                        </span>
-                        <span className="text-xs text-muted-foreground">{periodLabel}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => handleUnarchiveGoal(goal.id)}
-                          className="text-muted-foreground/60 hover:text-foreground p-1.5 rounded-lg hover:bg-secondary transition-colors"
-                          title={t('goals.unarchive')}
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteExtra(goal.id)}
-                          className="text-destructive/60 hover:text-destructive p-1.5 rounded-lg hover:bg-destructive/10 transition-colors"
-                          title={t('common.delete')}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </>
+          <ArchivedGoalsSection
+            archivedGoals={archivedGoals}
+            repeatingGoals={extraGoals.filter(g => g.repeating)}
+            sessions={sessions}
+            expandedId={expandedRepeatingGoalId}
+            onToggleExpand={(id) => setExpandedRepeatingGoalId(prev => prev === id ? null : id)}
+            onUnarchive={handleUnarchiveGoal}
+            onDelete={handleDeleteExtra}
+          />
         )}
       </div>
 
