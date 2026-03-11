@@ -30,6 +30,7 @@ const GoalsSection = () => {
   const [showDeletePrimaryConfirm, setShowDeletePrimaryConfirm] = useState(false);
   const [editGoal, setEditGoal] = useState<ExtraGoal | undefined>();
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [expandedRepeatingGoalId, setExpandedRepeatingGoalId] = useState<string | null>(null);
 
   // Edit period dialog state
   const [editingPeriod, setEditingPeriod] = useState<(PrimaryGoalPeriod & { toDate: string | null }) | null>(null);
