@@ -530,6 +530,14 @@ const SettingsPage = () => {
             <Button onClick={() => {
               if (selectedPrivacyKey) {
                 updateSettings({ [`${selectedPrivacyKey}Friends`]: selectedFriendIds } as any);
+                // Persist selected friends to DB
+                if (user) {
+                  const dbCol = selectedPrivacyKey === 'privacyWorkouts' ? 'privacy_workouts_friends'
+                    : selectedPrivacyKey === 'privacyStats' ? 'privacy_stats_friends'
+                    : selectedPrivacyKey === 'privacyGoals' ? 'privacy_goals_friends'
+                    : 'privacy_peak_checkins_friends';
+                  supabase.from('profiles').update({ [dbCol]: selectedFriendIds } as any).eq('id', user.id).then(() => {});
+                }
               }
               setShowFriendPicker(false);
                toast.success(t('privacy.friendsUpdated'));
