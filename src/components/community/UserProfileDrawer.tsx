@@ -265,10 +265,8 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
 
   // Compute pace diff accounting for goal start date
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const activeGoalForMonth = useMemo(() => {
-    const monthEnd = new Date(currentYear, currentMonth + 1, 0);
-    return getActiveGoalForDate(friendGoalPeriods, monthEnd);
-  }, [friendGoalPeriods, currentYear, currentMonth]);
+  const monthEnd = new Date(currentYear, currentMonth + 1, 0);
+  const activeGoalForMonth = getActiveGoalForDate(friendGoalPeriods, monthEnd);
   const goalStartInMonth = activeGoalForMonth ? new Date(activeGoalForMonth.validFrom) : null;
   const goalStartDay = goalStartInMonth && goalStartInMonth.getFullYear() === currentYear && goalStartInMonth.getMonth() === currentMonth
     ? goalStartInMonth.getDate() : 1;
