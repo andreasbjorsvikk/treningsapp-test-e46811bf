@@ -15,7 +15,7 @@ const GoalProgressVisual = ({ metric, activityType, percent, current, target }: 
   const isDark = settings.darkMode;
   
   const type = activityType === 'all' ? 'styrke' : activityType;
-  const colors = getActivityColors(type, isDark);
+  const colors = getActivityColors(type as SessionType, isDark);
   const fillPct = Math.min(percent, 100);
   const done = percent >= 100;
 
