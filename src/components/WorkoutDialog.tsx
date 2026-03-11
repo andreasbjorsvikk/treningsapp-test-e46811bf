@@ -252,7 +252,9 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
         onClose={() => setDurationPickerOpen(false)}
         hours={hours}
         minutes={minutes}
-        onConfirm={(h, m) => { setHours(h); setMinutes(m); }}
+        seconds={showSeconds ? seconds : undefined}
+        showSeconds={showSeconds}
+        onConfirm={(h, m, s) => { setHours(h); setMinutes(m); if (s !== undefined) setSeconds(s); }}
       />
     </>
   );
