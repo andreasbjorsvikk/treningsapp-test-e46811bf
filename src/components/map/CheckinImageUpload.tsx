@@ -112,14 +112,17 @@ const CheckinCropDialog = ({ open, imageUrl, rawFile, onConfirm, onCancel }: Che
   const [imgNatural, setImgNatural] = useState({ w: 0, h: 0 });
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [rotation, setRotation] = useState(0);
   const [compressing, setCompressing] = useState(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const zoomRef = useRef(1);
   const offsetRef = useRef({ x: 0, y: 0 });
+  const rotationRef = useRef(0);
 
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
   useEffect(() => { offsetRef.current = offset; }, [offset]);
+  useEffect(() => { rotationRef.current = rotation; }, [rotation]);
 
   // Load natural dimensions
   useEffect(() => {
@@ -130,6 +133,7 @@ const CheckinCropDialog = ({ open, imageUrl, rawFile, onConfirm, onCancel }: Che
       setImgNatural({ w: img.width, h: img.height });
       setZoom(1);
       setOffset({ x: 0, y: 0 });
+      setRotation(0);
     };
     img.src = imageUrl;
   }, [open, imageUrl]);
@@ -147,7 +151,6 @@ const CheckinCropDialog = ({ open, imageUrl, rawFile, onConfirm, onCancel }: Che
   const clampOffset = useCallback((ox: number, oy: number, z: number) => {
     const scaledW = baseW * z;
     const scaledH = baseH * z;
-    // Allow panning such that any part of the image can fill the crop area
     const maxX = Math.max(0, (scaledW - CROP_W) / 2);
     const maxY = Math.max(0, (scaledH - CROP_H) / 2);
     return {
@@ -156,8 +159,8 @@ const CheckinCropDialog = ({ open, imageUrl, rawFile, onConfirm, onCancel }: Che
     };
   }, [baseW, baseH]);
 
-  // Touch gestures
-  const gestureRef = useRef<{ dist: number; zoom0: number; ox0: number; oy0: number; cx0: number; cy0: number } | null>(null);
+  // Touch gestures (pan, pinch-zoom, rotation)
+  const gestureRef = useRef<{ dist: number; zoom0: number; ox0: number; oy0: number; cx0: number; cy0: number; angle0: number; rot0: number } | null>(null);
   const dragRef = useRef<{ x0: number; y0: number; ox0: number; oy0: number } | null>(null);
 
   useEffect(() => {
@@ -167,6 +170,7 @@ const CheckinCropDialog = ({ open, imageUrl, rawFile, onConfirm, onCancel }: Che
       if (!el) return;
 
       const pinchDist = (t1: Touch, t2: Touch) => Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      const pinchAngle = (t1: Touch, t2: Touch) => Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) * (180 / Math.PI);
 
       const onTouchStart = (e: TouchEvent) => {
         e.preventDefault();
@@ -178,6 +182,8 @@ const CheckinCropDialog = ({ open, imageUrl, rawFile, onConfirm, onCancel }: Che
             ox0: offsetRef.current.x, oy0: offsetRef.current.y,
             cx0: (e.touches[0].clientX + e.touches[1].clientX) / 2,
             cy0: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+            angle0: pinchAngle(e.touches[0], e.touches[1]),
+            rot0: rotationRef.current,
           };
           dragRef.current = null;
         } else if (e.touches.length === 1) {
@@ -197,8 +203,13 @@ const CheckinCropDialog = ({ open, imageUrl, rawFile, onConfirm, onCancel }: Che
           const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
           const rawX = g.ox0 + (cx - g.cx0);
           const rawY = g.oy0 + (cy - g.cy0);
+          // Rotation with low sensitivity (0.4x)
+          const currentAngle = pinchAngle(e.touches[0], e.touches[1]);
+          const angleDelta = currentAngle - g.angle0;
+          const newRotation = g.rot0 + angleDelta * 0.4;
           setZoom(newZoom);
           setOffset(clampOffset(rawX, rawY, newZoom));
+          setRotation(newRotation);
         } else if (e.touches.length === 1 && dragRef.current) {
           const dr = dragRef.current;
           const rawX = dr.ox0 + (e.touches[0].clientX - dr.x0);
@@ -264,6 +275,7 @@ const CheckinCropDialog = ({ open, imageUrl, rawFile, onConfirm, onCancel }: Che
       const ctx = canvas.getContext('2d')!;
 
       const z = zoomRef.current;
+      const rot = rotationRef.current;
       const off = clampOffset(offsetRef.current.x, offsetRef.current.y, z);
       const effectiveLeft = (CROP_W - baseW * z) / 2 + off.x;
       const effectiveTop = (CROP_H - baseH * z) / 2 + off.y;
@@ -272,15 +284,23 @@ const CheckinCropDialog = ({ open, imageUrl, rawFile, onConfirm, onCancel }: Che
 
       const scaleX = 1920 / CROP_W;
       const scaleY = 1080 / CROP_H;
+
+      // Apply rotation around center of the drawn image
+      const imgCenterX = (effectiveLeft + effectiveW / 2) * scaleX;
+      const imgCenterY = (effectiveTop + effectiveH / 2) * scaleY;
+      ctx.save();
+      ctx.translate(imgCenterX, imgCenterY);
+      ctx.rotate((rot * Math.PI) / 180);
+      ctx.translate(-imgCenterX, -imgCenterY);
       ctx.drawImage(
         imgRef.current,
         0, 0, imgRef.current.naturalWidth, imgRef.current.naturalHeight,
         effectiveLeft * scaleX, effectiveTop * scaleY, effectiveW * scaleX, effectiveH * scaleY
       );
+      ctx.restore();
 
       const blob = await new Promise<Blob | null>(res => canvas.toBlob(res, 'image/jpeg', 0.85));
       if (blob) {
-        // Compress further if needed
         const { default: imageCompression } = await import('browser-image-compression');
         const file = new File([blob], 'checkin.jpg', { type: 'image/jpeg' });
         const compressed = await imageCompression(file, {
@@ -292,7 +312,6 @@ const CheckinCropDialog = ({ open, imageUrl, rawFile, onConfirm, onCancel }: Che
         onConfirm(compressed as File);
       }
     } catch {
-      // fallback: just compress raw
       const { default: imageCompression } = await import('browser-image-compression');
       const compressed = await imageCompression(rawFile, {
         maxSizeMB: TARGET_SIZE_KB / 1024,
@@ -315,7 +334,7 @@ const CheckinCropDialog = ({ open, imageUrl, rawFile, onConfirm, onCancel }: Che
         <DialogHeader>
           <DialogTitle className="text-base">Juster bilde</DialogTitle>
         </DialogHeader>
-        <p className="text-xs text-muted-foreground text-center mb-1">Dra og zoom for å velge utsnitt</p>
+        <p className="text-xs text-muted-foreground text-center mb-1">Dra, zoom og roter for å velge utsnitt</p>
         <div className="flex justify-center">
           <div
             ref={containerRef}
@@ -336,7 +355,7 @@ const CheckinCropDialog = ({ open, imageUrl, rawFile, onConfirm, onCancel }: Che
                   left: imgLeft,
                   top: imgTop,
                   transformOrigin: 'center center',
-                  transform: `translate(${clamped.x}px, ${clamped.y}px) scale(${zoom})`,
+                  transform: `translate(${clamped.x}px, ${clamped.y}px) scale(${zoom}) rotate(${rotation}deg)`,
                 }}
               />
             )}

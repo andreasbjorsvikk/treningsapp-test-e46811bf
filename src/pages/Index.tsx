@@ -23,8 +23,7 @@ import TrainingPage from '@/pages/TrainingPage';
 import CommunityPage from '@/pages/CommunityPage';
 import SettingsPage from '@/pages/SettingsPage';
 import ProgressWheel from '@/components/ProgressWheel';
-import WeeklySessionIcons from '@/components/WeeklySessionIcons';
-import MiniCalendar from '@/components/MiniCalendar';
+import Last7Days from '@/components/Last7Days';
 import DraggableGoalGrid from '@/components/DraggableGoalGrid';
 import ChallengeCard from '@/components/community/ChallengeCard';
 import ChallengeDetail from '@/components/community/ChallengeDetail';
@@ -454,10 +453,7 @@ const IndexContent = () => {
         );
       case 'last7dCalendar':
         return (
-          <div className="grid grid-cols-2 gap-3">
-            <WeeklySessionIcons sessions={allSessions} onClick={navigateToHistory} />
-            <MiniCalendar sessions={allSessions} onClick={navigateToCalendar} />
-          </div>
+          <Last7Days sessions={allSessions} onClick={navigateToHistory} />
         );
       case 'statistics':
         return (
@@ -605,9 +601,9 @@ const IndexContent = () => {
 
             {/* ===== FIXED TOP SECTION (not reorderable) ===== */}
             <div className="space-y-5">
-              {/* Desktop: 4-column layout */}
+              {/* Desktop: 3-column layout */}
               {!isMobile && (
-                <div className="grid grid-cols-4 gap-3 items-stretch">
+                <div className="grid grid-cols-3 gap-3 items-stretch">
                   <ProgressWheel
                     percent={monthData.percent} current={monthData.current} target={monthData.target}
                     unit={monthData.unit} title={t(`month.${new Date().getMonth()}`)}
@@ -629,11 +625,8 @@ const IndexContent = () => {
                      <h2 className="font-display font-semibold text-[10px] text-muted-foreground uppercase tracking-wide mb-1.5">
                        {t('home.last7dCalendar')}
                      </h2>
-                      <WeeklySessionIcons sessions={allSessions} onClick={navigateToHistory} />
+                      <Last7Days sessions={allSessions} onClick={navigateToHistory} />
                     </div>
-                  </div>
-                  <div>
-                    <MiniCalendar sessions={allSessions} onClick={navigateToCalendar} />
                   </div>
                 </div>
               )}
