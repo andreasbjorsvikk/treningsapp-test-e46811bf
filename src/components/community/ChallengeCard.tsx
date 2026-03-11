@@ -3,14 +3,16 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { MapPin, Clock, MountainSnow, Activity, Home, Pencil, Trophy } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettings } from '@/contexts/SettingsContext';
+import { getActivityColors } from '@/utils/activityColors';
+import ActivityIcon from '@/components/ActivityIcon';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toast } from 'sonner';
 
-const metricIcons: Record<string, typeof Activity> = {
-  sessions: Activity,
-  distance: MapPin,
-  duration: Clock,
-  elevation: MountainSnow,
+const metricUnits: Record<string, string> = {
+  sessions: '',
+  distance: 'km',
+  duration: 't',
+  elevation: 'm',
 };
 
 const metricUnits: Record<string, string> = {
