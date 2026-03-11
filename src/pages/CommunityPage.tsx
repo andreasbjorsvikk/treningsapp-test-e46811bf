@@ -111,6 +111,14 @@ const CommunityPage = () => {
     setMainTab('friends');
   };
 
+  const handleViewChallenge = (challengeId: string) => {
+    setMainTab('challenges');
+    const found = challenges.find(c => c.challenge.id === challengeId);
+    if (found) {
+      setSelectedChallenge(found);
+    }
+  };
+
   const handleSelectChallenge = (cWithP: ChallengeWithParticipants) => {
     setSelectedChallenge(cWithP);
   };
