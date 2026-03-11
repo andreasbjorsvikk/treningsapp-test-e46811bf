@@ -206,6 +206,7 @@ const CommunityPage = () => {
         open={showNotifications}
         onClose={() => { setShowNotifications(false); getUnreadNotificationCount().then(setUnreadCount); }}
         onNavigateToFriends={handleNavigateToFriends}
+        onViewChallenge={handleViewChallenge}
       />
       <UserProfileDrawer
         user={profileUser}
