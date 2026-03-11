@@ -525,6 +525,7 @@ const no: Record<string, string> = {
   'notifications.daysAgo': '{n}d siden',
   'notifications.accept': 'Godta',
   'notifications.decline': 'Avslå',
+  'notifications.viewChallenge': 'Se utfordring',
   'notifications.challengeAccepted': 'Utfordring godtatt!',
   'notifications.challengeDeclined': 'Utfordring avslått',
   'notifications.respondError': 'Kunne ikke svare på invitasjonen',
