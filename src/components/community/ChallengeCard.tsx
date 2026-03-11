@@ -56,8 +56,25 @@ const ChallengeCard = ({ challenge, onClick, onEdit }: ChallengeCardProps) => {
           {c.emoji && <span className="text-xl">{c.emoji}</span>}
           <h3 className="font-display font-semibold text-base">{c.name}</h3>
         </div>
-        <div className="flex items-center gap-1 text-muted-foreground">
-          <Icon className="w-4 h-4" />
+        <div className="flex items-center gap-1">
+          {activityTypes.length > 0 ? (
+            activityTypes.map(type => {
+              const colors = getActivityColors(type, isDark);
+              return (
+                <div
+                  key={type}
+                  className="w-7 h-7 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: colors.bg }}
+                >
+                  <ActivityIcon type={type} className="w-3.5 h-3.5" colorOverride={colors.text} />
+                </div>
+              );
+            })
+          ) : (
+            <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center">
+              <Activity className="w-3.5 h-3.5 text-muted-foreground" />
+            </div>
+          )}
         </div>
       </div>
 
