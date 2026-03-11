@@ -693,7 +693,7 @@ const IndexContent = () => {
                     onDragOver={(e) => handleDragOver(e, id)}
                     onDrop={() => { if (dragId) { /* swap handled in dragOver */ } }}
                     onDragEnd={handleDragEnd}
-                    className={`transition-all duration-200 ease-in-out rounded-2xl border border-border/30 px-4 py-4 ${gradient} ${
+                    className={`transition-all duration-200 ease-in-out rounded-2xl border border-border/30 px-4 ${isDragging ? 'py-2.5' : 'py-4'} ${gradient} ${
                       isDragging
                         ? `${dragId === id ? 'scale-[1.02] shadow-md ring-2 ring-energy/30' : 'opacity-80'}`
                         : ''
@@ -718,7 +718,7 @@ const IndexContent = () => {
                       onMouseDown={() => {}}
                     >
                       {isDragging && <GripVertical className="w-4 h-4 text-muted-foreground shrink-0" />}
-                      <h2 className="font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-2 flex-1">
+                      <h2 className={`font-display font-semibold text-sm text-muted-foreground uppercase tracking-wide flex-1 ${isDragging ? '' : 'mb-2'}`}>
                         {sectionLabels[id]}
                       </h2>
                     </div>
