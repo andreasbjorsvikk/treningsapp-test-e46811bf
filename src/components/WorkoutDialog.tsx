@@ -113,6 +113,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
     const parts: string[] = [];
     if (hours > 0) parts.push(`${hours} ${t('workout.h')}`);
     parts.push(`${minutes} ${t('workout.min')}`);
+    if (showSeconds && seconds > 0) parts.push(`${seconds} ${t('workout.sec')}`);
     return parts.join(' ');
   };
 
