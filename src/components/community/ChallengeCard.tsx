@@ -16,12 +16,6 @@ const metricUnits: Record<string, string> = {
   elevation: 'm',
 };
 
-const metricUnits: Record<string, string> = {
-  sessions: '',
-  distance: 'km',
-  duration: 't',
-  elevation: 'm',
-};
 
 interface ChallengeCardProps {
   challenge: ChallengeWithParticipants;
