@@ -405,7 +405,8 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
               )}
 
               {/* Recent sessions */}
-              {recentSessions.length > 0 && (
+              {/* Recent sessions */}
+              {canSeeWorkouts && recentSessions.length > 0 && (
                 <div className="space-y-2">
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Siste økter</h3>
                   <div className="space-y-1.5">
