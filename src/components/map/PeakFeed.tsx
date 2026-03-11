@@ -101,12 +101,19 @@ const PeakFeed = () => {
         return;
       }
 
-      // Get peak info
-      const peakIds = [...new Set((checkins as any[]).map((c: any) => c.peak_id))];
-      const { data: peaks } = await supabase
-        .from('peaks_db')
-        .select('id, name_no, elevation_moh, area')
-        .in('id', peakIds);
+      // Get peak info - filter out non-UUID peak_ids to avoid query errors
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const allPeakIds = [...new Set((checkins as any[]).map((c: any) => c.peak_id))];
+      const validUuidPeakIds = allPeakIds.filter(id => uuidRegex.test(id));
+      
+      let peaks: any[] = [];
+      if (validUuidPeakIds.length > 0) {
+        const { data } = await supabase
+          .from('peaks_db')
+          .select('id, name_no, elevation_moh, area')
+          .in('id', validUuidPeakIds);
+        peaks = data || [];
+      }
 
       const peakMap = new Map((peaks || []).map((p: any) => [p.id, p]));
       const profileMap = new Map(profiles.map(p => [p.id, p]));
