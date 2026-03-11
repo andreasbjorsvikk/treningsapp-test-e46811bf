@@ -49,7 +49,9 @@ const GoalsSection = () => {
   // Use context data instead of localStorage
   const allPeriods = appData.primaryGoals;
   const currentGoal = appData.currentPrimaryGoal;
-  const extraGoals = appData.goals;
+  const allGoals = appData.goals;
+  const extraGoals = useMemo(() => allGoals.filter(g => !g.archived), [allGoals]);
+  const archivedGoals = useMemo(() => allGoals.filter(g => g.archived), [allGoals]);
   const sessions = appData.sessions;
 
   // Get the active goal for the navigated month
