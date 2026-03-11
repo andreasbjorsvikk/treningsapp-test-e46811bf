@@ -35,6 +35,34 @@ const ChallengeDetail = ({ challenge, open, onClose, onEdit, onResponded }: Chal
   const { t } = useTranslation();
   const [profileUser, setProfileUser] = useState<Friend | null>(null);
   const [responding, setResponding] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+
+  useEffect(() => {
+    if (open && challenge && user) {
+      supabase.from('challenge_participants')
+        .select('status')
+        .eq('challenge_id', challenge.challenge.id)
+        .eq('user_id', user.id)
+        .single()
+        .then(({ data }) => {
+          setIsPending(data?.status === 'pending');
+        });
+    }
+  }, [open, challenge, user]);
+
+  const handleRespond = async (accept: boolean) => {
+    if (!challenge) return;
+    setResponding(true);
+    try {
+      await respondToChallenge(challenge.challenge.id, accept);
+      toast.success(accept ? t('notifications.challengeAccepted') : t('notifications.challengeDeclined'));
+      setIsPending(false);
+      onResponded?.();
+    } catch {
+      toast.error(t('notifications.respondError'));
+    }
+    setResponding(false);
+  };
 
   if (!challenge) return null;
 
