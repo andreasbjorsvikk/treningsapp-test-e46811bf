@@ -32,10 +32,11 @@ const ChallengeCard = ({ challenge, onClick, onEdit }: ChallengeCardProps) => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const { settings, updateSettings } = useSettings();
+  const isDark = settings.darkMode;
   const c = challenge.challenge;
-  const Icon = metricIcons[c.metric] || Activity;
   const unit = metricUnits[c.metric] || '';
   const myParticipant = challenge.participants.find(p => p.userId === user?.id);
+  const activityTypes = c.activity_type === 'all' ? [] : c.activity_type.split(',');
 
   const locale = t('date.locale');
   const startDate = new Date(c.period_start);
