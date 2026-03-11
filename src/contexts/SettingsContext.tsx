@@ -292,16 +292,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const timer = setTimeout(async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
-      // Only save non-default colors to keep it clean
-      const colorsToSave: Record<string, string> = {};
-      for (const [type, color] of Object.entries(settings.sessionTypeColors)) {
-        if (color !== defaultTypeColors[type as SessionType]) {
-          colorsToSave[type] = color;
-        }
-      }
+      // Save full ActivityColors structure (light/dark) to DB
+      const overrides = getActivityColorOverrides();
       await supabase
         .from('profiles')
-        .update({ session_type_colors: Object.keys(colorsToSave).length > 0 ? colorsToSave : null } as any)
+        .update({ session_type_colors: Object.keys(overrides).length > 0 ? overrides : null } as any)
         .eq('id', session.user.id);
     }, 1000);
     return () => clearTimeout(timer);
