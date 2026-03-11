@@ -18,10 +18,22 @@ export async function getUserCheckins(userId: string): Promise<PeakCheckin[]> {
   return (data || []) as unknown as PeakCheckin[];
 }
 
-export async function checkinPeak(userId: string, peakId: string, checkedInAt?: string): Promise<PeakCheckin> {
+export async function checkinPeak(userId: string, peakId: string, checkedInAt?: string, imageFile?: File | null): Promise<PeakCheckin> {
   const payload: any = { user_id: userId, peak_id: peakId };
   if (checkedInAt) {
     payload.checked_in_at = checkedInAt;
+  }
+
+  // Upload image if provided
+  if (imageFile) {
+    const ext = imageFile.name.split('.').pop() || 'jpg';
+    const path = `${userId}/${peakId}/${Date.now()}.${ext}`;
+    const { error: uploadErr } = await supabase.storage
+      .from('peak-images')
+      .upload(path, imageFile, { contentType: imageFile.type, upsert: false });
+    if (uploadErr) throw uploadErr;
+    const { data: urlData } = supabase.storage.from('peak-images').getPublicUrl(path);
+    payload.image_url = urlData.publicUrl;
   }
   
   const { data, error } = await supabase
