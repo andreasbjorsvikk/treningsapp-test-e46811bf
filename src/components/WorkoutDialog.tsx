@@ -81,8 +81,10 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
       setTitle(session?.title || '');
       const dateStr = session?.date?.slice(0, 10) || defaultDate || new Date().toISOString().slice(0, 10);
       setDate(new Date(dateStr + 'T12:00:00'));
-      setHours(session ? Math.floor(session.durationMinutes / 60) : 0);
-      setMinutes(session ? (session.durationMinutes % 60) : 30);
+      const totalMinutes = session?.durationMinutes || 30;
+      setHours(Math.floor(totalMinutes / 60));
+      setMinutes(Math.floor(totalMinutes % 60));
+      setSeconds(Math.round((totalMinutes % 1) * 60));
       setDistance(session?.distance?.toString() || '');
       setElevationGain(session?.elevationGain?.toString() || '');
       setNotes(session?.notes || '');
