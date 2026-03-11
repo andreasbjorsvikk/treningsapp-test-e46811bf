@@ -54,7 +54,7 @@ const ChallengeCard = ({ challenge, onClick, onEdit }: ChallengeCardProps) => {
         <div className="flex items-center gap-1">
           {activityTypes.length > 0 ? (
             activityTypes.map(type => {
-              const colors = getActivityColors(type, isDark);
+              const colors = getActivityColors(type as SessionType, isDark);
               return (
                 <div
                   key={type}
