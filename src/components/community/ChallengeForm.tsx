@@ -68,6 +68,7 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [freshParticipantIds, setFreshParticipantIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (open) {
