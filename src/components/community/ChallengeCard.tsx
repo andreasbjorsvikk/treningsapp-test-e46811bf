@@ -166,7 +166,7 @@ const ChallengeCard = ({ challenge, onClick, onEdit }: ChallengeCardProps) => {
             <Home className="w-3.5 h-3.5" />
           </button>
           <div className="flex -space-x-1.5 ml-1">
-            {challenge.participants.slice(0, 4).map(p => (
+            {visibleParticipants.slice(0, 4).map(p => (
               <Avatar key={p.userId} className="w-6 h-6 border border-background">
                 {p.avatarUrl ? <AvatarImage src={p.avatarUrl} /> : null}
                 <AvatarFallback className="text-[9px] font-medium">{(p.username || '?')[0]}</AvatarFallback>
