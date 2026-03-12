@@ -135,7 +135,7 @@ const ChallengeCard = ({ challenge, onClick, onEdit }: ChallengeCardProps) => {
           {myParticipant && (
             <span className="text-sm font-medium text-accent">#{myParticipant.rank}</span>
           )}
-          <span className="text-sm text-muted-foreground">· {challenge.participants.length} {t('challengeCard.participants')}</span>
+          <span className="text-sm text-muted-foreground">· {visibleParticipants.length} {t('challengeCard.participants')}</span>
         </div>
         <div className="flex items-center gap-1">
           {onEdit && c.created_by === user?.id && (
