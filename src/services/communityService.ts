@@ -246,7 +246,9 @@ export async function updateChallenge(challengeId: string, updates: {
   target: number;
   periodStart: string;
   periodEnd: string;
+  newInvitedUserIds?: string[];
 }) {
+  const { data: { user } } = await supabase.auth.getUser();
   const { error } = await supabase.from('challenges').update({
     name: updates.name,
     emoji: updates.emoji || null,
@@ -257,6 +259,37 @@ export async function updateChallenge(challengeId: string, updates: {
     period_end: updates.periodEnd,
   }).eq('id', challengeId);
   if (error) throw error;
+
+  // Invite new participants
+  if (updates.newInvitedUserIds && updates.newInvitedUserIds.length > 0 && user) {
+    const { data: profile } = await supabase.from('profiles').select('username').eq('id', user.id).single();
+    const { data: challenge } = await supabase.from('challenges').select('name').eq('id', challengeId).single();
+    for (const friendId of updates.newInvitedUserIds) {
+      await supabase.from('challenge_participants').insert({
+        challenge_id: challengeId,
+        user_id: friendId,
+        status: 'pending',
+      });
+      await supabase.from('community_notifications').insert({
+        user_id: friendId,
+        type: 'invite',
+        title: 'Ny utfordring',
+        message: `${profile?.username || 'Noen'} inviterte deg til «${challenge?.name || ''}»`,
+        challenge_id: challengeId,
+        from_user_id: user.id,
+      });
+    }
+  }
+}
+
+export async function leaveChallenge(challengeId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  await supabase.from('challenge_participants')
+    .delete()
+    .eq('challenge_id', challengeId)
+    .eq('user_id', user.id);
 }
 
 // ===== NOTIFICATIONS =====
