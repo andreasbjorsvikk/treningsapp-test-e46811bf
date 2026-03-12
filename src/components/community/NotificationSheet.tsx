@@ -249,14 +249,3 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
 };
 
 export default NotificationSheet;
-                </div>
-              );
-            })
-          )}
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
-};
-
-export default NotificationSheet;
