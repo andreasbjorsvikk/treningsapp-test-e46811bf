@@ -47,7 +47,7 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
     
     // Fetch current challenge names and user's participation status
     let challengeNameMap: Record<string, string> = {};
-    let respondedChallenges = new Set<string>();
+    const latestParticipationByChallenge = new Map<string, { status: string; createdAt: string }>();
 
     if (challengeIds.length > 0) {
       const { data: challenges } = await supabase
@@ -56,31 +56,50 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
         .in('id', challengeIds);
       challengeNameMap = Object.fromEntries((challenges || []).map(c => [c.id, c.name]));
 
-      // Check which challenges user has already accepted (status != 'pending') or left
       const { data: participations } = await supabase
         .from('challenge_participants')
-        .select('challenge_id, status')
+        .select('challenge_id, status, created_at')
         .eq('user_id', user.id)
         .in('challenge_id', challengeIds);
-      
-      const participationMap = new Map((participations || []).map(p => [p.challenge_id, p.status]));
-      
-      for (const cid of challengeIds) {
-        const status = participationMap.get(cid);
-        // pending = fresh invite (re-invited), show action buttons
-        // accepted/declined = already responded
-        // no record = user left/was removed, also already responded
-        if (status === 'accepted' || status === 'declined' || !status) {
-          respondedChallenges.add(cid);
+
+      for (const p of participations || []) {
+        const existing = latestParticipationByChallenge.get(p.challenge_id);
+        if (!existing || new Date(p.created_at).getTime() > new Date(existing.createdAt).getTime()) {
+          latestParticipationByChallenge.set(p.challenge_id, {
+            status: p.status,
+            createdAt: p.created_at,
+          });
         }
       }
     }
 
-    return raw.map(n => ({
-      ...n,
-      currentChallengeName: n.challenge_id ? challengeNameMap[n.challenge_id] : undefined,
-      alreadyResponded: n.type === 'invite' && n.challenge_id ? respondedChallenges.has(n.challenge_id) : false,
-    }));
+    return raw.map(n => {
+      let alreadyResponded = false;
+
+      if (n.type === 'invite' && n.challenge_id) {
+        const latest = latestParticipationByChallenge.get(n.challenge_id);
+
+        if (!latest) {
+          // User has no participant row anymore => invite is no longer actionable
+          alreadyResponded = true;
+        } else if (latest.status === 'pending') {
+          // Fresh invite (including re-invite)
+          alreadyResponded = false;
+        } else if (latest.status === 'declined') {
+          // If notification is newer than decline, treat as fresh re-invite
+          alreadyResponded = new Date(n.created_at).getTime() <= new Date(latest.createdAt).getTime();
+        } else {
+          // accepted (or any unexpected status)
+          alreadyResponded = true;
+        }
+      }
+
+      return {
+        ...n,
+        currentChallengeName: n.challenge_id ? challengeNameMap[n.challenge_id] : undefined,
+        alreadyResponded,
+      };
+    });
   };
 
   const handleClose = () => {
