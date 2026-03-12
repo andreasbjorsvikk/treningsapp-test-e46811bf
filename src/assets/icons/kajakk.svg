@@ -1,6 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M2 15c2-.5 4-.5 6 0h8c2-.5 4-.5 6 0"/>
-  <path d="M4 15c1-3 3-5 8-5s7 2 8 5"/>
-  <circle cx="12" cy="7" r="1.5"/>
-  <path d="M8 4l4 6 4-6"/>
+  <!-- Person -->
+  <circle cx="12" cy="5" r="1.5"/>
+  <path d="M12 6.5v4"/>
+  <path d="M10 8.5l2 2 2-2"/>
+  <!-- Paddle -->
+  <path d="M7 6l10 10"/>
+  <ellipse cx="6.5" cy="5.5" rx="1" ry="2" transform="rotate(-45 6.5 5.5)"/>
+  <ellipse cx="17.5" cy="16.5" rx="1" ry="2" transform="rotate(-45 17.5 16.5)"/>
+  <!-- Kayak hull -->
+  <path d="M4 15c0 0 2 3 8 3s8-3 8-3"/>
+  <!-- Water -->
+  <path d="M2 19c2-1 4-1 6 0s4 1 6 0 4-1 6 0"/>
 </svg>

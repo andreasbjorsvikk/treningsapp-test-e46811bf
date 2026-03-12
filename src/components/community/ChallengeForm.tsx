@@ -82,7 +82,11 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
         if (editChallenge) {
           const { getChallengeParticipants } = await import('@/services/communityService');
           const freshParts = await getChallengeParticipants(editChallenge.challenge.id);
-          setFreshParticipantIds(freshParts.map(p => p.user_id));
+          // Only exclude users who are actively in the challenge (accepted or pending)
+          const activeParticipantIds = freshParts
+            .filter(p => p.status === 'accepted' || p.status === 'pending')
+            .map(p => p.user_id);
+          setFreshParticipantIds(activeParticipantIds);
         } else {
           setFreshParticipantIds([]);
         }
