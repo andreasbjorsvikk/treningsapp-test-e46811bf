@@ -48,6 +48,9 @@ export const typeColorOptions: { label: string; value: string }[] = [
   { label: 'Rosa',    value: '#f472b6' },
   { label: 'Teal',    value: '#2dd4bf' },
   { label: 'Sink',    value: '#a1a1aa' },
+  { label: 'Himmelsblå', value: '#0ea5e9' },
+  { label: 'Cyan',    value: '#06b6d4' },
+  { label: 'Fiolett', value: '#8b5cf6' },
 ];
 
 export const sessionTypeConfig: Record<SessionType, SessionTypeConfig> = {
