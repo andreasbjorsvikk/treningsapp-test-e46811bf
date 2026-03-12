@@ -243,8 +243,53 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
                 )}
                 {fields.elevation && (
                   <div className="space-y-1">
-                    <Label>{t('workout.elevation')}</Label>
-                    <Input type="number" min="0" value={elevationGain} onChange={e => setElevationGain(e.target.value)} placeholder="0" />
+                    {type === 'trappemaskin' ? (
+                      <>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => { setElevationMode('meters'); setElevationGain(''); }}
+                            className={cn(
+                              "text-xs px-2 py-0.5 rounded-full border transition-colors",
+                              elevationMode === 'meters'
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+                            )}
+                          >
+                            {t('workout.elevationUnit')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setElevationMode('floors'); setElevationGain(''); }}
+                            className={cn(
+                              "text-xs px-2 py-0.5 rounded-full border transition-colors",
+                              elevationMode === 'floors'
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+                            )}
+                          >
+                            {t('workout.floorsUnit')}
+                          </button>
+                        </div>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={elevationGain}
+                          onChange={e => setElevationGain(e.target.value)}
+                          placeholder={elevationMode === 'floors' ? '0' : '0'}
+                        />
+                        {elevationMode === 'floors' && elevationGain && (
+                          <p className="text-[10px] text-muted-foreground">
+                            = {Math.round(parseFloat(elevationGain) * 3)} m
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <Label>{t('workout.elevation')}</Label>
+                        <Input type="number" min="0" value={elevationGain} onChange={e => setElevationGain(e.target.value)} placeholder="0" />
+                      </>
+                    )}
                   </div>
                 )}
               </div>
