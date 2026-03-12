@@ -68,11 +68,28 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [freshParticipantIds, setFreshParticipantIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (open) {
       setLoading(true);
-      getFriends().then(f => { setFriends(f); setLoading(false); });
+      
+      const loadData = async () => {
+        const friendsList = await getFriends();
+        setFriends(friendsList);
+        
+        // When editing, fetch fresh participants to catch users who left
+        if (editChallenge) {
+          const { getChallengeParticipants } = await import('@/services/communityService');
+          const freshParts = await getChallengeParticipants(editChallenge.challenge.id);
+          setFreshParticipantIds(freshParts.map(p => p.user_id));
+        } else {
+          setFreshParticipantIds([]);
+        }
+        
+        setLoading(false);
+      };
+      loadData();
 
       if (editChallenge) {
         const c = editChallenge.challenge;
@@ -95,10 +112,9 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
     }
   }, [open, preselectedUser, editChallenge]);
 
-  // Filter out friends already in the challenge when editing
-  const existingParticipantIds = editChallenge?.participants.map(p => p.userId) || [];
+  // Use fresh participant IDs (fetched on open) instead of stale props
   const availableFriends = isEditing
-    ? friends.filter(f => !existingParticipantIds.includes(f.id))
+    ? friends.filter(f => !freshParticipantIds.includes(f.id))
     : friends;
 
   const toggleType = (type: string) => {

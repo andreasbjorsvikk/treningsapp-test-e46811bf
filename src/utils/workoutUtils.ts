@@ -29,6 +29,9 @@ export const defaultTypeColors: Record<SessionType, string> = {
   yoga:     '#c084fc', // purple
   fotball:  '#4ade80', // green
   trappemaskin: '#f59e0b', // amber
+  roing:        '#0ea5e9', // sky blue
+  kajakk:       '#06b6d4', // cyan
+  tredemølle:   '#8b5cf6', // violet
   annet:    '#a1a1aa', // zinc
 };
 
@@ -45,6 +48,9 @@ export const typeColorOptions: { label: string; value: string }[] = [
   { label: 'Rosa',    value: '#f472b6' },
   { label: 'Teal',    value: '#2dd4bf' },
   { label: 'Sink',    value: '#a1a1aa' },
+  { label: 'Himmelsblå', value: '#0ea5e9' },
+  { label: 'Cyan',    value: '#06b6d4' },
+  { label: 'Fiolett', value: '#8b5cf6' },
 ];
 
 export const sessionTypeConfig: Record<SessionType, SessionTypeConfig> = {
@@ -98,6 +104,21 @@ export const sessionTypeConfig: Record<SessionType, SessionTypeConfig> = {
     icon: Dumbbell,
     color: 'bg-warning text-warning-foreground',
   },
+  roing: {
+    label: 'Roing',
+    icon: Waves,
+    color: 'bg-accent text-accent-foreground',
+  },
+  kajakk: {
+    label: 'Kajakk',
+    icon: Waves,
+    color: 'bg-accent text-accent-foreground',
+  },
+  tredemølle: {
+    label: 'Tredemølle',
+    icon: PersonStanding,
+    color: 'bg-primary text-primary-foreground',
+  },
   annet: {
     label: 'Annet',
     icon: CircleDot,
@@ -106,7 +127,7 @@ export const sessionTypeConfig: Record<SessionType, SessionTypeConfig> = {
 };
 
 export const allSessionTypes: SessionType[] = [
-  'styrke', 'løping', 'fjelltur', 'svømming', 'sykling', 'gå', 'tennis', 'yoga', 'fotball', 'trappemaskin', 'annet'
+  'styrke', 'løping', 'fjelltur', 'svømming', 'sykling', 'gå', 'tennis', 'yoga', 'fotball', 'trappemaskin', 'roing', 'kajakk', 'tredemølle', 'annet'
 ];
 
 export function formatDuration(minutes: number): string {

@@ -52,6 +52,18 @@ export const defaultActivityColorMap: Partial<Record<SessionType, ActivityColors
     light: { bg: 'rgb(255,230,180)', text: 'rgb(140,75,5)', badge: 'rgb(255,240,200)' },
     dark:  { bg: 'rgb(185,130,45)',  text: '#ffffff',        badge: '#4a3510' },
   },
+  roing: {
+    light: { bg: 'rgb(210,238,255)', text: 'rgb(10,100,160)', badge: 'rgb(225,245,255)' },
+    dark:  { bg: 'rgb(40,130,190)',  text: '#ffffff',          badge: '#0c3550' },
+  },
+  kajakk: {
+    light: { bg: 'rgb(200,245,245)', text: 'rgb(8,100,120)', badge: 'rgb(218,250,252)' },
+    dark:  { bg: 'rgb(20,140,165)',  text: '#ffffff',          badge: '#0a3a45' },
+  },
+  tredemølle: {
+    light: { bg: 'rgb(230,215,250)', text: 'rgb(90,30,170)', badge: 'rgb(240,228,255)' },
+    dark:  { bg: 'rgb(120,85,185)',  text: '#ffffff',          badge: '#2e1560' },
+  },
   annet: {
     light: { bg: 'rgb(220,220,224)', text: '#444444',        badge: 'rgb(232,232,236)' },
     dark:  { bg: 'rgb(90,90,94)',    text: '#ffffff',         badge: '#2a2a2e' },

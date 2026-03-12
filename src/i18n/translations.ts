@@ -43,7 +43,8 @@ const no: Record<string, string> = {
   // Activity types
   'activity.styrke': 'Styrke', 'activity.løping': 'Løping', 'activity.fjelltur': 'Fjelltur',
   'activity.svømming': 'Svømming', 'activity.sykling': 'Sykling', 'activity.gå': 'Gå',
-  'activity.tennis': 'Tennis', 'activity.yoga': 'Yoga', 'activity.fotball': 'Fotball', 'activity.trappemaskin': 'Trappemaskin', 'activity.annet': 'Annet',
+  'activity.tennis': 'Tennis', 'activity.yoga': 'Yoga', 'activity.fotball': 'Fotball', 'activity.trappemaskin': 'Trappemaskin',
+  'activity.roing': 'Roing', 'activity.kajakk': 'Kajakk', 'activity.tredemølle': 'Tredemølle', 'activity.annet': 'Annet',
 
   // Metrics
   'metric.sessions': 'økter', 'metric.minutes': 'timer', 'metric.distance': 'km', 'metric.elevation': 'm',
@@ -662,7 +663,8 @@ const en: Record<string, string> = {
   // Activity types
   'activity.styrke': 'Strength', 'activity.løping': 'Running', 'activity.fjelltur': 'Hiking',
   'activity.svømming': 'Swimming', 'activity.sykling': 'Cycling', 'activity.gå': 'Walking',
-  'activity.tennis': 'Tennis', 'activity.yoga': 'Yoga', 'activity.fotball': 'Football', 'activity.trappemaskin': 'Stair Climber', 'activity.annet': 'Other',
+  'activity.tennis': 'Tennis', 'activity.yoga': 'Yoga', 'activity.fotball': 'Football', 'activity.trappemaskin': 'Stair Climber',
+  'activity.roing': 'Rowing', 'activity.kajakk': 'Kayak', 'activity.tredemølle': 'Treadmill', 'activity.annet': 'Other',
 
   // Metrics
   'metric.sessions': 'workouts', 'metric.minutes': 'hours', 'metric.distance': 'km', 'metric.elevation': 'm',
