@@ -95,6 +95,12 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
     }
   }, [open, preselectedUser, editChallenge]);
 
+  // Filter out friends already in the challenge when editing
+  const existingParticipantIds = editChallenge?.participants.map(p => p.userId) || [];
+  const availableFriends = isEditing
+    ? friends.filter(f => !existingParticipantIds.includes(f.id))
+    : friends;
+
   const toggleType = (type: string) => {
     if (type === 'all') {
       setSelectedTypes(['all']);
