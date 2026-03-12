@@ -192,6 +192,9 @@ const no: Record<string, string> = {
   'workout.distance': 'Distanse',
   'workout.distanceKm': 'Distanse km',
   'workout.elevation': 'Høydemeter',
+  'workout.floors': 'Etasjer',
+  'workout.elevationUnit': 'Høydemeter',
+  'workout.floorsUnit': 'Etasjer',
   'workout.notes': 'Notater',
   // Home stats toggle
   'home.thisWeek': 'Denne uken',
