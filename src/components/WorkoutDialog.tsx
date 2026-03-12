@@ -38,7 +38,10 @@ function getVisibleFields(type: SessionType) {
     case 'styrke':
       return { distance: true, elevation: true }; // optional for styrke
     case 'svømming':
+    case 'roing':
+    case 'kajakk':
       return { distance: true, elevation: false };
+    case 'tredemølle':
     case 'fjelltur':
     case 'løping':
     case 'sykling':

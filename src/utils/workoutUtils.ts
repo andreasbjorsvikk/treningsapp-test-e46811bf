@@ -104,6 +104,21 @@ export const sessionTypeConfig: Record<SessionType, SessionTypeConfig> = {
     icon: Dumbbell,
     color: 'bg-warning text-warning-foreground',
   },
+  roing: {
+    label: 'Roing',
+    icon: Waves,
+    color: 'bg-accent text-accent-foreground',
+  },
+  kajakk: {
+    label: 'Kajakk',
+    icon: Waves,
+    color: 'bg-accent text-accent-foreground',
+  },
+  tredemølle: {
+    label: 'Tredemølle',
+    icon: PersonStanding,
+    color: 'bg-primary text-primary-foreground',
+  },
   annet: {
     label: 'Annet',
     icon: CircleDot,
@@ -112,7 +127,7 @@ export const sessionTypeConfig: Record<SessionType, SessionTypeConfig> = {
 };
 
 export const allSessionTypes: SessionType[] = [
-  'styrke', 'løping', 'fjelltur', 'svømming', 'sykling', 'gå', 'tennis', 'yoga', 'fotball', 'trappemaskin', 'annet'
+  'styrke', 'løping', 'fjelltur', 'svømming', 'sykling', 'gå', 'tennis', 'yoga', 'fotball', 'trappemaskin', 'roing', 'kajakk', 'tredemølle', 'annet'
 ];
 
 export function formatDuration(minutes: number): string {

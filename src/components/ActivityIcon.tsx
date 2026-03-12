@@ -11,6 +11,9 @@ import tennisIcon from '@/assets/icons/tennis.svg';
 import yogaIcon from '@/assets/icons/yoga.svg';
 import fotballIcon from '@/assets/icons/fotball.svg';
 import trappemaskinIcon from '@/assets/icons/trappemaskin.svg';
+import roingIcon from '@/assets/icons/roing.svg';
+import kajakkIcon from '@/assets/icons/kajakk.svg';
+import tredemolleIcon from '@/assets/icons/tredemølle.svg';
 
 const iconMap: Record<string, string> = {
   styrke: styrkeIcon,
@@ -23,6 +26,9 @@ const iconMap: Record<string, string> = {
   yoga: yogaIcon,
   fotball: fotballIcon,
   trappemaskin: trappemaskinIcon,
+  roing: roingIcon,
+  kajakk: kajakkIcon,
+  tredemølle: tredemolleIcon,
 };
 
 interface ActivityIconProps {
