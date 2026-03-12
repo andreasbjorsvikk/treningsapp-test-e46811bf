@@ -186,7 +186,7 @@ Deno.serve(async (req) => {
         const { error } = await admin.from("workout_sessions")
           .upsert(rows, { onConflict: "user_id,strava_activity_id", ignoreDuplicates: false })
           .select("id");
-        if (error) { console.error("Upsert error:", error); return new Response(JSON.stringify({ error: "Failed to upsert activities" }), { status: 500, headers: corsHeaders }); }
+        if (error) { console.error("Upsert error:", JSON.stringify(error)); return new Response(JSON.stringify({ error: "Failed to upsert activities", details: error.message, code: error.code, hint: error.hint }), { status: 500, headers: corsHeaders }); }
       }
       return new Response(JSON.stringify({ synced: newCount, total: activities.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
