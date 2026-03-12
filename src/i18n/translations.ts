@@ -714,6 +714,10 @@ const en: Record<string, string> = {
   'goalCard.remaining': 'remaining',
   'goalCard.deleteTitle': 'Delete goal',
   'goalCard.deleteDesc': 'Are you sure you want to delete this goal? This action cannot be undone.',
+  'goalCard.deleteOrArchiveTitle': 'Delete goal?',
+  'goalCard.deleteOrArchiveDesc': 'Are you sure you want to permanently delete this goal?',
+  'goalCard.archiveTitle': 'Archive goal?',
+  'goalCard.archiveDesc': 'Do you want to archive this goal? It will be moved to completed goals.',
 
   // Goal form
   'goalForm.editGoal': 'Edit goal',
