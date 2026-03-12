@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { getNotifications, markAllNotificationsRead, respondToChallenge, NotificationRow } from '@/services/communityService';
+import { supabase } from '@/integrations/supabase/client';
 import { Mail, Settings, Trophy, UserPlus, Loader2, Check, X, Eye } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toast } from 'sonner';
@@ -18,18 +19,71 @@ const iconMap: Record<string, typeof Mail> = {
   friend_request: UserPlus,
 };
 
+interface EnrichedNotification extends NotificationRow {
+  currentChallengeName?: string;
+  alreadyResponded?: boolean;
+}
+
 const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge }: NotificationSheetProps) => {
   const { t } = useTranslation();
-  const [notifications, setNotifications] = useState<NotificationRow[]>([]);
+  const [notifications, setNotifications] = useState<EnrichedNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [respondingTo, setRespondingTo] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
       setLoading(true);
-      getNotifications().then(n => { setNotifications(n); setLoading(false); });
+      enrichNotifications().then(n => { setNotifications(n); setLoading(false); });
     }
   }, [open]);
+
+  const enrichNotifications = async (): Promise<EnrichedNotification[]> => {
+    const raw = await getNotifications();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return raw;
+
+    // Get unique challenge IDs from invite notifications
+    const challengeIds = [...new Set(raw.filter(n => n.type === 'invite' && n.challenge_id).map(n => n.challenge_id!))];
+    
+    // Fetch current challenge names and user's participation status
+    let challengeNameMap: Record<string, string> = {};
+    let respondedChallenges = new Set<string>();
+
+    if (challengeIds.length > 0) {
+      const { data: challenges } = await supabase
+        .from('challenges')
+        .select('id, name')
+        .in('id', challengeIds);
+      challengeNameMap = Object.fromEntries((challenges || []).map(c => [c.id, c.name]));
+
+      // Check which challenges user has already accepted (status != 'pending') or left
+      const { data: participations } = await supabase
+        .from('challenge_participants')
+        .select('challenge_id, status')
+        .eq('user_id', user.id)
+        .in('challenge_id', challengeIds);
+      
+      for (const p of participations || []) {
+        if (p.status === 'accepted' || p.status === 'declined') {
+          respondedChallenges.add(p.challenge_id);
+        }
+      }
+
+      // Also mark challenges where user is no longer a participant (left/declined+deleted)
+      const participatedIds = new Set((participations || []).map(p => p.challenge_id));
+      for (const cid of challengeIds) {
+        if (!participatedIds.has(cid)) {
+          respondedChallenges.add(cid); // user was removed or left
+        }
+      }
+    }
+
+    return raw.map(n => ({
+      ...n,
+      currentChallengeName: n.challenge_id ? challengeNameMap[n.challenge_id] : undefined,
+      alreadyResponded: n.type === 'invite' && n.challenge_id ? respondedChallenges.has(n.challenge_id) : false,
+    }));
+  };
 
   const handleClose = () => {
     markAllNotificationsRead();
@@ -41,8 +95,7 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
     try {
       await respondToChallenge(challengeId, accept);
       toast.success(accept ? t('notifications.challengeAccepted') : t('notifications.challengeDeclined'));
-      // Refresh notifications
-      const updated = await getNotifications();
+      const updated = await enrichNotifications();
       setNotifications(updated);
     } catch {
       toast.error(t('notifications.respondError'));
@@ -57,6 +110,18 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
     if (hours < 24) return t('notifications.hoursAgo', { n: hours });
     const days = Math.floor(hours / 24);
     return t('notifications.daysAgo', { n: days });
+  };
+
+  // Build display message, replacing old challenge name with current one
+  const getDisplayMessage = (n: EnrichedNotification): string => {
+    if (n.type === 'invite' && n.currentChallengeName && n.challenge_id) {
+      // Replace the old name in the message with the current name
+      const match = n.message.match(/«(.+?)»/);
+      if (match && match[1] !== n.currentChallengeName) {
+        return n.message.replace(`«${match[1]}»`, `«${n.currentChallengeName}»`);
+      }
+    }
+    return n.message;
   };
 
   return (
@@ -76,6 +141,7 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
               const timeAgo = getTimeAgo(n.created_at);
               const isFriendRequest = n.type === 'friend_request';
               const isChallengeInvite = n.type === 'invite';
+              const showActions = isChallengeInvite && n.challenge_id && !n.alreadyResponded;
               return (
                 <div
                   key={n.id}
@@ -88,7 +154,7 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium">{n.title}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{getDisplayMessage(n)}</p>
                     {isFriendRequest && (
                       <button
                         onClick={() => {
@@ -100,7 +166,7 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
                         {t('notifications.tapToSee')}
                       </button>
                     )}
-                    {isChallengeInvite && n.challenge_id && (
+                    {showActions && (
                       <div className="flex items-center gap-2 mt-2">
                         <button
                           onClick={() => {
@@ -119,6 +185,9 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
                           <X className="w-3 h-3" /> {t('notifications.decline')}
                         </button>
                       </div>
+                    )}
+                    {isChallengeInvite && n.alreadyResponded && (
+                      <p className="text-[10px] text-muted-foreground/60 mt-1 italic">{t('notifications.alreadyResponded')}</p>
                     )}
                     <p className="text-[10px] text-muted-foreground mt-1">{timeAgo}</p>
                   </div>

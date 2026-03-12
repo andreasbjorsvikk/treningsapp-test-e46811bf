@@ -225,10 +225,18 @@ export async function respondToChallenge(challengeId: string, accept: boolean) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  await supabase.from('challenge_participants')
-    .update({ status: accept ? 'accepted' : 'declined' })
-    .eq('challenge_id', challengeId)
-    .eq('user_id', user.id);
+  if (accept) {
+    await supabase.from('challenge_participants')
+      .update({ status: 'accepted' })
+      .eq('challenge_id', challengeId)
+      .eq('user_id', user.id);
+  } else {
+    // Delete the participant row so user disappears for everyone
+    await supabase.from('challenge_participants')
+      .delete()
+      .eq('challenge_id', challengeId)
+      .eq('user_id', user.id);
+  }
 }
 
 export async function deleteChallenge(challengeId: string) {
