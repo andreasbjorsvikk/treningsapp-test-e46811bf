@@ -101,13 +101,19 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
     const durationMinutes = hours * 60 + minutes + (showSeconds ? seconds / 60 : 0);
     if (durationMinutes <= 0 || !date) return;
 
+    let finalElevation: number | undefined;
+    if (fields.elevation && elevationGain) {
+      const val = parseFloat(elevationGain);
+      finalElevation = (type === 'trappemaskin' && elevationMode === 'floors') ? Math.round(val * 3) : Math.round(val);
+    }
+
     onSave({
       type,
       title: title.trim() || undefined,
       date: new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12).toISOString(),
       durationMinutes,
       distance: fields.distance && distance ? parseFloat(distance) : undefined,
-      elevationGain: fields.elevation && elevationGain ? parseInt(elevationGain) : undefined,
+      elevationGain: finalElevation,
       notes: notes.trim() || undefined,
     });
     onClose();
