@@ -1178,6 +1178,7 @@ const en: Record<string, string> = {
   'notifications.challengeAccepted': 'Challenge accepted!',
   'notifications.challengeDeclined': 'Challenge declined',
   'notifications.respondError': 'Could not respond to invitation',
+  'notifications.alreadyResponded': 'Already responded',
 
   // Calendar
   'calendar.monthNames.0': 'January', 'calendar.monthNames.1': 'February', 'calendar.monthNames.2': 'March',
