@@ -315,6 +315,8 @@ const no: Record<string, string> = {
   'common.participants': 'deltakere',
   'common.me': 'Meg',
   'common.ok': 'Ok',
+  'common.yes': 'Ja',
+  'common.no': 'Nei',
 
   // Greetings
   'greeting.goodNight': 'God natt',
