@@ -818,6 +818,7 @@ const IndexContent = () => {
 
       <GoalCompletionOverlay
         goal={appData.completedGoal}
+        sessions={appData.sessions}
         onArchive={(id) => appData.archiveGoal(id)}
         onDismiss={() => appData.dismissCompletedGoal()}
       />

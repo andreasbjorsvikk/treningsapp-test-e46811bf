@@ -824,13 +824,18 @@ const en: Record<string, string> = {
 
   // Goal completion
   'goalCompletion.title': 'Goal reached! 🎉',
-  'goalCompletion.description': 'Congratulations! You completed your goal.',
+  'goalCompletion.description': 'Congratulations! You reached your goal.',
   'goalCompletion.archive': 'Archive',
+  'goalCompletion.archiveNow': 'Archive now',
   'goalCompletion.later': 'Later',
   'goalCompletion.achieved': 'Achieved',
   'goalCompletion.notAchieved': 'Not achieved',
   'goalCompletion.folder': 'Periods',
   'goalCompletion.progress': 'Progress',
+  'goalCompletion.autoArchiveWeek': 'The goal will be automatically archived at the end of the week ({date})',
+  'goalCompletion.autoArchiveMonth': 'The goal will be automatically archived at the end of the month ({date})',
+  'goalCompletion.autoArchiveYear': 'The goal will be automatically archived at the end of the year',
+  'goalCompletion.autoArchiveCustom': 'The goal will be automatically archived on {date}',
 
   // Settings
   'settings.title': 'Settings',
