@@ -310,6 +310,7 @@ const no: Record<string, string> = {
   'common.noGoalSet': 'Ingen satt mål',
   'common.participants': 'deltakere',
   'common.me': 'Meg',
+  'common.ok': 'Ok',
 
   // Greetings
   'greeting.goodNight': 'God natt',
