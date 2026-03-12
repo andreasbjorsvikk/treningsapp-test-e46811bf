@@ -73,25 +73,41 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
       }
     }
 
-    return raw.map(n => {
+    // Check friend request status for friend_request notifications
+    const friendRequestFromIds = [...new Set(raw.filter(n => n.type === 'friend_request' && n.from_user_id).map(n => n.from_user_id!))];
+    const respondedFriendRequests = new Set<string>();
+    if (friendRequestFromIds.length > 0) {
+      const { data: friendships } = await supabase
+        .from('friendships')
+        .select('user_id, friend_id, status')
+        .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
+        .in('status', ['accepted', 'declined']);
+      for (const f of friendships || []) {
+        const otherId = f.user_id === user.id ? f.friend_id : f.user_id;
+        if (friendRequestFromIds.includes(otherId)) {
+          respondedFriendRequests.add(otherId);
+        }
+      }
+    }
+
+    const enriched = raw.map(n => {
       let alreadyResponded = false;
 
       if (n.type === 'invite' && n.challenge_id) {
         const latest = latestParticipationByChallenge.get(n.challenge_id);
-
         if (!latest) {
-          // User has no participant row anymore => invite is no longer actionable
           alreadyResponded = true;
         } else if (latest.status === 'pending') {
-          // Fresh invite (including re-invite)
           alreadyResponded = false;
         } else if (latest.status === 'declined') {
-          // If notification is newer than decline, treat as fresh re-invite
           alreadyResponded = new Date(n.created_at).getTime() <= new Date(latest.createdAt).getTime();
         } else {
-          // accepted (or any unexpected status)
           alreadyResponded = true;
         }
+      }
+
+      if (n.type === 'friend_request' && n.from_user_id && respondedFriendRequests.has(n.from_user_id)) {
+        alreadyResponded = true;
       }
 
       return {
@@ -100,6 +116,23 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
         alreadyResponded,
       };
     });
+
+    // Deduplicate: for challenge invites, keep only the newest per challenge_id
+    const seenChallenges = new Set<string>();
+    const deduped: EnrichedNotification[] = [];
+    // Sort newest first for dedup
+    const sorted = [...enriched].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    for (const n of sorted) {
+      if (n.type === 'invite' && n.challenge_id) {
+        if (seenChallenges.has(n.challenge_id)) continue;
+        seenChallenges.add(n.challenge_id);
+      }
+      // Hide responded notifications entirely
+      if (n.alreadyResponded) continue;
+      deduped.push(n);
+    }
+    // Re-sort by created_at descending (already is, but be explicit)
+    return deduped;
   };
 
   const handleClose = () => {
@@ -202,9 +235,6 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
                           <X className="w-3 h-3" /> {t('notifications.decline')}
                         </button>
                       </div>
-                    )}
-                    {isChallengeInvite && n.alreadyResponded && (
-                      <p className="text-[10px] text-muted-foreground/60 mt-1 italic">{t('notifications.alreadyResponded')}</p>
                     )}
                     <p className="text-[10px] text-muted-foreground mt-1">{timeAgo}</p>
                   </div>
