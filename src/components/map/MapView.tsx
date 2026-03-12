@@ -219,6 +219,8 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     else if (mapStyle === 'streets') styleUrl = 'mapbox://styles/mapbox/streets-v12';
     else if (mapStyle === 'topo') styleUrl = 'mapbox://styles/mapbox/outdoors-v12';
     
+    // For topo, we'll add Kartverket raster tiles after style loads
+    
     setMapLoaded(false);
     m.setStyle(styleUrl);
     m.once('style.load', () => {
