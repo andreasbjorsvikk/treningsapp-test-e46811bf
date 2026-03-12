@@ -84,6 +84,11 @@ const ChallengeDetail = ({ challenge, open, onClose, onEdit, onResponded }: Chal
     setResponding(true);
     try {
       await leaveChallenge(challenge.challenge.id);
+      // Remove from pinned challenges on home
+      const pinned = settings.pinnedChallengeIds || [];
+      if (pinned.includes(challenge.challenge.id)) {
+        updateSettings({ pinnedChallengeIds: pinned.filter(id => id !== challenge.challenge.id) });
+      }
       toast.success(t('challenge.leftChallenge'));
       onResponded?.();
       onClose();
@@ -148,15 +153,17 @@ const ChallengeDetail = ({ challenge, open, onClose, onEdit, onResponded }: Chal
             <div className="px-4 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-base text-muted-foreground">
-                  {t(`challenge.metric${c.metric.charAt(0).toUpperCase() + c.metric.slice(1)}`)}
-                  {c.target > 0 ? ` · ${t('challengeCard.target')}: ${c.target}${unit ? ` ${unit}` : ''}` : ` · ${t(`challenge.noTarget.${c.metric}`)}`}
+                  {c.target > 0
+                    ? `${t('challengeCard.target')}: ${c.target}${unit ? ` ${unit}` : ''}`
+                    : t(`challenge.noTarget.${c.metric}`)
+                  }
                 </span>
                 {!isEnded ? (
-                  <span className="text-sm font-medium bg-accent/10 text-accent px-2.5 py-1 rounded-full">
+                  <span className="text-sm font-medium bg-accent/10 text-accent px-2.5 py-1 rounded-full text-center">
                     {daysLeft} {t('challenge.daysLeft')}
                   </span>
                 ) : (
-                  <span className="text-sm font-medium bg-muted text-muted-foreground px-2.5 py-1 rounded-full">
+                  <span className="text-sm font-medium bg-muted text-muted-foreground px-2.5 py-1 rounded-full text-center">
                     {t('common.ended')}
                   </span>
                 )}

@@ -48,7 +48,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   const { user } = useAuth();
   const [mapLoaded, setMapLoaded] = useState(false);
   const [is3D, setIs3D] = useState(true);
-  const [mapStyle, setMapStyle] = useState<'outdoors' | 'satellite' | 'streets'>('outdoors');
+  const [mapStyle, setMapStyle] = useState<'outdoors' | 'satellite' | 'streets' | 'topo'>('outdoors');
   const appliedStyleRef = useRef<string>('outdoors');
   const [showStyleMenu, setShowStyleMenu] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -217,6 +217,9 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     let styleUrl = 'mapbox://styles/mapbox/outdoors-v12';
     if (mapStyle === 'satellite') styleUrl = 'mapbox://styles/mapbox/satellite-streets-v12';
     else if (mapStyle === 'streets') styleUrl = 'mapbox://styles/mapbox/streets-v12';
+    else if (mapStyle === 'topo') styleUrl = 'mapbox://styles/mapbox/outdoors-v12';
+    
+    // For topo, we'll add Kartverket raster tiles after style loads
     
     setMapLoaded(false);
     m.setStyle(styleUrl);
@@ -227,6 +230,25 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       if (is3D) m.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
       if (!m.getLayer('sky')) {
         m.addLayer({ id: 'sky', type: 'sky', paint: { 'sky-type': 'atmosphere', 'sky-atmosphere-sun': [0.0, 90.0], 'sky-atmosphere-sun-intensity': 15 } });
+      }
+      // Add Kartverket topo raster for topo mode
+      if (mapStyle === 'topo') {
+        if (!m.getSource('kartverket-topo')) {
+          m.addSource('kartverket-topo', {
+            type: 'raster',
+            tiles: ['https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png'],
+            tileSize: 256,
+            attribution: '© Kartverket',
+          });
+        }
+        if (!m.getLayer('kartverket-topo-layer')) {
+          m.addLayer({
+            id: 'kartverket-topo-layer',
+            type: 'raster',
+            source: 'kartverket-topo',
+            paint: { 'raster-opacity': 1 },
+          }, m.getStyle().layers.find(l => l.type === 'symbol')?.id);
+        }
       }
       setMapLoaded(true);
     });
@@ -807,6 +829,12 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
                 className={`w-full px-3 py-2 text-xs font-medium text-left hover:bg-muted transition-colors flex items-center gap-2 ${mapStyle === 'satellite' ? 'bg-muted' : ''}`}
               >
                 🛰️ Satellitt
+              </button>
+              <button
+                onClick={() => { setMapStyle('topo'); setShowStyleMenu(false); }}
+                className={`w-full px-3 py-2 text-xs font-medium text-left hover:bg-muted transition-colors flex items-center gap-2 ${mapStyle === 'topo' ? 'bg-muted' : ''}`}
+              >
+                🥾 Topografisk
               </button>
             </div>
           )}
