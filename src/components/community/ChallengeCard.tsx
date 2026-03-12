@@ -38,8 +38,14 @@ const ChallengeCard = ({ challenge, onClick, onEdit }: ChallengeCardProps) => {
   const endDate = new Date(c.period_end);
   const periodStr = `${startDate.toLocaleDateString(locale, { day: 'numeric', month: 'short' })} – ${endDate.toLocaleDateString(locale, { day: 'numeric', month: 'short' })}`;
 
-  const sorted = [...challenge.participants].sort((a, b) => a.rank - b.rank);
-  const maxProgress = Math.max(...challenge.participants.map(p => p.progress), 1);
+  // Only show accepted participants (and self if pending)
+  const visibleParticipants = challenge.participants.filter(p => {
+    if (p.status === 'accepted') return true;
+    if (p.status === 'pending' && p.userId === user?.id) return true;
+    return false;
+  });
+  const sorted = [...visibleParticipants].sort((a, b) => a.rank - b.rank);
+  const maxProgress = Math.max(...visibleParticipants.map(p => p.progress), 1);
 
   return (
     <button
