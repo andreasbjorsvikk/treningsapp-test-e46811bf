@@ -63,17 +63,15 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
         .eq('user_id', user.id)
         .in('challenge_id', challengeIds);
       
-      for (const p of participations || []) {
-        if (p.status === 'accepted' || p.status === 'declined') {
-          respondedChallenges.add(p.challenge_id);
-        }
-      }
-
-      // Also mark challenges where user is no longer a participant (left/declined+deleted)
-      const participatedIds = new Set((participations || []).map(p => p.challenge_id));
+      const participationMap = new Map((participations || []).map(p => [p.challenge_id, p.status]));
+      
       for (const cid of challengeIds) {
-        if (!participatedIds.has(cid)) {
-          respondedChallenges.add(cid); // user was removed or left
+        const status = participationMap.get(cid);
+        // pending = fresh invite (re-invited), show action buttons
+        // accepted/declined = already responded
+        // no record = user left/was removed, also already responded
+        if (status === 'accepted' || status === 'declined' || !status) {
+          respondedChallenges.add(cid);
         }
       }
     }
