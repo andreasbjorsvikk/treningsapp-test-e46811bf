@@ -809,6 +809,12 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
               >
                 🛰️ Satellitt
               </button>
+              <button
+                onClick={() => { setMapStyle('topo'); setShowStyleMenu(false); }}
+                className={`w-full px-3 py-2 text-xs font-medium text-left hover:bg-muted transition-colors flex items-center gap-2 ${mapStyle === 'topo' ? 'bg-muted' : ''}`}
+              >
+                🥾 Topografisk
+              </button>
             </div>
           )}
         </div>
