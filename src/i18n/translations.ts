@@ -103,6 +103,10 @@ const no: Record<string, string> = {
   'goalCard.remaining': 'igjen',
   'goalCard.deleteTitle': 'Slett mål',
   'goalCard.deleteDesc': 'Er du sikker på at du vil slette dette målet? Denne handlingen kan ikke angres.',
+  'goalCard.deleteOrArchiveTitle': 'Slett målet?',
+  'goalCard.deleteOrArchiveDesc': 'Er du sikker på at du vil slette dette målet permanent?',
+  'goalCard.archiveTitle': 'Arkiver målet?',
+  'goalCard.archiveDesc': 'Vil du arkivere dette målet? Det flyttes til fullførte mål.',
 
   // Goal form
   'goalForm.editGoal': 'Rediger mål',
