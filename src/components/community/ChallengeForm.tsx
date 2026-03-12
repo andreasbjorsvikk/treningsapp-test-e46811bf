@@ -135,6 +135,7 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
           target: parseFloat(target) || 0,
           periodStart: dates.start,
           periodEnd: dates.end,
+          newInvitedUserIds: selectedUsers.length > 0 ? selectedUsers : undefined,
         });
         toast.success(t('challenge.updated'));
       } else {
