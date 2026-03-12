@@ -13,12 +13,13 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 function mapStravaType(sportType: string): string {
   const map: Record<string, string> = {
-    Run: "løping", TrailRun: "løping", VirtualRun: "løping",
+    Run: "løping", TrailRun: "løping", VirtualRun: "tredemølle",
     Ride: "sykling", VirtualRide: "sykling", MountainBikeRide: "sykling",
     GravelRide: "sykling", EBikeRide: "sykling",
     Swim: "svømming", Walk: "gå", Hike: "fjelltur",
     WeightTraining: "styrke", Yoga: "yoga", Tennis: "tennis",
     Soccer: "fotball", Workout: "annet",
+    Rowing: "roing", Canoeing: "kajakk", Kayaking: "kajakk",
   };
   return map[sportType] || "annet";
 }
