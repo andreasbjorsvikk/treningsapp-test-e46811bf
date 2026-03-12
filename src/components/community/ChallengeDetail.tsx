@@ -106,7 +106,13 @@ const ChallengeDetail = ({ challenge, open, onClose, onEdit, onResponded }: Chal
   const periodStr = `${new Date(c.period_start).toLocaleDateString(locale, { day: 'numeric', month: 'long' })} – ${endDate.toLocaleDateString(locale, { day: 'numeric', month: 'long' })}`;
   const isCreator = c.created_by === user?.id;
 
-  const sorted = [...challenge.participants].sort((a, b) => a.rank - b.rank);
+  // Filter participants: hide pending users from others, but show pending user to themselves
+  const visibleParticipants = challenge.participants.filter(p => {
+    if (p.status === 'accepted') return true;
+    if (p.status === 'pending' && p.userId === user?.id) return true;
+    return false;
+  });
+  const sorted = [...visibleParticipants].sort((a, b) => a.rank - b.rank);
 
   const isPinned = settings.pinnedChallengeIds?.includes(c.id);
 
