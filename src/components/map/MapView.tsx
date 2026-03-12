@@ -213,17 +213,25 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     if (mapStyle === appliedStyleRef.current) return;
     appliedStyleRef.current = mapStyle;
     const m = map.current;
+
+    const previousStyle = appliedStyleRef.current;
     
     let styleUrl = 'mapbox://styles/mapbox/outdoors-v12';
     if (mapStyle === 'satellite') styleUrl = 'mapbox://styles/mapbox/satellite-streets-v12';
     else if (mapStyle === 'streets') styleUrl = 'mapbox://styles/mapbox/streets-v12';
     else if (mapStyle === 'topo') styleUrl = 'mapbox://styles/mapbox/outdoors-v12';
-    
-    // For topo, we'll add Kartverket raster tiles after style loads
-    
-    setMapLoaded(false);
-    m.setStyle(styleUrl);
-    m.once('style.load', () => {
+
+    // Determine if the base Mapbox style URL actually changes
+    const getBaseUrl = (s: string) => {
+      if (s === 'satellite') return 'mapbox://styles/mapbox/satellite-streets-v12';
+      if (s === 'streets') return 'mapbox://styles/mapbox/streets-v12';
+      return 'mapbox://styles/mapbox/outdoors-v12'; // both 'outdoors' and 'topo'
+    };
+    const oldBaseUrl = getBaseUrl(previousStyle as any || 'outdoors');
+    const newBaseUrl = getBaseUrl(mapStyle);
+    const sameBaseStyle = oldBaseUrl === newBaseUrl;
+
+    const applyOverlays = () => {
       if (!m.getSource('mapbox-dem')) {
         m.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
       }
@@ -231,6 +239,13 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       if (!m.getLayer('sky')) {
         m.addLayer({ id: 'sky', type: 'sky', paint: { 'sky-type': 'atmosphere', 'sky-atmosphere-sun': [0.0, 90.0], 'sky-atmosphere-sun-intensity': 15 } });
       }
+
+      // Remove Kartverket layer if not topo
+      if (mapStyle !== 'topo') {
+        if (m.getLayer('kartverket-topo-layer')) m.removeLayer('kartverket-topo-layer');
+        if (m.getSource('kartverket-topo')) m.removeSource('kartverket-topo');
+      }
+
       // Add Kartverket topo raster for topo mode
       if (mapStyle === 'topo') {
         if (!m.getSource('kartverket-topo')) {
@@ -242,16 +257,27 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           });
         }
         if (!m.getLayer('kartverket-topo-layer')) {
+          const firstSymbol = m.getStyle().layers.find((l: any) => l.type === 'symbol')?.id;
           m.addLayer({
             id: 'kartverket-topo-layer',
             type: 'raster',
             source: 'kartverket-topo',
             paint: { 'raster-opacity': 1 },
-          }, m.getStyle().layers.find(l => l.type === 'symbol')?.id);
+          }, firstSymbol);
         }
       }
       setMapLoaded(true);
-    });
+    };
+
+    if (sameBaseStyle) {
+      // Same base style (e.g. outdoors <-> topo): just add/remove overlay layers
+      applyOverlays();
+    } else {
+      // Different base style: need full style swap
+      setMapLoaded(false);
+      m.setStyle(styleUrl);
+      m.once('style.load', applyOverlays);
+    }
   }, [mapStyle, mapLoaded]);
 
   // Draw route if provided
