@@ -211,10 +211,9 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     if (!map.current || !mapLoaded) return;
     // Skip if style hasn't actually changed
     if (mapStyle === appliedStyleRef.current) return;
+    const previousStyle = appliedStyleRef.current;
     appliedStyleRef.current = mapStyle;
     const m = map.current;
-
-    const previousStyle = appliedStyleRef.current;
     
     let styleUrl = 'mapbox://styles/mapbox/outdoors-v12';
     if (mapStyle === 'satellite') styleUrl = 'mapbox://styles/mapbox/satellite-streets-v12';
