@@ -926,6 +926,8 @@ const en: Record<string, string> = {
   'common.participants': 'participants',
   'common.me': 'Me',
   'common.ok': 'Ok',
+  'common.yes': 'Yes',
+  'common.no': 'No',
 
   // Greetings
   'greeting.goodNight': 'Good night',
