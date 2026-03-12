@@ -236,9 +236,19 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
                         </button>
                       </div>
                     )}
-                    {isChallengeInvite && n.alreadyResponded && (
-                      <p className="text-[10px] text-muted-foreground/60 mt-1 italic">{t('notifications.alreadyResponded')}</p>
-                    )}
+                    <p className="text-[10px] text-muted-foreground mt-1">{timeAgo}</p>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+};
+
+export default NotificationSheet;
                     <p className="text-[10px] text-muted-foreground mt-1">{timeAgo}</p>
                   </div>
                 </div>
