@@ -53,19 +53,14 @@ const CommunityPage = () => {
 
     for (const c of raw) {
       const parts = await getChallengeParticipants(c.id);
-      const acceptedParts = parts.filter(p => p.status === 'accepted');
-      const userIds = acceptedParts.map(p => p.user_id);
+      const allUserIds = parts.map(p => p.user_id);
 
-      // Get profiles
-      const { data: profiles } = await supabase.from('profiles').select('id, username, avatar_url').in('id', userIds);
+      // Get profiles for ALL participants
+      const { data: profiles } = await supabase.from('profiles').select('id, username, avatar_url').in('id', allUserIds.length > 0 ? allUserIds : ['none']);
       const profileMap = new Map((profiles || []).map(p => [p.id, p]));
 
-      // Get progress
-      const progress = userIds.length > 0 ? await getChallengeProgress(c, userIds) : {};
-
-      // Include ALL participants (accepted + pending) so we can check status for filtering
-      const allParts = parts;
-      const allUserIds = allParts.map(p => p.user_id);
+      // Get progress for ALL participants (so pending users also see their stats)
+      const progress = allUserIds.length > 0 ? await getChallengeProgress(c, allUserIds) : {};
       const { data: allProfiles } = await supabase.from('profiles').select('id, username, avatar_url').in('id', allUserIds.length > 0 ? allUserIds : ['none']);
       const allProfileMap = new Map((allProfiles || []).map(p => [p.id, p]));
       
