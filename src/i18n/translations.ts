@@ -915,6 +915,7 @@ const en: Record<string, string> = {
   'common.noGoalSet': 'No goal set',
   'common.participants': 'participants',
   'common.me': 'Me',
+  'common.ok': 'Ok',
 
   // Greetings
   'greeting.goodNight': 'Good night',
