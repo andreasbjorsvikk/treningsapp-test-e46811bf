@@ -273,6 +273,9 @@ export async function updateChallenge(challengeId: string, updates: {
     const { data: profile } = await supabase.from('profiles').select('username').eq('id', user.id).single();
     const { data: challenge } = await supabase.from('challenges').select('name').eq('id', challengeId).single();
     for (const friendId of updates.newInvitedUserIds) {
+      // Try to create a fresh pending participant row.
+      // If the user already has a row (e.g. declined previously), we still send a new notification
+      // and let the invited user accept directly from notifications.
       await supabase.from('challenge_participants').insert({
         challenge_id: challengeId,
         user_id: friendId,
