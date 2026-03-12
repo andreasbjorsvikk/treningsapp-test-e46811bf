@@ -231,6 +231,25 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       if (!m.getLayer('sky')) {
         m.addLayer({ id: 'sky', type: 'sky', paint: { 'sky-type': 'atmosphere', 'sky-atmosphere-sun': [0.0, 90.0], 'sky-atmosphere-sun-intensity': 15 } });
       }
+      // Add Kartverket topo raster for topo mode
+      if (mapStyle === 'topo') {
+        if (!m.getSource('kartverket-topo')) {
+          m.addSource('kartverket-topo', {
+            type: 'raster',
+            tiles: ['https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png'],
+            tileSize: 256,
+            attribution: '© Kartverket',
+          });
+        }
+        if (!m.getLayer('kartverket-topo-layer')) {
+          m.addLayer({
+            id: 'kartverket-topo-layer',
+            type: 'raster',
+            source: 'kartverket-topo',
+            paint: { 'raster-opacity': 1 },
+          }, m.getStyle().layers.find(l => l.type === 'symbol')?.id);
+        }
+      }
       setMapLoaded(true);
     });
   }, [mapStyle, mapLoaded]);
