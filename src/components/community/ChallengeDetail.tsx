@@ -1,19 +1,22 @@
 import { useState, useEffect } from 'react';
 import { ChallengeWithParticipants } from '@/pages/CommunityPage';
-import { Friend, respondToChallenge } from '@/services/communityService';
+import { Friend, respondToChallenge, leaveChallenge } from '@/services/communityService';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter,
 } from '@/components/ui/drawer';
-import { Trophy, Link2, Home, Pencil, Check, X } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
+} from '@/components/ui/alert-dialog';
+import { Trophy, Link2, Home, Pencil, Check, X, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/hooks/useAuth';
 import UserProfileDrawer from '@/components/community/UserProfileDrawer';
 import { useTranslation } from '@/i18n/useTranslation';
 
-// metricLabels now use translation keys
 const metricUnits: Record<string, string> = {
   sessions: '',
   distance: 'km',
@@ -36,6 +39,8 @@ const ChallengeDetail = ({ challenge, open, onClose, onEdit, onResponded }: Chal
   const [profileUser, setProfileUser] = useState<Friend | null>(null);
   const [responding, setResponding] = useState(false);
   const [isPending, setIsPending] = useState(false);
+  const [creatorName, setCreatorName] = useState<string | null>(null);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   useEffect(() => {
     if (open && challenge && user) {
@@ -46,6 +51,15 @@ const ChallengeDetail = ({ challenge, open, onClose, onEdit, onResponded }: Chal
         .single()
         .then(({ data }) => {
           setIsPending(data?.status === 'pending');
+        });
+
+      // Fetch creator name
+      supabase.from('profiles')
+        .select('username')
+        .eq('id', challenge.challenge.created_by)
+        .single()
+        .then(({ data }) => {
+          setCreatorName(data?.username || null);
         });
     }
   }, [open, challenge, user]);
@@ -58,10 +72,26 @@ const ChallengeDetail = ({ challenge, open, onClose, onEdit, onResponded }: Chal
       toast.success(accept ? t('notifications.challengeAccepted') : t('notifications.challengeDeclined'));
       setIsPending(false);
       onResponded?.();
+      onClose();
     } catch {
       toast.error(t('notifications.respondError'));
     }
     setResponding(false);
+  };
+
+  const handleLeave = async () => {
+    if (!challenge) return;
+    setResponding(true);
+    try {
+      await leaveChallenge(challenge.challenge.id);
+      toast.success(t('challenge.leftChallenge'));
+      onResponded?.();
+      onClose();
+    } catch {
+      toast.error(t('notifications.respondError'));
+    }
+    setResponding(false);
+    setShowLeaveConfirm(false);
   };
 
   if (!challenge) return null;
@@ -74,6 +104,7 @@ const ChallengeDetail = ({ challenge, open, onClose, onEdit, onResponded }: Chal
   const isEnded = c.period_end < now.toISOString().split('T')[0];
   const locale = t('date.locale');
   const periodStr = `${new Date(c.period_start).toLocaleDateString(locale, { day: 'numeric', month: 'long' })} – ${endDate.toLocaleDateString(locale, { day: 'numeric', month: 'long' })}`;
+  const isCreator = c.created_by === user?.id;
 
   const sorted = [...challenge.participants].sort((a, b) => a.rank - b.rank);
 
@@ -193,7 +224,7 @@ const ChallengeDetail = ({ challenge, open, onClose, onEdit, onResponded }: Chal
                 </div>
               )}
               <div className="flex gap-2">
-                {onEdit && c.created_by === user?.id && (
+                {onEdit && isCreator && (
                   <button
                     onClick={() => { onEdit(challenge); onClose(); }}
                     className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-secondary text-sm font-medium hover:bg-secondary/80 transition-colors"
@@ -213,10 +244,41 @@ const ChallengeDetail = ({ challenge, open, onClose, onEdit, onResponded }: Chal
                   </button>
                 )}
               </div>
+
+              {/* Footer: created by + leave */}
+              <div className="flex items-center justify-between w-full pt-2 border-t border-border">
+                <span className="text-xs text-muted-foreground">
+                  {t('challenge.createdBy')} {creatorName || t('common.unknown')}
+                </span>
+                {!isCreator && !isPending && (
+                  <button
+                    onClick={() => setShowLeaveConfirm(true)}
+                    className="flex items-center gap-1.5 text-xs text-destructive hover:text-destructive/80 transition-colors"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    {t('challenge.leave')}
+                  </button>
+                )}
+              </div>
             </DrawerFooter>
           </div>
         </DrawerContent>
       </Drawer>
+
+      <AlertDialog open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('challenge.leaveConfirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('challenge.leaveConfirmDesc')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLeave} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {t('challenge.leave')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <UserProfileDrawer
         user={profileUser}
