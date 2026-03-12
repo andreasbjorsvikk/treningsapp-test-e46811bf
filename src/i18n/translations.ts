@@ -220,13 +220,18 @@ const no: Record<string, string> = {
 
   // Goal completion
   'goalCompletion.title': 'Mål nådd! 🎉',
-  'goalCompletion.description': 'Gratulerer! Du har fullført målet ditt.',
+  'goalCompletion.description': 'Gratulerer! Du har nådd målet ditt.',
   'goalCompletion.archive': 'Arkiver',
+  'goalCompletion.archiveNow': 'Arkiver nå',
   'goalCompletion.later': 'Senere',
   'goalCompletion.achieved': 'Oppnådd',
   'goalCompletion.notAchieved': 'Ikke oppnådd',
   'goalCompletion.folder': 'Perioder',
   'goalCompletion.progress': 'Fremgang',
+  'goalCompletion.autoArchiveWeek': 'Målet blir automatisk arkivert ved slutten av uken ({date})',
+  'goalCompletion.autoArchiveMonth': 'Målet blir automatisk arkivert ved slutten av måneden ({date})',
+  'goalCompletion.autoArchiveYear': 'Målet blir automatisk arkivert ved slutten av året',
+  'goalCompletion.autoArchiveCustom': 'Målet blir automatisk arkivert {date}',
 
   // Settings
   'settings.title': 'Innstillinger',
