@@ -103,6 +103,10 @@ const no: Record<string, string> = {
   'goalCard.remaining': 'igjen',
   'goalCard.deleteTitle': 'Slett mål',
   'goalCard.deleteDesc': 'Er du sikker på at du vil slette dette målet? Denne handlingen kan ikke angres.',
+  'goalCard.deleteOrArchiveTitle': 'Slett målet?',
+  'goalCard.deleteOrArchiveDesc': 'Er du sikker på at du vil slette dette målet permanent?',
+  'goalCard.archiveTitle': 'Arkiver målet?',
+  'goalCard.archiveDesc': 'Vil du arkivere dette målet? Det flyttes til fullførte mål.',
 
   // Goal form
   'goalForm.editGoal': 'Rediger mål',
@@ -311,6 +315,8 @@ const no: Record<string, string> = {
   'common.participants': 'deltakere',
   'common.me': 'Meg',
   'common.ok': 'Ok',
+  'common.yes': 'Ja',
+  'common.no': 'Nei',
 
   // Greetings
   'greeting.goodNight': 'God natt',
@@ -708,6 +714,10 @@ const en: Record<string, string> = {
   'goalCard.remaining': 'remaining',
   'goalCard.deleteTitle': 'Delete goal',
   'goalCard.deleteDesc': 'Are you sure you want to delete this goal? This action cannot be undone.',
+  'goalCard.deleteOrArchiveTitle': 'Delete goal?',
+  'goalCard.deleteOrArchiveDesc': 'Are you sure you want to permanently delete this goal?',
+  'goalCard.archiveTitle': 'Archive goal?',
+  'goalCard.archiveDesc': 'Do you want to archive this goal? It will be moved to completed goals.',
 
   // Goal form
   'goalForm.editGoal': 'Edit goal',
@@ -916,6 +926,8 @@ const en: Record<string, string> = {
   'common.participants': 'participants',
   'common.me': 'Me',
   'common.ok': 'Ok',
+  'common.yes': 'Yes',
+  'common.no': 'No',
 
   // Greetings
   'greeting.goodNight': 'Good night',

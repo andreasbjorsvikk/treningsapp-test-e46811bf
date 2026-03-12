@@ -40,6 +40,7 @@ interface GoalCardProps {
 
 const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome, onArchive }: GoalCardProps) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const { settings } = useSettings();
   const { t, locale } = useTranslation();
   const isDark = settings.darkMode;
@@ -98,18 +99,15 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome, onArchive }:
       className="glass-card rounded-xl p-4 flex flex-col items-center text-center gap-2 relative group"
       style={cardBg}
     >
-      {/* Top-right actions */}
-      <div className="absolute top-2 right-2 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button onClick={() => onEdit(goal)} className="p-1 rounded-md hover:bg-secondary transition-colors">
-          <Pencil className="w-3 h-3 text-muted-foreground" />
-        </button>
+      {/* Top-right: archive & delete with confirmation */}
+      <div className="absolute top-1.5 right-1.5 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         {onArchive && (
-          <button onClick={() => onArchive(goal.id)} className="p-1 rounded-md hover:bg-secondary transition-colors" title={t('goalCard.archive')}>
-            <Archive className="w-3 h-3 text-muted-foreground" />
+          <button onClick={() => setShowArchiveConfirm(true)} className="p-1.5 rounded-lg hover:bg-secondary transition-colors" title={t('goalCard.archive')}>
+            <Archive className="w-4 h-4 text-muted-foreground" />
           </button>
         )}
-        <button onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true); }} className="p-1 rounded-md hover:bg-destructive/10 transition-colors">
-          <Trash2 className="w-3 h-3 text-destructive" />
+        <button onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true); }} className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors">
+          <Trash2 className="w-4 h-4 text-destructive" />
         </button>
       </div>
 
@@ -170,32 +168,60 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome, onArchive }:
 
       <p className={`text-xs ${schedule.className}`}>{schedule.label}</p>
 
-      {/* Home toggle */}
+      {/* Bottom-left: Home toggle */}
       <button
         onClick={() => onToggleHome(goal.id)}
-        className={`absolute bottom-2 left-2 p-1 rounded-md transition-colors ${
+        className={`absolute bottom-2 left-2 p-1.5 rounded-lg transition-colors ${
           goal.showOnHome
             ? 'text-primary bg-primary/10'
             : 'text-muted-foreground/40 hover:text-muted-foreground'
         }`}
         title={goal.showOnHome ? t('goals.removeFromHome') : t('goals.showOnHome')}
       >
-        <Home className="w-3.5 h-3.5" />
+        <Home className="w-4 h-4" />
       </button>
 
+      {/* Bottom-right: Edit button */}
+      <button
+        onClick={() => onEdit(goal)}
+        className="absolute bottom-2 right-2 p-1.5 rounded-lg hover:bg-secondary transition-colors opacity-0 group-hover:opacity-100"
+        title={t('common.edit')}
+      >
+        <Pencil className="w-4 h-4 text-muted-foreground" />
+      </button>
+
+      {/* Delete confirmation */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="max-w-[min(calc(100vw-2rem),20rem)]">
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('goalCard.deleteTitle')}</AlertDialogTitle>
+            <AlertDialogTitle>{t('goalCard.deleteOrArchiveTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('goalCard.deleteDesc')}
+              {t('goalCard.deleteOrArchiveDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => onDelete(goal.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+            <AlertDialogAction onClick={() => onDelete(goal.id)} className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90">
               {t('common.delete')}
             </AlertDialogAction>
+            <AlertDialogCancel className="w-full">{t('common.no')}</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Archive confirmation */}
+      <AlertDialog open={showArchiveConfirm} onOpenChange={setShowArchiveConfirm}>
+        <AlertDialogContent className="max-w-[min(calc(100vw-2rem),20rem)]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('goalCard.archiveTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('goalCard.archiveDesc')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+            <AlertDialogAction onClick={() => { if (onArchive) onArchive(goal.id); }} className="w-full">
+              {t('common.yes')}
+            </AlertDialogAction>
+            <AlertDialogCancel className="w-full">{t('common.no')}</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
