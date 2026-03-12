@@ -95,6 +95,12 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
     }
   }, [open, preselectedUser, editChallenge]);
 
+  // Filter out friends already in the challenge when editing
+  const existingParticipantIds = editChallenge?.participants.map(p => p.userId) || [];
+  const availableFriends = isEditing
+    ? friends.filter(f => !existingParticipantIds.includes(f.id))
+    : friends;
+
   const toggleType = (type: string) => {
     if (type === 'all') {
       setSelectedTypes(['all']);
@@ -129,6 +135,7 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
           target: parseFloat(target) || 0,
           periodStart: dates.start,
           periodEnd: dates.end,
+          newInvitedUserIds: selectedUsers.length > 0 ? selectedUsers : undefined,
         });
         toast.success(t('challenge.updated'));
       } else {
@@ -267,35 +274,37 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
           )}
           {!target && <p className="text-xs text-muted-foreground">{t('challenge.noTargetDesc')}</p>}
 
-          {/* Participant selection - only for new challenges */}
-          {!isEditing && (
-            <div>
-              <Label className="text-xs mb-2 block">{t('challenge.participants')}</Label>
-              {loading ? (
-                <div className="flex justify-center py-4"><Loader2 className="w-4 h-4 animate-spin" /></div>
-              ) : friends.length === 0 ? (
-                <p className="text-xs text-muted-foreground py-2">{t('community.addFriendsFirst')}</p>
-              ) : (
-                <div className="space-y-1">
-                  {friends.map(u => (
-                    <button
-                      key={u.id}
-                      onClick={() => toggleUser(u.id)}
-                      className={`w-full flex items-center gap-2 p-2 rounded-lg text-sm transition-colors ${
-                        selectedUsers.includes(u.id) ? 'bg-accent/10 text-accent' : 'bg-secondary/50 text-foreground'
-                      }`}
-                    >
-                      <Avatar className="w-6 h-6">
-                        {u.avatarUrl ? <AvatarImage src={u.avatarUrl} /> : null}
-                        <AvatarFallback className="text-[10px]">{(u.username || '?')[0]}</AvatarFallback>
-                      </Avatar>
-                      {u.username || t('common.unknown')}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          {/* Participant selection */}
+          <div>
+            <Label className="text-xs mb-2 block">
+              {isEditing ? t('challenge.addParticipants') : t('challenge.participants')}
+            </Label>
+            {loading ? (
+              <div className="flex justify-center py-4"><Loader2 className="w-4 h-4 animate-spin" /></div>
+            ) : availableFriends.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-2">
+                {isEditing ? t('challenge.allFriendsInvited') : t('community.addFriendsFirst')}
+              </p>
+            ) : (
+              <div className="space-y-1">
+                {availableFriends.map(u => (
+                  <button
+                    key={u.id}
+                    onClick={() => toggleUser(u.id)}
+                    className={`w-full flex items-center gap-2 p-2 rounded-lg text-sm transition-colors ${
+                      selectedUsers.includes(u.id) ? 'bg-accent/10 text-accent' : 'bg-secondary/50 text-foreground'
+                    }`}
+                  >
+                    <Avatar className="w-6 h-6">
+                      {u.avatarUrl ? <AvatarImage src={u.avatarUrl} /> : null}
+                      <AvatarFallback className="text-[10px]">{(u.username || '?')[0]}</AvatarFallback>
+                    </Avatar>
+                    {u.username || t('common.unknown')}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <DialogFooter className="flex-col gap-2">

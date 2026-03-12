@@ -510,6 +510,13 @@ const no: Record<string, string> = {
   'challenge.noTarget.distance': 'Flest kilometer vinner',
   'challenge.noTarget.duration': 'Høyest total tid vinner',
   'challenge.noTarget.elevation': 'Flest høydemeter vinner',
+  'challenge.createdBy': 'Opprettet av',
+  'challenge.leave': 'Forlat utfordring',
+  'challenge.leaveConfirmTitle': 'Forlat utfordring?',
+  'challenge.leaveConfirmDesc': 'Du kan bare bli med igjen med en ny invitasjon.',
+  'challenge.leftChallenge': 'Du har forlatt utfordringen',
+  'challenge.addParticipants': 'Legg til deltakere',
+  'challenge.allFriendsInvited': 'Alle venner er allerede invitert',
 
   // Leaderboard
   'leaderboard.week': 'Uke',
@@ -1121,6 +1128,13 @@ const en: Record<string, string> = {
   'challenge.noTarget.distance': 'Most kilometers wins',
   'challenge.noTarget.duration': 'Highest total time wins',
   'challenge.noTarget.elevation': 'Most elevation gain wins',
+  'challenge.createdBy': 'Created by',
+  'challenge.leave': 'Leave challenge',
+  'challenge.leaveConfirmTitle': 'Leave challenge?',
+  'challenge.leaveConfirmDesc': 'You can only rejoin with a new invitation.',
+  'challenge.leftChallenge': 'You have left the challenge',
+  'challenge.addParticipants': 'Add participants',
+  'challenge.allFriendsInvited': 'All friends are already invited',
 
   // Leaderboard
   'leaderboard.week': 'Week',
