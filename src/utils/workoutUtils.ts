@@ -29,6 +29,9 @@ export const defaultTypeColors: Record<SessionType, string> = {
   yoga:     '#c084fc', // purple
   fotball:  '#4ade80', // green
   trappemaskin: '#f59e0b', // amber
+  roing:        '#0ea5e9', // sky blue
+  kajakk:       '#06b6d4', // cyan
+  tredemølle:   '#8b5cf6', // violet
   annet:    '#a1a1aa', // zinc
 };
 
