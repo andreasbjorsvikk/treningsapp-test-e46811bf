@@ -220,13 +220,18 @@ const no: Record<string, string> = {
 
   // Goal completion
   'goalCompletion.title': 'Mål nådd! 🎉',
-  'goalCompletion.description': 'Gratulerer! Du har fullført målet ditt.',
+  'goalCompletion.description': 'Gratulerer! Du har nådd målet ditt.',
   'goalCompletion.archive': 'Arkiver',
+  'goalCompletion.archiveNow': 'Arkiver nå',
   'goalCompletion.later': 'Senere',
   'goalCompletion.achieved': 'Oppnådd',
   'goalCompletion.notAchieved': 'Ikke oppnådd',
   'goalCompletion.folder': 'Perioder',
   'goalCompletion.progress': 'Fremgang',
+  'goalCompletion.autoArchiveWeek': 'Målet blir automatisk arkivert ved slutten av uken ({date})',
+  'goalCompletion.autoArchiveMonth': 'Målet blir automatisk arkivert ved slutten av måneden ({date})',
+  'goalCompletion.autoArchiveYear': 'Målet blir automatisk arkivert ved slutten av året',
+  'goalCompletion.autoArchiveCustom': 'Målet blir automatisk arkivert {date}',
 
   // Settings
   'settings.title': 'Innstillinger',
@@ -305,6 +310,7 @@ const no: Record<string, string> = {
   'common.noGoalSet': 'Ingen satt mål',
   'common.participants': 'deltakere',
   'common.me': 'Meg',
+  'common.ok': 'Ok',
 
   // Greetings
   'greeting.goodNight': 'God natt',
@@ -819,13 +825,18 @@ const en: Record<string, string> = {
 
   // Goal completion
   'goalCompletion.title': 'Goal reached! 🎉',
-  'goalCompletion.description': 'Congratulations! You completed your goal.',
+  'goalCompletion.description': 'Congratulations! You reached your goal.',
   'goalCompletion.archive': 'Archive',
+  'goalCompletion.archiveNow': 'Archive now',
   'goalCompletion.later': 'Later',
   'goalCompletion.achieved': 'Achieved',
   'goalCompletion.notAchieved': 'Not achieved',
   'goalCompletion.folder': 'Periods',
   'goalCompletion.progress': 'Progress',
+  'goalCompletion.autoArchiveWeek': 'The goal will be automatically archived at the end of the week ({date})',
+  'goalCompletion.autoArchiveMonth': 'The goal will be automatically archived at the end of the month ({date})',
+  'goalCompletion.autoArchiveYear': 'The goal will be automatically archived at the end of the year',
+  'goalCompletion.autoArchiveCustom': 'The goal will be automatically archived on {date}',
 
   // Settings
   'settings.title': 'Settings',
@@ -904,6 +915,7 @@ const en: Record<string, string> = {
   'common.noGoalSet': 'No goal set',
   'common.participants': 'participants',
   'common.me': 'Me',
+  'common.ok': 'Ok',
 
   // Greetings
   'greeting.goodNight': 'Good night',
