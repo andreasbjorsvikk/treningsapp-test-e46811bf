@@ -246,10 +246,7 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
       </SheetContent>
     </Sheet>
   );
-};
-
 export default NotificationSheet;
-                    <p className="text-[10px] text-muted-foreground mt-1">{timeAgo}</p>
                   </div>
                 </div>
               );
