@@ -217,6 +217,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     let styleUrl = 'mapbox://styles/mapbox/outdoors-v12';
     if (mapStyle === 'satellite') styleUrl = 'mapbox://styles/mapbox/satellite-streets-v12';
     else if (mapStyle === 'streets') styleUrl = 'mapbox://styles/mapbox/streets-v12';
+    else if (mapStyle === 'topo') styleUrl = 'mapbox://styles/mapbox/outdoors-v12';
     
     setMapLoaded(false);
     m.setStyle(styleUrl);
