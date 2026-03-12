@@ -164,7 +164,7 @@ const ChallengeDetail = ({ challenge, open, onClose, onEdit, onResponded }: Chal
 
               <div className="space-y-2">
                 {sorted.map((p, i) => {
-                  const maxProgress = Math.max(...challenge.participants.map(pp => pp.progress));
+                  const maxProgress = Math.max(...visibleParticipants.map(pp => pp.progress));
                   const pct = c.target > 0
                     ? Math.min((p.progress / c.target) * 100, 100)
                     : maxProgress > 0 ? (p.progress / maxProgress) * 100 : 0;
