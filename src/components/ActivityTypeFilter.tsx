@@ -16,7 +16,7 @@ const ActivityTypeFilter = ({ selected, onToggle }: ActivityTypeFilterProps) => 
   const isDark = settings.darkMode;
   const disabledTypes = settings.disabledSessionTypes || [];
   const filteredTypes = allSessionTypes.filter(t => !disabledTypes.includes(t));
-  const allSelected = selected.length === filteredTypes.length;
+  const allSelected = filteredTypes.length > 0 && filteredTypes.every(t => selected.includes(t));
 
   const handleToggleAll = () => {
     if (allSelected) {
