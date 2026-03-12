@@ -75,6 +75,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
   const [elevationGain, setElevationGain] = useState('');
   const [notes, setNotes] = useState('');
   const [durationPickerOpen, setDurationPickerOpen] = useState(false);
+  const [elevationMode, setElevationMode] = useState<'meters' | 'floors'>('meters');
   
   const showSeconds = type === 'løping';
 

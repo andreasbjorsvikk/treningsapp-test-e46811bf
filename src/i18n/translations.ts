@@ -815,6 +815,9 @@ const en: Record<string, string> = {
   'workout.distance': 'Distance',
   'workout.distanceKm': 'Distance km',
   'workout.elevation': 'Elevation',
+  'workout.floors': 'Floors',
+  'workout.elevationUnit': 'Elevation (m)',
+  'workout.floorsUnit': 'Floors',
   'workout.notes': 'Notes',
   // Home stats toggle
   'home.thisWeek': 'This week',
