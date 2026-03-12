@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { ChevronDown, RotateCcw, Trash2, Check, X, FolderOpen, Repeat } from 'lucide-react';
 import { ExtraGoal, WorkoutSession, GoalMetric, SessionType } from '@/types/workout';
 import { computeProgress } from '@/utils/goalUtils';
@@ -16,13 +16,20 @@ interface PeriodEntry {
   achieved: boolean;
 }
 
+function getWeekNumber(d: Date): number {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
 function computePastPeriods(goal: ExtraGoal, sessions: WorkoutSession[]): PeriodEntry[] {
   const now = new Date();
   const createdAt = new Date(goal.createdAt);
   const periods: PeriodEntry[] = [];
 
   if (goal.period === 'week') {
-    // Start from the Monday of the creation week
     const day = createdAt.getDay();
     const mondayOffset = day === 0 ? 6 : day - 1;
     const monday = new Date(createdAt);
@@ -43,9 +50,10 @@ function computePastPeriods(goal: ExtraGoal, sessions: WorkoutSession[]): Period
 
       const weekSessions = filterSessionsByPeriodAndType(sessions, weekStart, weekEnd, goal.activityType);
       const progress = computeProgress(weekSessions, goal.metric);
+      const weekNum = getWeekNumber(weekStart);
 
       periods.push({
-        label: `${formatShortDate(weekStart)} – ${formatShortDate(weekEnd)}`,
+        label: `Uke ${weekNum}`,
         start: new Date(weekStart),
         end: new Date(weekEnd),
         progress,
@@ -68,7 +76,7 @@ function computePastPeriods(goal: ExtraGoal, sessions: WorkoutSession[]): Period
       const monthSessions = filterSessionsByPeriodAndType(sessions, monthStart, monthEnd, goal.activityType);
       const progress = computeProgress(monthSessions, goal.metric);
 
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Des'];
+      const monthNames = ['Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Desember'];
       periods.push({
         label: `${monthNames[month]} ${year}`,
         start: new Date(monthStart),
@@ -84,6 +92,51 @@ function computePastPeriods(goal: ExtraGoal, sessions: WorkoutSession[]): Period
   }
 
   return periods.reverse(); // Most recent first
+}
+
+/** For non-repeating archived goals, compute the period boundaries based on goal period & createdAt */
+function getArchivedGoalPeriodBounds(goal: ExtraGoal): { start: Date; end: Date; label: string } {
+  const created = new Date(goal.createdAt);
+
+  if (goal.period === 'custom' && goal.customStart && goal.customEnd) {
+    return {
+      start: new Date(goal.customStart),
+      end: new Date(goal.customEnd + 'T23:59:59.999'),
+      label: `${goal.customStart} – ${goal.customEnd}`,
+    };
+  }
+
+  if (goal.period === 'week') {
+    const day = created.getDay();
+    const mondayOffset = day === 0 ? 6 : day - 1;
+    const monday = new Date(created);
+    monday.setDate(created.getDate() - mondayOffset);
+    monday.setHours(0, 0, 0, 0);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+    const weekNum = getWeekNumber(monday);
+    return { start: monday, end: sunday, label: `Uke ${weekNum}` };
+  }
+
+  if (goal.period === 'month') {
+    const monthStart = new Date(created.getFullYear(), created.getMonth(), 1);
+    const monthEnd = new Date(created.getFullYear(), created.getMonth() + 1, 0, 23, 59, 59, 999);
+    const monthNames = ['Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Desember'];
+    return { start: monthStart, end: monthEnd, label: `${monthNames[created.getMonth()]} ${created.getFullYear()}` };
+  }
+
+  // year
+  const yearStart = new Date(created.getFullYear(), 0, 1);
+  const yearEnd = new Date(created.getFullYear(), 11, 31, 23, 59, 59, 999);
+  return { start: yearStart, end: yearEnd, label: `${created.getFullYear()}` };
+}
+
+/** Check if unarchiving is allowed (still within the goal's period) */
+function canUnarchive(goal: ExtraGoal): boolean {
+  const now = new Date();
+  const bounds = getArchivedGoalPeriodBounds(goal);
+  return now <= bounds.end;
 }
 
 function filterSessionsByPeriodAndType(
@@ -109,13 +162,14 @@ function filterSessionsByPeriodAndType(
   return filtered;
 }
 
-function formatShortDate(d: Date): string {
-  return `${d.getDate()}.${d.getMonth() + 1}`;
-}
-
 function formatValue(value: number, metric: GoalMetric): string {
   if (metric === 'distance' || metric === 'minutes') return value.toFixed(1);
   return Math.round(value).toString();
+}
+
+function parseActivityTypes(activityType: string): string[] {
+  if (activityType === 'all') return ['all'];
+  return activityType.split(',').filter(Boolean);
 }
 
 interface ArchivedGoalsSectionProps {
@@ -157,13 +211,29 @@ const ArchivedGoalsSection = ({
     return <p className="text-center py-4 text-sm text-muted-foreground">{t('goals.noArchivedGoals')}</p>;
   }
 
+  const renderActivityIcons = (activityType: string) => {
+    const types = parseActivityTypes(activityType);
+    if (types.includes('all')) return null;
+    return (
+      <div className="flex items-center gap-0.5">
+        {types.slice(0, 3).map((type) => {
+          const c = getActivityColors(type as SessionType, isDark);
+          return (
+            <div key={type} className="rounded-full p-0.5" style={{ backgroundColor: c.bg }}>
+              <ActivityIcon type={type as SessionType} className="w-3.5 h-3.5" colorOverride={!isDark ? c.text : undefined} />
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-2">
       {/* Repeating goals as folders */}
       {repeatingWithHistory.map(({ goal, periods }) => {
         const isExpanded = expandedId === goal.id;
         const metricLabel = t(`metric.${goal.metric}`);
-        const periodLabel = goal.period === 'week' ? t('goalCard.thisWeek') : t('goalCard.thisMonth');
         const achievedCount = periods.filter(p => p.achieved).length;
 
         return (
@@ -175,7 +245,8 @@ const ArchivedGoalsSection = ({
               <div className="flex items-center gap-2">
                 <FolderOpen className="w-4 h-4 text-muted-foreground" />
                 <div className="flex flex-col items-start gap-0.5">
-                  <span className="font-semibold text-sm text-foreground flex items-center gap-1">
+                  <span className="font-semibold text-sm text-foreground flex items-center gap-1.5">
+                    {renderActivityIcons(goal.activityType)}
                     {goal.target} {metricLabel}
                     <Repeat className="w-3 h-3 text-muted-foreground" />
                   </span>
@@ -220,19 +291,16 @@ const ArchivedGoalsSection = ({
       {/* Non-repeating archived goals */}
       {nonRepeatingArchived.map(goal => {
         const metricLabel = t(`metric.${goal.metric}`);
+        const bounds = getArchivedGoalPeriodBounds(goal);
         const periodSessions = filterSessionsByPeriodAndType(
           sessions,
-          goal.customStart ? new Date(goal.customStart) : new Date(goal.createdAt),
-          goal.customEnd ? new Date(goal.customEnd) : new Date(),
+          bounds.start,
+          bounds.end,
           goal.activityType
         );
         const progress = computeProgress(periodSessions, goal.metric);
         const achieved = progress >= goal.target;
-        const periodLabel = goal.period === 'custom'
-          ? `${goal.customStart} – ${goal.customEnd}`
-          : goal.period === 'week' ? t('goalCard.thisWeek')
-          : goal.period === 'month' ? t('goalCard.thisMonth')
-          : goal.period === 'year' ? t('goalCard.thisYear') : goal.period;
+        const allowUnarchive = canUnarchive(goal);
 
         return (
           <div key={goal.id} className={`flex items-center justify-between rounded-xl px-4 py-3 ${
@@ -240,6 +308,7 @@ const ArchivedGoalsSection = ({
           }`}>
             <div className="flex flex-col gap-0.5">
               <span className="font-semibold text-sm text-foreground flex items-center gap-1.5">
+                {renderActivityIcons(goal.activityType)}
                 {goal.target} {metricLabel}
                 {achieved ? (
                   <Check className="w-3.5 h-3.5 text-success" />
@@ -248,17 +317,19 @@ const ArchivedGoalsSection = ({
                 )}
               </span>
               <span className="text-xs text-muted-foreground">
-                {formatValue(progress, goal.metric)} / {formatValue(goal.target, goal.metric)} · {periodLabel}
+                {formatValue(progress, goal.metric)} / {formatValue(goal.target, goal.metric)} · {bounds.label}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => onUnarchive(goal.id)}
-                className="text-muted-foreground/60 hover:text-foreground p-1.5 rounded-lg hover:bg-secondary transition-colors"
-                title={t('goals.unarchive')}
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
+              {allowUnarchive && (
+                <button
+                  onClick={() => onUnarchive(goal.id)}
+                  className="text-muted-foreground/60 hover:text-foreground p-1.5 rounded-lg hover:bg-secondary transition-colors"
+                  title={t('goals.unarchive')}
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              )}
               <button
                 onClick={() => onDelete(goal.id)}
                 className="text-destructive/60 hover:text-destructive p-1.5 rounded-lg hover:bg-destructive/10 transition-colors"
