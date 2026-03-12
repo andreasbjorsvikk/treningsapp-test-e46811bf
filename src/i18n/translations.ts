@@ -559,6 +559,7 @@ const no: Record<string, string> = {
   'notifications.challengeAccepted': 'Utfordring godtatt!',
   'notifications.challengeDeclined': 'Utfordring avslått',
   'notifications.respondError': 'Kunne ikke svare på invitasjonen',
+  'notifications.alreadyResponded': 'Allerede besvart',
 
   // Calendar
   'calendar.monthNames.0': 'Januar', 'calendar.monthNames.1': 'Februar', 'calendar.monthNames.2': 'Mars',
