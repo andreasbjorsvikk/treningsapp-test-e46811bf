@@ -30,6 +30,7 @@ export async function nativeSignInWithOAuth(
     if (error) return { error: error.message };
 
     if (data?.url) {
+      // @ts-ignore - Only available in native Capacitor builds
       const { Browser } = await import('@capacitor/browser');
       await Browser.open({ url: data.url });
     }
