@@ -91,26 +91,24 @@ const CheckinAnimation = () => {
   );
 };
 
-// ── Step 2: Static map preview rotating through map styles ──
+// ── Step 2: Static map preview rotating between satellite and terrain ──
 const MapStylePreview = () => {
   const [styleIdx, setStyleIdx] = useState(0);
   const mapStyles = [
-    { name: 'Standard', style: 'streets-v12' },
-    { name: 'Terreng', style: 'outdoors-v12' },
-    { name: 'Topografisk', style: 'light-v11' },
     { name: 'Satellitt', style: 'satellite-streets-v12' },
+    { name: 'Terreng', style: 'outdoors-v12' },
   ];
 
   useEffect(() => {
     const interval = setInterval(() => {
       setStyleIdx(i => (i + 1) % mapStyles.length);
-    }, 2000);
+    }, 2500);
     return () => clearInterval(interval);
   }, []);
 
   const current = mapStyles[styleIdx];
   const zoom = 13;
-  const pitch = 60;
+  const pitch = 50;
   const bearing = 45;
   const width = 400;
   const height = 220;
@@ -123,7 +121,7 @@ const MapStylePreview = () => {
         <img
           src={markerUrl}
           alt={`Hovlandsnuten - ${current.name}`}
-          className="w-full h-full object-cover transition-opacity duration-500"
+          className="w-full h-full object-cover"
           key={`map-style-${styleIdx}`}
         />
         {/* Style label */}
@@ -199,7 +197,7 @@ const LongPressAnimation = () => {
 const OverviewContent = () => (
   <div className="space-y-2 py-1">
     <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
-      <List className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+      <Mountain className="w-5 h-5 text-primary shrink-0 mt-0.5" />
       <div>
         <p className="text-sm font-semibold text-foreground">Topper</p>
         <p className="text-[11px] text-muted-foreground">Bla gjennom alle topper sortert etter høyde eller avstand fra deg.</p>
@@ -235,7 +233,7 @@ const steps: TutorialStep[] = [
   },
   {
     title: 'Kartvisning',
-    text: 'Bytt mellom ulike kartvisninger – standard, terreng, topografisk og satellitt. Du kan også veksle mellom 2D og 3D-visning.',
+    text: 'Bytt mellom satellitt- og terrengvisning. Du kan også veksle mellom 2D og 3D-visning.',
     icon: <Map className="w-8 h-8" />,
     customContent: <MapStylePreview />,
   },
@@ -246,9 +244,9 @@ const steps: TutorialStep[] = [
     customContent: <LongPressAnimation />,
   },
   {
-    title: 'Utforsk',
-    text: 'Under kartet finner du flere faner for å utforske fjelltopper og følge med på aktivitet.',
-    icon: <List className="w-8 h-8" />,
+    title: 'Utforsk de andre fanene',
+    text: '',
+    icon: null,
     customContent: <OverviewContent />,
   },
 ];
@@ -289,9 +287,11 @@ const MapTutorial = () => {
             <X className="w-4 h-4" />
           </button>
 
-          <div className="flex justify-center text-primary">
-            {current.icon}
-          </div>
+          {current.icon && (
+            <div className="flex justify-center text-primary">
+              {current.icon}
+            </div>
+          )}
 
           <div className="text-center space-y-2">
             <h3 className="font-display font-bold text-lg text-foreground">{current.title}</h3>
