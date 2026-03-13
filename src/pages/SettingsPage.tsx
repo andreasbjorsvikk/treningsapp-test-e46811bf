@@ -1003,9 +1003,8 @@ const SettingsPage = () => {
 
   // ========== HELP VIEW ==========
   if (view === 'help') {
-    const [openSections, setOpenSections] = useState<Set<string>>(new Set());
     const toggleSection = (key: string) => {
-      setOpenSections(prev => {
+      setHelpOpenSections(prev => {
         const next = new Set(prev);
         if (next.has(key)) next.delete(key);
         else next.add(key);
