@@ -1,4 +1,3 @@
-import { Capacitor } from '@capacitor/core';
 import { supabase } from '@/integrations/supabase/client';
 
 const APP_SCHEME = 'treningsapp';
@@ -6,7 +5,8 @@ const WEB_CALLBACK_URL = 'https://treningsapp-test.lovable.app/auth/native-callb
 
 export function isNativePlatform(): boolean {
   try {
-    return Capacitor.isNativePlatform();
+    // Use window.Capacitor which is injected by the native runtime
+    return !!(window as any).Capacitor?.isNativePlatform?.();
   } catch {
     return false;
   }
@@ -30,7 +30,7 @@ export async function nativeSignInWithOAuth(
     if (error) return { error: error.message };
 
     if (data?.url) {
-      // Dynamically import Capacitor Browser plugin (only available in native)
+      // @ts-ignore - Only available in native Capacitor builds
       const { Browser } = await import('@capacitor/browser');
       await Browser.open({ url: data.url });
     }
@@ -47,7 +47,9 @@ export async function nativeSignInWithOAuth(
 export async function setupDeepLinkListener() {
   if (!isNativePlatform()) return;
 
+  // @ts-ignore - These packages are only available in native Capacitor builds
   const { App } = await import('@capacitor/app');
+  // @ts-ignore
   const { Browser } = await import('@capacitor/browser');
 
   App.addListener('appUrlOpen', async ({ url }) => {
@@ -61,7 +63,6 @@ export async function setupDeepLinkListener() {
       // Browser might already be closed
     }
 
-    // Extract tokens from URL fragment (#access_token=...&refresh_token=...)
     const hashIndex = url.indexOf('#');
     if (hashIndex !== -1) {
       const fragment = url.substring(hashIndex + 1);
@@ -79,7 +80,6 @@ export async function setupDeepLinkListener() {
       }
     }
 
-    // Try query params (code flow)
     const queryIndex = url.indexOf('?');
     if (queryIndex !== -1) {
       const params = new URLSearchParams(url.substring(queryIndex));
