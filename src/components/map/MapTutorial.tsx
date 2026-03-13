@@ -153,12 +153,14 @@ const MapTutorial = () => {
       {/* Backdrop */}
       <div className="fixed inset-0 z-[9998] bg-black/40 backdrop-blur-[2px]" onClick={dismiss} />
 
-      {/* Arrow pointing to top-left controls for step 2 */}
+      {/* Large arrow pointing diagonally up-left to map controls for step 2 */}
       {current.arrowDirection === 'up-left' && (
-        <div className="fixed top-14 left-12 z-[9999]">
-          <svg width="40" height="60" viewBox="0 0 40 60" fill="none" className="text-card drop-shadow-lg">
-            <path d="M20 0 L20 30" stroke="currentColor" strokeWidth="2" />
-            <path d="M12 22 L20 30 L28 22" stroke="currentColor" strokeWidth="2" fill="none" />
+        <div className="fixed z-[10000] pointer-events-none" style={{ top: '56px', left: '16px' }}>
+          <svg width="120" height="120" viewBox="0 0 120 120" fill="none" className="drop-shadow-xl">
+            {/* Arrowhead pointing up-left */}
+            <path d="M12 8 L8 40 L40 36" stroke="hsl(var(--primary))" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            {/* Curved shaft from arrowhead towards center/bottom-right */}
+            <path d="M10 38 C30 50, 50 70, 90 110" stroke="hsl(var(--primary))" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeDasharray="8 4" />
           </svg>
         </div>
       )}
