@@ -527,7 +527,78 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
 
       markersRef.current.push(marker);
     });
-  }, [peaks, checkins, mapLoaded, t, adminMode]);
+  }, [peaks, checkins, mapLoaded, t, adminMode, onlyReachedThisYear]);
+
+  // === SUGGESTED PEAKS: Show pending suggestions with different icon ===
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    suggestedMarkersRef.current.forEach(m => m.remove());
+    suggestedMarkersRef.current = [];
+
+    if (!suggestedPeaks?.length) return;
+
+    suggestedPeaks.forEach(suggestion => {
+      const el = document.createElement('div');
+      el.style.cssText = `
+        width: 32px; height: 32px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        background: hsl(0, 0%, 88%);
+        border: 2px dashed hsl(0, 0%, 60%);
+        border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        opacity: 0.8;
+      `;
+      el.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="hsl(0, 0%, 45%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 2 15H2L8 3z"/></svg>
+      `;
+
+      const popup = new mapboxgl.Popup({
+        offset: 20,
+        closeButton: false,
+        maxWidth: '260px',
+        className: 'peak-popup',
+      });
+
+      popup.setHTML(`
+        <div class="peak-popup-inner">
+          <div class="peak-popup-header">
+            <div class="peak-popup-title">${suggestion.name}</div>
+          </div>
+          ${suggestion.elevation_moh ? `<div style="text-align: center; font-size: 16px; font-weight: 700; margin: 4px 0;">${suggestion.elevation_moh} moh</div>` : ''}
+          <div style="text-align: center; padding: 4px 8px; margin: 4px 0; background: hsl(38, 80%, 92%); border-radius: 8px; font-size: 12px; color: hsl(38, 70%, 30%); font-weight: 500;">
+            ⏳ Denne toppen er ikke godkjent enda, men du kan sjekke inn
+          </div>
+          <button class="peak-popup-btn primary" id="suggestion-btn-${suggestion.id}">Sjekk inn</button>
+        </div>
+      `);
+
+      popup.on('open', () => {
+        setTimeout(() => {
+          document.getElementById(`suggestion-btn-${suggestion.id}`)?.addEventListener('click', () => {
+            popup.remove();
+            // Create a temporary Peak object for check-in
+            const tempPeak: Peak = {
+              id: suggestion.id,
+              name: suggestion.name,
+              heightMoh: suggestion.elevation_moh || 0,
+              latitude: suggestion.latitude,
+              longitude: suggestion.longitude,
+              area: '',
+              description: '',
+              isPublished: false,
+            };
+            onSelectPeak(tempPeak);
+          });
+        }, 10);
+      });
+
+      const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
+        .setLngLat([suggestion.longitude, suggestion.latitude])
+        .setPopup(popup)
+        .addTo(map.current!);
+
+      suggestedMarkersRef.current.push(marker);
+    });
+  }, [suggestedPeaks, mapLoaded, onSelectPeak]);
 
   // === HEATMAP: Lines from summary_polyline, thicker/redder where more overlap ===
   useEffect(() => {
