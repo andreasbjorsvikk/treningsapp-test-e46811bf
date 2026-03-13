@@ -32,7 +32,7 @@ const PeakOrbitMap = ({ latitude, longitude, heightMoh, className }: PeakOrbitMa
 
       const map = new mapboxgl.Map({
         container: containerRef.current,
-        style: 'mapbox://styles/mapbox/satellite-streets-v12',
+        style: 'mapbox://styles/mapbox/outdoors-v12',
         center: [longitude, latitude],
         zoom,
         pitch: 65,

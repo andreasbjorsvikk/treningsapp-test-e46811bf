@@ -48,7 +48,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   const { user } = useAuth();
   const [mapLoaded, setMapLoaded] = useState(false);
   const [is3D, setIs3D] = useState(true);
-  const [mapStyle, setMapStyle] = useState<'outdoors' | 'satellite' | 'streets' | 'topo'>('outdoors');
+  const [mapStyle, setMapStyle] = useState<'outdoors' | 'satellite' | 'streets'>('outdoors');
   const appliedStyleRef = useRef<string>('outdoors');
   const [showStyleMenu, setShowStyleMenu] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -211,26 +211,16 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     if (!map.current || !mapLoaded) return;
     // Skip if style hasn't actually changed
     if (mapStyle === appliedStyleRef.current) return;
-    const previousStyle = appliedStyleRef.current;
     appliedStyleRef.current = mapStyle;
     const m = map.current;
     
     let styleUrl = 'mapbox://styles/mapbox/outdoors-v12';
     if (mapStyle === 'satellite') styleUrl = 'mapbox://styles/mapbox/satellite-streets-v12';
     else if (mapStyle === 'streets') styleUrl = 'mapbox://styles/mapbox/streets-v12';
-    else if (mapStyle === 'topo') styleUrl = 'mapbox://styles/mapbox/outdoors-v12';
-
-    // Determine if the base Mapbox style URL actually changes
-    const getBaseUrl = (s: string) => {
-      if (s === 'satellite') return 'mapbox://styles/mapbox/satellite-streets-v12';
-      if (s === 'streets') return 'mapbox://styles/mapbox/streets-v12';
-      return 'mapbox://styles/mapbox/outdoors-v12'; // both 'outdoors' and 'topo'
-    };
-    const oldBaseUrl = getBaseUrl(previousStyle as any || 'outdoors');
-    const newBaseUrl = getBaseUrl(mapStyle);
-    const sameBaseStyle = oldBaseUrl === newBaseUrl;
-
-    const applyOverlays = () => {
+    
+    setMapLoaded(false);
+    m.setStyle(styleUrl);
+    m.once('style.load', () => {
       if (!m.getSource('mapbox-dem')) {
         m.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
       }
@@ -238,45 +228,8 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       if (!m.getLayer('sky')) {
         m.addLayer({ id: 'sky', type: 'sky', paint: { 'sky-type': 'atmosphere', 'sky-atmosphere-sun': [0.0, 90.0], 'sky-atmosphere-sun-intensity': 15 } });
       }
-
-      // Remove Kartverket layer if not topo
-      if (mapStyle !== 'topo') {
-        if (m.getLayer('kartverket-topo-layer')) m.removeLayer('kartverket-topo-layer');
-        if (m.getSource('kartverket-topo')) m.removeSource('kartverket-topo');
-      }
-
-      // Add Kartverket topo raster for topo mode
-      if (mapStyle === 'topo') {
-        if (!m.getSource('kartverket-topo')) {
-          m.addSource('kartverket-topo', {
-            type: 'raster',
-            tiles: ['https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png'],
-            tileSize: 256,
-            attribution: '© Kartverket',
-          });
-        }
-        if (!m.getLayer('kartverket-topo-layer')) {
-          const firstSymbol = m.getStyle().layers.find((l: any) => l.type === 'symbol')?.id;
-          m.addLayer({
-            id: 'kartverket-topo-layer',
-            type: 'raster',
-            source: 'kartverket-topo',
-            paint: { 'raster-opacity': 1 },
-          }, firstSymbol);
-        }
-      }
       setMapLoaded(true);
-    };
-
-    if (sameBaseStyle) {
-      // Same base style (e.g. outdoors <-> topo): just add/remove overlay layers
-      applyOverlays();
-    } else {
-      // Different base style: need full style swap
-      setMapLoaded(false);
-      m.setStyle(styleUrl);
-      m.once('style.load', applyOverlays);
-    }
+    });
   }, [mapStyle, mapLoaded]);
 
   // Draw route if provided
@@ -854,12 +807,6 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
                 className={`w-full px-3 py-2 text-xs font-medium text-left hover:bg-muted transition-colors flex items-center gap-2 ${mapStyle === 'satellite' ? 'bg-muted' : ''}`}
               >
                 🛰️ Satellitt
-              </button>
-              <button
-                onClick={() => { setMapStyle('topo'); setShowStyleMenu(false); }}
-                className={`w-full px-3 py-2 text-xs font-medium text-left hover:bg-muted transition-colors flex items-center gap-2 ${mapStyle === 'topo' ? 'bg-muted' : ''}`}
-              >
-                🥾 Topografisk
               </button>
             </div>
           )}

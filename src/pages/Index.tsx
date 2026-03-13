@@ -230,8 +230,7 @@ const IndexContent = () => {
     const loadPinned = async () => {
       const pinnedIds = settings.pinnedChallengeIds;
       const raw = await getChallenges();
-      const today = new Date().toISOString().split('T')[0];
-      const pinned = raw.filter(c => pinnedIds.includes(c.id) && c.period_end >= today);
+      const pinned = raw.filter(c => pinnedIds.includes(c.id));
       const enriched: ChallengeWithParticipants[] = [];
       for (const c of pinned) {
         const parts = await getChallengeParticipants(c.id);

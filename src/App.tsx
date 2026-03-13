@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,11 +6,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { AdminProvider } from "@/hooks/useAdmin";
-import { setupDeepLinkListener } from "@/utils/nativeAuth";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
-import NativeCallbackPage from "./pages/NativeCallbackPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,20 +27,12 @@ function RedirectIfAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function DeepLinkSetup() {
-  useEffect(() => {
-    setupDeepLinkListener();
-  }, []);
-  return null;
-}
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <AdminProvider>
       <SettingsProvider>
         <TooltipProvider>
-          <DeepLinkSetup />
           <Toaster />
           <Sonner />
           <BrowserRouter>
@@ -51,7 +40,6 @@ const App = () => (
               <Route path="/" element={<RequireAuth><Index /></RequireAuth>} />
               <Route path="/login" element={<RedirectIfAuth><LoginPage /></RedirectIfAuth>} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/auth/native-callback" element={<NativeCallbackPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
