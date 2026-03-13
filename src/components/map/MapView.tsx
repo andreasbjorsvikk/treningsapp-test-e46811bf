@@ -440,7 +440,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         ${isYearFiltered ? 'opacity: 0.55;' : ''}
       `;
       el.innerHTML = `
-        <img src="${peakIcon}" alt="" width="20" height="20" style="filter: brightness(0) ${iconColor === 'white' ? 'invert(1)' : 'invert(0.3)'};" draggable="false" />
+        <img src="${peakIcon}" alt="" width="26" height="28" style="filter: brightness(0) ${iconColor === 'white' ? 'invert(1)' : 'invert(0.3)'}; object-fit: contain;" draggable="false" />
       `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;

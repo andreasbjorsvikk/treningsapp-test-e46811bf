@@ -244,9 +244,9 @@ const steps: TutorialStep[] = [
     customContent: <LongPressAnimation />,
   },
   {
-    title: 'Utforsk',
-    text: 'Under kartet finner du flere faner for å utforske fjelltopper og følge med på aktivitet.',
-    icon: <List className="w-8 h-8" />,
+    title: 'Utforsk de andre fanene',
+    text: '',
+    icon: null,
     customContent: <OverviewContent />,
   },
 ];
