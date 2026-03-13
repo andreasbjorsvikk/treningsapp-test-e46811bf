@@ -56,6 +56,10 @@ const MapPage = () => {
   const [showAreaStats, setShowAreaStats] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [heatmapPeriod, setHeatmapPeriod] = useState<HeatmapPeriod>('year');
+  const [onlyReachedThisYear, setOnlyReachedThisYear] = useState(false);
+
+  // Suggested peaks (pending, visible to all)
+  const [suggestedPeaks, setSuggestedPeaks] = useState<PeakSuggestion[]>([]);
 
   const checkedPeakIds = useMemo(() => new Set(checkins.map(c => c.peak_id)), [checkins]);
 
