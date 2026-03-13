@@ -63,7 +63,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
     }
   }, []);
 
-  const [filterType, setFilterType] = useState<SessionType | 'all'>('all');
+  const [historyFilterTypes, setHistoryFilterTypes] = useState<SessionType[]>([...allSessionTypes]);
   const [detailSession, setDetailSession] = useState<WorkoutSession | null>(null);
   const [healthFilter, setHealthFilter] = useState<'all' | 'sickness' | 'injury'>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
