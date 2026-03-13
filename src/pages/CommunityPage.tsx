@@ -31,6 +31,7 @@ const CommunityPage = () => {
     { id: 'challenges', label: t('community.challenges') },
     { id: 'leaderboard', label: t('community.leaderboard') },
     { id: 'friends', label: t('community.friends') },
+    ...(adminMode ? [{ id: 'users', label: 'Alle brukere' }] : []),
   ];
 
   const challengeFilterTabs = [
