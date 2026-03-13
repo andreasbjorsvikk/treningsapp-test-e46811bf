@@ -30,8 +30,9 @@ export async function nativeSignInWithOAuth(
     if (error) return { error: error.message };
 
     if (data?.url) {
-      // @ts-ignore - Only available in native Capacitor builds
-      const { Browser } = await import('@capacitor/browser');
+      const cap = (window as any).Capacitor;
+      const Browser = cap?.Plugins?.Browser;
+      if (!Browser) return { error: 'Capacitor Browser plugin ikke tilgjengelig' };
       await Browser.open({ url: data.url });
     }
 
@@ -47,18 +48,22 @@ export async function nativeSignInWithOAuth(
 export async function setupDeepLinkListener() {
   if (!isNativePlatform()) return;
 
-  // @ts-ignore - These packages are only available in native Capacitor builds
-  const { App } = await import('@capacitor/app');
-  // @ts-ignore
-  const { Browser } = await import('@capacitor/browser');
+  const cap = (window as any).Capacitor;
+  const AppPlugin = cap?.Plugins?.App;
+  const BrowserPlugin = cap?.Plugins?.Browser;
 
-  App.addListener('appUrlOpen', async ({ url }) => {
+  if (!AppPlugin) {
+    console.warn('[NativeAuth] Capacitor App plugin not available');
+    return;
+  }
+
+  AppPlugin.addListener('appUrlOpen', async ({ url }: { url: string }) => {
     console.log('[NativeAuth] Deep link received:', url);
 
     if (!url.startsWith(`${APP_SCHEME}://`)) return;
 
     try {
-      await Browser.close();
+      await BrowserPlugin?.close();
     } catch {
       // Browser might already be closed
     }
