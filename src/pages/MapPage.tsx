@@ -233,6 +233,8 @@ const MapPage = () => {
               showHeatmap={showHeatmap}
               heatmapPeriod={heatmapPeriod}
               showAreaStats={showAreaStats}
+              onlyReachedThisYear={onlyReachedThisYear}
+              suggestedPeaks={suggestedPeaks}
             />
             {activeRouteGeojson && (
               <button
