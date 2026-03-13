@@ -73,6 +73,7 @@ const SettingsPage = () => {
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
   const [realFriends, setRealFriends] = useState<Friend[]>([]);
   const [gdprSubView, setGdprSubView] = useState<'main' | 'deleteData' | 'deleteAccount' | 'downloadData'>('main');
+  const [helpOpenSections, setHelpOpenSections] = useState<Set<string>>(new Set());
 
   // Check Strava connection on mount & after callback
   useEffect(() => {
