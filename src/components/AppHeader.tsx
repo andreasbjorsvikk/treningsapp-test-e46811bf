@@ -13,7 +13,7 @@ const AppHeader = ({ className }: AppHeaderProps) => {
             <Activity className="w-5 h-5 text-primary-foreground" />
           </div>
           <h1 className="font-display font-bold text-lg">
-            Trenings<span className="text-gradient-energy">logg</span>
+            Trenings<span className="text-gradient-energy">appen</span>
           </h1>
         </div>
         <p className="text-xs text-muted-foreground hidden sm:block">

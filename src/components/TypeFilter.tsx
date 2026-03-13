@@ -33,7 +33,7 @@ const TypeFilter = ({ selected, onToggle, onSelectAll }: TypeFilterProps) => {
         {t('common.all')}
       </button>
       {/* Scrollable type buttons */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+      <div className="flex gap-2 overflow-x-auto scrollbar-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         {types.map((type) => {
           const isActive = selected.includes(type);
           const colors = getActivityColors(type, isDark);

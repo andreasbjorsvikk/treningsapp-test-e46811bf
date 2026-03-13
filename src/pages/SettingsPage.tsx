@@ -1082,7 +1082,6 @@ const SettingsPage = () => {
           <div className="text-sm text-muted-foreground space-y-2">
             <p dangerouslySetInnerHTML={{ __html: t('help.registerSessionsP1') }} />
             <p dangerouslySetInnerHTML={{ __html: t('help.registerSessionsP2') }} />
-            <p dangerouslySetInnerHTML={{ __html: t('help.registerSessionsP3') }} />
           </div>
         ))}
 
@@ -1092,7 +1091,6 @@ const SettingsPage = () => {
             <p dangerouslySetInnerHTML={{ __html: t('help.stravaSyncP1') }} />
             <p dangerouslySetInnerHTML={{ __html: t('help.stravaSyncP2') }} />
             <p dangerouslySetInnerHTML={{ __html: t('help.stravaSyncP3') }} />
-            <p dangerouslySetInnerHTML={{ __html: t('help.stravaSyncP4') }} />
           </div>
         ))}
 
@@ -1118,7 +1116,7 @@ const SettingsPage = () => {
         {helpSection('map', <Mountain className="w-5 h-5 text-[hsl(var(--success))]" />, 'bg-success/10', 'Fjelltopp-kart', (
           <div className="text-sm text-muted-foreground space-y-2">
             <p>Sjekk inn på fjelltopper du bestiger. Du kan sjekke inn flere ganger på hver topp for å øke scoren din.</p>
-            <p>Bytt mellom <strong>standard</strong>, <strong>satellitt</strong>, <strong>topografisk</strong> og <strong>3D</strong>-kartvisning med knappene øverst til venstre.</p>
+            <p>Bytt mellom <strong>2D og 3D-visning</strong>, og ulike kartvisninger som standard, terreng, topografisk og satellitt.</p>
             <p>For å <strong>foreslå en ny topp</strong>, trykk og hold inne på kartet der toppen befinner seg. Om du er i nærheten vil du bli sjekket inn automatisk når toppen godkjennes.</p>
             <p>Under <strong>Topper</strong>-fanen finner du alle tilgjengelige topper, og under <strong>Feed</strong> ser du de siste innsjekkingene.</p>
           </div>
@@ -1130,8 +1128,6 @@ const SettingsPage = () => {
             <p dangerouslySetInnerHTML={{ __html: t('help.communityP1') }} />
             <p dangerouslySetInnerHTML={{ __html: t('help.communityP2') }} />
             <p dangerouslySetInnerHTML={{ __html: t('help.communityP3') }} />
-            <p>Opprett <strong>utfordringer</strong> med valgfri aktivitetstype, metrikk og tidsperiode. Fest utfordringer til forsiden for å følge stillingen.</p>
-            <p>Under <strong>Ledertavle</strong> kan du sammenligne deg med venner på økter, distanse, tid og høydemeter.</p>
           </div>
         ))}
 

@@ -10,27 +10,30 @@ interface GoalTutorialDialogProps {
 }
 
 const GoalExamples = () => (
-  <div className="grid grid-cols-3 gap-3 py-2">
-    {/* 40 km løping */}
-    <div className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-muted/50 border border-border/40">
-      <div className="w-14 h-14">
-        <GoalProgressVisual metric="distance" activityType="løping" percent={65} current={26} target={40} />
+  <div className="space-y-1">
+    <p className="text-xs font-semibold text-muted-foreground text-center">Eksempler:</p>
+    <div className="grid grid-cols-3 gap-3 py-2">
+      {/* 40 km løping */}
+      <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/50 border border-border/40">
+        <div className="w-16 h-16">
+          <GoalProgressVisual metric="distance" activityType="løping" percent={65} current={26} target={40} />
+        </div>
+        <p className="text-[11px] text-muted-foreground text-center leading-tight font-medium">40 km løping<br/>denne uken</p>
       </div>
-      <p className="text-[10px] text-muted-foreground text-center leading-tight font-medium">40 km løping<br/>denne uken</p>
-    </div>
-    {/* 10 styrkeøkter */}
-    <div className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-muted/50 border border-border/40">
-      <div className="w-14 h-14">
-        <GoalProgressVisual metric="sessions" activityType="styrke" percent={40} current={4} target={10} />
+      {/* 10 styrkeøkter */}
+      <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/50 border border-border/40">
+        <div className="w-16 h-16">
+          <GoalProgressVisual metric="sessions" activityType="styrke" percent={40} current={4} target={10} />
+        </div>
+        <p className="text-[11px] text-muted-foreground text-center leading-tight font-medium">10 styrkeøkter<br/>denne mnd</p>
       </div>
-      <p className="text-[10px] text-muted-foreground text-center leading-tight font-medium">10 styrkeøkter<br/>denne mnd</p>
-    </div>
-    {/* 5000 hm fjelltur */}
-    <div className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-muted/50 border border-border/40">
-      <div className="w-14 h-14">
-        <GoalProgressVisual metric="elevation" activityType="fjelltur" percent={55} current={2750} target={5000} />
+      {/* 5000 hm fjelltur */}
+      <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/50 border border-border/40">
+        <div className="w-16 h-16">
+          <GoalProgressVisual metric="elevation" activityType="fjelltur" percent={55} current={2750} target={5000} />
+        </div>
+        <p className="text-[11px] text-muted-foreground text-center leading-tight font-medium">Flest høydemeter<br/>jun–aug</p>
       </div>
-      <p className="text-[10px] text-muted-foreground text-center leading-tight font-medium">5000 hm<br/>jun–aug</p>
     </div>
   </div>
 );
@@ -78,7 +81,7 @@ const GoalTutorialDialog = ({ open, onClose }: GoalTutorialDialogProps) => {
               <div className="text-center space-y-2">
                 <h3 className="font-display font-bold text-lg text-foreground">Andre mål</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Du kan også sette mer spesifikke mål, med valgfri tidsperiode. Eksempler:
+                  Du kan også sette mer spesifikke mål, med valgfri tidsperiode.
                 </p>
               </div>
               <GoalExamples />
