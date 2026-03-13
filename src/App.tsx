@@ -29,12 +29,20 @@ function RedirectIfAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function DeepLinkSetup() {
+  useEffect(() => {
+    setupDeepLinkListener();
+  }, []);
+  return null;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <AdminProvider>
       <SettingsProvider>
         <TooltipProvider>
+          <DeepLinkSetup />
           <Toaster />
           <Sonner />
           <BrowserRouter>
