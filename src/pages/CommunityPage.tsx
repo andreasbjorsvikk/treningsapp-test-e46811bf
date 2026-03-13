@@ -24,6 +24,7 @@ export interface ChallengeWithParticipants {
 
 const CommunityPage = () => {
   const { user } = useAuth();
+  const { adminMode } = useAdmin();
   const { t } = useTranslation();
 
   const mainTabs = [
