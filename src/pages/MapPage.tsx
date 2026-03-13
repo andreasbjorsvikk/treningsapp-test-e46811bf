@@ -252,6 +252,7 @@ const MapPage = () => {
             >
               <Settings2 className="w-5 h-5" />
             </button>
+            <MapTutorial />
           </div>
         )}
 
