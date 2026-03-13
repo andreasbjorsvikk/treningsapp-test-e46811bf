@@ -193,7 +193,7 @@ const SettingsPage = () => {
 
   const backButton = (title: string) => (
     <button
-      onClick={() => setView('main')}
+      onClick={() => { setView('main'); setGdprSubView('main'); }}
       className="flex items-center gap-2 mb-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
     >
       <ChevronLeft className="w-4 h-4" />
