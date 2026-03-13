@@ -226,6 +226,7 @@ const CommunityPage = () => {
         onClose={() => setProfileUser(null)}
         onInviteToChallenge={handleInviteToChallenge}
       />
+      <CommunityTutorial />
     </div>
   );
 };
