@@ -67,6 +67,14 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   }, []);
 
   const checkedPeakIds = new Set(checkins.map(c => c.peak_id));
+  
+  // Checkins this year
+  const thisYearCheckedIds = new Set(
+    checkins
+      .filter(c => new Date(c.checked_in_at).getFullYear() === new Date().getFullYear())
+      .map(c => c.peak_id)
+  );
+  const suggestedMarkersRef = useRef<mapboxgl.Marker[]>([]);
 
   // Map initialization
   useEffect(() => {
