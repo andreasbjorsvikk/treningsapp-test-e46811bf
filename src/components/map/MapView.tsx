@@ -898,7 +898,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         }
       }
 
-      // Add zoom-based scaling for area stats labels
+      // Add zoom-based scaling for area stats labels — scale the INNER div, not the marker element
       const updateScale = () => {
         if (!map.current) return;
         const zoom = map.current.getZoom();
@@ -906,9 +906,11 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         const scale = Math.max(0.4, Math.min(1, (zoom - 7) / 5));
         areaMarkersRef.current.forEach(mk => {
           const el = mk.getElement();
-          el.style.transform = `scale(${scale})`;
-          // Hide entirely at very low zoom
-          el.style.display = zoom < 7 ? 'none' : '';
+          const inner = el.querySelector('div > div') as HTMLElement;
+          if (inner) {
+            inner.style.transform = `scale(${scale})`;
+            inner.style.display = zoom < 7 ? 'none' : '';
+          }
         });
       };
       map.current.on('zoom', updateScale);
