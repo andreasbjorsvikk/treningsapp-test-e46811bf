@@ -1,20 +1,19 @@
-import { Capacitor } from '@capacitor/core';
-import { Browser } from '@capacitor/browser';
-import { App } from '@capacitor/app';
 import { supabase } from '@/integrations/supabase/client';
 
 const APP_SCHEME = 'treningsapp';
-
-// OAuth redirects to the web app's callback page, which then redirects to the native app
 const WEB_CALLBACK_URL = 'https://treningsapp-test.lovable.app/auth/native-callback';
 
 export function isNativePlatform(): boolean {
-  return Capacitor.isNativePlatform();
+  try {
+    const { Capacitor } = (window as any);
+    return typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform?.();
+  } catch {
+    return false;
+  }
 }
 
 /**
  * Signs in with OAuth for native Capacitor apps.
- * Redirects to the web callback page, which forwards tokens to the native app via deep link.
  */
 export async function nativeSignInWithOAuth(
   provider: 'google' | 'apple'
@@ -31,6 +30,8 @@ export async function nativeSignInWithOAuth(
     if (error) return { error: error.message };
 
     if (data?.url) {
+      // Dynamically import Capacitor Browser plugin (only available in native)
+      const { Browser } = await import('@capacitor/browser');
       await Browser.open({ url: data.url });
     }
 
@@ -43,22 +44,24 @@ export async function nativeSignInWithOAuth(
 /**
  * Sets up the deep link listener for OAuth callbacks.
  */
-export function setupDeepLinkListener() {
+export async function setupDeepLinkListener() {
   if (!isNativePlatform()) return;
+
+  const { App } = await import('@capacitor/app');
+  const { Browser } = await import('@capacitor/browser');
 
   App.addListener('appUrlOpen', async ({ url }) => {
     console.log('[NativeAuth] Deep link received:', url);
 
     if (!url.startsWith(`${APP_SCHEME}://`)) return;
 
-    // Close the browser opened during OAuth
     try {
       await Browser.close();
     } catch {
       // Browser might already be closed
     }
 
-    // Extract tokens from the URL fragment (#access_token=...&refresh_token=...)
+    // Extract tokens from URL fragment (#access_token=...&refresh_token=...)
     const hashIndex = url.indexOf('#');
     if (hashIndex !== -1) {
       const fragment = url.substring(hashIndex + 1);
