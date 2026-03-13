@@ -11,6 +11,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { decodePolyline } from '@/utils/polyline';
 import { addEnhancedTerrain } from '@/utils/mapTerrain';
+import peakLowIcon from '@/assets/icons/peak-low.svg';
+import peakMediumIcon from '@/assets/icons/peak-medium.svg';
+import peakHighIcon from '@/assets/icons/peak-high.svg';
+import peakVeryHighIcon from '@/assets/icons/peak-veryhigh.svg';
+
+function getPeakIconByElevation(elevationMoh: number): string {
+  if (elevationMoh >= 1000) return peakVeryHighIcon;
+  if (elevationMoh >= 650) return peakHighIcon;
+  if (elevationMoh >= 300) return peakMediumIcon;
+  return peakLowIcon;
+}
 
 type HeatmapPeriod = 'year' | 'total';
 
