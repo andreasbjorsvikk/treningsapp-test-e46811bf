@@ -17,7 +17,7 @@ const ChallengeExamples = () => (
     <p className="text-xs font-semibold text-muted-foreground text-center">Eksempler:</p>
     <div className="flex items-center justify-center gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
       <div className="w-8 h-8 rounded-full bg-[rgb(210,229,255)] flex items-center justify-center shrink-0">
-        <ActivityIcon type="løping" className="w-4.5 h-4.5" />
+        <ActivityIcon type="løping" className="w-4 h-4" />
       </div>
       <div className="min-w-0 text-center">
         <p className="text-sm font-semibold text-foreground">Flest km løpt i mars</p>
@@ -26,7 +26,7 @@ const ChallengeExamples = () => (
     </div>
     <div className="flex items-center justify-center gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
       <div className="w-8 h-8 rounded-full bg-[rgb(212,212,216)] flex items-center justify-center shrink-0">
-        <ActivityIcon type="styrke" className="w-4.5 h-4.5" />
+        <ActivityIcon type="styrke" className="w-4 h-4" />
       </div>
       <div className="min-w-0 text-center">
         <p className="text-sm font-semibold text-foreground">Flest styrkeøkter i 2026</p>
@@ -35,10 +35,10 @@ const ChallengeExamples = () => (
     </div>
     <div className="flex items-center justify-center gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
       <div className="w-8 h-8 rounded-full bg-[rgb(212,242,184)] flex items-center justify-center shrink-0">
-        <ActivityIcon type="fjelltur" className="w-4.5 h-4.5" />
+        <ActivityIcon type="fjelltur" className="w-4 h-4" />
       </div>
       <div className="min-w-0 text-center">
-        <p className="text-sm font-semibold text-foreground">Mest høydemeter i sommer</p>
+        <p className="text-sm font-semibold text-foreground">Flest høydemeter i sommer</p>
         <p className="text-[11px] text-muted-foreground">Fjelltur · Jun – Aug</p>
       </div>
     </div>
