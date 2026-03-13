@@ -195,6 +195,10 @@ const CommunityPage = () => {
         <FriendsSection onOpenProfile={setProfileUser} />
       )}
 
+      {mainTab === 'users' && adminMode && (
+        <AdminUsersTab />
+      )}
+
       {/* Drawers / Dialogs */}
       <ChallengeDetail
         challenge={selectedChallenge}
