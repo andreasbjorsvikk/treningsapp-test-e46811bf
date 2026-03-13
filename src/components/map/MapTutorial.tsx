@@ -287,9 +287,11 @@ const MapTutorial = () => {
             <X className="w-4 h-4" />
           </button>
 
-          <div className="flex justify-center text-primary">
-            {current.icon}
-          </div>
+          {current.icon && (
+            <div className="flex justify-center text-primary">
+              {current.icon}
+            </div>
+          )}
 
           <div className="text-center space-y-2">
             <h3 className="font-display font-bold text-lg text-foreground">{current.title}</h3>
