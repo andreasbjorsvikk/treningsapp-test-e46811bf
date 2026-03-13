@@ -307,7 +307,11 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
               </DropdownMenu>
             </div>
             <div className="md:order-1">
-              <TypeFilter selected={filterType} onSelect={setFilterType} />
+              <TypeFilter
+                selected={historyFilterTypes}
+                onToggle={(type) => setHistoryFilterTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])}
+                onSelectAll={() => setHistoryFilterTypes(prev => prev.length === allSessionTypes.length ? [] : [...allSessionTypes])}
+              />
             </div>
           </div>
 
