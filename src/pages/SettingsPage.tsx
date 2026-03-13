@@ -1022,7 +1022,7 @@ const SettingsPage = () => {
           <span className="flex-1 text-left font-display font-semibold text-sm">{title}</span>
           <ChevronRight className={`w-4 h-4 text-muted-foreground/50 transition-transform duration-200 ${helpOpenSections.has(key) ? 'rotate-90' : ''}`} />
         </button>
-        {openSections.has(key) && (
+        {helpOpenSections.has(key) && (
           <div className="px-4 pb-4 space-y-3 border-t border-border/40 pt-3">
             {children}
           </div>
