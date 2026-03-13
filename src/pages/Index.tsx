@@ -82,6 +82,7 @@ const IndexContent = () => {
   const [stravaSyncing, setStravaSyncing] = useState(false);
   const [detailSession, setDetailSession] = useState<WorkoutSession | null>(null);
   const [challengeDetail, setChallengeDetail] = useState<ChallengeWithParticipants | null>(null);
+  const [showGoalTip, setShowGoalTip] = useState(false);
 
   // Profile info
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
