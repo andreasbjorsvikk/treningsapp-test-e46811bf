@@ -11,6 +11,7 @@ import { setupDeepLinkListener } from "@/utils/nativeAuth";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import NativeCallbackPage from "./pages/NativeCallbackPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
