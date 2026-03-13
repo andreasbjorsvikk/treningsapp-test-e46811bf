@@ -63,7 +63,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
     }
   }, []);
 
-  const [filterType, setFilterType] = useState<SessionType | 'all'>('all');
+  const [historyFilterTypes, setHistoryFilterTypes] = useState<SessionType[]>([...allSessionTypes]);
   const [detailSession, setDetailSession] = useState<WorkoutSession | null>(null);
   const [healthFilter, setHealthFilter] = useState<'all' | 'sickness' | 'injury'>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -84,7 +84,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
 
   const allSessions = appData.sessions;
   const healthEvents = appData.healthEvents;
-  const filtered = filterType === 'all' ? allSessions : allSessions.filter(s => s.type === filterType);
+  const filtered = historyFilterTypes.length === allSessionTypes.length ? allSessions : allSessions.filter(s => historyFilterTypes.includes(s.type));
 
   const currentPrimaryGoal = appData.currentPrimaryGoal;
 
@@ -307,7 +307,11 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
               </DropdownMenu>
             </div>
             <div className="md:order-1">
-              <TypeFilter selected={filterType} onSelect={setFilterType} />
+              <TypeFilter
+                selected={historyFilterTypes}
+                onToggle={(type) => setHistoryFilterTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])}
+                onSelectAll={() => setHistoryFilterTypes(prev => prev.length === allSessionTypes.length ? [] : [...allSessionTypes])}
+              />
             </div>
           </div>
 
