@@ -4,6 +4,7 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { Peak } from '@/data/peaks';
 import { getUserCheckins, PeakCheckin } from '@/services/peakCheckinService';
 import { fetchPeaks, dbPeakToLegacy, createPeak, updatePeak, deletePeak, DbPeak } from '@/services/peakDbService';
+import { fetchPendingSuggestions, PeakSuggestion } from '@/services/peakSuggestionService';
 import MapSubTabs, { MapSubTab } from '@/components/map/MapSubTabs';
 import MapView from '@/components/map/MapView';
 import PeaksList from '@/components/map/PeaksList';
@@ -14,6 +15,7 @@ import SuggestPeakDrawer from '@/components/map/SuggestPeakDrawer';
 import MapSettingsSheet from '@/components/map/MapSettingsSheet';
 import PeakFeed from '@/components/map/PeakFeed';
 import GlobalLeaderboard from '@/components/map/GlobalLeaderboard';
+import MapTutorial from '@/components/map/MapTutorial';
 import { Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 
