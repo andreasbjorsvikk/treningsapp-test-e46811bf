@@ -553,7 +553,6 @@ const SettingsPage = () => {
 
   // ========== GDPR VIEW ==========
   if (view === 'data') {
-    const [gdprSubView, setGdprSubView] = useState<'main' | 'deleteData' | 'deleteAccount' | 'downloadData'>('main');
     
     const handleDeleteAccount = async () => {
       if (!user) return;
