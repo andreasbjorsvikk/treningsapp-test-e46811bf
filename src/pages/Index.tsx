@@ -570,8 +570,8 @@ const IndexContent = () => {
                   )}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button size="icon" variant="ghost" className="rounded-full h-9 w-9">
-                        <Plus className="w-5 h-5" />
+                      <Button size="icon" variant="ghost" className="rounded-full h-10 w-10">
+                        <Plus className="w-6 h-6" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">

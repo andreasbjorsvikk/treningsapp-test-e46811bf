@@ -1231,7 +1231,7 @@ const SettingsPage = () => {
          {menuItem(t('privacy.title'), <Lock className="w-4 h-4" />, () => setView('privacy'))}
          {menuItem(t('settings.sync'), <RefreshCw className="w-4 h-4" />, () => setView('sync'))}
          {menuItem(t('help.title'), <HelpCircle className="w-4 h-4" />, () => setView('help'))}
-        {menuItem(t('settings.dangerZone'), <Shield className="w-4 h-4" />, () => setView('data'))}
+        {menuItem(t('settings.gdpr'), <Shield className="w-4 h-4" />, () => setView('data'))}
       </div>
 
       {/* Sign out */}
