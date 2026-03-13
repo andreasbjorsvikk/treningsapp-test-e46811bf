@@ -45,6 +45,16 @@ export async function fetchSuggestions(): Promise<PeakSuggestion[]> {
   return (data || []) as unknown as PeakSuggestion[];
 }
 
+export async function fetchPendingSuggestions(): Promise<PeakSuggestion[]> {
+  const { data, error } = await supabase
+    .from('peak_suggestions' as any)
+    .select('*')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []) as unknown as PeakSuggestion[];
+}
+
 export async function reviewSuggestion(
   id: string,
   status: 'approved' | 'rejected',
