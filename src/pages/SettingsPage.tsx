@@ -1020,7 +1020,7 @@ const SettingsPage = () => {
         >
           <div className={`rounded-lg p-2 ${iconBg}`}>{icon}</div>
           <span className="flex-1 text-left font-display font-semibold text-sm">{title}</span>
-          <ChevronRight className={`w-4 h-4 text-muted-foreground/50 transition-transform duration-200 ${openSections.has(key) ? 'rotate-90' : ''}`} />
+          <ChevronRight className={`w-4 h-4 text-muted-foreground/50 transition-transform duration-200 ${helpOpenSections.has(key) ? 'rotate-90' : ''}`} />
         </button>
         {openSections.has(key) && (
           <div className="px-4 pb-4 space-y-3 border-t border-border/40 pt-3">
