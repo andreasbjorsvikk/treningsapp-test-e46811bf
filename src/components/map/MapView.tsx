@@ -205,17 +205,19 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     const m = map.current;
     if (is3D) {
       m.easeTo({ pitch: 60, bearing: -20, duration: 600 });
-      if (!m.getTerrain()) {
-        if (!m.getSource('mapbox-dem')) {
-          m.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
+      whenStyleReady(m, () => {
+        if (!m.getTerrain()) {
+          if (!m.getSource('mapbox-dem')) {
+            m.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
+          }
+          m.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
         }
-        m.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
-      }
+      });
     } else {
       m.easeTo({ pitch: 0, bearing: 0, duration: 600 });
       m.setTerrain(null);
     }
-  }, [is3D, mapLoaded]);
+  }, [is3D, mapLoaded, whenStyleReady]);
 
   // Toggle map style — only when user actually changes it
   useEffect(() => {
