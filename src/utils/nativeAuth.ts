@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core';
 import { supabase } from '@/integrations/supabase/client';
 
 const APP_SCHEME = 'treningsapp';
@@ -5,8 +6,7 @@ const WEB_CALLBACK_URL = 'https://treningsapp-test.lovable.app/auth/native-callb
 
 export function isNativePlatform(): boolean {
   try {
-    const { Capacitor } = (window as any);
-    return typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform?.();
+    return Capacitor.isNativePlatform();
   } catch {
     return false;
   }
