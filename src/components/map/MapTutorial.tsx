@@ -197,7 +197,7 @@ const LongPressAnimation = () => {
 const OverviewContent = () => (
   <div className="space-y-2 py-1">
     <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
-      <List className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+      <Mountain className="w-5 h-5 text-primary shrink-0 mt-0.5" />
       <div>
         <p className="text-sm font-semibold text-foreground">Topper</p>
         <p className="text-[11px] text-muted-foreground">Bla gjennom alle topper sortert etter høyde eller avstand fra deg.</p>
