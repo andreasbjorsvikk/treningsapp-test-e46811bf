@@ -69,7 +69,7 @@ const GoalTutorialDialog = ({ open, onClose }: GoalTutorialDialogProps) => {
               <div className="text-center space-y-2">
                 <h3 className="font-display font-bold text-lg text-foreground">Treningsmål</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Her kan du sette et generelt treningsmål på hvor mange treningsøkter du vil klare hver uke, måned, eller år. Fremdriftshjulene vil vise deg hvordan du ligger an dag for dag. Du kan når som helst justere målet senere om du ønsker det.
+                  Her kan du sette et generelt treningsmål på hvor mange treningsøkter du vil ha som mål hver uke, måned, eller år. Fremdriftshjulene vil vise deg hvordan du ligger an dag for dag. Du kan når som helst justere målet senere om du ønsker det.
                 </p>
               </div>
             </>

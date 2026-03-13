@@ -11,6 +11,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { decodePolyline } from '@/utils/polyline';
 import { addEnhancedTerrain } from '@/utils/mapTerrain';
+import peakLowIcon from '@/assets/icons/peak-low.svg';
+import peakMediumIcon from '@/assets/icons/peak-medium.svg';
+import peakHighIcon from '@/assets/icons/peak-high.svg';
+import peakVeryHighIcon from '@/assets/icons/peak-veryhigh.svg';
+
+function getPeakIconByElevation(elevationMoh: number): string {
+  if (elevationMoh >= 1000) return peakVeryHighIcon;
+  if (elevationMoh >= 650) return peakHighIcon;
+  if (elevationMoh >= 300) return peakMediumIcon;
+  return peakLowIcon;
+}
 
 type HeatmapPeriod = 'year' | 'total';
 
@@ -417,6 +428,8 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       const isYearFiltered = onlyReachedThisYear && !thisYearCheckedIds.has(peak.id);
 
       const el = document.createElement('div');
+      const peakIcon = getPeakIconByElevation(peak.heightMoh);
+      const iconColor = isYearFiltered ? 'hsl(220, 10%, 46%)' : isTaken ? 'white' : isUnpublished ? 'white' : 'hsl(220, 10%, 46%)';
       el.style.cssText = `
         width: 36px; height: 36px; cursor: pointer;
         display: flex; align-items: center; justify-content: center;
@@ -427,7 +440,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         ${isYearFiltered ? 'opacity: 0.55;' : ''}
       `;
       el.innerHTML = `
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${isYearFiltered ? 'hsl(220, 10%, 46%)' : isTaken ? 'white' : isUnpublished ? 'white' : 'hsl(220, 10%, 46%)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 2 15H2L8 3z"/></svg>
+        <img src="${peakIcon}" alt="" width="20" height="20" style="filter: brightness(0) ${iconColor === 'white' ? 'invert(1)' : 'invert(0.3)'};" draggable="false" />
       `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;

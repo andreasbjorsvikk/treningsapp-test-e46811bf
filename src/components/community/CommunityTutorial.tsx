@@ -12,38 +12,49 @@ interface TutorialStep {
   customContent?: React.ReactNode;
 }
 
-const ChallengeExamples = () => (
-  <div className="space-y-2 py-1">
-    <p className="text-xs font-semibold text-muted-foreground text-center">Eksempler:</p>
-    <div className="flex items-center justify-center gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
-      <div className="w-8 h-8 rounded-full bg-[rgb(210,229,255)] flex items-center justify-center shrink-0">
-        <ActivityIcon type="løping" className="w-4 h-4" />
+const ChallengeExamples = () => {
+  const isDark = document.documentElement.classList.contains('dark');
+  
+  const getColors = (type: string) => {
+    const colorMap: Record<string, { lightBg: string; lightText: string; darkBg: string }> = {
+      løping: { lightBg: 'rgb(210,229,255)', lightText: 'rgb(42,93,168)', darkBg: 'rgb(77,120,179)' },
+      styrke: { lightBg: 'rgb(212,212,216)', lightText: '#000000', darkBg: 'rgb(98,100,104)' },
+      fjelltur: { lightBg: 'rgb(212,242,184)', lightText: 'rgb(47,107,69)', darkBg: 'rgb(105,162,85)' },
+    };
+    return colorMap[type] || colorMap.løping;
+  };
+
+  const renderExample = (type: 'løping' | 'styrke' | 'fjelltur', title: string, subtitle: string) => {
+    const colors = getColors(type);
+    return (
+      <div className="flex items-center justify-center gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
+        <div
+          className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+          style={{ backgroundColor: isDark ? colors.darkBg : colors.lightBg }}
+        >
+          <ActivityIcon
+            type={type}
+            className="w-5 h-5"
+            colorOverride={isDark ? '#ffffff' : colors.lightText}
+          />
+        </div>
+        <div className="min-w-0 text-center">
+          <p className="text-sm font-semibold text-foreground">{title}</p>
+          <p className="text-[11px] text-muted-foreground">{subtitle}</p>
+        </div>
       </div>
-      <div className="min-w-0 text-center">
-        <p className="text-sm font-semibold text-foreground">Flest km løpt i mars</p>
-        <p className="text-[11px] text-muted-foreground">Løping · 1. – 31. mars</p>
-      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-2 py-1">
+      <p className="text-xs font-semibold text-muted-foreground text-center">Eksempler:</p>
+      {renderExample('løping', 'Flest km løpt i mars', 'Løping · 1. – 31. mars')}
+      {renderExample('styrke', 'Flest styrkeøkter i 2026', 'Styrke · Hele året')}
+      {renderExample('fjelltur', 'Flest høydemeter i sommer', 'Fjelltur · Jun – Aug')}
     </div>
-    <div className="flex items-center justify-center gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
-      <div className="w-8 h-8 rounded-full bg-[rgb(212,212,216)] flex items-center justify-center shrink-0">
-        <ActivityIcon type="styrke" className="w-4 h-4" />
-      </div>
-      <div className="min-w-0 text-center">
-        <p className="text-sm font-semibold text-foreground">Flest styrkeøkter i 2026</p>
-        <p className="text-[11px] text-muted-foreground">Styrke · Hele året</p>
-      </div>
-    </div>
-    <div className="flex items-center justify-center gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
-      <div className="w-8 h-8 rounded-full bg-[rgb(212,242,184)] flex items-center justify-center shrink-0">
-        <ActivityIcon type="fjelltur" className="w-4 h-4" />
-      </div>
-      <div className="min-w-0 text-center">
-        <p className="text-sm font-semibold text-foreground">Flest høydemeter i sommer</p>
-        <p className="text-[11px] text-muted-foreground">Fjelltur · Jun – Aug</p>
-      </div>
-    </div>
-  </div>
-);
+  );
+};
 
 const HomePinDemo = () => (
   <div className="flex items-center justify-center gap-2 py-2">
