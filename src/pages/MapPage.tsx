@@ -93,6 +93,12 @@ const MapPage = () => {
   useEffect(() => { loadPeaks(); }, [loadPeaks]);
   useEffect(() => { fetchCheckins(); }, [fetchCheckins]);
 
+  // Load pending suggestions for all users
+  useEffect(() => {
+    if (!user) return;
+    fetchPendingSuggestions().then(setSuggestedPeaks).catch(() => {});
+  }, [user]);
+
   const handleSelectPeak = (peak: Peak) => setSelectedPeak(peak);
 
   const handleMapClick = (lat: number, lng: number) => {
