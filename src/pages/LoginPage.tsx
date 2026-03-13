@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { lovable } from '@/integrations/lovable/index';
+import { isNativePlatform, nativeSignInWithOAuth } from '@/utils/nativeAuth';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, UserPlus, LogIn, Flame, Activity, Mountain, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
