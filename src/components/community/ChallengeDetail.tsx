@@ -84,6 +84,11 @@ const ChallengeDetail = ({ challenge, open, onClose, onEdit, onResponded }: Chal
     setResponding(true);
     try {
       await leaveChallenge(challenge.challenge.id);
+      // Remove from pinned challenges on home screen
+      const current = settings.pinnedChallengeIds || [];
+      if (current.includes(challenge.challenge.id)) {
+        updateSettings({ pinnedChallengeIds: current.filter(id => id !== challenge.challenge.id) });
+      }
       toast.success(t('challenge.leftChallenge'));
       onResponded?.();
       onClose();
