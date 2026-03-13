@@ -868,7 +868,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
 
           const el = document.createElement('div');
           el.className = 'area-stats-label';
-          el.style.cssText = 'pointer-events: none; text-align: center; white-space: nowrap; z-index: 5; transition: transform 0.2s;';
+          el.style.cssText = 'pointer-events: none; text-align: center; white-space: nowrap; z-index: 5;';
           el.innerHTML = `
             <div style="
               background: hsl(var(--background) / 0.92);
@@ -877,6 +877,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
               border-radius: 14px;
               padding: 10px 16px;
               box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+              transform-origin: center center;
             ">
               <div style="font-size: 16px; font-weight: 800; color: hsl(var(--foreground)); letter-spacing: -0.02em;">${entry.kommuneNavn}</div>
               <div style="font-size: 14px; color: hsl(var(--muted-foreground)); margin-top: 3px; font-weight: 500;">
