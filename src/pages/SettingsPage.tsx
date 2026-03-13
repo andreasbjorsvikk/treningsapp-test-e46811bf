@@ -1002,26 +1002,56 @@ const SettingsPage = () => {
 
   // ========== HELP VIEW ==========
   if (view === 'help') {
+    const [openSections, setOpenSections] = useState<Set<string>>(new Set());
+    const toggleSection = (key: string) => {
+      setOpenSections(prev => {
+        const next = new Set(prev);
+        if (next.has(key)) next.delete(key);
+        else next.add(key);
+        return next;
+      });
+    };
+
+    const helpSection = (key: string, icon: React.ReactNode, iconBg: string, title: string, children: React.ReactNode) => (
+      <div className="glass-card rounded-xl overflow-hidden">
+        <button
+          onClick={() => toggleSection(key)}
+          className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/30 transition-colors"
+        >
+          <div className={`rounded-lg p-2 ${iconBg}`}>{icon}</div>
+          <span className="flex-1 text-left font-display font-semibold text-sm">{title}</span>
+          <ChevronRight className={`w-4 h-4 text-muted-foreground/50 transition-transform duration-200 ${openSections.has(key) ? 'rotate-90' : ''}`} />
+        </button>
+        {openSections.has(key) && (
+          <div className="px-4 pb-4 space-y-3 border-t border-border/40 pt-3">
+            {children}
+          </div>
+        )}
+      </div>
+    );
+
     return (
-      <div className="space-y-4">
+      <div className="space-y-3">
         {backButton(t('help.title'))}
 
+        {/* Better intro */}
         <div className="glass-card rounded-xl p-5 space-y-3">
-           <h3 className="font-display font-bold text-lg">{t('help.welcome')}</h3>
-           <p className="text-sm text-muted-foreground">
-             {t('help.welcomeDesc')}
-           </p>
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-primary/10 p-3">
+              <HelpCircle className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-display font-bold text-lg">{t('help.welcome')}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Trykk på en kategori for å lese mer</p>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">{t('help.welcomeDesc')}</p>
         </div>
 
         {/* Treningsmål */}
-        <div className="glass-card rounded-xl p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-success/10 p-2">
-              <Target className="w-5 h-5 text-[hsl(var(--success))]" />
-            </div>
-             <h3 className="font-display font-semibold text-base">{t('help.trainingGoals')}</h3>
-           </div>
-           <div className="bg-secondary/50 rounded-xl p-4 space-y-2">
+        {helpSection('goals', <Target className="w-5 h-5 text-[hsl(var(--success))]" />, 'bg-success/10', t('help.trainingGoals'), (
+          <>
+            <div className="bg-secondary/50 rounded-xl p-4 space-y-2">
               <div className="flex gap-3 items-center">
                 <div className="w-16 h-16 rounded-full relative flex items-center justify-center shrink-0">
                   <svg width="64" height="64" viewBox="0 0 64 64" className="absolute inset-0">
@@ -1032,113 +1062,88 @@ const SettingsPage = () => {
                   </svg>
                   <span className="text-xs font-bold text-[hsl(var(--success))] relative z-10">75%</span>
                 </div>
-               <div className="text-xs text-muted-foreground space-y-1">
-                 <p><strong>{t('help.monthYearWheel')}</strong> {t('help.wheelDesc')}</p>
-                 <p>{t('help.wheelColors')}</p>
-               </div>
-             </div>
-           </div>
-           <div className="text-sm text-muted-foreground space-y-2">
-             <p dangerouslySetInnerHTML={{ __html: t('help.trainingGoalsP1') }} />
-             <p dangerouslySetInnerHTML={{ __html: t('help.trainingGoalsP2') }} />
-             <p dangerouslySetInnerHTML={{ __html: t('help.trainingGoalsP3') }} />
-             <p dangerouslySetInnerHTML={{ __html: t('help.trainingGoalsP4') }} />
-           </div>
-        </div>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p><strong>{t('help.monthYearWheel')}</strong> {t('help.wheelDesc')}</p>
+                  <p>{t('help.wheelColors')}</p>
+                </div>
+              </div>
+            </div>
+            <div className="text-sm text-muted-foreground space-y-2">
+              <p dangerouslySetInnerHTML={{ __html: t('help.trainingGoalsP1') }} />
+              <p dangerouslySetInnerHTML={{ __html: t('help.trainingGoalsP2') }} />
+              <p dangerouslySetInnerHTML={{ __html: t('help.trainingGoalsP3') }} />
+              <p dangerouslySetInnerHTML={{ __html: t('help.trainingGoalsP4') }} />
+            </div>
+          </>
+        ))}
 
         {/* Registrere økter */}
-        <div className="glass-card rounded-xl p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-accent/10 p-2">
-              <Dumbbell className="w-5 h-5 text-accent" />
-            </div>
-             <h3 className="font-display font-semibold text-base">{t('help.registerSessions')}</h3>
-           </div>
-           <div className="text-sm text-muted-foreground space-y-2">
-             <p dangerouslySetInnerHTML={{ __html: t('help.registerSessionsP1') }} />
-             <p dangerouslySetInnerHTML={{ __html: t('help.registerSessionsP2') }} />
-             <p dangerouslySetInnerHTML={{ __html: t('help.registerSessionsP3') }} />
-           </div>
-        </div>
+        {helpSection('sessions', <Dumbbell className="w-5 h-5 text-accent" />, 'bg-accent/10', t('help.registerSessions'), (
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p dangerouslySetInnerHTML={{ __html: t('help.registerSessionsP1') }} />
+            <p dangerouslySetInnerHTML={{ __html: t('help.registerSessionsP2') }} />
+            <p dangerouslySetInnerHTML={{ __html: t('help.registerSessionsP3') }} />
+          </div>
+        ))}
 
         {/* Strava */}
-        <div className="glass-card rounded-xl p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-warning/10 p-2">
-              <Zap className="w-5 h-5 text-[hsl(var(--warning))]" />
-            </div>
-             <h3 className="font-display font-semibold text-base">{t('help.stravaSync')}</h3>
-           </div>
-           <div className="text-sm text-muted-foreground space-y-2">
-             <p dangerouslySetInnerHTML={{ __html: t('help.stravaSyncP1') }} />
-             <p dangerouslySetInnerHTML={{ __html: t('help.stravaSyncP2') }} />
-             <p dangerouslySetInnerHTML={{ __html: t('help.stravaSyncP3') }} />
-             <p dangerouslySetInnerHTML={{ __html: t('help.stravaSyncP4') }} />
-           </div>
-        </div>
+        {helpSection('strava', <Zap className="w-5 h-5 text-[hsl(var(--warning))]" />, 'bg-warning/10', t('help.stravaSync'), (
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p dangerouslySetInnerHTML={{ __html: t('help.stravaSyncP1') }} />
+            <p dangerouslySetInnerHTML={{ __html: t('help.stravaSyncP2') }} />
+            <p dangerouslySetInnerHTML={{ __html: t('help.stravaSyncP3') }} />
+            <p dangerouslySetInnerHTML={{ __html: t('help.stravaSyncP4') }} />
+          </div>
+        ))}
 
         {/* Statistikk */}
-        <div className="glass-card rounded-xl p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-accent/10 p-2">
-              <BarChart3 className="w-5 h-5 text-accent" />
-            </div>
-             <h3 className="font-display font-semibold text-base">{t('help.statsAndRecords')}</h3>
-           </div>
-           <div className="text-sm text-muted-foreground space-y-2">
-             <p dangerouslySetInnerHTML={{ __html: t('help.statsAndRecordsP1') }} />
-             <p dangerouslySetInnerHTML={{ __html: t('help.statsAndRecordsP2') }} />
-             <p dangerouslySetInnerHTML={{ __html: t('help.statsAndRecordsP3') }} />
-           </div>
-        </div>
+        {helpSection('stats', <BarChart3 className="w-5 h-5 text-accent" />, 'bg-accent/10', t('help.statsAndRecords'), (
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p dangerouslySetInnerHTML={{ __html: t('help.statsAndRecordsP1') }} />
+            <p dangerouslySetInnerHTML={{ __html: t('help.statsAndRecordsP2') }} />
+            <p dangerouslySetInnerHTML={{ __html: t('help.statsAndRecordsP3') }} />
+          </div>
+        ))}
 
         {/* Kalender */}
-        <div className="glass-card rounded-xl p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-success/10 p-2">
-              <Calendar className="w-5 h-5 text-[hsl(var(--success))]" />
-            </div>
-             <h3 className="font-display font-semibold text-base">{t('help.calendar')}</h3>
-           </div>
-           <div className="text-sm text-muted-foreground space-y-2">
-             <p dangerouslySetInnerHTML={{ __html: t('help.calendarP1') }} />
-             <p dangerouslySetInnerHTML={{ __html: t('help.calendarP2') }} />
-             <p dangerouslySetInnerHTML={{ __html: t('help.calendarP3') }} />
-           </div>
-        </div>
+        {helpSection('calendar', <Calendar className="w-5 h-5 text-[hsl(var(--success))]" />, 'bg-success/10', t('help.calendar'), (
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p dangerouslySetInnerHTML={{ __html: t('help.calendarP1') }} />
+            <p dangerouslySetInnerHTML={{ __html: t('help.calendarP2') }} />
+            <p dangerouslySetInnerHTML={{ __html: t('help.calendarP3') }} />
+          </div>
+        ))}
+
+        {/* Fjelltopp-kart */}
+        {helpSection('map', <Mountain className="w-5 h-5 text-[hsl(var(--success))]" />, 'bg-success/10', 'Fjelltopp-kart', (
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p>Sjekk inn på fjelltopper du bestiger. Du kan sjekke inn flere ganger på hver topp for å øke scoren din.</p>
+            <p>Bytt mellom <strong>standard</strong>, <strong>satellitt</strong>, <strong>topografisk</strong> og <strong>3D</strong>-kartvisning med knappene øverst til venstre.</p>
+            <p>For å <strong>foreslå en ny topp</strong>, trykk og hold inne på kartet der toppen befinner seg. Om du er i nærheten vil du bli sjekket inn automatisk når toppen godkjennes.</p>
+            <p>Under <strong>Topper</strong>-fanen finner du alle tilgjengelige topper, og under <strong>Feed</strong> ser du de siste innsjekkingene.</p>
+          </div>
+        ))}
 
         {/* Fellesskap */}
-        <div className="glass-card rounded-xl p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-accent/10 p-2">
-              <Users className="w-5 h-5 text-accent" />
-            </div>
-             <h3 className="font-display font-semibold text-base">{t('help.community')}</h3>
-           </div>
-           <div className="text-sm text-muted-foreground space-y-2">
-             <p dangerouslySetInnerHTML={{ __html: t('help.communityP1') }} />
-             <p dangerouslySetInnerHTML={{ __html: t('help.communityP2') }} />
-             <p dangerouslySetInnerHTML={{ __html: t('help.communityP3') }} />
-           </div>
-        </div>
+        {helpSection('community', <Users className="w-5 h-5 text-accent" />, 'bg-accent/10', t('help.community'), (
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p dangerouslySetInnerHTML={{ __html: t('help.communityP1') }} />
+            <p dangerouslySetInnerHTML={{ __html: t('help.communityP2') }} />
+            <p dangerouslySetInnerHTML={{ __html: t('help.communityP3') }} />
+            <p>Opprett <strong>utfordringer</strong> med valgfri aktivitetstype, metrikk og tidsperiode. Fest utfordringer til forsiden for å følge stillingen.</p>
+            <p>Under <strong>Ledertavle</strong> kan du sammenligne deg med venner på økter, distanse, tid og høydemeter.</p>
+          </div>
+        ))}
 
         {/* Tilpasning */}
-        <div className="glass-card rounded-xl p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-warning/10 p-2">
-              <Palette className="w-5 h-5 text-[hsl(var(--warning))]" />
-            </div>
-             <h3 className="font-display font-semibold text-base">{t('help.customization')}</h3>
-           </div>
-           <div className="text-sm text-muted-foreground space-y-2">
-             <p dangerouslySetInnerHTML={{ __html: t('help.customizationP1') }} />
-             <p dangerouslySetInnerHTML={{ __html: t('help.customizationP2') }} />
-             <p dangerouslySetInnerHTML={{ __html: t('help.customizationP3') }} />
-             <p dangerouslySetInnerHTML={{ __html: t('help.customizationP4') }} />
-           </div>
-        </div>
-
-        {/* Footer removed */}
+        {helpSection('customization', <Palette className="w-5 h-5 text-[hsl(var(--warning))]" />, 'bg-warning/10', t('help.customization'), (
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p dangerouslySetInnerHTML={{ __html: t('help.customizationP1') }} />
+            <p dangerouslySetInnerHTML={{ __html: t('help.customizationP2') }} />
+            <p dangerouslySetInnerHTML={{ __html: t('help.customizationP3') }} />
+            <p dangerouslySetInnerHTML={{ __html: t('help.customizationP4') }} />
+          </div>
+        ))}
       </div>
     );
   }
