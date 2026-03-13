@@ -1082,7 +1082,6 @@ const SettingsPage = () => {
           <div className="text-sm text-muted-foreground space-y-2">
             <p dangerouslySetInnerHTML={{ __html: t('help.registerSessionsP1') }} />
             <p dangerouslySetInnerHTML={{ __html: t('help.registerSessionsP2') }} />
-            <p dangerouslySetInnerHTML={{ __html: t('help.registerSessionsP3') }} />
           </div>
         ))}
 
@@ -1092,7 +1091,6 @@ const SettingsPage = () => {
             <p dangerouslySetInnerHTML={{ __html: t('help.stravaSyncP1') }} />
             <p dangerouslySetInnerHTML={{ __html: t('help.stravaSyncP2') }} />
             <p dangerouslySetInnerHTML={{ __html: t('help.stravaSyncP3') }} />
-            <p dangerouslySetInnerHTML={{ __html: t('help.stravaSyncP4') }} />
           </div>
         ))}
 
