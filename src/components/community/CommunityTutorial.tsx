@@ -13,29 +13,26 @@ interface TutorialStep {
 
 const ChallengeExamples = () => (
   <div className="space-y-2 py-1">
-    <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-muted/60 border border-border/40">
+    <div className="flex items-center justify-center gap-2.5 px-3 py-2 rounded-xl bg-muted/60 border border-border/40">
       <span className="text-lg">🏃</span>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold text-foreground truncate">Flest km i mars</p>
+      <div className="min-w-0 text-center">
+        <p className="text-xs font-semibold text-foreground">Flest km løpt i mars</p>
         <p className="text-[10px] text-muted-foreground">Løping · 1. – 31. mars</p>
       </div>
-      <div className="text-xs font-bold text-primary">42 km</div>
     </div>
-    <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-muted/60 border border-border/40">
+    <div className="flex items-center justify-center gap-2.5 px-3 py-2 rounded-xl bg-muted/60 border border-border/40">
       <span className="text-lg">💪</span>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold text-foreground truncate">Styrke-duellen 2026</p>
-        <p className="text-xs text-muted-foreground">Styrke · Hele året</p>
+      <div className="min-w-0 text-center">
+        <p className="text-xs font-semibold text-foreground">Flest styrkeøkter i 2026</p>
+        <p className="text-[10px] text-muted-foreground">Styrke · Hele året</p>
       </div>
-      <div className="text-xs font-bold text-primary">100 økter</div>
     </div>
-    <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-muted/60 border border-border/40">
+    <div className="flex items-center justify-center gap-2.5 px-3 py-2 rounded-xl bg-muted/60 border border-border/40">
       <span className="text-lg">⛰️</span>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold text-foreground truncate">Høydemeter-kamp</p>
-        <p className="text-xs text-muted-foreground">Fjelltur · Jun – Aug</p>
+      <div className="min-w-0 text-center">
+        <p className="text-xs font-semibold text-foreground">Mest høydemeter i sommer</p>
+        <p className="text-[10px] text-muted-foreground">Fjelltur · Jun – Aug</p>
       </div>
-      <div className="text-xs font-bold text-primary">5000 m</div>
     </div>
   </div>
 );

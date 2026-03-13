@@ -833,12 +833,20 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           const outlineLayerId = `kommune-outline-${kommuneNr}`;
 
           const pct = entry.total > 0 ? Math.round((entry.checked / entry.total) * 100) : 0;
-          const fillColor = pct >= 75 ? 'hsla(152, 65%, 40%, 0.45)' :
-                            pct >= 25 ? 'hsla(210, 70%, 50%, 0.35)' :
-                                        'hsla(250, 55%, 55%, 0.28)';
-          const outlineColor = pct >= 75 ? 'hsla(152, 65%, 35%, 0.85)' :
-                               pct >= 25 ? 'hsla(210, 70%, 45%, 0.75)' :
-                                           'hsla(250, 55%, 50%, 0.6)';
+
+          // Use a deterministic color index based on kommuneNr to avoid adjacent areas sharing colors
+          // We'll use 5 distinct hues and distribute based on the numeric kommune code
+          const kommuneNum = parseInt(kommuneNr, 10) || 0;
+          const colorPalette = [
+            { fill: 'hsla(152, 65%, 40%, 0.35)', outline: 'hsla(152, 65%, 35%, 0.85)' },  // green
+            { fill: 'hsla(210, 70%, 50%, 0.30)', outline: 'hsla(210, 70%, 45%, 0.75)' },  // blue
+            { fill: 'hsla(280, 55%, 55%, 0.28)', outline: 'hsla(280, 55%, 50%, 0.65)' },  // purple
+            { fill: 'hsla(35, 80%, 50%, 0.30)', outline: 'hsla(35, 80%, 45%, 0.75)' },    // orange
+            { fill: 'hsla(340, 60%, 50%, 0.28)', outline: 'hsla(340, 60%, 45%, 0.65)' },  // pink
+          ];
+          const colorIdx = kommuneNum % colorPalette.length;
+          const fillColor = colorPalette[colorIdx].fill;
+          const outlineColor = colorPalette[colorIdx].outline;
 
           whenStyleReady(m, () => {
             if (!m.getSource(sourceId)) {
