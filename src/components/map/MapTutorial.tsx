@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { X, ChevronRight, Mountain, Map, MapPin, List, Rss, Trophy } from 'lucide-react';
+import { X, ChevronRight, Mountain, Map, MapPin, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const TUTORIAL_KEY = 'treningslogg_map_tutorial_done';
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
-// Hovlandsnuten coordinates
-const HOVLANDSNUTEN = { lat: 59.823, lng: 6.253, elev: 899 };
+// Correct Hovlandsnuten (Tysnes) coordinates from DB
+const HOVLANDSNUTEN = { lat: 60.0149, lng: 5.6774, elev: 726 };
 
 interface TutorialStep {
   title: string;
@@ -32,7 +32,7 @@ const CheckinAnimation = () => {
 
   return (
     <div className="flex flex-col items-center gap-3 py-2">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {/* Peak marker */}
         <div className="relative">
           <div
@@ -95,9 +95,9 @@ const CheckinAnimation = () => {
 const MapStylePreview = () => {
   const [styleIdx, setStyleIdx] = useState(0);
   const mapStyles = [
-    { name: 'Standard', style: 'outdoors-v12' },
-    { name: 'Terreng', style: 'outdoors-v12' }, // will use topo overlay
-    { name: 'Topografisk', style: 'outdoors-v12' },
+    { name: 'Standard', style: 'streets-v12' },
+    { name: 'Terreng', style: 'outdoors-v12' },
+    { name: 'Topografisk', style: 'light-v11' },
     { name: 'Satellitt', style: 'satellite-streets-v12' },
   ];
 
@@ -108,7 +108,6 @@ const MapStylePreview = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Use Mapbox Static Images API for a real map snapshot
   const current = mapStyles[styleIdx];
   const zoom = 13;
   const pitch = 60;
@@ -116,9 +115,6 @@ const MapStylePreview = () => {
   const width = 400;
   const height = 220;
   
-  const staticUrl = `https://api.mapbox.com/styles/v1/mapbox/${current.style}/static/${HOVLANDSNUTEN.lng},${HOVLANDSNUTEN.lat},${zoom},${bearing},${pitch}/${width}x${height}@2x?access_token=${MAPBOX_TOKEN}`;
-
-  // Peak marker overlay
   const markerUrl = `https://api.mapbox.com/styles/v1/mapbox/${current.style}/static/pin-s-mountain+ff4444(${HOVLANDSNUTEN.lng},${HOVLANDSNUTEN.lat})/${HOVLANDSNUTEN.lng},${HOVLANDSNUTEN.lat},${zoom},${bearing},${pitch}/${width}x${height}@2x?access_token=${MAPBOX_TOKEN}`;
 
   return (
@@ -128,15 +124,11 @@ const MapStylePreview = () => {
           src={markerUrl}
           alt={`Hovlandsnuten - ${current.name}`}
           className="w-full h-full object-cover transition-opacity duration-500"
-          key={styleIdx}
+          key={`map-style-${styleIdx}`}
         />
         {/* Style label */}
         <div className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded-md bg-black/50 text-white text-[9px] font-medium backdrop-blur-sm">
           {current.name}
-        </div>
-        {/* Peak name label */}
-        <div className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-md bg-black/50 text-white text-[9px] font-medium backdrop-blur-sm">
-          Hovlandsnuten {HOVLANDSNUTEN.elev} moh
         </div>
       </div>
       {/* Style dots */}
@@ -164,7 +156,6 @@ const LongPressAnimation = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Terrain/outdoors static map without marker
   const zoom = 13.5;
   const width = 380;
   const height = 200;
@@ -204,6 +195,37 @@ const LongPressAnimation = () => {
   );
 };
 
+// ── Step 4 content: Topper, Feed & Lederliste combined ──
+const OverviewContent = () => (
+  <div className="space-y-2 py-1">
+    <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
+      <List className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+      <div>
+        <p className="text-sm font-semibold text-foreground">Topper</p>
+        <p className="text-[11px] text-muted-foreground">Bla gjennom alle topper sortert etter høyde eller avstand fra deg.</p>
+      </div>
+    </div>
+    <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+        <path d="M4 11a9 9 0 0 1 9 9" /><path d="M4 4a16 16 0 0 1 16 16" /><circle cx="5" cy="19" r="1" />
+      </svg>
+      <div>
+        <p className="text-sm font-semibold text-foreground">Feed</p>
+        <p className="text-[11px] text-muted-foreground">Se de siste innsjekkingene fra deg selv og vennene dine, med bilder.</p>
+      </div>
+    </div>
+    <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C7 4 7 7 7 7" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5C17 4 17 7 17 7" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+      </svg>
+      <div>
+        <p className="text-sm font-semibold text-foreground">Lederliste</p>
+        <p className="text-[11px] text-muted-foreground">Se hvem som har flest innsjekkinger og unike topper.</p>
+      </div>
+    </div>
+  </div>
+);
+
 const steps: TutorialStep[] = [
   {
     title: 'Velkommen til fjelltopp-kartet! ⛰️',
@@ -224,19 +246,10 @@ const steps: TutorialStep[] = [
     customContent: <LongPressAnimation />,
   },
   {
-    title: 'Topper',
-    text: 'Bla gjennom alle tilgjengelige topper sortert etter høyde eller avstand fra deg. Trykk på en topp for å se detaljer.',
+    title: 'Utforsk',
+    text: 'Under kartet finner du flere faner for å utforske fjelltopper og følge med på aktivitet.',
     icon: <List className="w-8 h-8" />,
-  },
-  {
-    title: 'Feed',
-    text: 'I feeden kan du se de siste innsjekkingene fra deg selv og vennene dine, med bilder og kommentarer.',
-    icon: <Rss className="w-8 h-8" />,
-  },
-  {
-    title: 'Lederliste',
-    text: 'Sammenlign deg med andre og se hvem som har flest innsjekkinger og unike topper. Klatre på listene og utfordre venner!',
-    icon: <Trophy className="w-8 h-8" />,
+    customContent: <OverviewContent />,
   },
 ];
 

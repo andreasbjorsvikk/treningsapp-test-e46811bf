@@ -577,12 +577,14 @@ const CalendarPage = () => {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className={`overflow-y-auto transition-opacity duration-100 ${scrollReady ? 'opacity-100' : 'opacity-0'}`}
+        className={`overflow-y-auto transition-opacity duration-100 scrollbar-none ${scrollReady ? 'opacity-100' : 'opacity-0'}`}
         style={{
           maxHeight: 'calc(100vh - 160px)',
           contain: 'layout style',
           willChange: 'scroll-position',
           WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
         } as React.CSSProperties}
       >
         {months.map(m => renderMonth(m))}
