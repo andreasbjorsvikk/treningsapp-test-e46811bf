@@ -84,7 +84,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
 
   const allSessions = appData.sessions;
   const healthEvents = appData.healthEvents;
-  const filtered = filterType === 'all' ? allSessions : allSessions.filter(s => s.type === filterType);
+  const filtered = historyFilterTypes.length === allSessionTypes.length ? allSessions : allSessions.filter(s => historyFilterTypes.includes(s.type));
 
   const currentPrimaryGoal = appData.currentPrimaryGoal;
 
