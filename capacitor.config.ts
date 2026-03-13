@@ -7,7 +7,12 @@ const config: CapacitorConfig = {
   server: {
     url: 'https://b76d427e-030c-484a-b51c-8b1ec9d0841b.lovableproject.com?forceHideBadge=true',
     cleartext: true
-  }
+  },
+  plugins: {
+    CapacitorHttp: {
+      enabled: true,
+    },
+  },
 };
 
 export default config;
