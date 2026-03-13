@@ -293,6 +293,8 @@ const MapPage = () => {
         onShowHeatmapChange={setShowHeatmap}
         heatmapPeriod={heatmapPeriod}
         onHeatmapPeriodChange={setHeatmapPeriod}
+        onlyReachedThisYear={onlyReachedThisYear}
+        onOnlyReachedThisYearChange={setOnlyReachedThisYear}
       />
 
       {/* Peak detail drawer */}
