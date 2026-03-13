@@ -82,6 +82,7 @@ const IndexContent = () => {
   const [stravaSyncing, setStravaSyncing] = useState(false);
   const [detailSession, setDetailSession] = useState<WorkoutSession | null>(null);
   const [challengeDetail, setChallengeDetail] = useState<ChallengeWithParticipants | null>(null);
+  const [showGoalTip, setShowGoalTip] = useState(false);
 
   // Profile info
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -272,6 +273,13 @@ const IndexContent = () => {
   const handleHealthSave = async (data: Omit<HealthEvent, 'id'>) => { await appData.addHealthEvent(data); };
 
   const navigateToGoals = () => {
+    if (!primaryGoal) {
+      const tipShown = localStorage.getItem('treningslogg_goal_tip_shown');
+      if (!tipShown) {
+        setShowGoalTip(true);
+        localStorage.setItem('treningslogg_goal_tip_shown', 'true');
+      }
+    }
     setInitialStatPeriod(undefined);
     (window as any).__navigateToGoals = true;
     setActiveTab('trening');
@@ -819,6 +827,26 @@ const IndexContent = () => {
         onArchive={(id) => appData.archiveGoal(id)}
         onDismiss={() => appData.dismissCompletedGoal()}
       />
+
+      {/* Goal tip popup */}
+      <Dialog open={showGoalTip} onOpenChange={setShowGoalTip}>
+        <DialogContent className="max-w-sm">
+          <div className="text-center space-y-4 py-2">
+            <div className="flex justify-center">
+              <Target className="w-10 h-10 text-primary" />
+            </div>
+            <DialogHeader>
+              <DialogTitle className="text-center text-lg">Tips: Treningsmål 💡</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Her kan du sette et generelt treningsmål på hvor mange treningsøkter du vil klare hver uke, måned, eller år. Fremdriftshjulene vil vise deg hvordan du ligger an dag for dag. Du kan når som helst justere målet senere om du ønsker det.
+            </p>
+            <Button onClick={() => setShowGoalTip(false)} className="w-full">
+              Ok
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

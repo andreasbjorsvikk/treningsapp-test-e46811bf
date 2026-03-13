@@ -3,6 +3,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Peak } from '@/data/peaks';
 import { PeakCheckin } from '@/services/peakCheckinService';
+import { PeakSuggestion } from '@/services/peakSuggestionService';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,11 +33,13 @@ interface MapViewProps {
   showHeatmap?: boolean;
   heatmapPeriod?: HeatmapPeriod;
   showAreaStats?: boolean;
+  onlyReachedThisYear?: boolean;
+  suggestedPeaks?: PeakSuggestion[];
 }
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
-const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, onClearRoute, previewWaypoints, onWaypointClick, onWaypointDrag, showHeatmap, heatmapPeriod, showAreaStats }: MapViewProps) => {
+const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, onClearRoute, previewWaypoints, onWaypointClick, onWaypointDrag, showHeatmap, heatmapPeriod, showAreaStats, onlyReachedThisYear, suggestedPeaks }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -64,6 +67,14 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   }, []);
 
   const checkedPeakIds = new Set(checkins.map(c => c.peak_id));
+  
+  // Checkins this year
+  const thisYearCheckedIds = new Set(
+    checkins
+      .filter(c => new Date(c.checked_in_at).getFullYear() === new Date().getFullYear())
+      .map(c => c.peak_id)
+  );
+  const suggestedMarkersRef = useRef<mapboxgl.Marker[]>([]);
 
   // Map initialization
   useEffect(() => {
@@ -401,18 +412,20 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     peaks.forEach(peak => {
       const isTaken = checkedPeakIds.has(peak.id);
       const isUnpublished = peak.isPublished === false;
+      const isGrey = onlyReachedThisYear && !thisYearCheckedIds.has(peak.id);
 
       const el = document.createElement('div');
       el.style.cssText = `
         width: 36px; height: 36px; cursor: pointer;
         display: flex; align-items: center; justify-content: center;
-        background: ${isTaken ? 'hsl(152, 60%, 42%)' : isUnpublished ? 'hsl(38, 85%, 50%)' : 'hsl(0, 0%, 100%)'};
-        border: 2px solid ${isTaken ? 'hsl(152, 60%, 35%)' : isUnpublished ? 'hsl(38, 85%, 40%)' : 'hsl(220, 13%, 80%)'};
+        background: ${isGrey ? 'hsl(0, 0%, 75%)' : isTaken ? 'hsl(152, 60%, 42%)' : isUnpublished ? 'hsl(38, 85%, 50%)' : 'hsl(0, 0%, 100%)'};
+        border: 2px solid ${isGrey ? 'hsl(0, 0%, 60%)' : isTaken ? 'hsl(152, 60%, 35%)' : isUnpublished ? 'hsl(38, 85%, 40%)' : 'hsl(220, 13%, 80%)'};
         border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         ${isUnpublished ? 'opacity: 0.7;' : ''}
+        ${isGrey ? 'opacity: 0.5;' : ''}
       `;
       el.innerHTML = `
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${isTaken ? 'white' : isUnpublished ? 'white' : 'hsl(220, 10%, 46%)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 2 15H2L8 3z"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${isGrey ? 'hsl(0, 0%, 40%)' : isTaken ? 'white' : isUnpublished ? 'white' : 'hsl(220, 10%, 46%)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 2 15H2L8 3z"/></svg>
       `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;
@@ -514,7 +527,78 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
 
       markersRef.current.push(marker);
     });
-  }, [peaks, checkins, mapLoaded, t, adminMode]);
+  }, [peaks, checkins, mapLoaded, t, adminMode, onlyReachedThisYear]);
+
+  // === SUGGESTED PEAKS: Show pending suggestions with different icon ===
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    suggestedMarkersRef.current.forEach(m => m.remove());
+    suggestedMarkersRef.current = [];
+
+    if (!suggestedPeaks?.length) return;
+
+    suggestedPeaks.forEach(suggestion => {
+      const el = document.createElement('div');
+      el.style.cssText = `
+        width: 32px; height: 32px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        background: hsl(0, 0%, 88%);
+        border: 2px dashed hsl(0, 0%, 60%);
+        border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        opacity: 0.8;
+      `;
+      el.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="hsl(0, 0%, 45%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 2 15H2L8 3z"/></svg>
+      `;
+
+      const popup = new mapboxgl.Popup({
+        offset: 20,
+        closeButton: false,
+        maxWidth: '260px',
+        className: 'peak-popup',
+      });
+
+      popup.setHTML(`
+        <div class="peak-popup-inner">
+          <div class="peak-popup-header">
+            <div class="peak-popup-title">${suggestion.name}</div>
+          </div>
+          ${suggestion.elevation_moh ? `<div style="text-align: center; font-size: 16px; font-weight: 700; margin: 4px 0;">${suggestion.elevation_moh} moh</div>` : ''}
+          <div style="text-align: center; padding: 4px 8px; margin: 4px 0; background: hsl(38, 80%, 92%); border-radius: 8px; font-size: 12px; color: hsl(38, 70%, 30%); font-weight: 500;">
+            ⏳ Denne toppen er ikke godkjent enda, men du kan sjekke inn
+          </div>
+          <button class="peak-popup-btn primary" id="suggestion-btn-${suggestion.id}">Sjekk inn</button>
+        </div>
+      `);
+
+      popup.on('open', () => {
+        setTimeout(() => {
+          document.getElementById(`suggestion-btn-${suggestion.id}`)?.addEventListener('click', () => {
+            popup.remove();
+            // Create a temporary Peak object for check-in
+            const tempPeak: Peak = {
+              id: suggestion.id,
+              name: suggestion.name,
+              heightMoh: suggestion.elevation_moh || 0,
+              latitude: suggestion.latitude,
+              longitude: suggestion.longitude,
+              area: '',
+              description: '',
+              isPublished: false,
+            };
+            onSelectPeak(tempPeak);
+          });
+        }, 10);
+      });
+
+      const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
+        .setLngLat([suggestion.longitude, suggestion.latitude])
+        .setPopup(popup)
+        .addTo(map.current!);
+
+      suggestedMarkersRef.current.push(marker);
+    });
+  }, [suggestedPeaks, mapLoaded, onSelectPeak]);
 
   // === HEATMAP: Lines from summary_polyline, thicker/redder where more overlap ===
   useEffect(() => {
@@ -783,7 +867,8 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           const avgLng = entry.peaks.reduce((s, p) => s + p.longitude, 0) / entry.peaks.length;
 
           const el = document.createElement('div');
-          el.style.cssText = 'pointer-events: none; text-align: center; white-space: nowrap; z-index: 5;';
+          el.className = 'area-stats-label';
+          el.style.cssText = 'pointer-events: none; text-align: center; white-space: nowrap; z-index: 5; transition: transform 0.2s;';
           el.innerHTML = `
             <div style="
               background: hsl(var(--background) / 0.92);
@@ -811,6 +896,22 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           console.error('Failed to load municipality boundary for', kommuneNr, e);
         }
       }
+
+      // Add zoom-based scaling for area stats labels
+      const updateScale = () => {
+        if (!map.current) return;
+        const zoom = map.current.getZoom();
+        // Scale from 1.0 at zoom 12+ down to 0.5 at zoom 8
+        const scale = Math.max(0.4, Math.min(1, (zoom - 7) / 5));
+        areaMarkersRef.current.forEach(mk => {
+          const el = mk.getElement();
+          el.style.transform = `scale(${scale})`;
+          // Hide entirely at very low zoom
+          el.style.display = zoom < 7 ? 'none' : '';
+        });
+      };
+      map.current.on('zoom', updateScale);
+      updateScale();
     };
 
     fetchBoundaries();

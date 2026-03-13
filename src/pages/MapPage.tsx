@@ -4,6 +4,7 @@ import { useAdmin } from '@/hooks/useAdmin';
 import { Peak } from '@/data/peaks';
 import { getUserCheckins, PeakCheckin } from '@/services/peakCheckinService';
 import { fetchPeaks, dbPeakToLegacy, createPeak, updatePeak, deletePeak, DbPeak } from '@/services/peakDbService';
+import { fetchPendingSuggestions, PeakSuggestion } from '@/services/peakSuggestionService';
 import MapSubTabs, { MapSubTab } from '@/components/map/MapSubTabs';
 import MapView from '@/components/map/MapView';
 import PeaksList from '@/components/map/PeaksList';
@@ -14,6 +15,7 @@ import SuggestPeakDrawer from '@/components/map/SuggestPeakDrawer';
 import MapSettingsSheet from '@/components/map/MapSettingsSheet';
 import PeakFeed from '@/components/map/PeakFeed';
 import GlobalLeaderboard from '@/components/map/GlobalLeaderboard';
+import MapTutorial from '@/components/map/MapTutorial';
 import { Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -54,6 +56,10 @@ const MapPage = () => {
   const [showAreaStats, setShowAreaStats] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [heatmapPeriod, setHeatmapPeriod] = useState<HeatmapPeriod>('year');
+  const [onlyReachedThisYear, setOnlyReachedThisYear] = useState(false);
+
+  // Suggested peaks (pending, visible to all)
+  const [suggestedPeaks, setSuggestedPeaks] = useState<PeakSuggestion[]>([]);
 
   const checkedPeakIds = useMemo(() => new Set(checkins.map(c => c.peak_id)), [checkins]);
 
@@ -86,6 +92,12 @@ const MapPage = () => {
 
   useEffect(() => { loadPeaks(); }, [loadPeaks]);
   useEffect(() => { fetchCheckins(); }, [fetchCheckins]);
+
+  // Load pending suggestions for all users
+  useEffect(() => {
+    if (!user) return;
+    fetchPendingSuggestions().then(setSuggestedPeaks).catch(() => {});
+  }, [user]);
 
   const handleSelectPeak = (peak: Peak) => setSelectedPeak(peak);
 
@@ -221,6 +233,8 @@ const MapPage = () => {
               showHeatmap={showHeatmap}
               heatmapPeriod={heatmapPeriod}
               showAreaStats={showAreaStats}
+              onlyReachedThisYear={onlyReachedThisYear}
+              suggestedPeaks={suggestedPeaks}
             />
             {activeRouteGeojson && (
               <button
@@ -238,6 +252,7 @@ const MapPage = () => {
             >
               <Settings2 className="w-5 h-5" />
             </button>
+            <MapTutorial />
           </div>
         )}
 
@@ -279,6 +294,8 @@ const MapPage = () => {
         onShowHeatmapChange={setShowHeatmap}
         heatmapPeriod={heatmapPeriod}
         onHeatmapPeriodChange={setHeatmapPeriod}
+        onlyReachedThisYear={onlyReachedThisYear}
+        onOnlyReachedThisYearChange={setOnlyReachedThisYear}
       />
 
       {/* Peak detail drawer */}

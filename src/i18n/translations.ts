@@ -314,6 +314,7 @@ const no: Record<string, string> = {
   'color.green': 'Grønn', 'color.blue': 'Blå', 'color.red': 'Rød', 'color.yellow': 'Gul',
   'color.purple': 'Lilla', 'color.brown': 'Brun', 'color.cyan': 'Cyan', 'color.grey': 'Grå',
   'color.dustyPink': 'Dus rosa', 'color.orange': 'Oransje', 'color.sun': 'Sol', 'color.mint': 'Mint',
+  'color.indigo': 'Indigo', 'color.coral': 'Korall', 'color.teal': 'Teal', 'color.lavender': 'Lavendel',
 
   // Common
   'common.cancel': 'Avbryt',
@@ -953,6 +954,7 @@ const en: Record<string, string> = {
   'color.green': 'Green', 'color.blue': 'Blue', 'color.red': 'Red', 'color.yellow': 'Yellow',
   'color.purple': 'Purple', 'color.brown': 'Brown', 'color.cyan': 'Cyan', 'color.grey': 'Grey',
   'color.dustyPink': 'Dusty pink', 'color.orange': 'Orange', 'color.sun': 'Sun', 'color.mint': 'Mint',
+  'color.indigo': 'Indigo', 'color.coral': 'Coral', 'color.teal': 'Teal', 'color.lavender': 'Lavender',
 
   // Common
   'common.cancel': 'Cancel',
