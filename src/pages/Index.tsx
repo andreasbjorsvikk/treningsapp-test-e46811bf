@@ -496,18 +496,11 @@ const IndexContent = () => {
         );
       case 'recentSessions':
         return (
-          <>
-            <div className="flex items-center justify-end mb-3 -mt-1">
-              <Button size="sm" onClick={() => { setEditSession(undefined); setDialogOpen(true); }} className="gradient-energy text-primary-foreground border-0 shadow-md">
-                <Plus className="w-4 h-4 mr-1" /> {t('home.newSession')}
-              </Button>
-            </div>
-            <div className="space-y-3">
-              {recentSessions.map(s => (
-                <SessionCard key={s.id} session={s} onClick={setDetailSession} />
-              ))}
-            </div>
-          </>
+          <div className="space-y-3">
+            {recentSessions.map(s => (
+              <SessionCard key={s.id} session={s} onClick={setDetailSession} />
+            ))}
+          </div>
         );
       default:
         return null;
@@ -577,8 +570,8 @@ const IndexContent = () => {
                   )}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button size="icon" variant="ghost" className="rounded-full h-9 w-9">
-                        <Plus className="w-5 h-5" />
+                      <Button size="icon" variant="ghost" className="rounded-full h-10 w-10">
+                        <Plus className="w-6 h-6" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">

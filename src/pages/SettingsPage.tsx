@@ -15,7 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { SessionType } from '@/types/workout';
-import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw, Loader2, Check, Pencil, Dumbbell, Lock, HelpCircle, Target, BarChart3, Calendar, Users, Zap, ShieldCheck } from 'lucide-react';
+import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw, Loader2, Check, Pencil, Dumbbell, Lock, HelpCircle, Target, BarChart3, Calendar, Users, Zap, ShieldCheck, Download } from 'lucide-react';
 import { getActivityColors, activityColorMap, saveActivityColors } from '@/utils/activityColors';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
@@ -68,6 +68,7 @@ const SettingsPage = () => {
   const [selectedPrivacyKey, setSelectedPrivacyKey] = useState<string | null>(null);
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
   const [realFriends, setRealFriends] = useState<Friend[]>([]);
+  const [gdprSubView, setGdprSubView] = useState<'main' | 'deleteData' | 'deleteAccount' | 'downloadData'>('main');
 
   // Check Strava connection on mount & after callback
   useEffect(() => {
@@ -154,27 +155,25 @@ const SettingsPage = () => {
   };
 
   const handleClearData = async () => {
-    if (confirm(t('settings.deleteAllDataConfirm'))) {
-      if (user) {
-        try {
-          // Delete all user data from database
-          await Promise.all([
-            supabase.from('workout_sessions').delete().eq('user_id', user.id),
-            supabase.from('goals').delete().eq('user_id', user.id),
-            supabase.from('primary_goal_periods').delete().eq('user_id', user.id),
-            supabase.from('health_events').delete().eq('user_id', user.id),
-          ]);
-          toast.success(t('settings.dataDeleted') || 'All data deleted');
-        } catch (err) {
-          console.error('Failed to delete data:', err);
-          toast.error('Could not delete data');
-          return;
-        }
+    if (user) {
+      try {
+        await Promise.all([
+          supabase.from('workout_sessions').delete().eq('user_id', user.id),
+          supabase.from('workout_streams').delete().eq('user_id', user.id),
+          supabase.from('goals').delete().eq('user_id', user.id),
+          supabase.from('primary_goal_periods').delete().eq('user_id', user.id),
+          supabase.from('health_events').delete().eq('user_id', user.id),
+          supabase.from('peak_checkins').delete().eq('user_id', user.id),
+        ]);
+        toast.success(t('gdpr.dataDeleted'));
+      } catch (err) {
+        console.error('Failed to delete data:', err);
+        toast.error(t('gdpr.deleteFailed'));
+        return;
       }
-      localStorage.removeItem('treningslogg_sessions');
-      localStorage.removeItem('treningslogg_goals');
-      window.location.reload();
     }
+    localStorage.clear();
+    window.location.reload();
   };
 
   const menuItem = (label: string, icon: React.ReactNode, onClick: () => void, extra?: React.ReactNode) => (
@@ -194,7 +193,7 @@ const SettingsPage = () => {
 
   const backButton = (title: string) => (
     <button
-      onClick={() => setView('main')}
+      onClick={() => { setView('main'); setGdprSubView('main'); }}
       className="flex items-center gap-2 mb-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
     >
       <ChevronLeft className="w-4 h-4" />
@@ -550,18 +549,151 @@ const SettingsPage = () => {
     );
   }
 
-  // ========== DATA VIEW ==========
+  // ========== GDPR VIEW ==========
   if (view === 'data') {
+    
+    const handleDeleteAccount = async () => {
+      if (!user) return;
+      try {
+        // Delete all user data first
+        await Promise.all([
+          supabase.from('workout_sessions').delete().eq('user_id', user.id),
+          supabase.from('workout_streams').delete().eq('user_id', user.id),
+          supabase.from('goals').delete().eq('user_id', user.id),
+          supabase.from('primary_goal_periods').delete().eq('user_id', user.id),
+          supabase.from('health_events').delete().eq('user_id', user.id),
+          supabase.from('peak_checkins').delete().eq('user_id', user.id),
+          supabase.from('challenge_participants').delete().eq('user_id', user.id),
+          supabase.from('community_notifications').delete().eq('user_id', user.id),
+          supabase.from('friendships').delete().or(`user_id.eq.${user.id},friend_id.eq.${user.id}`),
+          supabase.from('strava_connections').delete().eq('user_id', user.id),
+          supabase.from('user_roles').delete().eq('user_id', user.id),
+          supabase.from('profiles').delete().eq('id', user.id),
+        ]);
+        localStorage.clear();
+        await signOut();
+        navigate('/login');
+        toast.success(t('gdpr.accountDeleted'));
+      } catch (err) {
+        console.error('Failed to delete account:', err);
+        toast.error(t('gdpr.deleteFailed'));
+      }
+    };
+
+    const handleDownloadData = async () => {
+      if (!user) return;
+      try {
+        const [sessions, goals, primaryGoals, healthEvents, peakCheckins] = await Promise.all([
+          supabase.from('workout_sessions').select('*').eq('user_id', user.id),
+          supabase.from('goals').select('*').eq('user_id', user.id),
+          supabase.from('primary_goal_periods').select('*').eq('user_id', user.id),
+          supabase.from('health_events').select('*').eq('user_id', user.id),
+          supabase.from('peak_checkins').select('*').eq('user_id', user.id),
+        ]);
+        const data = {
+          exported_at: new Date().toISOString(),
+          user_id: user.id,
+          email: user.email,
+          workout_sessions: sessions.data || [],
+          goals: goals.data || [],
+          primary_goal_periods: primaryGoals.data || [],
+          health_events: healthEvents.data || [],
+          peak_checkins: peakCheckins.data || [],
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `treningslogg-data-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast.success(t('gdpr.downloadStarted'));
+      } catch (err) {
+        console.error('Failed to download data:', err);
+        toast.error(t('gdpr.downloadFailed'));
+      }
+    };
+
+    if (gdprSubView === 'deleteData') {
+      return (
+        <div className="space-y-4">
+          <button
+            onClick={() => setGdprSubView('main')}
+            className="flex items-center gap-2 mb-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span className="font-medium">{t('gdpr.deleteData')}</span>
+          </button>
+          <div className="glass-card rounded-xl p-4 space-y-4">
+            <p className="text-sm text-muted-foreground">{t('gdpr.deleteDataDesc')}</p>
+            <Button variant="destructive" className="w-full" onClick={() => {
+              if (confirm(t('gdpr.deleteDataConfirm'))) {
+                handleClearData();
+              }
+            }}>
+              <Trash2 className="w-4 h-4 mr-2" />
+              {t('gdpr.deleteAllData')}
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    if (gdprSubView === 'deleteAccount') {
+      return (
+        <div className="space-y-4">
+          <button
+            onClick={() => setGdprSubView('main')}
+            className="flex items-center gap-2 mb-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span className="font-medium">{t('gdpr.deleteAccount')}</span>
+          </button>
+          <div className="glass-card rounded-xl p-4 space-y-4">
+            <p className="text-sm text-muted-foreground">{t('gdpr.deleteAccountDesc')}</p>
+            <Button variant="destructive" className="w-full" onClick={() => {
+              if (confirm(t('gdpr.deleteAccountConfirm'))) {
+                handleDeleteAccount();
+              }
+            }}>
+              <Trash2 className="w-4 h-4 mr-2" />
+              {t('gdpr.deleteMyAccount')}
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    if (gdprSubView === 'downloadData') {
+      return (
+        <div className="space-y-4">
+          <button
+            onClick={() => setGdprSubView('main')}
+            className="flex items-center gap-2 mb-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span className="font-medium">{t('gdpr.requestData')}</span>
+          </button>
+          <div className="glass-card rounded-xl p-4 space-y-4">
+            <p className="text-sm text-muted-foreground">{t('gdpr.requestDataDesc')}</p>
+            <Button variant="outline" className="w-full" onClick={handleDownloadData}>
+              <Download className="w-4 h-4 mr-2" />
+              {t('gdpr.download')}
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-4">
-        {backButton(t('settings.dangerZone'))}
-
-        <div className="glass-card rounded-xl p-4 space-y-3">
-          <p className="text-sm text-muted-foreground">{t('settings.deleteAllDataDesc')}</p>
-          <Button variant="destructive" onClick={handleClearData} className="w-full">
-            <Trash2 className="w-4 h-4 mr-2" />
-            {t('settings.deleteAllData')}
-          </Button>
+        {backButton(t('settings.gdpr'))}
+        <div className="glass-card rounded-xl overflow-hidden divide-y divide-border">
+          {menuItem(t('gdpr.deleteData'), <Trash2 className="w-4 h-4" />, () => setGdprSubView('deleteData'))}
+          {menuItem(t('gdpr.deleteAccount'), <Trash2 className="w-4 h-4" />, () => setGdprSubView('deleteAccount'))}
+          {menuItem(t('gdpr.requestData'), <Download className="w-4 h-4" />, () => setGdprSubView('downloadData'))}
         </div>
       </div>
     );
@@ -1097,7 +1229,7 @@ const SettingsPage = () => {
          {menuItem(t('privacy.title'), <Lock className="w-4 h-4" />, () => setView('privacy'))}
          {menuItem(t('settings.sync'), <RefreshCw className="w-4 h-4" />, () => setView('sync'))}
          {menuItem(t('help.title'), <HelpCircle className="w-4 h-4" />, () => setView('help'))}
-        {menuItem(t('settings.dangerZone'), <Shield className="w-4 h-4" />, () => setView('data'))}
+        {menuItem(t('settings.gdpr'), <Shield className="w-4 h-4" />, () => setView('data'))}
       </div>
 
       {/* Sign out */}
