@@ -1,11 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 
-const APP_SCHEME = 'treningsapp';
 const WEB_CALLBACK_URL = 'https://treningsapp-test.lovable.app/auth/native-callback';
 
 export function isNativePlatform(): boolean {
   try {
-    // Use window.Capacitor which is injected by the native runtime
     return !!(window as any).Capacitor?.isNativePlatform?.();
   } catch {
     return false;
@@ -14,6 +12,7 @@ export function isNativePlatform(): boolean {
 
 /**
  * Signs in with OAuth for native Capacitor apps.
+ * Uses dynamic imports so Capacitor plugins are bundled but only loaded on native.
  */
 export async function nativeSignInWithOAuth(
   provider: 'google' | 'apple'
@@ -30,9 +29,7 @@ export async function nativeSignInWithOAuth(
     if (error) return { error: error.message };
 
     if (data?.url) {
-      const cap = (window as any).Capacitor;
-      const Browser = cap?.Plugins?.Browser;
-      if (!Browser) return { error: 'Capacitor Browser plugin ikke tilgjengelig' };
+      const { Browser } = await import('@capacitor/browser');
       await Browser.open({ url: data.url });
     }
 
@@ -48,51 +45,49 @@ export async function nativeSignInWithOAuth(
 export async function setupDeepLinkListener() {
   if (!isNativePlatform()) return;
 
-  const cap = (window as any).Capacitor;
-  const AppPlugin = cap?.Plugins?.App;
-  const BrowserPlugin = cap?.Plugins?.Browser;
+  try {
+    const { App: AppPlugin } = await import('@capacitor/app');
+    const { Browser: BrowserPlugin } = await import('@capacitor/browser');
 
-  if (!AppPlugin) {
-    console.warn('[NativeAuth] Capacitor App plugin not available');
-    return;
+    AppPlugin.addListener('appUrlOpen', async ({ url }: { url: string }) => {
+      console.log('[NativeAuth] Deep link received:', url);
+
+      if (!url.startsWith('treningsapp://')) return;
+
+      try {
+        await BrowserPlugin.close();
+      } catch {
+        // Browser might already be closed
+      }
+
+      const hashIndex = url.indexOf('#');
+      if (hashIndex !== -1) {
+        const fragment = url.substring(hashIndex + 1);
+        const params = new URLSearchParams(fragment);
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+
+        if (accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (error) console.error('[NativeAuth] setSession failed:', error.message);
+          return;
+        }
+      }
+
+      const queryIndex = url.indexOf('?');
+      if (queryIndex !== -1) {
+        const params = new URLSearchParams(url.substring(queryIndex));
+        const code = params.get('code');
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) console.error('[NativeAuth] Code exchange failed:', error.message);
+        }
+      }
+    });
+  } catch (e) {
+    console.warn('[NativeAuth] Could not set up deep link listener:', e);
   }
-
-  AppPlugin.addListener('appUrlOpen', async ({ url }: { url: string }) => {
-    console.log('[NativeAuth] Deep link received:', url);
-
-    if (!url.startsWith(`${APP_SCHEME}://`)) return;
-
-    try {
-      await BrowserPlugin?.close();
-    } catch {
-      // Browser might already be closed
-    }
-
-    const hashIndex = url.indexOf('#');
-    if (hashIndex !== -1) {
-      const fragment = url.substring(hashIndex + 1);
-      const params = new URLSearchParams(fragment);
-      const accessToken = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
-
-      if (accessToken && refreshToken) {
-        const { error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
-        if (error) console.error('[NativeAuth] setSession failed:', error.message);
-        return;
-      }
-    }
-
-    const queryIndex = url.indexOf('?');
-    if (queryIndex !== -1) {
-      const params = new URLSearchParams(url.substring(queryIndex));
-      const code = params.get('code');
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error) console.error('[NativeAuth] Code exchange failed:', error.message);
-      }
-    }
-  });
 }

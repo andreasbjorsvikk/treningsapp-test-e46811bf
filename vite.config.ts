@@ -14,9 +14,6 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     assetsInlineLimit: 0,
-    rollupOptions: {
-      external: ['@capacitor/core', '@capacitor/app', '@capacitor/browser', '@capacitor/ios', '@capacitor/android'],
-    },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
