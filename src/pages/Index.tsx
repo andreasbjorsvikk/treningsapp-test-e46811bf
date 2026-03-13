@@ -273,6 +273,13 @@ const IndexContent = () => {
   const handleHealthSave = async (data: Omit<HealthEvent, 'id'>) => { await appData.addHealthEvent(data); };
 
   const navigateToGoals = () => {
+    if (!primaryGoal) {
+      const tipShown = localStorage.getItem('treningslogg_goal_tip_shown');
+      if (!tipShown) {
+        setShowGoalTip(true);
+        localStorage.setItem('treningslogg_goal_tip_shown', 'true');
+      }
+    }
     setInitialStatPeriod(undefined);
     (window as any).__navigateToGoals = true;
     setActiveTab('trening');
