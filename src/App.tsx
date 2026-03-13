@@ -11,6 +11,7 @@ import { setupDeepLinkListener } from "@/utils/nativeAuth";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import NativeCallbackPage from "./pages/NativeCallbackPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ const App = () => (
               <Route path="/" element={<RequireAuth><Index /></RequireAuth>} />
               <Route path="/login" element={<RedirectIfAuth><LoginPage /></RedirectIfAuth>} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/auth/native-callback" element={<NativeCallbackPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
