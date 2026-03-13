@@ -233,7 +233,7 @@ const steps: TutorialStep[] = [
   },
   {
     title: 'Kartvisning',
-    text: 'Bytt mellom ulike kartvisninger – standard, terreng, topografisk og satellitt. Du kan også veksle mellom 2D og 3D-visning.',
+    text: 'Bytt mellom satellitt- og terrengvisning. Du kan også veksle mellom 2D og 3D-visning.',
     icon: <Map className="w-8 h-8" />,
     customContent: <MapStylePreview />,
   },
