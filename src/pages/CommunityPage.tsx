@@ -8,8 +8,11 @@ import FriendsSection from '@/components/community/FriendsSection';
 import UserProfileDrawer from '@/components/community/UserProfileDrawer';
 import NotificationBell from '@/components/community/NotificationBell';
 import NotificationSheet from '@/components/community/NotificationSheet';
+import CommunityTutorial from '@/components/community/CommunityTutorial';
+import AdminUsersTab from '@/components/community/AdminUsersTab';
 import { getChallenges, getChallengeParticipants, getChallengeProgress, getNotifications, getUnreadNotificationCount, ChallengeRow, Friend } from '@/services/communityService';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -21,12 +24,14 @@ export interface ChallengeWithParticipants {
 
 const CommunityPage = () => {
   const { user } = useAuth();
+  const { adminMode } = useAdmin();
   const { t } = useTranslation();
 
   const mainTabs = [
     { id: 'challenges', label: t('community.challenges') },
     { id: 'leaderboard', label: t('community.leaderboard') },
     { id: 'friends', label: t('community.friends') },
+    ...(adminMode ? [{ id: 'users', label: 'Alle brukere' }] : []),
   ];
 
   const challengeFilterTabs = [
@@ -190,6 +195,10 @@ const CommunityPage = () => {
         <FriendsSection onOpenProfile={setProfileUser} />
       )}
 
+      {mainTab === 'users' && adminMode && (
+        <AdminUsersTab />
+      )}
+
       {/* Drawers / Dialogs */}
       <ChallengeDetail
         challenge={selectedChallenge}
@@ -217,6 +226,7 @@ const CommunityPage = () => {
         onClose={() => setProfileUser(null)}
         onInviteToChallenge={handleInviteToChallenge}
       />
+      <CommunityTutorial />
     </div>
   );
 };

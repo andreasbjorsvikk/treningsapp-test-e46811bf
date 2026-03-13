@@ -8,27 +8,120 @@ interface TutorialStep {
   title: string;
   text: string;
   icon: React.ReactNode;
-  position?: 'center' | 'top-left';
+  customContent?: React.ReactNode;
+  arrowDirection?: 'up-left';
 }
+
+// Animated check-in demo component
+const CheckinAnimation = () => {
+  const [phase, setPhase] = useState<'idle' | 'pressing' | 'checked'>('idle');
+
+  useEffect(() => {
+    const timer1 = setTimeout(() => setPhase('pressing'), 1200);
+    const timer2 = setTimeout(() => setPhase('checked'), 2200);
+    const timer3 = setTimeout(() => {
+      setPhase('idle');
+    }, 4500);
+
+    const interval = setInterval(() => {
+      setPhase('idle');
+      setTimeout(() => setPhase('pressing'), 1200);
+      setTimeout(() => setPhase('checked'), 2200);
+    }, 5000);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      clearInterval(interval);
+    };
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center gap-3 py-2">
+      <div className="flex items-center gap-6">
+        {/* Peak marker */}
+        <div className="relative">
+          <div
+            className={`w-14 h-14 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
+              phase === 'checked'
+                ? 'bg-[hsl(152,60%,42%)] border-[hsl(152,60%,35%)] scale-110'
+                : phase === 'pressing'
+                ? 'bg-[hsl(152,60%,42%)]/30 border-[hsl(152,60%,42%)]/50 scale-105'
+                : 'bg-card border-border'
+            }`}
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              className={`transition-all duration-500 ${
+                phase === 'checked' ? 'stroke-white' : 'stroke-muted-foreground'
+              }`}
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m8 3 4 8 5-5 2 15H2L8 3z" />
+            </svg>
+            {/* Checkmark overlay */}
+            {phase === 'checked' && (
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[hsl(152,60%,42%)] border-2 border-card flex items-center justify-center animate-scale-in">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              </div>
+            )}
+          </div>
+          {/* Ripple effect */}
+          {phase === 'checked' && (
+            <>
+              <div className="absolute inset-0 rounded-full border-2 border-[hsl(152,60%,42%)] animate-ping opacity-30" />
+              <div className="absolute inset-[-4px] rounded-full border border-[hsl(152,60%,42%)] animate-ping opacity-20" style={{ animationDelay: '150ms' }} />
+            </>
+          )}
+        </div>
+
+        {/* Arrow */}
+        <div className={`transition-opacity duration-300 ${phase === 'pressing' || phase === 'checked' ? 'opacity-100' : 'opacity-30'}`}>
+          <svg width="28" height="12" viewBox="0 0 28 12" fill="none">
+            <path d="M0 6h24M20 1l5 5-5 5" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+
+        {/* Result label */}
+        <div
+          className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-500 ${
+            phase === 'checked'
+              ? 'bg-[hsl(152,60%,42%)]/15 text-[hsl(152,60%,42%)] scale-105'
+              : 'bg-muted text-muted-foreground scale-100'
+          }`}
+        >
+          {phase === 'checked' ? '✓ Nådd!' : 'Sjekk inn'}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const steps: TutorialStep[] = [
   {
     title: 'Velkommen til fjelltopp-kartet! ⛰️',
     text: 'Her kan du sjekke inn på fjelltopper som du bestiger. Du kan sjekke inn flere ganger på hver topp og øke scoren din på lederlistene.',
     icon: <Mountain className="w-8 h-8" />,
-    position: 'center',
+    customContent: <CheckinAnimation />,
   },
   {
     title: 'Kartvisning',
     text: 'Skift mellom 2D/3D og ulike kartvisninger med knappene øverst til venstre.',
     icon: <Map className="w-8 h-8" />,
-    position: 'top-left',
+    arrowDirection: 'up-left',
   },
   {
     title: 'Foreslå ny topp',
     text: 'Tips: for å foreslå ny fjelltopp som ikke eksisterer her enda, trykk og hold inne på kartet på nøyaktig toppen sin posisjon. Om du står på toppen når du sender forespørsel, vil du bli sjekket inn når den blir godkjent.',
     icon: <MapPin className="w-8 h-8" />,
-    position: 'center',
   },
 ];
 
@@ -54,30 +147,24 @@ const MapTutorial = () => {
   if (!visible) return null;
 
   const current = steps[step];
-  const isTopLeft = current.position === 'top-left';
 
   return (
     <>
       {/* Backdrop */}
       <div className="fixed inset-0 z-[9998] bg-black/40 backdrop-blur-[2px]" onClick={dismiss} />
-      
-      {/* Arrow pointing to top-left controls */}
-      {isTopLeft && (
-        <div className="fixed top-14 left-20 z-[9999]">
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" className="text-card drop-shadow-lg">
-            <path d="M20 40 L5 0 L35 0 Z" fill="currentColor" />
+
+      {/* Arrow pointing to top-left controls for step 2 */}
+      {current.arrowDirection === 'up-left' && (
+        <div className="fixed top-14 left-12 z-[9999]">
+          <svg width="40" height="60" viewBox="0 0 40 60" fill="none" className="text-card drop-shadow-lg">
+            <path d="M20 0 L20 30" stroke="currentColor" strokeWidth="2" />
+            <path d="M12 22 L20 30 L28 22" stroke="currentColor" strokeWidth="2" fill="none" />
           </svg>
         </div>
       )}
 
-      {/* Tutorial card */}
-      <div
-        className={`fixed z-[9999] ${
-          isTopLeft
-            ? 'top-[54px] left-4 right-4 max-w-sm'
-            : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-sm w-[calc(100%-2rem)]'
-        }`}
-      >
+      {/* Tutorial card - always centered */}
+      <div className="fixed z-[9999] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-sm w-[calc(100%-2rem)]">
         <div className="bg-card border border-border rounded-2xl shadow-2xl p-6 space-y-4">
           {/* Close button */}
           <button
@@ -97,6 +184,9 @@ const MapTutorial = () => {
             <h3 className="font-display font-bold text-lg text-foreground">{current.title}</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">{current.text}</p>
           </div>
+
+          {/* Custom content (animation etc) */}
+          {current.customContent}
 
           {/* Progress dots + buttons */}
           <div className="flex items-center justify-between pt-2">

@@ -412,20 +412,20 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     peaks.forEach(peak => {
       const isTaken = checkedPeakIds.has(peak.id);
       const isUnpublished = peak.isPublished === false;
-      const isGrey = onlyReachedThisYear && !thisYearCheckedIds.has(peak.id);
+      const isYearFiltered = onlyReachedThisYear && !thisYearCheckedIds.has(peak.id);
 
       const el = document.createElement('div');
       el.style.cssText = `
         width: 36px; height: 36px; cursor: pointer;
         display: flex; align-items: center; justify-content: center;
-        background: ${isGrey ? 'hsl(0, 0%, 75%)' : isTaken ? 'hsl(152, 60%, 42%)' : isUnpublished ? 'hsl(38, 85%, 50%)' : 'hsl(0, 0%, 100%)'};
-        border: 2px solid ${isGrey ? 'hsl(0, 0%, 60%)' : isTaken ? 'hsl(152, 60%, 35%)' : isUnpublished ? 'hsl(38, 85%, 40%)' : 'hsl(220, 13%, 80%)'};
+        background: ${isYearFiltered ? 'hsl(0, 0%, 100%)' : isTaken ? 'hsl(152, 60%, 42%)' : isUnpublished ? 'hsl(38, 85%, 50%)' : 'hsl(0, 0%, 100%)'};
+        border: 2px solid ${isYearFiltered ? 'hsl(220, 13%, 80%)' : isTaken ? 'hsl(152, 60%, 35%)' : isUnpublished ? 'hsl(38, 85%, 40%)' : 'hsl(220, 13%, 80%)'};
         border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         ${isUnpublished ? 'opacity: 0.7;' : ''}
-        ${isGrey ? 'opacity: 0.5;' : ''}
+        ${isYearFiltered ? 'opacity: 0.55;' : ''}
       `;
       el.innerHTML = `
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${isGrey ? 'hsl(0, 0%, 40%)' : isTaken ? 'white' : isUnpublished ? 'white' : 'hsl(220, 10%, 46%)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 2 15H2L8 3z"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${isYearFiltered ? 'hsl(220, 10%, 46%)' : isTaken ? 'white' : isUnpublished ? 'white' : 'hsl(220, 10%, 46%)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 2 15H2L8 3z"/></svg>
       `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;
@@ -868,7 +868,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
 
           const el = document.createElement('div');
           el.className = 'area-stats-label';
-          el.style.cssText = 'pointer-events: none; text-align: center; white-space: nowrap; z-index: 5; transition: transform 0.2s;';
+          el.style.cssText = 'pointer-events: none; text-align: center; white-space: nowrap; z-index: 5;';
           el.innerHTML = `
             <div style="
               background: hsl(var(--background) / 0.92);
@@ -877,6 +877,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
               border-radius: 14px;
               padding: 10px 16px;
               box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+              transform-origin: center center;
             ">
               <div style="font-size: 16px; font-weight: 800; color: hsl(var(--foreground)); letter-spacing: -0.02em;">${entry.kommuneNavn}</div>
               <div style="font-size: 14px; color: hsl(var(--muted-foreground)); margin-top: 3px; font-weight: 500;">
@@ -897,7 +898,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         }
       }
 
-      // Add zoom-based scaling for area stats labels
+      // Add zoom-based scaling for area stats labels — scale the INNER div, not the marker element
       const updateScale = () => {
         if (!map.current) return;
         const zoom = map.current.getZoom();
@@ -905,9 +906,11 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         const scale = Math.max(0.4, Math.min(1, (zoom - 7) / 5));
         areaMarkersRef.current.forEach(mk => {
           const el = mk.getElement();
-          el.style.transform = `scale(${scale})`;
-          // Hide entirely at very low zoom
-          el.style.display = zoom < 7 ? 'none' : '';
+          const inner = el.querySelector('div > div') as HTMLElement;
+          if (inner) {
+            inner.style.transform = `scale(${scale})`;
+            inner.style.display = zoom < 7 ? 'none' : '';
+          }
         });
       };
       map.current.on('zoom', updateScale);
