@@ -91,26 +91,24 @@ const CheckinAnimation = () => {
   );
 };
 
-// ── Step 2: Static map preview rotating through map styles ──
+// ── Step 2: Static map preview rotating between satellite and terrain ──
 const MapStylePreview = () => {
   const [styleIdx, setStyleIdx] = useState(0);
   const mapStyles = [
-    { name: 'Standard', style: 'streets-v12' },
-    { name: 'Terreng', style: 'outdoors-v12' },
-    { name: 'Topografisk', style: 'light-v11' },
     { name: 'Satellitt', style: 'satellite-streets-v12' },
+    { name: 'Terreng', style: 'outdoors-v12' },
   ];
 
   useEffect(() => {
     const interval = setInterval(() => {
       setStyleIdx(i => (i + 1) % mapStyles.length);
-    }, 2000);
+    }, 2500);
     return () => clearInterval(interval);
   }, []);
 
   const current = mapStyles[styleIdx];
   const zoom = 13;
-  const pitch = 60;
+  const pitch = 50;
   const bearing = 45;
   const width = 400;
   const height = 220;
@@ -123,7 +121,7 @@ const MapStylePreview = () => {
         <img
           src={markerUrl}
           alt={`Hovlandsnuten - ${current.name}`}
-          className="w-full h-full object-cover transition-opacity duration-500"
+          className="w-full h-full object-cover"
           key={`map-style-${styleIdx}`}
         />
         {/* Style label */}
