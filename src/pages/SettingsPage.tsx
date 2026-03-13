@@ -38,6 +38,10 @@ const COLOR_PRESETS = [
   { labelKey: 'color.orange', light: { bg: 'rgb(255,218,185)', text: 'rgb(140,55,10)', badge: 'rgb(255,232,208)' }, dark: { bg: 'rgb(190,110,55)', text: '#ffffff', badge: '#5a2a0d' } },
   { labelKey: 'color.sun', light: { bg: 'rgb(255,240,180)', text: 'rgb(120,85,5)', badge: 'rgb(255,245,200)' }, dark: { bg: 'rgb(185,155,55)', text: '#ffffff', badge: '#4a3a10' } },
   { labelKey: 'color.mint', light: { bg: 'rgb(210,240,230)', text: 'rgb(35,95,75)', badge: 'rgb(225,248,240)' }, dark: { bg: 'rgb(80,145,120)', text: '#ffffff', badge: '#1a3a2e' } },
+  { labelKey: 'color.indigo', light: { bg: 'rgb(200,205,245)', text: 'rgb(50,40,140)', badge: 'rgb(218,222,252)' }, dark: { bg: 'rgb(85,80,165)', text: '#ffffff', badge: '#251e55' } },
+  { labelKey: 'color.coral', light: { bg: 'rgb(255,205,195)', text: 'rgb(160,50,30)', badge: 'rgb(255,222,215)' }, dark: { bg: 'rgb(195,95,70)', text: '#ffffff', badge: '#5a1a10' } },
+  { labelKey: 'color.teal', light: { bg: 'rgb(190,235,235)', text: 'rgb(15,95,100)', badge: 'rgb(210,245,245)' }, dark: { bg: 'rgb(35,140,145)', text: '#ffffff', badge: '#0a3538' } },
+  { labelKey: 'color.lavender', light: { bg: 'rgb(220,215,250)', text: 'rgb(75,55,145)', badge: 'rgb(232,228,255)' }, dark: { bg: 'rgb(110,95,175)', text: '#ffffff', badge: '#2a1f55' } },
 ];
 
 type SettingsView = 'main' | 'appearance' | 'preferences' | 'training' | 'data' | 'account' | 'sync' | 'privacy' | 'profile' | 'help';

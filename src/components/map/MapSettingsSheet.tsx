@@ -17,12 +17,14 @@ interface MapSettingsSheetProps {
   onShowHeatmapChange: (v: boolean) => void;
   heatmapPeriod: HeatmapPeriod;
   onHeatmapPeriodChange: (p: HeatmapPeriod) => void;
+  onlyReachedThisYear: boolean;
+  onOnlyReachedThisYearChange: (v: boolean) => void;
 }
 
 const peakFilters: { id: PeakFilter; label: string }[] = [
   { id: 'all', label: 'Alle' },
-  { id: 'taken', label: 'Tatt' },
-  { id: 'not_taken', label: 'Ikke tatt' },
+  { id: 'taken', label: 'Nådd' },
+  { id: 'not_taken', label: 'Ikke nådd' },
 ];
 
 const heatmapPeriods: { id: HeatmapPeriod; label: string }[] = [
@@ -36,6 +38,7 @@ const MapSettingsSheet = ({
   showAreaStats, onShowAreaStatsChange,
   showHeatmap, onShowHeatmapChange,
   heatmapPeriod, onHeatmapPeriodChange,
+  onlyReachedThisYear, onOnlyReachedThisYearChange,
 }: MapSettingsSheetProps) => {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -62,6 +65,15 @@ const MapSettingsSheet = ({
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Only reached this year toggle */}
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-sm font-semibold">Vis kun topper nådd i år</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">Andre topper vises som grå markører</p>
+            </div>
+            <Switch checked={onlyReachedThisYear} onCheckedChange={onOnlyReachedThisYearChange} />
           </div>
 
           {/* Area stats toggle */}

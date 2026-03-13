@@ -240,7 +240,7 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
                       {isTaken && (
                         <Badge variant="secondary" className="text-[10px] bg-success/15 text-success border-0 gap-0.5 shrink-0">
                           <Check className="w-3 h-3" />
-                          Tatt
+                          Nådd
                         </Badge>
                       )}
                       {isUnpublished && (
