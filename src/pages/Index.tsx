@@ -230,11 +230,15 @@ const IndexContent = () => {
     const loadPinned = async () => {
       const pinnedIds = settings.pinnedChallengeIds;
       const raw = await getChallenges();
-      const pinned = raw.filter(c => pinnedIds.includes(c.id));
+      const now = new Date().toISOString().split('T')[0];
+      const pinned = raw.filter(c => pinnedIds.includes(c.id) && c.period_end >= now);
       const enriched: ChallengeWithParticipants[] = [];
       for (const c of pinned) {
         const parts = await getChallengeParticipants(c.id);
         const acceptedParts = parts.filter(p => p.status === 'accepted');
+        // Skip if current user is not an accepted participant (left/declined)
+        const userPart = parts.find(p => p.user_id === user!.id);
+        if (!userPart || userPart.status !== 'accepted') continue;
         const userIds = acceptedParts.map(p => p.user_id);
         const { data: profiles } = await supabase.from('profiles').select('id, username, avatar_url').in('id', userIds);
         const profileMap = new Map((profiles || []).map(p => [p.id, p]));
