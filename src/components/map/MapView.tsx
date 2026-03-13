@@ -867,7 +867,8 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           const avgLng = entry.peaks.reduce((s, p) => s + p.longitude, 0) / entry.peaks.length;
 
           const el = document.createElement('div');
-          el.style.cssText = 'pointer-events: none; text-align: center; white-space: nowrap; z-index: 5;';
+          el.className = 'area-stats-label';
+          el.style.cssText = 'pointer-events: none; text-align: center; white-space: nowrap; z-index: 5; transition: transform 0.2s;';
           el.innerHTML = `
             <div style="
               background: hsl(var(--background) / 0.92);
@@ -895,6 +896,22 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           console.error('Failed to load municipality boundary for', kommuneNr, e);
         }
       }
+
+      // Add zoom-based scaling for area stats labels
+      const updateScale = () => {
+        if (!map.current) return;
+        const zoom = map.current.getZoom();
+        // Scale from 1.0 at zoom 12+ down to 0.5 at zoom 8
+        const scale = Math.max(0.4, Math.min(1, (zoom - 7) / 5));
+        areaMarkersRef.current.forEach(mk => {
+          const el = mk.getElement();
+          el.style.transform = `scale(${scale})`;
+          // Hide entirely at very low zoom
+          el.style.display = zoom < 7 ? 'none' : '';
+        });
+      };
+      map.current.on('zoom', updateScale);
+      updateScale();
     };
 
     fetchBoundaries();
