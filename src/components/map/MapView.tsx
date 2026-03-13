@@ -412,20 +412,20 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     peaks.forEach(peak => {
       const isTaken = checkedPeakIds.has(peak.id);
       const isUnpublished = peak.isPublished === false;
-      const isGrey = onlyReachedThisYear && !thisYearCheckedIds.has(peak.id);
+      const isYearFiltered = onlyReachedThisYear && !thisYearCheckedIds.has(peak.id);
 
       const el = document.createElement('div');
       el.style.cssText = `
         width: 36px; height: 36px; cursor: pointer;
         display: flex; align-items: center; justify-content: center;
-        background: ${isGrey ? 'hsl(0, 0%, 75%)' : isTaken ? 'hsl(152, 60%, 42%)' : isUnpublished ? 'hsl(38, 85%, 50%)' : 'hsl(0, 0%, 100%)'};
-        border: 2px solid ${isGrey ? 'hsl(0, 0%, 60%)' : isTaken ? 'hsl(152, 60%, 35%)' : isUnpublished ? 'hsl(38, 85%, 40%)' : 'hsl(220, 13%, 80%)'};
+        background: ${isYearFiltered ? 'hsl(0, 0%, 100%)' : isTaken ? 'hsl(152, 60%, 42%)' : isUnpublished ? 'hsl(38, 85%, 50%)' : 'hsl(0, 0%, 100%)'};
+        border: 2px solid ${isYearFiltered ? 'hsl(220, 13%, 80%)' : isTaken ? 'hsl(152, 60%, 35%)' : isUnpublished ? 'hsl(38, 85%, 40%)' : 'hsl(220, 13%, 80%)'};
         border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         ${isUnpublished ? 'opacity: 0.7;' : ''}
-        ${isGrey ? 'opacity: 0.5;' : ''}
+        ${isYearFiltered ? 'opacity: 0.55;' : ''}
       `;
       el.innerHTML = `
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${isGrey ? 'hsl(0, 0%, 40%)' : isTaken ? 'white' : isUnpublished ? 'white' : 'hsl(220, 10%, 46%)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 2 15H2L8 3z"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${isYearFiltered ? 'hsl(220, 10%, 46%)' : isTaken ? 'white' : isUnpublished ? 'white' : 'hsl(220, 10%, 46%)'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 2 15H2L8 3z"/></svg>
       `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;
