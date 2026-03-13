@@ -96,8 +96,8 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
 
   const filters: { id: Filter; label: string }[] = [
     { id: 'all', label: 'Alle' },
-    { id: 'taken', label: 'Tatt' },
-    { id: 'not_taken', label: 'Ikke tatt' },
+    { id: 'taken', label: 'Nådd' },
+    { id: 'not_taken', label: 'Ikke nådd' },
   ];
 
   const hasActiveFilters = minElevation > 0 || selectedMunicipality !== null;
