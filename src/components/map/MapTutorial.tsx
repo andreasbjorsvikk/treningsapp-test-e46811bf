@@ -150,8 +150,11 @@ const MapTutorial = () => {
 
   return (
     <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 z-[9998] bg-black/40 backdrop-blur-[2px]" onClick={dismiss} />
+      {/* Backdrop — no blur on step with arrow so buttons stay crisp */}
+      <div
+        className={`fixed inset-0 z-[9998] bg-black/40 ${current.arrowDirection === 'up-left' ? '' : 'backdrop-blur-[2px]'}`}
+        onClick={dismiss}
+      />
 
       {/* Large arrow pointing diagonally up-left to map controls for step 2 */}
       {current.arrowDirection === 'up-left' && (
