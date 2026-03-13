@@ -46,7 +46,9 @@ export async function nativeSignInWithOAuth(
 export async function setupDeepLinkListener() {
   if (!isNativePlatform()) return;
 
+  // @ts-ignore - These packages are only available in native Capacitor builds
   const { App } = await import('@capacitor/app');
+  // @ts-ignore
   const { Browser } = await import('@capacitor/browser');
 
   App.addListener('appUrlOpen', async ({ url }) => {
