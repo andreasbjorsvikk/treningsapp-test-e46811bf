@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, ChevronRight, Trophy, Users, BarChart3, Home, Swords } from 'lucide-react';
+import { X, ChevronRight, Trophy, Users, Home, Swords } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import ActivityIcon from '@/components/ActivityIcon';
 
 const TUTORIAL_KEY = 'treningslogg_community_tutorial_done';
 
@@ -13,25 +14,32 @@ interface TutorialStep {
 
 const ChallengeExamples = () => (
   <div className="space-y-2 py-1">
-    <div className="flex items-center justify-center gap-2.5 px-3 py-2 rounded-xl bg-muted/60 border border-border/40">
-      <span className="text-lg">🏃</span>
+    <p className="text-xs font-semibold text-muted-foreground text-center">Eksempler:</p>
+    <div className="flex items-center justify-center gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
+      <div className="w-8 h-8 rounded-full bg-[rgb(210,229,255)] flex items-center justify-center shrink-0">
+        <ActivityIcon type="løping" className="w-4.5 h-4.5" />
+      </div>
       <div className="min-w-0 text-center">
-        <p className="text-xs font-semibold text-foreground">Flest km løpt i mars</p>
-        <p className="text-[10px] text-muted-foreground">Løping · 1. – 31. mars</p>
+        <p className="text-sm font-semibold text-foreground">Flest km løpt i mars</p>
+        <p className="text-[11px] text-muted-foreground">Løping · 1. – 31. mars</p>
       </div>
     </div>
-    <div className="flex items-center justify-center gap-2.5 px-3 py-2 rounded-xl bg-muted/60 border border-border/40">
-      <span className="text-lg">💪</span>
+    <div className="flex items-center justify-center gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
+      <div className="w-8 h-8 rounded-full bg-[rgb(212,212,216)] flex items-center justify-center shrink-0">
+        <ActivityIcon type="styrke" className="w-4.5 h-4.5" />
+      </div>
       <div className="min-w-0 text-center">
-        <p className="text-xs font-semibold text-foreground">Flest styrkeøkter i 2026</p>
-        <p className="text-[10px] text-muted-foreground">Styrke · Hele året</p>
+        <p className="text-sm font-semibold text-foreground">Flest styrkeøkter i 2026</p>
+        <p className="text-[11px] text-muted-foreground">Styrke · Hele året</p>
       </div>
     </div>
-    <div className="flex items-center justify-center gap-2.5 px-3 py-2 rounded-xl bg-muted/60 border border-border/40">
-      <span className="text-lg">⛰️</span>
+    <div className="flex items-center justify-center gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
+      <div className="w-8 h-8 rounded-full bg-[rgb(212,242,184)] flex items-center justify-center shrink-0">
+        <ActivityIcon type="fjelltur" className="w-4.5 h-4.5" />
+      </div>
       <div className="min-w-0 text-center">
-        <p className="text-xs font-semibold text-foreground">Mest høydemeter i sommer</p>
-        <p className="text-[10px] text-muted-foreground">Fjelltur · Jun – Aug</p>
+        <p className="text-sm font-semibold text-foreground">Mest høydemeter i sommer</p>
+        <p className="text-[11px] text-muted-foreground">Fjelltur · Jun – Aug</p>
       </div>
     </div>
   </div>
@@ -48,7 +56,7 @@ const HomePinDemo = () => (
 
 const steps: TutorialStep[] = [
   {
-    title: 'Velkommen til Fellesskap! 🤝',
+    title: 'Fellesskap',
     text: 'Her kan du utfordre venner på ulike måter – velg aktivitetstype, metrikk og tidsperiode fritt. Stillingen oppdateres fortløpende!',
     icon: <Swords className="w-8 h-8" />,
     customContent: <ChallengeExamples />,
