@@ -3,6 +3,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Peak } from '@/data/peaks';
 import { PeakCheckin } from '@/services/peakCheckinService';
+import { PeakSuggestion } from '@/services/peakSuggestionService';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAuth } from '@/hooks/useAuth';
