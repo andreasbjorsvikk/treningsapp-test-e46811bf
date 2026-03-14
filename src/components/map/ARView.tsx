@@ -332,11 +332,56 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
         <span className="text-white/60 text-xs">{heading != null ? `${Math.round(heading)}°` : '—'}</span>
       </div>
 
-      {/* HUD: Peak count */}
-      <div className="absolute top-4 right-4 z-30 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white text-xs font-medium">
-        <Mountain className="w-3.5 h-3.5 inline mr-1" />
-        {visiblePeaks.length} topper
+      {/* HUD: Peak count + mini-map toggle */}
+      <div className="absolute top-4 right-4 z-30 flex gap-2">
+        <button
+          onClick={() => setShowMiniMap(v => !v)}
+          className={`px-3 py-1.5 rounded-full backdrop-blur-md border border-white/15 text-white text-xs font-medium transition-colors ${showMiniMap ? 'bg-primary/60' : 'bg-black/50'}`}
+        >
+          <MapIcon className="w-3.5 h-3.5 inline mr-1" />
+          Kart
+        </button>
+        <div className="px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white text-xs font-medium">
+          <Mountain className="w-3.5 h-3.5 inline mr-1" />
+          {visiblePeaks.length} topper
+        </div>
       </div>
+
+      {/* Mini-map */}
+      {showMiniMap && userPos && (
+        <div className="absolute bottom-24 right-3 z-30 w-36 h-36 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl">
+          {(() => {
+            const zoom = maxDist > 20 ? 9 : maxDist > 10 ? 10 : 11;
+            const nearPeaks = peaks
+              .map(p => ({ ...p, dist: calcDistance(userPos.lat, userPos.lng, p.latitude, p.longitude) }))
+              .filter(p => p.dist <= maxDist)
+              .sort((a, b) => a.dist - b.dist)
+              .slice(0, 15);
+            
+            const markers = nearPeaks.map(p => {
+              const color = checkedPeakIds.has(p.id) ? '2dbe6c' : 'ffffff';
+              return `pin-s+${color}(${p.longitude},${p.latitude})`;
+            }).join(',');
+            
+            const userMarker = `pin-s-circle+4a90d9(${userPos.lng},${userPos.lat})`;
+            const allMarkers = markers ? `${userMarker},${markers}` : userMarker;
+            
+            const mapUrl = `https://api.mapbox.com/styles/v1/mapbox/outdoors-v12/static/${allMarkers}/${userPos.lng},${userPos.lat},${zoom},0/${288}x${288}@2x?access_token=${MAPBOX_TOKEN}`;
+            
+            return (
+              <img src={mapUrl} alt="Minikart" className="w-full h-full object-cover" />
+            );
+          })()}
+          {/* Heading indicator */}
+          <div
+            className="absolute top-1/2 left-1/2 w-0 h-0 -translate-x-1/2 -translate-y-1/2 z-10"
+            style={{ transform: `translate(-50%, -50%) rotate(${heading || 0}deg)` }}
+          >
+            <div className="w-0.5 h-12 bg-primary/60 mx-auto origin-bottom" style={{ marginTop: '-48px' }} />
+            <div className="w-2 h-2 rounded-full bg-primary border border-white mx-auto -mt-0.5" />
+          </div>
+        </div>
+      )}
 
       {/* HUD: Distance filter */}
       <div className="absolute bottom-6 left-4 right-4 z-30">
