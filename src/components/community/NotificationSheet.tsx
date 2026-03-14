@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { getNotifications, markAllNotificationsRead, respondToChallenge, NotificationRow } from '@/services/communityService';
 import { supabase } from '@/integrations/supabase/client';
-import { Mail, Settings, Trophy, UserPlus, Loader2, Check, X, Eye } from 'lucide-react';
+import { Mail, Settings, Trophy, UserPlus, Loader2, Check, X, Eye, Baby } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toast } from 'sonner';
 
@@ -17,6 +17,7 @@ const iconMap: Record<string, typeof Mail> = {
   edit_approval: Settings,
   challenge_ended: Trophy,
   friend_request: UserPlus,
+  child_share: Baby,
 };
 
 interface EnrichedNotification extends NotificationRow {
