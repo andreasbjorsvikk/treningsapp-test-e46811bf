@@ -312,6 +312,12 @@ const MapPage = () => {
             />
           </div>
         )}
+
+        {subTab === 'admin' && adminMode && (
+          <div className="h-full overflow-y-auto">
+            <AdminDashboard />
+          </div>
+        )}
       </div>
 
       {/* Map settings sheet */}
