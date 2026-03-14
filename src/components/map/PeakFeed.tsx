@@ -105,13 +105,14 @@ const PeakFeed = () => {
       const feedItems: FeedItem[] = (checkins as any[]).map((c: any) => {
         const peak = peakMap.get(c.peak_id);
         const profile = profileMap.get(c.user_id);
+        const child = childMap.get(c.user_id);
         return {
           id: c.id,
           user_id: c.user_id,
           peak_id: c.peak_id,
           checked_in_at: c.checked_in_at,
-          username: profile?.username || null,
-          avatar_url: profile?.avatar_url || null,
+          username: profile?.username || child?.name || null,
+          avatar_url: profile?.avatar_url || child?.avatar_url || null,
           peak_name: peak?.name_no || 'Ukjent topp',
           peak_elevation: peak?.elevation_moh || 0,
           peak_area: peak?.area || '',
