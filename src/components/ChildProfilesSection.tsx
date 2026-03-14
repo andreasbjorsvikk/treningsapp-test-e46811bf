@@ -579,6 +579,13 @@ const ChildProfilesSection = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Child profile detail */}
+      <ChildProfileDetailDrawer
+        child={selectedChildDetail}
+        open={!!selectedChildDetail}
+        onClose={() => setSelectedChildDetail(null)}
+      />
     </>
   );
 };
