@@ -335,7 +335,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                 {/* Allow re-checkin */}
                 <Button onClick={handleCheckin} disabled={loading || !canCheckin} variant="outline" size="sm" className="w-full mt-2">
                   {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <MapPin className="w-4 h-4 mr-2" />}
-                  {canCheckin ? 'Sjekk inn igjen' : 'Vent minst 3 timer'}
+                  {canCheckin ? 'Sjekk inn' : 'Du er sjekket inn'}
                 </Button>
 
                 {/* Image upload/replace within 24h */}

@@ -115,7 +115,7 @@ const ChildProfileDetailDrawer = ({ child, open, onClose }: ChildProfileDetailDr
             </div>
           ) : (
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground mb-3">
+              <p className="text-xs text-muted-foreground mb-3 text-center">
                 {peaks.length} {peaks.length === 1 ? 'topp' : 'topper'} besøkt
               </p>
               {peaks.map(p => (

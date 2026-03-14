@@ -513,9 +513,9 @@ const PeakFeed = () => {
                                   }}
                                   className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/8 border border-emerald-500/15 hover:bg-emerald-500/15 transition-colors"
                                 >
-                                  <Avatar className="w-5 h-5">
+                                  <Avatar className="w-7 h-7">
                                     {ci.avatar_url ? <AvatarImage src={ci.avatar_url} /> : null}
-                                    <AvatarFallback className="text-[9px] bg-emerald-500/10 text-emerald-600">
+                                    <AvatarFallback className="text-[10px] bg-emerald-500/10 text-emerald-600">
                                       {ci.child_emoji || '👶'}
                                     </AvatarFallback>
                                   </Avatar>
