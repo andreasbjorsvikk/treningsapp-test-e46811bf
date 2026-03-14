@@ -256,6 +256,25 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
           <Button onClick={handleApproveRoute} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm">
             Godkjenn rute
           </Button>
+          <div className="flex items-center justify-between px-1 py-1">
+            <span className="text-xs text-muted-foreground font-medium">Fritt rute-modus</span>
+            <Switch checked={straightLineMode} onCheckedChange={(v) => {
+              setStraightLineMode(v);
+              if (routeWaypoints.length > 0 || routeGeojson) {
+                // Re-generate with new mode
+                setTimeout(() => {
+                  if (v) {
+                    generateStraightLineRoute(routeWaypoints);
+                  } else {
+                    generateRouteWithWaypoints(routeWaypoints);
+                  }
+                }, 50);
+              }
+            }} />
+          </div>
+          <p className="text-[10px] text-muted-foreground -mt-1 px-1">
+            {straightLineMode ? 'Waypoints kobles med rette linjer – perfekt for stier utenfor veier.' : 'Ruten følger kjente stier og veier fra kartdata.'}
+          </p>
           <div className="grid grid-cols-2 gap-2">
             <Button variant={addingWaypointMode ? "default" : "outline"} onClick={() => setAddingWaypointMode(!addingWaypointMode)} className="text-xs">
               {addingWaypointMode ? 'Avslutt waypoint-modus' : '+ Legg til waypoint'}

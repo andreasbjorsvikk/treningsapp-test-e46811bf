@@ -208,6 +208,9 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
               <PeakOrbitMap latitude={peak.latitude} longitude={peak.longitude} heightMoh={peak.heightMoh} className="w-full h-[180px]" />
             </div>
 
+            {/* Weather */}
+            <PeakWeather latitude={peak.latitude} longitude={peak.longitude} />
+
             {/* Check-in button - right below map */}
             {isCheckedIn ? (
               <div className="p-3 rounded-xl bg-success/10 border border-success/20 space-y-2">
