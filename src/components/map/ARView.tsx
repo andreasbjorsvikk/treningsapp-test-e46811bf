@@ -652,8 +652,23 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
         </div>
       )}
 
-      {/* No compass warning */}
-      {heading == null && userPos && (
+      {/* Compass state */}
+      {!compassEnabled && userPos && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/80 backdrop-blur-sm text-white text-xs font-medium shadow-lg">
+          <span>Kompass ikke aktivert</span>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-7 px-2 text-[11px]"
+            onClick={requestCompassPermission}
+          >
+            Aktiver kompass
+          </Button>
+        </div>
+      )}
+
+      {/* Waiting for compass data */}
+      {compassEnabled && heading == null && userPos && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 px-4 py-2 rounded-xl bg-amber-500/80 backdrop-blur-sm text-white text-xs font-medium shadow-lg">
           Venter på kompass...
         </div>
