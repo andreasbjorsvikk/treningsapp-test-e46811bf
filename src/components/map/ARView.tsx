@@ -461,11 +461,18 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
 
   // ── Main AR view ──
   return (
-    <div ref={containerRef} className="relative w-full h-full overflow-hidden bg-black">
+    <div
+      ref={containerRef}
+      className="relative w-full h-full overflow-hidden bg-black"
+      onTouchStart={mode === 'camera' ? handleTouchStart : undefined}
+      onTouchMove={mode === 'camera' ? handleTouchMove : undefined}
+      onTouchEnd={mode === 'camera' ? handleTouchEnd : undefined}
+    >
       {/* Camera feed (visible in camera mode) */}
       <video
         ref={videoRef}
         className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${mode === 'camera' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        style={{ transform: `scale(${cameraZoom})`, transformOrigin: 'center center' }}
         playsInline
         muted
         autoPlay
