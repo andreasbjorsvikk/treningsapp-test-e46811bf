@@ -11,10 +11,29 @@ import { toast } from 'sonner';
 import AvatarCropper from '@/components/AvatarCropper';
 import { supabase } from '@/integrations/supabase/client';
 
+// All baby/child emoji variants with skin tones
 const CHILD_EMOJIS = [
+  // Baby
   { value: '👶', label: 'Baby' },
+  { value: '👶🏻', label: 'Baby' },
+  { value: '👶🏼', label: 'Baby' },
+  { value: '👶🏽', label: 'Baby' },
+  { value: '👶🏾', label: 'Baby' },
+  { value: '👶🏿', label: 'Baby' },
+  // Boy
   { value: '👦', label: 'Gutt' },
+  { value: '👦🏻', label: 'Gutt' },
+  { value: '👦🏼', label: 'Gutt' },
+  { value: '👦🏽', label: 'Gutt' },
+  { value: '👦🏾', label: 'Gutt' },
+  { value: '👦🏿', label: 'Gutt' },
+  // Girl
   { value: '👧', label: 'Jente' },
+  { value: '👧🏻', label: 'Jente' },
+  { value: '👧🏼', label: 'Jente' },
+  { value: '👧🏽', label: 'Jente' },
+  { value: '👧🏾', label: 'Jente' },
+  { value: '👧🏿', label: 'Jente' },
 ];
 
 interface SharedUser {
@@ -73,7 +92,7 @@ const ChildProfilesSection = () => {
         await updateChildProfile(editingChild.id, { name: name.trim(), emoji });
         toast.success('Barn oppdatert');
       } else {
-        const child = await createChildProfile(user.id, name.trim(), emoji);
+        await createChildProfile(user.id, name.trim(), emoji);
         toast.success('Barn lagt til');
       }
       setDialogOpen(false);
@@ -146,7 +165,6 @@ const ChildProfilesSection = () => {
     setSharingChildId(childId);
     setSearchQuery('');
     setSearchResults([]);
-    // Load existing shared users
     const { data } = await supabase
       .from('child_shared_access')
       .select('child_id, shared_with_user_id, status')
@@ -198,18 +216,16 @@ const ChildProfilesSection = () => {
         .single();
       if (error) throw error;
 
-      // Find the child name for the notification
       const child = children.find(c => c.id === sharingChildId);
       const childName = child?.name || 'et barn';
 
-      // Send notification to target user
       await supabase.from('community_notifications').insert({
         user_id: targetUserId,
         from_user_id: user.id,
         type: 'child_share',
         title: 'Barn-deling',
         message: `Du er invitert til å ha ${childName} i din profil.`,
-        challenge_id: (insertedAccess as any).id, // repurpose challenge_id to store access id
+        challenge_id: (insertedAccess as any).id,
       });
 
       toast.success('Invitasjon sendt!');
@@ -329,19 +345,18 @@ const ChildProfilesSection = () => {
             </div>
             <div className="space-y-2">
               <Label>Emoji</Label>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-6 gap-1.5">
                 {CHILD_EMOJIS.map(e => (
                   <button
                     key={e.value}
                     onClick={() => setEmoji(e.value)}
-                    className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all ${
+                    className={`flex items-center justify-center p-1.5 rounded-lg border-2 transition-all ${
                       emoji === e.value
                         ? 'border-primary bg-primary/10'
                         : 'border-border hover:border-primary/50'
                     }`}
                   >
-                    <span className="text-2xl">{e.value}</span>
-                    <span className="text-[10px] text-muted-foreground">{e.label}</span>
+                    <span className="text-xl">{e.value}</span>
                   </button>
                 ))}
               </div>
