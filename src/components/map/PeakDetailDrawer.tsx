@@ -599,6 +599,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
           peakId={peak.id}
           peakName={peak.name}
           onCheckinSuccess={onCheckinSuccess}
+          parentCheckinId={lastNewCheckinId || lastCheckin?.id || null}
         />
       )}
     </>
