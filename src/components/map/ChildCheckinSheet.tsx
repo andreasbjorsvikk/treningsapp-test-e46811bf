@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { ChildProfile, getChildProfiles } from '@/services/childProfileService';
-import { checkinPeak } from '@/services/peakCheckinService';
+import { ChildProfile, getChildProfiles, getSharedChildProfiles } from '@/services/childProfileService';
+import { checkinPeak, PeakCheckin } from '@/services/peakCheckinService';
+import { supabase } from '@/integrations/supabase/client';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ interface ChildCheckinSheetProps {
 const ChildCheckinSheet = ({ open, onClose, peakId, peakName, onCheckinSuccess }: ChildCheckinSheetProps) => {
   const { user } = useAuth();
   const [children, setChildren] = useState<ChildProfile[]>([]);
+  const [alreadyCheckedIn, setAlreadyCheckedIn] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [childImages, setChildImages] = useState<Map<string, File | null>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -32,14 +34,36 @@ const ChildCheckinSheet = ({ open, onClose, peakId, peakName, onCheckinSuccess }
       setSelectedIds(new Set());
       setChildImages(new Map());
       setDone(false);
-      getChildProfiles(user.id).then(c => {
-        setChildren(c);
+      setLoading(true);
+
+      Promise.all([
+        getChildProfiles(user.id),
+        getSharedChildProfiles(user.id),
+      ]).then(async ([owned, shared]) => {
+        const allChildren = [...owned, ...shared];
+        setChildren(allChildren);
+
+        // Check which children are already checked in today on this peak
+        if (allChildren.length > 0) {
+          const childIds = allChildren.map(c => c.id);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const { data: existing } = await supabase
+            .from('peak_checkins')
+            .select('user_id')
+            .eq('peak_id', peakId)
+            .in('user_id', childIds)
+            .gte('checked_in_at', today.toISOString());
+          setAlreadyCheckedIn(new Set((existing || []).map((c: any) => c.user_id)));
+        }
+
         setLoading(false);
       }).catch(() => setLoading(false));
     }
   }, [open, user]);
 
   const toggleChild = (id: string) => {
+    if (alreadyCheckedIn.has(id)) return;
     setSelectedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -104,24 +128,33 @@ const ChildCheckinSheet = ({ open, onClose, peakId, peakName, onCheckinSuccess }
               <div className="space-y-2">
                 {children.map(child => {
                   const isSelected = selectedIds.has(child.id);
+                  const isAlready = alreadyCheckedIn.has(child.id);
                   return (
                     <div key={child.id} className="space-y-2">
                       <button
                         onClick={() => toggleChild(child.id)}
+                        disabled={isAlready}
                         className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-                          isSelected ? 'bg-primary/5 border-primary/30' : 'bg-card border-border/50 hover:border-border'
+                          isAlready
+                            ? 'bg-muted/30 border-border/30 opacity-60 cursor-not-allowed'
+                            : isSelected
+                              ? 'bg-primary/5 border-primary/30'
+                              : 'bg-card border-border/50 hover:border-border'
                         }`}
                       >
-                        <Checkbox checked={isSelected} className="pointer-events-none" />
+                        <Checkbox checked={isSelected || isAlready} disabled={isAlready} className="pointer-events-none" />
                         <Avatar className="w-9 h-9">
                           {child.avatar_url ? <AvatarImage src={child.avatar_url} /> : null}
                           <AvatarFallback className="text-sm font-bold">
-                            {child.name.charAt(0).toUpperCase()}
+                            {child.emoji || '👶'}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-sm font-medium flex-1 text-left">{child.name}</span>
+                        <span className="text-sm font-medium flex-1 text-left">
+                          {child.name}
+                          {isAlready && <span className="text-xs text-muted-foreground ml-2">Allerede sjekket inn</span>}
+                        </span>
                       </button>
-                      {isSelected && (
+                      {isSelected && !isAlready && (
                         <div className="ml-12 mr-2">
                           <CheckinImageUpload onImageReady={(file) => {
                             setChildImages(prev => new Map(prev).set(child.id, file));
