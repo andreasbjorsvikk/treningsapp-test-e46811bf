@@ -46,7 +46,7 @@ const CheckinAnimation = () => {
             }`}
           >
             <div className={`w-9 h-9 rounded-full flex items-center justify-center ${phase === 'checked' ? 'bg-white/20 border border-white/40' : ''}`}>
-              <img src={peakHighIcon} alt="" className="w-7 h-7 object-contain rounded-full" />
+              <img src={peakIconTiers.high} alt="" className="w-7 h-7 object-contain rounded-full" />
             </div>
           </div>
           {/* Ripple effect */}
