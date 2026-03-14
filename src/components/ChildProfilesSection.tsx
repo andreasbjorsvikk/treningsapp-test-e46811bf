@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { ChildProfile, getChildProfiles, createChildProfile, updateChildProfile, deleteChildProfile, uploadChildAvatar } from '@/services/childProfileService';
+import { ChildProfile, getChildProfiles, createChildProfile, updateChildProfile, deleteChildProfile } from '@/services/childProfileService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
