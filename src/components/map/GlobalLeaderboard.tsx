@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Trophy, Loader2, Mountain } from 'lucide-react';
+import UserProfileDrawer from '@/components/community/UserProfileDrawer';
 
 type Period = 'month' | 'year' | 'total';
 type Metric = 'unique' | 'total';
@@ -28,6 +29,7 @@ const GlobalLeaderboard = () => {
   const [metric, setMetric] = useState<Metric>('unique');
   const [entries, setEntries] = useState<LeaderEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedProfile, setSelectedProfile] = useState<{ id: string; username: string | null; avatar_url: string | null } | null>(null);
 
   useEffect(() => {
     loadLeaderboard();
@@ -50,7 +52,6 @@ const GlobalLeaderboard = () => {
       const { data: checkins } = await query;
       if (!checkins) { setEntries([]); setLoading(false); return; }
 
-      // Count unique peaks and total ascents per user
       const userPeaks = new Map<string, Set<string>>();
       const userTotalAscents = new Map<string, number>();
       (checkins as any[]).forEach((c: any) => {
@@ -102,6 +103,11 @@ const GlobalLeaderboard = () => {
     return 'text-muted-foreground';
   };
 
+  const handleProfileClick = (entry: LeaderEntry) => {
+    if (entry.isChild) return;
+    setSelectedProfile({ id: entry.user_id, username: entry.username, avatar_url: entry.avatar_url });
+  };
+
   return (
     <div className="flex flex-col gap-3 p-4">
       {/* Metric dropdown */}
@@ -111,7 +117,7 @@ const GlobalLeaderboard = () => {
         className="w-full px-3 py-2 rounded-lg border border-border bg-card text-sm font-medium text-foreground"
       >
         <option value="unique">Unike topper</option>
-        <option value="total">Totalt antall bestigninger</option>
+        <option value="total">Totalt antall turer</option>
       </select>
 
       {/* Period filter */}
@@ -145,7 +151,7 @@ const GlobalLeaderboard = () => {
           {sortedEntries.map((entry, index) => {
             const isMe = entry.user_id === user?.id;
             const displayValue = metric === 'unique' ? entry.unique_peaks : entry.total_ascents;
-            const displayLabel = metric === 'unique' ? 'topper' : 'bestigninger';
+            const displayLabel = metric === 'unique' ? 'topper' : 'turer';
             return (
               <div
                 key={entry.user_id}
@@ -160,17 +166,19 @@ const GlobalLeaderboard = () => {
                     <span className="text-sm">{index + 1}</span>
                   )}
                 </div>
-                <Avatar className="w-10 h-10">
-                  <AvatarImage src={entry.avatar_url || undefined} />
-                  <AvatarFallback>{entry.username?.[0]?.toUpperCase() || '?'}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <span className="font-semibold text-sm truncate block">
-                    {entry.username || 'Ukjent'}
-                    {isMe && <span className="text-muted-foreground font-normal"> (deg)</span>}
-                    {entry.isChild && <span className="text-muted-foreground font-normal text-xs ml-1">👶</span>}
-                  </span>
-                </div>
+                <button onClick={() => handleProfileClick(entry)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+                  <Avatar className="w-10 h-10">
+                    <AvatarImage src={entry.avatar_url || undefined} />
+                    <AvatarFallback>{entry.username?.[0]?.toUpperCase() || '?'}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-semibold text-sm truncate block">
+                      {entry.username || 'Ukjent'}
+                      {isMe && <span className="text-muted-foreground font-normal"> (deg)</span>}
+                      {entry.isChild && <span className="text-muted-foreground font-normal text-xs ml-1">👶</span>}
+                    </span>
+                  </div>
+                </button>
                 <div className="text-right shrink-0">
                   <span className="font-display font-bold text-lg">{displayValue}</span>
                   <span className="text-xs text-muted-foreground ml-1">{displayLabel}</span>
@@ -179,6 +187,15 @@ const GlobalLeaderboard = () => {
             );
           })}
         </div>
+      )}
+
+      {/* User profile drawer */}
+      {selectedProfile && (
+        <UserProfileDrawer
+          user={selectedProfile as any}
+          open={!!selectedProfile}
+          onClose={() => setSelectedProfile(null)}
+        />
       )}
     </div>
   );
