@@ -537,12 +537,12 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
             <span className="text-[9px] text-white/90 font-medium drop-shadow-lg">
               {distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}
             </span>
-            <div className={`relative overflow-hidden border-2 shadow-lg ${
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 shadow-lg ${
               isTaken
                 ? 'bg-[hsl(152,60%,42%)] border-[hsl(152,60%,35%)]'
                 : 'bg-white/90 border-white/60'
-            }`} style={{ width: 36, height: 26, borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%' }}>
-              <img src={icon} alt="" className="absolute w-8 h-8 object-contain" style={{ top: -3, left: '50%', transform: 'translateX(-50%)' }} />
+            }`}>
+              <img src={icon} alt="" className="w-5 h-5 object-contain" />
             </div>
             <div className={`w-px h-4 ${isTaken ? 'bg-[hsl(152,60%,42%)]/50' : 'bg-white/30'}`} />
           </button>
