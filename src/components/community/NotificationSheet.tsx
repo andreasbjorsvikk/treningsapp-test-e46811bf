@@ -11,6 +11,7 @@ interface NotificationSheetProps {
   onClose: () => void;
   onNavigateToFriends?: () => void;
   onViewChallenge?: (challengeId: string) => void;
+  onNavigateToProfile?: () => void;
 }
 const iconMap: Record<string, typeof Mail> = {
   invite: Mail,
