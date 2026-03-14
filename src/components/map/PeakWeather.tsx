@@ -54,7 +54,7 @@ const PeakWeather = ({ latitude, longitude }: PeakWeatherProps) => {
   if (loading || !weather) return null;
 
   return (
-    <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/40 border border-border/30">
+    <div className="flex items-center justify-center gap-3 px-3 py-2 rounded-lg bg-muted/40 border border-border/30">
       <img
         src={`${WEATHER_ICON_BASE}${weather.symbolCode}.svg`}
         alt=""
