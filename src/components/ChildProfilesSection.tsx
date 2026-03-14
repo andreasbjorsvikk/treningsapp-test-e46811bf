@@ -463,7 +463,8 @@ const ChildProfilesSection = () => {
             ))}
           </div>
         </div>
-      )
+      )}
+
 
       {/* Pending shared invitations */}
       {pendingInvitations.length > 0 && (
