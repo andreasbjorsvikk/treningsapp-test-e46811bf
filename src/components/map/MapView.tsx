@@ -430,9 +430,13 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       const el = document.createElement('div');
       const peakIcon = getPeakIconByElevation(peak.heightMoh);
       const iconColor = isYearFiltered ? 'hsl(220, 10%, 46%)' : isTaken ? 'white' : isUnpublished ? 'white' : 'hsl(220, 10%, 46%)';
+      const isLow = peak.heightMoh < 300;
+      const imgW = isLow ? 26 : 26;
+      const imgH = isLow ? 30 : 30;
       el.style.cssText = `
         width: 36px; height: 36px; cursor: pointer;
         display: flex; align-items: center; justify-content: center;
+        padding-bottom: 3px;
         background: ${isYearFiltered ? 'hsl(0, 0%, 100%)' : isTaken ? 'hsl(152, 60%, 42%)' : isUnpublished ? 'hsl(38, 85%, 50%)' : 'hsl(0, 0%, 100%)'};
         border: 2px solid ${isYearFiltered ? 'hsl(220, 13%, 80%)' : isTaken ? 'hsl(152, 60%, 35%)' : isUnpublished ? 'hsl(38, 85%, 40%)' : 'hsl(220, 13%, 80%)'};
         border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
@@ -440,7 +444,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         ${isYearFiltered ? 'opacity: 0.55;' : ''}
       `;
       el.innerHTML = `
-        <img src="${peakIcon}" alt="" width="26" height="28" style="filter: brightness(0) ${iconColor === 'white' ? 'invert(1)' : 'invert(0.3)'}; object-fit: contain;" draggable="false" />
+        <img src="${peakIcon}" alt="" width="${imgW}" height="${imgH}" style="filter: brightness(0) ${iconColor === 'white' ? 'invert(1)' : 'invert(0.3)'}; object-fit: contain; margin-top: -2px;" draggable="false" />
       `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;

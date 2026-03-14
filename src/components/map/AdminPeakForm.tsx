@@ -46,6 +46,7 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
   const [routeStatus, setRouteStatus] = useState<string>(initial?.route_status || 'none');
   const [routeWaypoints, setRouteWaypoints] = useState<{lat: number, lng: number}[]>(initial?.route_waypoints || []);
   const [addingWaypointMode, setAddingWaypointMode] = useState(false);
+  const [straightLineMode, setStraightLineMode] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -103,8 +104,40 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
     }
   }, [routeWaypoints, onWaypointsChange]);
 
+  const generateStraightLineRoute = (waypoints: {lat: number, lng: number}[]) => {
+    if (!routeStartLat || !routeStartLng || !lat || !lng) return;
+    const allPoints: [number, number][] = [
+      [Number(routeStartLng), Number(routeStartLat)],
+      ...waypoints.map(wp => [wp.lng, wp.lat] as [number, number]),
+      [Number(lng), Number(lat)],
+    ];
+    // Calculate total distance
+    let totalDist = 0;
+    for (let i = 1; i < allPoints.length; i++) {
+      const [lng1, lat1] = allPoints[i - 1];
+      const [lng2, lat2] = allPoints[i];
+      const R = 6371000;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+      totalDist += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+    const geometry = { type: 'LineString', coordinates: allPoints };
+    setRouteGeojson(geometry);
+    setRouteDistance(totalDist);
+    setRouteDuration(totalDist / 1.2); // ~4.3 km/h walking
+    setRouteStatus('preview');
+    if (onPreviewRoute) onPreviewRoute(geometry);
+  };
+
   const generateRouteWithWaypoints = async (waypoints: {lat: number, lng: number}[]) => {
     if (!routeStartLat || !routeStartLng || !lat || !lng) return;
+
+    if (straightLineMode) {
+      generateStraightLineRoute(waypoints);
+      return;
+    }
+
     try {
       const coords = [
         `${routeStartLng},${routeStartLat}`,
@@ -223,6 +256,25 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
           <Button onClick={handleApproveRoute} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm">
             Godkjenn rute
           </Button>
+          <div className="flex items-center justify-between px-1 py-1">
+            <span className="text-xs text-muted-foreground font-medium">Fritt rute-modus</span>
+            <Switch checked={straightLineMode} onCheckedChange={(v) => {
+              setStraightLineMode(v);
+              if (routeWaypoints.length > 0 || routeGeojson) {
+                // Re-generate with new mode
+                setTimeout(() => {
+                  if (v) {
+                    generateStraightLineRoute(routeWaypoints);
+                  } else {
+                    generateRouteWithWaypoints(routeWaypoints);
+                  }
+                }, 50);
+              }
+            }} />
+          </div>
+          <p className="text-[10px] text-muted-foreground -mt-1 px-1">
+            {straightLineMode ? 'Waypoints kobles med rette linjer – perfekt for stier utenfor veier.' : 'Ruten følger kjente stier og veier fra kartdata.'}
+          </p>
           <div className="grid grid-cols-2 gap-2">
             <Button variant={addingWaypointMode ? "default" : "outline"} onClick={() => setAddingWaypointMode(!addingWaypointMode)} className="text-xs">
               {addingWaypointMode ? 'Avslutt waypoint-modus' : '+ Legg til waypoint'}

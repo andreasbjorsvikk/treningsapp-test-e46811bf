@@ -14,6 +14,7 @@ import { Mountain, MapPin, Check, Loader2, Pencil, Trash2, CalendarIcon, UserPlu
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { RouteElevationChart } from '@/components/map/RouteElevationChart';
+import PeakWeather from '@/components/map/PeakWeather';
 import PeakLeaderboard from '@/components/map/PeakLeaderboard';
 import CheckinSuccessAnimation from '@/components/map/CheckinSuccessAnimation';
 import CheckinImageUpload from '@/components/map/CheckinImageUpload';
@@ -206,6 +207,9 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
             <div className="rounded-xl overflow-hidden border border-border/50">
               <PeakOrbitMap latitude={peak.latitude} longitude={peak.longitude} heightMoh={peak.heightMoh} className="w-full h-[180px]" />
             </div>
+
+            {/* Weather */}
+            <PeakWeather latitude={peak.latitude} longitude={peak.longitude} />
 
             {/* Check-in button - right below map */}
             {isCheckedIn ? (
