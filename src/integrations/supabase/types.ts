@@ -92,6 +92,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          emoji: string
           id: string
           name: string
           parent_user_id: string
@@ -100,6 +101,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          emoji?: string
           id?: string
           name: string
           parent_user_id: string
@@ -108,12 +110,48 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          emoji?: string
           id?: string
           name?: string
           parent_user_id?: string
           updated_at?: string
         }
         Relationships: []
+      }
+      child_shared_access: {
+        Row: {
+          child_id: string
+          created_at: string
+          id: string
+          invited_by: string
+          shared_with_user_id: string
+          status: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          id?: string
+          invited_by: string
+          shared_with_user_id: string
+          status?: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          id?: string
+          invited_by?: string
+          shared_with_user_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "child_shared_access_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "child_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       community_notifications: {
         Row: {

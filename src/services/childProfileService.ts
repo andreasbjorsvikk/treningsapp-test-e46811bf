@@ -5,6 +5,7 @@ export interface ChildProfile {
   parent_user_id: string;
   name: string;
   avatar_url: string | null;
+  emoji: string;
   created_at: string;
   updated_at: string;
 }
@@ -19,17 +20,35 @@ export async function getChildProfiles(parentUserId: string): Promise<ChildProfi
   return (data || []) as unknown as ChildProfile[];
 }
 
-export async function createChildProfile(parentUserId: string, name: string): Promise<ChildProfile> {
+export async function getSharedChildProfiles(userId: string): Promise<ChildProfile[]> {
+  const { data: access, error: accessErr } = await supabase
+    .from('child_shared_access')
+    .select('child_id')
+    .eq('shared_with_user_id', userId)
+    .eq('status', 'accepted');
+  if (accessErr) throw accessErr;
+  if (!access || access.length === 0) return [];
+
+  const childIds = access.map((a: any) => a.child_id);
   const { data, error } = await supabase
     .from('child_profiles')
-    .insert({ parent_user_id: parentUserId, name })
+    .select('*')
+    .in('id', childIds);
+  if (error) throw error;
+  return (data || []) as unknown as ChildProfile[];
+}
+
+export async function createChildProfile(parentUserId: string, name: string, emoji: string = '👶'): Promise<ChildProfile> {
+  const { data, error } = await supabase
+    .from('child_profiles')
+    .insert({ parent_user_id: parentUserId, name, emoji })
     .select()
     .single();
   if (error) throw error;
   return data as unknown as ChildProfile;
 }
 
-export async function updateChildProfile(childId: string, updates: { name?: string; avatar_url?: string | null }): Promise<void> {
+export async function updateChildProfile(childId: string, updates: { name?: string; avatar_url?: string | null; emoji?: string }): Promise<void> {
   const { error } = await supabase
     .from('child_profiles')
     .update(updates)

@@ -6,23 +6,47 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, Camera, Loader2, Users } from 'lucide-react';
+import { Plus, Pencil, Trash2, Camera, Loader2, Users, UserPlus, Search, X, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import AvatarCropper from '@/components/AvatarCropper';
+import { supabase } from '@/integrations/supabase/client';
+
+const CHILD_EMOJIS = [
+  { value: '👶', label: 'Baby' },
+  { value: '👦', label: 'Gutt' },
+  { value: '👧', label: 'Jente' },
+];
+
+interface SharedUser {
+  child_id: string;
+  shared_with_user_id: string;
+  status: string;
+  username: string | null;
+  avatar_url: string | null;
+}
 
 const ChildProfilesSection = () => {
   const { user } = useAuth();
-  const [children, setChildren] = useState<ChildProfile[]>([]);
+  const [children, setChildren] = useState<(ChildProfile & { emoji?: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingChild, setEditingChild] = useState<ChildProfile | null>(null);
+  const [editingChild, setEditingChild] = useState<(ChildProfile & { emoji?: string }) | null>(null);
   const [name, setName] = useState('');
+  const [emoji, setEmoji] = useState('👶');
   const [saving, setSaving] = useState(false);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [cropFile, setCropFile] = useState<File | null>(null);
   const [showCropper, setShowCropper] = useState(false);
   const [cropChildId, setCropChildId] = useState<string | null>(null);
+
+  // Sharing state
+  const [sharingChildId, setSharingChildId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<{ id: string; username: string | null; avatar_url: string | null }[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [sharedUsers, setSharedUsers] = useState<SharedUser[]>([]);
+  const [inviting, setInviting] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -33,7 +57,8 @@ const ChildProfilesSection = () => {
     if (!user) return;
     setLoading(true);
     try {
-      setChildren(await getChildProfiles(user.id));
+      const data = await getChildProfiles(user.id);
+      setChildren(data as any);
     } catch {
       toast.error('Kunne ikke laste barn-profiler');
     }
@@ -45,15 +70,16 @@ const ChildProfilesSection = () => {
     setSaving(true);
     try {
       if (editingChild) {
-        await updateChildProfile(editingChild.id, { name: name.trim() });
+        await updateChildProfile(editingChild.id, { name: name.trim(), emoji });
         toast.success('Barn oppdatert');
       } else {
-        await createChildProfile(user.id, name.trim());
+        const child = await createChildProfile(user.id, name.trim(), emoji);
         toast.success('Barn lagt til');
       }
       setDialogOpen(false);
       setEditingChild(null);
       setName('');
+      setEmoji('👶');
       loadChildren();
     } catch {
       toast.error('Kunne ikke lagre');
@@ -101,16 +127,107 @@ const ChildProfilesSection = () => {
     setCropChildId(null);
   };
 
-  const openEdit = (child: ChildProfile) => {
+  const openEdit = (child: ChildProfile & { emoji?: string }) => {
     setEditingChild(child);
     setName(child.name);
+    setEmoji((child as any).emoji || '👶');
     setDialogOpen(true);
   };
 
   const openAdd = () => {
     setEditingChild(null);
     setName('');
+    setEmoji('👶');
     setDialogOpen(true);
+  };
+
+  // Sharing functions
+  const openSharing = async (childId: string) => {
+    setSharingChildId(childId);
+    setSearchQuery('');
+    setSearchResults([]);
+    // Load existing shared users
+    const { data } = await supabase
+      .from('child_shared_access')
+      .select('child_id, shared_with_user_id, status')
+      .eq('child_id', childId);
+
+    if (data && data.length > 0) {
+      const userIds = data.map((d: any) => d.shared_with_user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', userIds);
+      const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+      setSharedUsers(data.map((d: any) => ({
+        ...d,
+        username: profileMap.get(d.shared_with_user_id)?.username || null,
+        avatar_url: profileMap.get(d.shared_with_user_id)?.avatar_url || null,
+      })));
+    } else {
+      setSharedUsers([]);
+    }
+  };
+
+  const searchFriends = async (query: string) => {
+    setSearchQuery(query);
+    if (query.length < 2) { setSearchResults([]); return; }
+    setSearching(true);
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_url')
+      .ilike('username', `%${query}%`)
+      .neq('id', user!.id)
+      .limit(10);
+    setSearchResults(data || []);
+    setSearching(false);
+  };
+
+  const inviteUser = async (targetUserId: string) => {
+    if (!sharingChildId || !user) return;
+    setInviting(true);
+    try {
+      const { data: insertedAccess, error } = await supabase
+        .from('child_shared_access')
+        .insert({
+          child_id: sharingChildId,
+          shared_with_user_id: targetUserId,
+          invited_by: user.id,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+
+      // Find the child name for the notification
+      const child = children.find(c => c.id === sharingChildId);
+      const childName = child?.name || 'et barn';
+
+      // Send notification to target user
+      await supabase.from('community_notifications').insert({
+        user_id: targetUserId,
+        from_user_id: user.id,
+        type: 'child_share',
+        title: 'Barn-deling',
+        message: `Du er invitert til å ha ${childName} i din profil.`,
+        challenge_id: (insertedAccess as any).id, // repurpose challenge_id to store access id
+      });
+
+      toast.success('Invitasjon sendt!');
+      openSharing(sharingChildId);
+    } catch (e: any) {
+      if (e?.code === '23505') {
+        toast.info('Allerede invitert');
+      } else {
+        toast.error('Kunne ikke sende invitasjon');
+      }
+    }
+    setInviting(false);
+  };
+
+  const removeSharedAccess = async (childId: string, userId: string) => {
+    await supabase.from('child_shared_access').delete().eq('child_id', childId).eq('shared_with_user_id', userId);
+    toast.success('Tilgang fjernet');
+    openSharing(childId);
   };
 
   if (loading) {
@@ -150,7 +267,7 @@ const ChildProfilesSection = () => {
                   <Avatar className="w-10 h-10">
                     {child.avatar_url ? <AvatarImage src={child.avatar_url} /> : null}
                     <AvatarFallback className="text-sm font-bold">
-                      {child.name.charAt(0).toUpperCase()}
+                      {(child as any).emoji || '👶'}
                     </AvatarFallback>
                   </Avatar>
                   <button
@@ -165,7 +282,13 @@ const ChildProfilesSection = () => {
                     )}
                   </button>
                 </div>
-                <span className="flex-1 text-sm font-medium">{child.name}</span>
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-medium">{child.name}</span>
+                  <span className="ml-1 text-sm">{(child as any).emoji || '👶'}</span>
+                </div>
+                <button onClick={() => openSharing(child.id)} className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground" title="Del med andre">
+                  <UserPlus className="w-3.5 h-3.5" />
+                </button>
                 <button onClick={() => openEdit(child)} className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground">
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
@@ -188,6 +311,7 @@ const ChildProfilesSection = () => {
         onCancel={() => { setShowCropper(false); setCropFile(null); setCropChildId(null); }}
       />
 
+      {/* Add/Edit child dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -203,11 +327,103 @@ const ChildProfilesSection = () => {
                 autoFocus
               />
             </div>
+            <div className="space-y-2">
+              <Label>Emoji</Label>
+              <div className="flex gap-2">
+                {CHILD_EMOJIS.map(e => (
+                  <button
+                    key={e.value}
+                    onClick={() => setEmoji(e.value)}
+                    className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all ${
+                      emoji === e.value
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <span className="text-2xl">{e.value}</span>
+                    <span className="text-[10px] text-muted-foreground">{e.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
             <Button onClick={handleSave} disabled={!name.trim() || saving} className="w-full">
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               {editingChild ? 'Lagre' : 'Legg til'}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share child dialog */}
+      <Dialog open={!!sharingChildId} onOpenChange={(open) => { if (!open) setSharingChildId(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Del barn med andre</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground">
+            Inviter en annen bruker til å ha dette barnet i sin profil. De kan da også sjekke inn barnet på fjelltopper.
+          </p>
+
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => searchFriends(e.target.value)}
+              placeholder="Søk etter brukernavn..."
+              className="pl-9"
+            />
+          </div>
+
+          {/* Search results */}
+          {searchResults.length > 0 && (
+            <div className="space-y-1 max-h-40 overflow-y-auto">
+              {searchResults.map(p => {
+                const alreadyShared = sharedUsers.some(s => s.shared_with_user_id === p.id);
+                return (
+                  <div key={p.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/30">
+                    <Avatar className="w-8 h-8">
+                      {p.avatar_url && <AvatarImage src={p.avatar_url} />}
+                      <AvatarFallback className="text-xs">{p.username?.[0]?.toUpperCase() || '?'}</AvatarFallback>
+                    </Avatar>
+                    <span className="flex-1 text-sm">{p.username || 'Ukjent'}</span>
+                    {alreadyShared ? (
+                      <span className="text-xs text-muted-foreground">Invitert</span>
+                    ) : (
+                      <Button size="sm" variant="outline" onClick={() => inviteUser(p.id)} disabled={inviting}>
+                        <UserPlus className="w-3.5 h-3.5 mr-1" />
+                        Inviter
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Current shared users */}
+          {sharedUsers.length > 0 && (
+            <div className="space-y-1 pt-2 border-t border-border/30">
+              <Label className="text-xs text-muted-foreground">Delt med</Label>
+              {sharedUsers.map(s => (
+                <div key={s.shared_with_user_id} className="flex items-center gap-2 p-2 rounded-lg">
+                  <Avatar className="w-8 h-8">
+                    {s.avatar_url && <AvatarImage src={s.avatar_url} />}
+                    <AvatarFallback className="text-xs">{s.username?.[0]?.toUpperCase() || '?'}</AvatarFallback>
+                  </Avatar>
+                  <span className="flex-1 text-sm">{s.username || 'Ukjent'}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                    s.status === 'accepted' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'
+                  }`}>
+                    {s.status === 'accepted' ? 'Godkjent' : 'Venter'}
+                  </span>
+                  <button onClick={() => sharingChildId && removeSharedAccess(sharingChildId, s.shared_with_user_id)} className="p-1 rounded hover:bg-destructive/10 text-destructive">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>

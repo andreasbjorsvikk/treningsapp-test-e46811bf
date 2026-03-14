@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { getNotifications, markAllNotificationsRead, respondToChallenge, NotificationRow } from '@/services/communityService';
 import { supabase } from '@/integrations/supabase/client';
-import { Mail, Settings, Trophy, UserPlus, Loader2, Check, X, Eye } from 'lucide-react';
+import { Mail, Settings, Trophy, UserPlus, Loader2, Check, X, Eye, Baby } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toast } from 'sonner';
 
@@ -17,6 +17,7 @@ const iconMap: Record<string, typeof Mail> = {
   edit_approval: Settings,
   challenge_ended: Trophy,
   friend_request: UserPlus,
+  child_share: Baby,
 };
 
 interface EnrichedNotification extends NotificationRow {
@@ -90,6 +91,19 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
       }
     }
 
+    // Pre-fetch child share statuses
+    const childShareIds = raw.filter(n => n.type === 'child_share' && n.challenge_id).map(n => n.challenge_id!);
+    const respondedChildShares = new Set<string>();
+    if (childShareIds.length > 0) {
+      const { data: accesses } = await supabase
+        .from('child_shared_access')
+        .select('id, status')
+        .in('id', childShareIds);
+      for (const a of accesses || []) {
+        if ((a as any).status !== 'pending') respondedChildShares.add((a as any).id);
+      }
+    }
+
     const enriched = raw.map(n => {
       let alreadyResponded = false;
 
@@ -107,6 +121,10 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
       }
 
       if (n.type === 'friend_request' && n.from_user_id && respondedFriendRequests.has(n.from_user_id)) {
+        alreadyResponded = true;
+      }
+
+      if (n.type === 'child_share' && n.challenge_id && respondedChildShares.has(n.challenge_id)) {
         alreadyResponded = true;
       }
 
@@ -191,7 +209,9 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
               const timeAgo = getTimeAgo(n.created_at);
               const isFriendRequest = n.type === 'friend_request';
               const isChallengeInvite = n.type === 'invite';
+              const isChildShare = n.type === 'child_share';
               const showActions = isChallengeInvite && n.challenge_id && !n.alreadyResponded;
+              const showChildShareActions = isChildShare && n.challenge_id && !n.alreadyResponded;
               return (
                 <div
                   key={n.id}
@@ -233,6 +253,42 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
                           className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-secondary text-foreground text-xs font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50"
                         >
                           <X className="w-3 h-3" /> {t('notifications.decline')}
+                        </button>
+                      </div>
+                    )}
+                    {showChildShareActions && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          onClick={async () => {
+                            setRespondingTo(n.challenge_id);
+                            try {
+                              await supabase.from('child_shared_access').update({ status: 'accepted' }).eq('id', n.challenge_id);
+                              toast.success('Barn-tilgang godkjent!');
+                              const updated = await enrichNotifications();
+                              setNotifications(updated);
+                            } catch { toast.error('Kunne ikke godkjenne'); }
+                            setRespondingTo(null);
+                          }}
+                          disabled={respondingTo === n.challenge_id}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                        >
+                          <Check className="w-3 h-3" /> Godta
+                        </button>
+                        <button
+                          onClick={async () => {
+                            setRespondingTo(n.challenge_id);
+                            try {
+                              await supabase.from('child_shared_access').update({ status: 'declined' }).eq('id', n.challenge_id);
+                              toast.success('Avvist');
+                              const updated = await enrichNotifications();
+                              setNotifications(updated);
+                            } catch { toast.error('Kunne ikke avvise'); }
+                            setRespondingTo(null);
+                          }}
+                          disabled={respondingTo === n.challenge_id}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-secondary text-foreground text-xs font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50"
+                        >
+                          <X className="w-3 h-3" /> Avvis
                         </button>
                       </div>
                     )}
