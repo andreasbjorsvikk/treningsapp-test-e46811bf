@@ -532,24 +532,40 @@ const PeakFeed = () => {
                           {post.childItems.length > 0 && (
                             <div className="flex items-center gap-2 mt-2 flex-wrap">
                               {post.childItems.map(ci => (
-                                <button
-                                  key={ci.id}
-                                  onClick={() => {
-                                    const cp = childProfileMap.get(ci.user_id);
-                                    if (cp) setSelectedChildProfile(cp);
-                                  }}
-                                  className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/8 border border-emerald-500/15 hover:bg-emerald-500/15 transition-colors"
-                                >
-                                  <Avatar className="w-9 h-9">
-                                    {ci.avatar_url ? <AvatarImage src={ci.avatar_url} /> : null}
-                                    <AvatarFallback className="text-xs bg-emerald-500/10 text-emerald-600">
-                                      {ci.child_emoji || '👶'}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <span className="text-[11px] text-muted-foreground">
-                                    <span className="font-medium text-foreground">{ci.username}</span> var med
-                                  </span>
-                                </button>
+                                <div key={ci.id} className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/8 border border-emerald-500/15">
+                                  <button
+                                    onClick={() => {
+                                      const cp = childProfileMap.get(ci.user_id);
+                                      if (cp) setSelectedChildProfile(cp);
+                                    }}
+                                    className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+                                  >
+                                    <Avatar className="w-9 h-9">
+                                      {ci.avatar_url ? <AvatarImage src={ci.avatar_url} /> : null}
+                                      <AvatarFallback className="text-xs bg-emerald-500/10 text-emerald-600">
+                                        {ci.child_emoji || '👶'}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-[11px] text-muted-foreground">
+                                      <span className="font-medium text-foreground">{ci.username}</span> var med
+                                    </span>
+                                  </button>
+                                  {isEditing && (
+                                    <button
+                                      onClick={async () => {
+                                        try {
+                                          await deleteCheckin(ci.id);
+                                          loadFeed();
+                                          toast.success(`${ci.username} fjernet fra innsjekkingen`);
+                                        } catch { toast.error('Kunne ikke fjerne barnet'); }
+                                      }}
+                                      className="p-0.5 rounded hover:bg-destructive/10 text-destructive/60 hover:text-destructive transition-colors ml-1"
+                                      title="Fjern barn"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                </div>
                               ))}
                             </div>
                           )}

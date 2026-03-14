@@ -36,16 +36,17 @@ interface PeakDetailDrawerProps {
   adminMode?: boolean;
   onEdit?: (peak: Peak) => void;
   onDelete?: (peakId: string) => void;
-  onShowRoute?: (peak: Peak) => void;
+  onShowRoute?: (peak: Peak, fromTopper?: boolean) => void;
   onHideRoute?: () => void;
   isRouteShown?: boolean;
+  fromTopperTab?: boolean;
 }
 
 const CHECKIN_RADIUS_METERS = 100;
 const CHECKIN_COOLDOWN_MS = 3 * 60 * 60 * 1000; // 3 hours
 const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adminMode, onEdit, onDelete, onShowRoute, onHideRoute, isRouteShown }: PeakDetailDrawerProps) => {
+const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adminMode, onEdit, onDelete, onShowRoute, onHideRoute, isRouteShown, fromTopperTab }: PeakDetailDrawerProps) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showSuccessAnim, setShowSuccessAnim] = useState(false);
@@ -112,8 +113,23 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
   useEffect(() => {
     if (!open) {
       setPendingImage(null);
+      setUserDistanceToPeak(null);
     }
   }, [open, peak?.id]);
+
+  // Get user distance for fromTopperTab
+  const [userDistanceToPeak, setUserDistanceToPeak] = useState<number | null>(null);
+  useEffect(() => {
+    if (!open || !peak || !fromTopperTab) return;
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => {
+        const dist = getDistanceMeters(pos.coords.latitude, pos.coords.longitude, peak.latitude, peak.longitude);
+        setUserDistanceToPeak(dist);
+      },
+      () => setUserDistanceToPeak(null),
+      { enableHighAccuracy: false, timeout: 5000 }
+    );
+  }, [open, peak?.id, fromTopperTab]);
 
   // Checkin stats for this peak
   const peakCheckins = useMemo(() => {
@@ -149,6 +165,9 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
 
   // Check if last checkin already has an image
   const lastCheckinHasImage = lastCheckin && (lastCheckin as any).image_url;
+
+  // Should we show the check-in section?
+  const showCheckinSection = !fromTopperTab || (userDistanceToPeak !== null && userDistanceToPeak <= CHECKIN_RADIUS_METERS);
 
   if (!peak) return null;
 
@@ -320,103 +339,106 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
             {/* Weather */}
             <PeakWeather latitude={peak.latitude} longitude={peak.longitude} />
 
-            {/* Check-in button - right below map */}
-            {isCheckedIn ? (
-              <div className="p-3 rounded-xl bg-success/10 border border-success/20 space-y-2">
-                <div className="flex items-center gap-2">
-                  <Check className="w-5 h-5 text-success" />
-                  <span className="text-sm font-medium text-success">
-                    Du har sjekket inn på denne toppen {checkinCount} {checkinCount === 1 ? 'gang' : 'ganger'}
-                  </span>
-                </div>
-                {lastCheckin && (
-                  <p className="text-xs text-muted-foreground ml-7">
-                    Sist: {format(new Date(lastCheckin.checked_in_at), "d. MMMM yyyy", { locale: nb })}
-                  </p>
-                )}
-                {/* Allow re-checkin */}
-                <Button onClick={handleCheckin} disabled={loading || !canCheckin} variant="outline" size="sm" className="w-full mt-2">
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <MapPin className="w-4 h-4 mr-2" />}
-                  {canCheckin ? 'Sjekk inn' : 'Du er sjekket inn'}
-                </Button>
+            {/* Check-in section - hidden in Topper tab unless within 100m */}
+            {showCheckinSection && (
+              <>
+                {isCheckedIn ? (
+                  <div className="p-3 rounded-xl bg-success/10 border border-success/20 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-5 h-5 text-success" />
+                      <span className="text-sm font-medium text-success">
+                        Du har sjekket inn på denne toppen {checkinCount} {checkinCount === 1 ? 'gang' : 'ganger'}
+                      </span>
+                    </div>
+                    {lastCheckin && (
+                      <p className="text-xs text-muted-foreground ml-7">
+                        Sist: {format(new Date(lastCheckin.checked_in_at), "d. MMMM yyyy", { locale: nb })}
+                      </p>
+                    )}
+                    {/* Allow re-checkin */}
+                    <Button onClick={handleCheckin} disabled={loading || !canCheckin} variant="outline" size="sm" className="w-full mt-2">
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <MapPin className="w-4 h-4 mr-2" />}
+                      {canCheckin ? 'Sjekk inn' : 'Du er sjekket inn'}
+                    </Button>
 
-                {/* Image upload/replace within 24h */}
-                {isInEditWindow && (
-                  <div className="mt-3 pt-3 border-t border-border/30">
-                    {lastCheckinHasImage ? (
-                      <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground">Du kan endre bildet innen 24 timer.</p>
-                        <CheckinImageUpload onImageReady={setPendingImage} />
-                        {pendingImage && (
-                          <Button onClick={handleSaveImage} disabled={savingImage} size="sm" className="w-full">
-                            {savingImage ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ImageIcon className="w-4 h-4 mr-2" />}
-                            {savingImage ? 'Lagrer...' : 'Bytt bilde'}
-                          </Button>
+                    {/* Image upload/replace within 24h */}
+                    {isInEditWindow && (
+                      <div className="mt-3 pt-3 border-t border-border/30">
+                        {lastCheckinHasImage ? (
+                          <div className="space-y-2">
+                            <p className="text-xs text-muted-foreground">Du kan endre bildet innen 24 timer.</p>
+                            <CheckinImageUpload onImageReady={setPendingImage} />
+                            {pendingImage && (
+                              <Button onClick={handleSaveImage} disabled={savingImage} size="sm" className="w-full">
+                                {savingImage ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ImageIcon className="w-4 h-4 mr-2" />}
+                                {savingImage ? 'Lagrer...' : 'Bytt bilde'}
+                              </Button>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full text-destructive hover:text-destructive"
+                              onClick={async () => {
+                                if (!lastCheckin) return;
+                                try {
+                                  const { supabase } = await import('@/integrations/supabase/client');
+                                  await supabase.from('peak_checkins').update({ image_url: null }).eq('id', lastCheckin.id);
+                                  toast.success('Bilde fjernet');
+                                  onCheckinSuccess();
+                                } catch { toast.error('Kunne ikke fjerne bildet'); }
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Fjern bilde
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            <CheckinImageUpload onImageReady={setPendingImage} />
+                            {pendingImage && (
+                              <Button onClick={handleSaveImage} disabled={savingImage} size="sm" className="w-full mt-2">
+                                {savingImage ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                {savingImage ? 'Lagrer...' : 'Lagre bilde'}
+                              </Button>
+                            )}
+                          </>
                         )}
-                        {/* Delete image */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full text-destructive hover:text-destructive"
-                          onClick={async () => {
-                            if (!lastCheckin) return;
-                            try {
-                              const { supabase } = await import('@/integrations/supabase/client');
-                              await supabase.from('peak_checkins').update({ image_url: null }).eq('id', lastCheckin.id);
-                              toast.success('Bilde fjernet');
-                              onCheckinSuccess();
-                            } catch { toast.error('Kunne ikke fjerne bildet'); }
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Fjern bilde
-                        </Button>
                       </div>
-                    ) : (
-                      <>
-                        <CheckinImageUpload onImageReady={setPendingImage} />
-                        {pendingImage && (
-                          <Button onClick={handleSaveImage} disabled={savingImage} size="sm" className="w-full mt-2">
-                            {savingImage ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                            {savingImage ? 'Lagrer...' : 'Lagre bilde'}
-                          </Button>
-                        )}
-                      </>
+                    )}
+
+                    {/* Delete own checkin */}
+                    {isInEditWindow && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-2 text-destructive hover:text-destructive"
+                        onClick={() => setDeleteConfirmId('own')}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Slett innsjekking
+                      </Button>
+                    )}
+
+                    {/* Child checkin button - shown during cooldown */}
+                    {isInCooldownWindow && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-2"
+                        onClick={() => setShowChildCheckin(true)}
+                      >
+                        <Users className="w-4 h-4 mr-2" />
+                        Sjekk inn barn
+                      </Button>
                     )}
                   </div>
-                )}
-
-                {/* Delete own checkin */}
-                {isInEditWindow && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full mt-2 text-destructive hover:text-destructive"
-                    onClick={() => setDeleteConfirmId('own')}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Slett innsjekking
+                ) : (
+                  <Button onClick={handleCheckin} disabled={loading} className="w-full" size="lg">
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <MapPin className="w-4 h-4 mr-2" />}
+                    Sjekk inn
                   </Button>
                 )}
-
-                {/* Child checkin button - shown during cooldown */}
-                {isInCooldownWindow && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full mt-2"
-                    onClick={() => setShowChildCheckin(true)}
-                  >
-                    <Users className="w-4 h-4 mr-2" />
-                    Sjekk inn barn
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <Button onClick={handleCheckin} disabled={loading} className="w-full" size="lg">
-                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <MapPin className="w-4 h-4 mr-2" />}
-                Sjekk inn
-              </Button>
+              </>
             )}
 
             {/* Route info */}
@@ -427,7 +449,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                     <X className="w-4 h-4 mr-2" />Skjul rute
                   </Button>
                 ) : (
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => { onClose(); onShowRoute(peak); }}>
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => { onClose(); onShowRoute(peak, fromTopperTab); }}>
                     Vis rute ({((peak.route_distance_m || 0) / 1000).toFixed(1)} km, {Math.round((peak.route_duration_s || 0) / 60)} min)
                   </Button>
                 )

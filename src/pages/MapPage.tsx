@@ -15,6 +15,7 @@ import SuggestPeakDrawer from '@/components/map/SuggestPeakDrawer';
 import MapSettingsSheet from '@/components/map/MapSettingsSheet';
 import PeakFeed from '@/components/map/PeakFeed';
 import GlobalLeaderboard from '@/components/map/GlobalLeaderboard';
+import AdminDashboard from '@/components/map/AdminDashboard';
 import MapTutorial from '@/components/map/MapTutorial';
 import ARView from '@/components/map/ARView';
 import { Settings2 } from 'lucide-react';
@@ -62,6 +63,9 @@ const MapPage = () => {
   // Suggested peaks (pending, visible to all)
   const [suggestedPeaks, setSuggestedPeaks] = useState<PeakSuggestion[]>([]);
 
+  // Track if route was shown from topper tab for back navigation
+  const [routeFromTopperPeak, setRouteFromTopperPeak] = useState<Peak | null>(null);
+
   const checkedPeakIds = useMemo(() => new Set(checkins.map(c => c.peak_id)), [checkins]);
 
   // Filter peaks for map display
@@ -100,7 +104,12 @@ const MapPage = () => {
     fetchPendingSuggestions().then(setSuggestedPeaks).catch(() => {});
   }, [user]);
 
-  const handleSelectPeak = (peak: Peak) => setSelectedPeak(peak);
+  const [peakOpenedFromTopper, setPeakOpenedFromTopper] = useState(false);
+
+  const handleSelectPeak = (peak: Peak) => {
+    setPeakOpenedFromTopper(subTab === 'topper');
+    setSelectedPeak(peak);
+  };
 
   const handleMapClick = (lat: number, lng: number) => {
     if (adminMode && addMode) {
@@ -160,8 +169,10 @@ const MapPage = () => {
     toast.info('Trykk på kartet for å velge startpunkt for ruten.');
   };
 
-  const handleShowRoute = (peak: Peak) => {
+  const handleShowRoute = (peak: Peak, fromTopper?: boolean) => {
     if (peak.route_status === 'approved' && peak.route_geojson) {
+      if (fromTopper) setRouteFromTopperPeak(peak);
+      else setRouteFromTopperPeak(null);
       setSubTab('kart');
       setActiveRouteGeojson(peak.route_geojson);
       setActiveRoutePeakId(peak.id);
@@ -181,7 +192,7 @@ const MapPage = () => {
     <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)]">
       {/* Sub-tab bar */}
       <div className="px-4 pt-3 pb-2">
-        <MapSubTabs active={subTab} onChange={setSubTab} />
+        <MapSubTabs active={subTab} onChange={setSubTab} showAdmin={adminMode} />
       </div>
 
       {/* Admin toolbar */}
@@ -239,11 +250,26 @@ const MapPage = () => {
             />
             {activeRouteGeojson && (
               <button
-                onClick={handleHideRoute}
+                onClick={() => {
+                  if (routeFromTopperPeak) {
+                    handleHideRoute();
+                    setSubTab('topper');
+                    setSelectedPeak(routeFromTopperPeak);
+                    setRouteFromTopperPeak(null);
+                  } else {
+                    handleHideRoute();
+                  }
+                }}
                 className="absolute top-3 left-1/2 -translate-x-1/2 z-20 px-4 py-2 rounded-full text-xs font-semibold shadow-lg border border-border bg-background/95 backdrop-blur-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                Skjul rute
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  {routeFromTopperPeak ? (
+                    <><polyline points="15 18 9 12 15 6"/></>
+                  ) : (
+                    <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>
+                  )}
+                </svg>
+                {routeFromTopperPeak ? 'Tilbake' : 'Skjul rute'}
               </button>
             )}
             {/* Settings button bottom-left */}
@@ -291,6 +317,12 @@ const MapPage = () => {
             />
           </div>
         )}
+
+        {subTab === 'admin' && adminMode && (
+          <div className="h-full overflow-y-auto">
+            <AdminDashboard />
+          </div>
+        )}
       </div>
 
       {/* Map settings sheet */}
@@ -322,6 +354,7 @@ const MapPage = () => {
         onShowRoute={handleShowRoute}
         onHideRoute={handleHideRoute}
         isRouteShown={!!activeRoutePeakId && activeRoutePeakId === selectedPeak?.id}
+        fromTopperTab={peakOpenedFromTopper}
       />
 
       {/* Admin: Add new peak form */}
