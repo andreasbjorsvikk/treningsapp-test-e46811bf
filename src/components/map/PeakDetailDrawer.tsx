@@ -246,6 +246,19 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                     )}
                   </div>
                 )}
+
+                {/* Child checkin button - shown during cooldown */}
+                {isInCooldownWindow && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-2"
+                    onClick={() => setShowChildCheckin(true)}
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Sjekk inn barn
+                  </Button>
+                )}
               </div>
             ) : (
               <Button onClick={handleCheckin} disabled={loading} className="w-full" size="lg">
