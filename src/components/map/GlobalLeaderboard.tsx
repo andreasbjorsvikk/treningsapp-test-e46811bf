@@ -11,6 +11,7 @@ interface LeaderEntry {
   username: string | null;
   avatar_url: string | null;
   unique_peaks: number;
+  isChild?: boolean;
 }
 
 const periods: { id: Period; label: string }[] = [
@@ -56,20 +57,24 @@ const GlobalLeaderboard = () => {
       const userIds = Array.from(userPeaks.keys());
       if (userIds.length === 0) { setEntries([]); setLoading(false); return; }
 
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, username, avatar_url')
-        .in('id', userIds);
+      // Fetch profiles and child profiles in parallel
+      const [{ data: profiles }, { data: childProfiles }] = await Promise.all([
+        supabase.from('profiles').select('id, username, avatar_url').in('id', userIds),
+        supabase.from('child_profiles').select('id, name, avatar_url').in('id', userIds),
+      ]);
 
       const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+      const childMap = new Map(((childProfiles || []) as any[]).map(c => [c.id, c]));
 
       const leaderboard: LeaderEntry[] = userIds.map(uid => {
         const profile = profileMap.get(uid);
+        const child = childMap.get(uid);
         return {
           user_id: uid,
-          username: profile?.username || null,
-          avatar_url: profile?.avatar_url || null,
+          username: profile?.username || child?.name || null,
+          avatar_url: profile?.avatar_url || child?.avatar_url || null,
           unique_peaks: userPeaks.get(uid)!.size,
+          isChild: !!child && !profile,
         };
       }).sort((a, b) => b.unique_peaks - a.unique_peaks);
 
@@ -141,6 +146,7 @@ const GlobalLeaderboard = () => {
                   <span className="font-semibold text-sm truncate block">
                     {entry.username || 'Ukjent'}
                     {isMe && <span className="text-muted-foreground font-normal"> (deg)</span>}
+                    {entry.isChild && <span className="text-muted-foreground font-normal text-xs ml-1">👶</span>}
                   </span>
                 </div>
                 <div className="text-right shrink-0">

@@ -11,6 +11,7 @@ interface LeaderEntry {
   username: string | null;
   avatar_url: string | null;
   count: number;
+  isChild?: boolean;
 }
 
 const periods: { id: Period; label: string }[] = [
@@ -63,19 +64,25 @@ const PeakLeaderboard = ({ peakId }: PeakLeaderboardProps) => {
       const userIds = Array.from(counts.keys());
       if (userIds.length === 0) { setEntries([]); setLoading(false); return; }
 
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, username, avatar_url')
-        .in('id', userIds);
+      const [{ data: profiles }, { data: childProfiles }] = await Promise.all([
+        supabase.from('profiles').select('id, username, avatar_url').in('id', userIds),
+        supabase.from('child_profiles').select('id, name, avatar_url').in('id', userIds),
+      ]);
 
       const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+      const childMap = new Map(((childProfiles || []) as any[]).map(c => [c.id, c]));
 
-      const leaderboard: LeaderEntry[] = userIds.map(uid => ({
-        user_id: uid,
-        username: profileMap.get(uid)?.username || null,
-        avatar_url: profileMap.get(uid)?.avatar_url || null,
-        count: counts.get(uid) || 0,
-      })).sort((a, b) => b.count - a.count);
+      const leaderboard: LeaderEntry[] = userIds.map(uid => {
+        const profile = profileMap.get(uid);
+        const child = childMap.get(uid);
+        return {
+          user_id: uid,
+          username: profile?.username || child?.name || null,
+          avatar_url: profile?.avatar_url || child?.avatar_url || null,
+          count: counts.get(uid) || 0,
+          isChild: !!child && !profile,
+        };
+      }).sort((a, b) => b.count - a.count);
 
       setEntries(leaderboard);
     } catch (e) {
@@ -137,7 +144,10 @@ const PeakLeaderboard = ({ peakId }: PeakLeaderboardProps) => {
                       <AvatarImage src={entry.avatar_url || undefined} />
                       <AvatarFallback className="text-[10px]">{entry.username?.[0]?.toUpperCase() || '?'}</AvatarFallback>
                     </Avatar>
-                    <span className="flex-1 text-sm truncate">{entry.username || 'Ukjent'}</span>
+                    <span className="flex-1 text-sm truncate">
+                      {entry.username || 'Ukjent'}
+                      {entry.isChild && <span className="text-xs ml-1">👶</span>}
+                    </span>
                     <span className="text-sm font-semibold">{entry.count} <span className="text-xs text-muted-foreground font-normal">ganger</span></span>
                   </div>
                 );
