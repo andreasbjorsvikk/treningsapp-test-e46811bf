@@ -287,7 +287,7 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
 
       {/* Peak labels overlay */}
       {visiblePeaks.map(({ peak, distance, screenX, screenY, isTaken }) => {
-        const icon = getPeakIcon(peak.elevation);
+        const icon = getPeakIcon(peak.heightMoh);
         const opacity = Math.max(0.5, 1 - distance / maxDist);
         const scale = Math.max(0.6, 1 - (distance / maxDist) * 0.4);
 
