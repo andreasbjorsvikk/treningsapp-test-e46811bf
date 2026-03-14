@@ -46,13 +46,9 @@ const CheckinAnimation = () => {
                 : 'bg-card border-border'
             }`}
           >
-            <svg
-              width="24" height="24" viewBox="0 0 24 24" fill="none"
-              className={`transition-all duration-500 ${phase === 'checked' ? 'stroke-white' : 'stroke-muted-foreground'}`}
-              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-            >
-              <path d="m8 3 4 8 5-5 2 15H2L8 3z" />
-            </svg>
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center ${phase === 'checked' ? 'bg-white/20 border border-white/40' : ''}`}>
+              <img src={peakHighIcon} alt="" className="w-7 h-7 object-contain rounded-full" />
+            </div>
           </div>
           {/* Ripple effect */}
           {phase === 'checked' && (
