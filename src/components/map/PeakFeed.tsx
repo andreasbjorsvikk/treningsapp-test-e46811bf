@@ -311,8 +311,17 @@ const PeakFeed = () => {
       });
 
       usedIds.add(item.id);
-      childItems.forEach(ci => usedIds.add(ci.id));
-      posts.push({ parentItem: item, childItems });
+      // Deduplicate children by user_id (prevent same child appearing twice)
+      const seenChildUserIds = new Set<string>();
+      const dedupedChildren: FeedItem[] = [];
+      for (const ci of childItems) {
+        if (!seenChildUserIds.has(ci.user_id)) {
+          seenChildUserIds.add(ci.user_id);
+          dedupedChildren.push(ci);
+        }
+        usedIds.add(ci.id);
+      }
+      posts.push({ parentItem: item, childItems: dedupedChildren });
     }
 
     // Add orphan child items (no matching parent post)
