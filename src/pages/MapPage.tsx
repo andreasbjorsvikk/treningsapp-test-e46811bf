@@ -245,11 +245,26 @@ const MapPage = () => {
             />
             {activeRouteGeojson && (
               <button
-                onClick={handleHideRoute}
+                onClick={() => {
+                  if (routeFromTopperPeak) {
+                    handleHideRoute();
+                    setSubTab('topper');
+                    setSelectedPeak(routeFromTopperPeak);
+                    setRouteFromTopperPeak(null);
+                  } else {
+                    handleHideRoute();
+                  }
+                }}
                 className="absolute top-3 left-1/2 -translate-x-1/2 z-20 px-4 py-2 rounded-full text-xs font-semibold shadow-lg border border-border bg-background/95 backdrop-blur-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                Skjul rute
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  {routeFromTopperPeak ? (
+                    <><polyline points="15 18 9 12 15 6"/></>
+                  ) : (
+                    <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>
+                  )}
+                </svg>
+                {routeFromTopperPeak ? 'Tilbake' : 'Skjul rute'}
               </button>
             )}
             {/* Settings button bottom-left */}
