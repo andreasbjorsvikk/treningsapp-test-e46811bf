@@ -227,7 +227,7 @@ const steps: TutorialStep[] = [
   {
     title: 'Velkommen til fjelltopp-kartet! ⛰️',
     text: 'Her kan du sjekke inn på fjelltopper som du bestiger. Du kan sjekke inn flere ganger på hver topp og øke scoren din på lederlistene.',
-    icon: <PeakIcon src={peakVeryHighIcon} />,
+    icon: <PeakIcon src={peakIconTiers.veryHigh} />,
     customContent: <CheckinAnimation />,
   },
   {
