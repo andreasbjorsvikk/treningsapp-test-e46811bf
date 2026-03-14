@@ -104,38 +104,56 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
     setCameraActive(false);
   }, []);
 
-  // Init: getUserMedia MUST be called first directly in the gesture handler
+  const requestCompassPermission = useCallback(async () => {
+    const OrientationEvent = (window as any).DeviceOrientationEvent;
+
+    if (!OrientationEvent) {
+      setCompassStatus('denied');
+      setCompassEnabled(false);
+      return false;
+    }
+
+    if (typeof OrientationEvent.requestPermission === 'function') {
+      try {
+        const result = await OrientationEvent.requestPermission();
+        const granted = result === 'granted';
+        setCompassStatus(granted ? 'granted' : 'denied');
+        setCompassEnabled(granted);
+        return granted;
+      } catch (err) {
+        console.warn('Compass permission request failed', err);
+        setCompassStatus('denied');
+        setCompassEnabled(false);
+        return false;
+      }
+    }
+
+    // Android / browsers without explicit permission API
+    setCompassStatus('granted');
+    setCompassEnabled(true);
+    return true;
+  }, []);
+
+  // Init: getUserMedia directly in user gesture + attempt compass permission
   const init = useCallback(async () => {
-    // Camera first — must be in direct gesture context for iOS
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
       });
       streamRef.current = stream;
-      // Try to attach immediately if video element exists
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
       setCameraActive(true);
+      setPermissionsReady(true);
+      // Try once here (works on many devices). If denied/missed, user can retry from button.
+      await requestCompassPermission();
     } catch (err: any) {
       setCameraError('Kunne ikke starte kamera. Sjekk at du har gitt tilgang.');
       console.error('Camera error:', err);
     }
-    // Then orientation permission (iOS) — must also be in gesture context
-    if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
-      try {
-        const result = await (DeviceOrientationEvent as any).requestPermission();
-        if (result !== 'granted') {
-          setCameraError('Kompass-tilgang ble nektet.');
-        }
-      } catch {
-        // Non-critical, compass may still work on some devices
-        console.warn('Could not request orientation permission');
-      }
-    }
-    setPermissionsReady(true);
-  }, []);
+  }, [requestCompassPermission]);
 
   // Attach stream to video element when it mounts (after permissionsReady becomes true)
   useEffect(() => {
