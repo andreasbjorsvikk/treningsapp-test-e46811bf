@@ -51,10 +51,10 @@ function calcBearing(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return (toDeg(Math.atan2(y, x)) + 360) % 360;
 }
 
-function getPeakIcon(elevation: number): string {
-  if (elevation >= 800) return peakVeryHighIcon;
-  if (elevation >= 500) return peakHighIcon;
-  if (elevation >= 200) return peakMediumIcon;
+function getPeakIcon(heightMoh: number): string {
+  if (heightMoh >= 800) return peakVeryHighIcon;
+  if (heightMoh >= 500) return peakHighIcon;
+  if (heightMoh >= 200) return peakMediumIcon;
   return peakLowIcon;
 }
 
