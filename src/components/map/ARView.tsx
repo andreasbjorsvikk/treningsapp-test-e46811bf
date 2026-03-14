@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Peak } from '@/data/peaks';
 import { PeakCheckin } from '@/services/peakCheckinService';
-import { Camera, CameraOff, Compass, Mountain, Navigation, X, Map as MapIcon } from 'lucide-react';
+import { Camera, Compass, Mountain, Navigation, Map as MapIcon, Eye, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getPeakIcon } from '@/utils/peakIcons';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface ARViewProps {
   peaks: Peak[];
@@ -28,8 +30,10 @@ interface VisiblePeak {
 }
 
 const MAX_DISTANCE_KM = 30;
-const HORIZONTAL_FOV = 60; // degrees
+const HORIZONTAL_FOV = 60;
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
+
+mapboxgl.accessToken = MAPBOX_TOKEN;
 
 function toRad(deg: number) { return deg * Math.PI / 180; }
 function toDeg(rad: number) { return rad * 180 / Math.PI; }
@@ -49,8 +53,6 @@ function calcBearing(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return (toDeg(Math.atan2(y, x)) + 360) % 360;
 }
 
-// getPeakIcon imported from utils
-
 function normalizeDeg(deg: number): number {
   return ((deg % 360) + 360) % 360;
 }
@@ -61,9 +63,14 @@ function angleDiff(a: number, b: number): number {
   return diff;
 }
 
+type ARMode = 'camera' | '3d';
+
 const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [userPos, setUserPos] = useState<UserPosition | null>(null);
@@ -72,7 +79,10 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
   const [permissionsReady, setPermissionsReady] = useState(false);
   const [maxDist, setMaxDist] = useState(MAX_DISTANCE_KM);
   const [showMiniMap, setShowMiniMap] = useState(true);
+  const [mode, setMode] = useState<ARMode>('camera');
+  const [mapReady, setMapReady] = useState(false);
   const headingSmoothed = useRef<number | null>(null);
+  const lastMapUpdate = useRef(0);
 
   const checkedPeakIds = useMemo(() => new Set(checkins.map(c => c.peak_id)), [checkins]);
 
@@ -108,7 +118,7 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
       try {
         const result = await (DeviceOrientationEvent as any).requestPermission();
         if (result !== 'granted') {
-          setCameraError('Kompass-tilgang ble nektet. Vennligst gi tilgang i innstillingene.');
+          setCameraError('Kompass-tilgang ble nektet.');
           return false;
         }
       } catch {
@@ -119,7 +129,7 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
     return true;
   }, []);
 
-  // Init: request permissions and start
+  // Init
   const init = useCallback(async () => {
     const orientationOk = await requestOrientationPermission();
     if (!orientationOk) return;
@@ -147,19 +157,14 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
   // Compass listener
   useEffect(() => {
     if (!permissionsReady) return;
-
     const handleOrientation = (e: DeviceOrientationEvent) => {
       let alpha: number | null = null;
-
-      // iOS uses webkitCompassHeading
       if ((e as any).webkitCompassHeading != null) {
         alpha = (e as any).webkitCompassHeading;
       } else if (e.alpha != null) {
         alpha = (360 - e.alpha) % 360;
       }
-
       if (alpha != null) {
-        // Smooth heading
         if (headingSmoothed.current == null) {
           headingSmoothed.current = alpha;
         } else {
@@ -170,23 +175,180 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
         }
         setHeading(headingSmoothed.current);
       }
-
-      // Tilt from beta
       if (e.beta != null) {
         setTilt(Math.max(0, Math.min(90, e.beta)));
       }
     };
-
     window.addEventListener('deviceorientation', handleOrientation, true);
     return () => window.removeEventListener('deviceorientation', handleOrientation, true);
   }, [permissionsReady]);
 
   // Cleanup on unmount
-  useEffect(() => () => stopCamera(), [stopCamera]);
+  useEffect(() => () => {
+    stopCamera();
+    if (mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
+    }
+  }, [stopCamera]);
 
-  // Calculate visible peaks
+  // ── 3D Map initialization ──
+  useEffect(() => {
+    if (mode !== '3d' || !permissionsReady || !mapContainerRef.current) return;
+    if (mapRef.current) return; // already init
+
+    const initialCenter = userPos || { lat: 60.0, lng: 5.67 };
+
+    const map = new mapboxgl.Map({
+      container: mapContainerRef.current,
+      style: 'mapbox://styles/mapbox/satellite-streets-v12',
+      center: [initialCenter.lng, initialCenter.lat],
+      zoom: 14,
+      pitch: 75,
+      bearing: heading || 0,
+      antialias: false,
+      interactive: false, // Sensor-driven, no touch
+    });
+
+    map.on('style.load', () => {
+      // 3D terrain
+      map.addSource('mapbox-dem', {
+        type: 'raster-dem',
+        url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+        tileSize: 512,
+        maxzoom: 14,
+      });
+      map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+
+      // Sky
+      map.addLayer({
+        id: 'sky',
+        type: 'sky',
+        paint: {
+          'sky-type': 'atmosphere',
+          'sky-atmosphere-sun': [0.0, 30.0],
+          'sky-atmosphere-sun-intensity': 5,
+        },
+      });
+
+      // Add peak markers
+      addPeakMarkers(map);
+      setMapReady(true);
+    });
+
+    mapRef.current = map;
+
+    return () => {
+      // Don't remove here – cleanup on unmount handles it
+    };
+  }, [mode, permissionsReady]);
+
+  // Add peak markers to 3D map
+  const addPeakMarkers = useCallback((map: mapboxgl.Map) => {
+    // Clear old
+    markersRef.current.forEach(m => m.remove());
+    markersRef.current = [];
+
+    const userLat = userPos?.lat || 60.0;
+    const userLng = userPos?.lng || 5.67;
+
+    peaks.forEach(peak => {
+      const dist = calcDistance(userLat, userLng, peak.latitude, peak.longitude);
+      if (dist > maxDist) return;
+
+      const isTaken = checkedPeakIds.has(peak.id);
+      const icon = getPeakIcon(peak.heightMoh, peak.id);
+
+      const el = document.createElement('div');
+      el.style.cssText = `
+        display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer;
+        filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+      `;
+      el.innerHTML = `
+        <div style="
+          padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: 700;
+          white-space: nowrap;
+          background: ${isTaken ? 'hsla(152,60%,42%,0.9)' : 'rgba(0,0,0,0.7)'};
+          color: white; border: 1px solid ${isTaken ? 'hsla(152,60%,35%,0.6)' : 'rgba(255,255,255,0.25)'};
+          backdrop-filter: blur(4px);
+        ">
+          ${peak.name} <span style="opacity:0.7;font-size:9px">${peak.heightMoh}m</span>
+        </div>
+        <div style="
+          width: 28px; height: 28px; border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+          border: 2px solid ${isTaken ? 'hsl(152,60%,35%)' : 'rgba(255,255,255,0.7)'};
+          background: ${isTaken ? 'hsl(152,60%,42%)' : 'rgba(255,255,255,0.9)'};
+        ">
+          <img src="${icon}" style="width:18px;height:18px;object-fit:contain" />
+        </div>
+      `;
+
+      el.addEventListener('click', () => onSelectPeak?.(peak));
+
+      const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat([peak.longitude, peak.latitude])
+        .addTo(map);
+
+      markersRef.current.push(marker);
+    });
+  }, [peaks, userPos, maxDist, checkedPeakIds, onSelectPeak]);
+
+  // ── Sync 3D map camera with sensors ──
+  useEffect(() => {
+    if (mode !== '3d' || !mapRef.current || !mapReady || !userPos || heading == null) return;
+
+    const now = Date.now();
+    if (now - lastMapUpdate.current < 50) return; // throttle to ~20fps
+    lastMapUpdate.current = now;
+
+    const map = mapRef.current;
+
+    // Map pitch from device tilt: holding upright (tilt~90) => high pitch, tilted down (tilt~45) => lower pitch
+    const pitch = Math.min(85, Math.max(30, tilt * 0.95));
+
+    map.jumpTo({
+      center: [userPos.lng, userPos.lat],
+      bearing: heading,
+      pitch,
+    });
+  }, [mode, mapReady, userPos, heading, tilt]);
+
+  // Re-add markers when maxDist changes
+  useEffect(() => {
+    if (mode === '3d' && mapRef.current && mapReady) {
+      addPeakMarkers(mapRef.current);
+    }
+  }, [mode, mapReady, maxDist, addPeakMarkers]);
+
+  // Handle mode switch
+  const toggleMode = useCallback(() => {
+    setMode(prev => {
+      const next = prev === 'camera' ? '3d' : 'camera';
+      if (next === '3d') {
+        // Pause camera to save battery
+        if (videoRef.current) {
+          videoRef.current.pause();
+        }
+      } else {
+        // Resume camera
+        if (videoRef.current && videoRef.current.srcObject) {
+          videoRef.current.play();
+        }
+        // Remove 3D map
+        if (mapRef.current) {
+          mapRef.current.remove();
+          mapRef.current = null;
+          setMapReady(false);
+        }
+      }
+      return next;
+    });
+  }, []);
+
+  // Calculate visible peaks (for camera mode)
   const visiblePeaks = useMemo(() => {
-    if (!userPos || heading == null) return [];
+    if (!userPos || heading == null || mode !== 'camera') return [];
 
     const results: VisiblePeak[] = [];
     const containerWidth = containerRef.current?.clientWidth || 400;
@@ -198,40 +360,24 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
 
       const bearing = calcBearing(userPos.lat, userPos.lng, peak.latitude, peak.longitude);
       const hDiff = angleDiff(bearing, heading);
-
-      // Only show peaks within FOV
       if (Math.abs(hDiff) > HORIZONTAL_FOV / 2 + 5) continue;
 
-      // Screen X position
       const screenX = containerWidth / 2 + (hDiff / (HORIZONTAL_FOV / 2)) * (containerWidth / 2);
-
-      // Elevation angle
       const userAlt = userPos.altitude || 50;
       const elevDiff = peak.heightMoh - userAlt;
       const elevAngle = toDeg(Math.atan2(elevDiff, dist * 1000));
-
-      // Screen Y: map elevation angle to vertical position
       const verticalFov = HORIZONTAL_FOV * (containerHeight / containerWidth);
       const tiltOffset = tilt - 70;
       const adjustedAngle = elevAngle - tiltOffset;
       const screenY = containerHeight / 2 - (adjustedAngle / (verticalFov / 2)) * (containerHeight / 2);
       const clampedY = Math.max(60, Math.min(containerHeight - 80, screenY));
 
-      results.push({
-        peak,
-        bearing,
-        distance: dist,
-        elevAngle,
-        screenX,
-        screenY: clampedY,
-        isTaken: checkedPeakIds.has(peak.id),
-      });
+      results.push({ peak, bearing, distance: dist, elevAngle, screenX, screenY: clampedY, isTaken: checkedPeakIds.has(peak.id) });
     }
 
-    // Sort by distance (far first so close ones render on top)
     results.sort((a, b) => b.distance - a.distance);
     return results;
-  }, [userPos, heading, tilt, peaks, maxDist, checkedPeakIds]);
+  }, [userPos, heading, tilt, peaks, maxDist, checkedPeakIds, mode]);
 
   // Compass direction label
   const compassDir = heading != null ? (
@@ -244,6 +390,7 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
     heading < 292.5 ? 'V' : 'NV'
   ) : '';
 
+  // ── Pre-permissions screen ──
   if (!permissionsReady) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-6 p-6 text-center">
@@ -253,7 +400,7 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
         <div className="space-y-2">
           <h3 className="text-lg font-bold text-foreground">AR Fjellvisning</h3>
           <p className="text-sm text-muted-foreground max-w-xs">
-            Se fjelltopper rundt deg gjennom kameraet. Krever tilgang til kamera, GPS og kompass.
+            Se fjelltopper rundt deg gjennom kameraet eller som 3D-terreng. Krever tilgang til kamera, GPS og kompass.
           </p>
         </div>
         {cameraError && (
@@ -268,19 +415,26 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
     );
   }
 
+  // ── Main AR view ──
   return (
     <div ref={containerRef} className="relative w-full h-full overflow-hidden bg-black">
-      {/* Camera feed */}
+      {/* Camera feed (visible in camera mode) */}
       <video
         ref={videoRef}
-        className="absolute inset-0 w-full h-full object-cover"
+        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${mode === 'camera' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         playsInline
         muted
         autoPlay
       />
 
-      {/* Peak labels overlay */}
-      {visiblePeaks.map(({ peak, distance, screenX, screenY, isTaken }) => {
+      {/* 3D Map container (visible in 3d mode) */}
+      <div
+        ref={mapContainerRef}
+        className={`absolute inset-0 w-full h-full transition-opacity duration-300 ${mode === '3d' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      />
+
+      {/* Peak labels overlay (camera mode only) */}
+      {mode === 'camera' && visiblePeaks.map(({ peak, distance, screenX, screenY, isTaken }) => {
         const icon = getPeakIcon(peak.heightMoh, peak.id);
         const opacity = Math.max(0.5, 1 - distance / maxDist);
         const scale = Math.max(0.6, 1 - (distance / maxDist) * 0.4);
@@ -298,7 +452,6 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
             }}
             onClick={() => onSelectPeak?.(peak)}
           >
-            {/* Label */}
             <div className={`px-2 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap shadow-lg backdrop-blur-md border ${
               isTaken
                 ? 'bg-[hsl(152,60%,42%)]/85 text-white border-[hsl(152,60%,35%)]/50'
@@ -307,11 +460,9 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
               <span>{peak.name}</span>
               <span className="ml-1.5 text-[10px] opacity-80">{peak.heightMoh}m</span>
             </div>
-            {/* Distance */}
             <span className="text-[9px] text-white/90 font-medium drop-shadow-lg">
               {distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}
             </span>
-            {/* Icon */}
             <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 shadow-lg ${
               isTaken
                 ? 'bg-[hsl(152,60%,42%)] border-[hsl(152,60%,35%)]'
@@ -319,7 +470,6 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
             }`}>
               <img src={icon} alt="" className="w-5 h-5 object-contain" />
             </div>
-            {/* Connector line */}
             <div className={`w-px h-4 ${isTaken ? 'bg-[hsl(152,60%,42%)]/50' : 'bg-white/30'}`} />
           </button>
         );
@@ -332,23 +482,38 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
         <span className="text-white/60 text-xs">{heading != null ? `${Math.round(heading)}°` : '—'}</span>
       </div>
 
-      {/* HUD: Peak count + mini-map toggle */}
+      {/* HUD: Top-right controls */}
       <div className="absolute top-4 right-4 z-30 flex gap-2">
+        {/* Mode toggle */}
         <button
-          onClick={() => setShowMiniMap(v => !v)}
-          className={`px-3 py-1.5 rounded-full backdrop-blur-md border border-white/15 text-white text-xs font-medium transition-colors ${showMiniMap ? 'bg-primary/60' : 'bg-black/50'}`}
+          onClick={toggleMode}
+          className="px-3 py-1.5 rounded-full bg-primary/70 backdrop-blur-md border border-white/15 text-white text-xs font-medium flex items-center gap-1"
         >
-          <MapIcon className="w-3.5 h-3.5 inline mr-1" />
-          Kart
+          {mode === 'camera' ? (
+            <><Eye className="w-3.5 h-3.5" /> 3D</>
+          ) : (
+            <><Video className="w-3.5 h-3.5" /> Kamera</>
+          )}
         </button>
+        {/* Mini-map toggle (camera mode) */}
+        {mode === 'camera' && (
+          <button
+            onClick={() => setShowMiniMap(v => !v)}
+            className={`px-3 py-1.5 rounded-full backdrop-blur-md border border-white/15 text-white text-xs font-medium transition-colors ${showMiniMap ? 'bg-primary/60' : 'bg-black/50'}`}
+          >
+            <MapIcon className="w-3.5 h-3.5 inline mr-1" />
+            Kart
+          </button>
+        )}
+        {/* Peak count */}
         <div className="px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white text-xs font-medium">
           <Mountain className="w-3.5 h-3.5 inline mr-1" />
-          {visiblePeaks.length} topper
+          {mode === 'camera' ? visiblePeaks.length : peaks.filter(p => userPos ? calcDistance(userPos.lat, userPos.lng, p.latitude, p.longitude) <= maxDist : false).length} topper
         </div>
       </div>
 
-      {/* Mini-map */}
-      {showMiniMap && userPos && (
+      {/* Mini-map (camera mode only) */}
+      {mode === 'camera' && showMiniMap && userPos && (
         <div className="absolute bottom-24 right-3 z-30 w-36 h-36 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl">
           {(() => {
             const zoom = maxDist > 20 ? 9 : maxDist > 10 ? 10 : 11;
@@ -357,22 +522,15 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
               .filter(p => p.dist <= maxDist)
               .sort((a, b) => a.dist - b.dist)
               .slice(0, 15);
-            
             const markers = nearPeaks.map(p => {
               const color = checkedPeakIds.has(p.id) ? '2dbe6c' : 'ffffff';
               return `pin-s+${color}(${p.longitude},${p.latitude})`;
             }).join(',');
-            
             const userMarker = `pin-s-circle+4a90d9(${userPos.lng},${userPos.lat})`;
             const allMarkers = markers ? `${userMarker},${markers}` : userMarker;
-            
             const mapUrl = `https://api.mapbox.com/styles/v1/mapbox/outdoors-v12/static/${allMarkers}/${userPos.lng},${userPos.lat},${zoom},0/${288}x${288}@2x?access_token=${MAPBOX_TOKEN}`;
-            
-            return (
-              <img src={mapUrl} alt="Minikart" className="w-full h-full object-cover" />
-            );
+            return <img src={mapUrl} alt="Minikart" className="w-full h-full object-cover" />;
           })()}
-          {/* Heading indicator */}
           <div
             className="absolute top-1/2 left-1/2 w-0 h-0 -translate-x-1/2 -translate-y-1/2 z-10"
             style={{ transform: `translate(-50%, -50%) rotate(${heading || 0}deg)` }}
