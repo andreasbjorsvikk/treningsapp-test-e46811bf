@@ -11,17 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { decodePolyline } from '@/utils/polyline';
 import { addEnhancedTerrain } from '@/utils/mapTerrain';
-import peakLowIcon from '@/assets/icons/peak-low.png';
-import peakMediumIcon from '@/assets/icons/peak-medium.png';
-import peakHighIcon from '@/assets/icons/peak-high.png';
-import peakVeryHighIcon from '@/assets/icons/peak-veryhigh.png';
-
-function getPeakIconByElevation(elevationMoh: number): string {
-  if (elevationMoh >= 1000) return peakVeryHighIcon;
-  if (elevationMoh >= 650) return peakHighIcon;
-  if (elevationMoh >= 300) return peakMediumIcon;
-  return peakLowIcon;
-}
+import { getPeakIcon } from '@/utils/peakIcons';
 
 type HeatmapPeriod = 'year' | 'total';
 
@@ -428,7 +418,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       const isYearFiltered = onlyReachedThisYear && !thisYearCheckedIds.has(peak.id);
 
       const el = document.createElement('div');
-      const peakIcon = getPeakIconByElevation(peak.heightMoh);
+      const peakIcon = getPeakIcon(peak.heightMoh, peak.id);
       
       el.style.cssText = `
         width: 36px; height: 36px; cursor: pointer;

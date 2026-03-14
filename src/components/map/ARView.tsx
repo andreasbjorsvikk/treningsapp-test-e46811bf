@@ -3,10 +3,7 @@ import { Peak } from '@/data/peaks';
 import { PeakCheckin } from '@/services/peakCheckinService';
 import { Camera, CameraOff, Compass, Mountain, Navigation, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import peakLowIcon from '@/assets/icons/peak-low.png';
-import peakMediumIcon from '@/assets/icons/peak-medium.png';
-import peakHighIcon from '@/assets/icons/peak-high.png';
-import peakVeryHighIcon from '@/assets/icons/peak-veryhigh.png';
+import { getPeakIcon } from '@/utils/peakIcons';
 
 interface ARViewProps {
   peaks: Peak[];
@@ -51,12 +48,7 @@ function calcBearing(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return (toDeg(Math.atan2(y, x)) + 360) % 360;
 }
 
-function getPeakIcon(heightMoh: number): string {
-  if (heightMoh >= 800) return peakVeryHighIcon;
-  if (heightMoh >= 500) return peakHighIcon;
-  if (heightMoh >= 200) return peakMediumIcon;
-  return peakLowIcon;
-}
+// getPeakIcon imported from utils
 
 function normalizeDeg(deg: number): number {
   return ((deg % 360) + 360) % 360;
@@ -287,7 +279,7 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
 
       {/* Peak labels overlay */}
       {visiblePeaks.map(({ peak, distance, screenX, screenY, isTaken }) => {
-        const icon = getPeakIcon(peak.heightMoh);
+        const icon = getPeakIcon(peak.heightMoh, peak.id);
         const opacity = Math.max(0.5, 1 - distance / maxDist);
         const scale = Math.max(0.6, 1 - (distance / maxDist) * 0.4);
 

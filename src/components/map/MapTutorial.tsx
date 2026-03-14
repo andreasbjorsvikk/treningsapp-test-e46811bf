@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, ChevronRight, Mountain, Map, MapPin, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import peakHighIcon from '@/assets/icons/peak-high.png';
-import peakMediumIcon from '@/assets/icons/peak-medium.png';
-import peakLowIcon from '@/assets/icons/peak-low.png';
-import peakVeryHighIcon from '@/assets/icons/peak-veryhigh.png';
+import { peakIconTiers } from '@/utils/peakIcons';
 
 const TUTORIAL_KEY = 'treningslogg_map_tutorial_done';
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
@@ -49,7 +46,7 @@ const CheckinAnimation = () => {
             }`}
           >
             <div className={`w-9 h-9 rounded-full flex items-center justify-center ${phase === 'checked' ? 'bg-white/20 border border-white/40' : ''}`}>
-              <img src={peakHighIcon} alt="" className="w-7 h-7 object-contain rounded-full" />
+              <img src={peakIconTiers.high} alt="" className="w-7 h-7 object-contain rounded-full" />
             </div>
           </div>
           {/* Ripple effect */}
@@ -182,7 +179,7 @@ const LongPressAnimation = () => {
         {phase === 'spawned' && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-scale-in">
             <div className="w-10 h-10 rounded-full bg-card border-2 border-border flex items-center justify-center shadow-lg">
-              <img src={peakMediumIcon} alt="" className="w-7 h-7 object-contain rounded-full" />
+              <img src={peakIconTiers.medium} alt="" className="w-7 h-7 object-contain rounded-full" />
             </div>
           </div>
         )}
@@ -230,25 +227,25 @@ const steps: TutorialStep[] = [
   {
     title: 'Velkommen til fjelltopp-kartet! ⛰️',
     text: 'Her kan du sjekke inn på fjelltopper som du bestiger. Du kan sjekke inn flere ganger på hver topp og øke scoren din på lederlistene.',
-    icon: <PeakIcon src={peakVeryHighIcon} />,
+    icon: <PeakIcon src={peakIconTiers.veryHigh} />,
     customContent: <CheckinAnimation />,
   },
   {
     title: 'Kartvisning',
     text: 'Bytt mellom satellitt- og terrengvisning. Du kan også veksle mellom 2D og 3D-visning.',
-    icon: <PeakIcon src={peakHighIcon} />,
+    icon: <PeakIcon src={peakIconTiers.high} />,
     customContent: <MapStylePreview />,
   },
   {
     title: 'Foreslå ny topp',
     text: 'For å foreslå en ny fjelltopp som ikke finnes her enda, trykk og hold inne på kartet der toppen er. Om du står på toppen vil du bli sjekket inn når den blir godkjent.',
-    icon: <PeakIcon src={peakMediumIcon} />,
+    icon: <PeakIcon src={peakIconTiers.medium} />,
     customContent: <LongPressAnimation />,
   },
   {
     title: 'Utforsk de andre fanene',
     text: '',
-    icon: <PeakIcon src={peakLowIcon} />,
+    icon: <PeakIcon src={peakIconTiers.low} />,
     customContent: <OverviewContent />,
   },
 ];
