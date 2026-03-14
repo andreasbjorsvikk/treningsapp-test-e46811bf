@@ -169,7 +169,8 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
         setLoading(false);
         return;
       }
-      await checkinPeak(user.id, peak.id);
+      const newCheckin = await checkinPeak(user.id, peak.id);
+      setLastNewCheckinId(newCheckin.id);
       setShowSuccessAnim(true);
       setShowChildCheckin(true);
       onCheckinSuccess();
