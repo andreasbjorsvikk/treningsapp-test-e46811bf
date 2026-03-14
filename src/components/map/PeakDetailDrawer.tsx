@@ -59,6 +59,8 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
   const [checkinDate, setCheckinDate] = useState<Date>(new Date());
   const [searching, setSearching] = useState(false);
   const [submittingCheckin, setSubmittingCheckin] = useState(false);
+  const [adminChildrenForUser, setAdminChildrenForUser] = useState<{ id: string; name: string; emoji: string; avatar_url: string | null }[]>([]);
+  const [adminSelectedChildIds, setAdminSelectedChildIds] = useState<Set<string>>(new Set());
 
   // Admin all checkins state
   const [allCheckinsOpen, setAllCheckinsOpen] = useState(false);
