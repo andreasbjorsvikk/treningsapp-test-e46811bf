@@ -233,7 +233,7 @@ const steps: TutorialStep[] = [
   {
     title: 'Kartvisning',
     text: 'Bytt mellom satellitt- og terrengvisning. Du kan også veksle mellom 2D og 3D-visning.',
-    icon: <PeakIcon src={peakHighIcon} />,
+    icon: <PeakIcon src={peakIconTiers.high} />,
     customContent: <MapStylePreview />,
   },
   {
