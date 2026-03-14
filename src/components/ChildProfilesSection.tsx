@@ -437,6 +437,34 @@ const ChildProfilesSection = () => {
         )}
       </div>
 
+      {/* Shared (accepted) children from other parents */}
+      {sharedChildren.length > 0 && (
+        <div className="glass-card rounded-xl p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-muted-foreground" />
+            <Label className="text-sm font-semibold">Delte barn</Label>
+          </div>
+          <div className="space-y-2">
+            {sharedChildren.map(child => (
+              <div key={child.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/30 transition-colors">
+                <button onClick={() => setSelectedChildDetail(child as unknown as ChildProfile)}>
+                  <Avatar className="w-10 h-10">
+                    {child.avatar_url ? <AvatarImage src={child.avatar_url} /> : null}
+                    <AvatarFallback className="text-sm font-bold">
+                      {(child as any).emoji || '👶'}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+                <button onClick={() => setSelectedChildDetail(child as unknown as ChildProfile)} className="flex-1 min-w-0 text-left">
+                  <span className="text-sm font-medium">{child.name}</span>
+                  <span className="ml-1 text-sm">{(child as any).emoji || '👶'}</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )
+
       {/* Pending shared invitations */}
       {pendingInvitations.length > 0 && (
         <div className="glass-card rounded-xl p-4 space-y-3">
