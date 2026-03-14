@@ -198,11 +198,20 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
     setSubmittingCheckin(true);
     try {
       await adminCheckinPeak(selectedUser.id, peak.id, checkinDate.toISOString());
-      toast.success(`Innsjekking registrert for ${selectedUser.username}`);
+      // Also check in selected children
+      for (const childId of adminSelectedChildIds) {
+        await adminCheckinPeak(childId, peak.id, checkinDate.toISOString());
+      }
+      const childCount = adminSelectedChildIds.size;
+      const msg = childCount > 0
+        ? `Innsjekking registrert for ${selectedUser.username} og ${childCount} barn`
+        : `Innsjekking registrert for ${selectedUser.username}`;
+      toast.success(msg);
       setManualCheckinOpen(false);
       setSelectedUser(null);
       setSearchQuery('');
       setCheckinDate(new Date());
+      setAdminSelectedChildIds(new Set());
       onCheckinSuccess();
     } catch (e: any) {
       const msg = e?.message || 'Ukjent feil';
