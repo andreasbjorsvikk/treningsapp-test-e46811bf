@@ -394,7 +394,16 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
           </div>
         </DrawerContent>
       </Drawer>
-    </>
+      {peak && (
+        <ChildCheckinSheet
+          open={showChildCheckin}
+          onClose={() => setShowChildCheckin(false)}
+          peakId={peak.id}
+          peakName={peak.name}
+          onCheckinSuccess={onCheckinSuccess}
+        />
+      )}
+    </>;
   );
 };
 
