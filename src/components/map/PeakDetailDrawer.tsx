@@ -46,6 +46,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
   const [showSuccessAnim, setShowSuccessAnim] = useState(false);
   const [savingImage, setSavingImage] = useState(false);
   const [pendingImage, setPendingImage] = useState<File | null>(null);
+  const [showChildCheckin, setShowChildCheckin] = useState(false);
   
   // Admin manual checkin state
   const [manualCheckinOpen, setManualCheckinOpen] = useState(false);
