@@ -535,7 +535,16 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
         <span className="text-white/60 text-xs">{heading != null ? `${Math.round(heading)}°` : '—'}</span>
       </div>
 
-      {/* HUD: Top-right controls */}
+      {/* Zoom indicator (camera mode) */}
+      {mode === 'camera' && cameraZoom > 1.05 && (
+        <button
+          onClick={() => setCameraZoom(1)}
+          className="absolute top-14 left-1/2 -translate-x-1/2 z-30 px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white text-xs font-medium"
+        >
+          {cameraZoom.toFixed(1)}x ✕
+        </button>
+      )}
+
       <div className="absolute top-4 right-4 z-30 flex gap-2">
         {/* Mode toggle */}
         <button
