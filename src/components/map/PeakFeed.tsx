@@ -10,11 +10,12 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import CheckinImageUpload from '@/components/map/CheckinImageUpload';
 import ChildProfileDetailDrawer from '@/components/map/ChildProfileDetailDrawer';
+import UserProfileDrawer from '@/components/community/UserProfileDrawer';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 
-type FeedFilter = 'all' | 'mine' | 'friends' | 'global';
+type FeedFilter = 'mine' | 'friends' | 'global';
 
 interface FeedItem {
   id: string;
