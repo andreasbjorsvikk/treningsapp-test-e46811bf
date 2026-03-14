@@ -81,8 +81,11 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
   const [showMiniMap, setShowMiniMap] = useState(true);
   const [mode, setMode] = useState<ARMode>('camera');
   const [mapReady, setMapReady] = useState(false);
+  const [cameraZoom, setCameraZoom] = useState(1);
   const headingSmoothed = useRef<number | null>(null);
   const lastMapUpdate = useRef(0);
+  const pinchStartDist = useRef<number | null>(null);
+  const pinchStartZoom = useRef(1);
 
   const checkedPeakIds = useMemo(() => new Set(checkins.map(c => c.peak_id)), [checkins]);
 
