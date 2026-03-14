@@ -10,11 +10,12 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import CheckinImageUpload from '@/components/map/CheckinImageUpload';
 import ChildProfileDetailDrawer from '@/components/map/ChildProfileDetailDrawer';
+import UserProfileDrawer from '@/components/community/UserProfileDrawer';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 
-type FeedFilter = 'all' | 'mine' | 'friends' | 'global';
+type FeedFilter = 'mine' | 'friends' | 'global';
 
 interface FeedItem {
   id: string;
@@ -42,7 +43,8 @@ const PeakFeed = () => {
   const { user } = useAuth();
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<FeedFilter>('all');
+  const [selectedProfile, setSelectedProfile] = useState<{ id: string; username: string | null; avatar_url: string | null } | null>(null);
+  const [filter, setFilter] = useState<FeedFilter>('friends');
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [pendingImage, setPendingImage] = useState<File | null>(null);
@@ -243,7 +245,7 @@ const PeakFeed = () => {
   };
 
   useEffect(() => {
-    if (user && filter === 'global') {
+    if (user) {
       loadFeed();
     }
   }, [filter]);
@@ -283,7 +285,7 @@ const PeakFeed = () => {
   };
 
   const filteredItems = items.filter(item => {
-    if (filter === 'mine') return item.user_id === user?.id;
+    if (filter === 'mine') return item.user_id === user?.id || myChildIds.has(item.user_id);
     if (filter === 'friends') {
       return item.user_id !== user?.id || myChildIds.has(item.user_id);
     }
@@ -361,9 +363,8 @@ const PeakFeed = () => {
   };
 
   const filterOptions: { value: FeedFilter; label: string }[] = [
-    { value: 'all', label: 'Alle' },
-    { value: 'mine', label: 'Mine' },
     { value: 'friends', label: 'Venner' },
+    { value: 'mine', label: 'Mine' },
     { value: 'global', label: 'Global' },
   ];
 
@@ -379,8 +380,23 @@ const PeakFeed = () => {
 
   const handleDeleteCheckin = async (itemId: string) => {
     try {
+      // Find the item and its children - cascade delete children
+      const item = items.find(i => i.id === itemId);
+      if (item && !item.is_child) {
+        // Find child checkins for this post
+        const childCheckins = items.filter(ci =>
+          ci.is_child &&
+          ci.peak_id === item.peak_id &&
+          ci.child_parent_id === item.user_id &&
+          Math.abs(new Date(ci.checked_in_at).getTime() - new Date(item.checked_in_at).getTime()) <= 60 * 60 * 1000
+        );
+        // Delete child checkins first
+        for (const ci of childCheckins) {
+          await deleteCheckin(ci.id);
+        }
+      }
       await deleteCheckin(itemId);
-      setItems(prev => prev.filter(i => i.id !== itemId));
+      loadFeed();
       toast.success('Innsjekking slettet');
     } catch { toast.error('Kunne ikke slette innsjekking'); }
     setDeleteConfirmId(null);
@@ -493,19 +509,21 @@ const PeakFeed = () => {
 
                     <div className="p-3.5">
                       <div className="flex items-start gap-3">
-                        <Avatar className="w-10 h-10 shrink-0 ring-2 ring-emerald-500/20">
-                          <AvatarImage src={item.avatar_url || undefined} />
-                          <AvatarFallback className="text-sm font-bold bg-emerald-500/10 text-emerald-600">
-                            {item.is_child && item.child_emoji ? item.child_emoji : (item.username?.[0]?.toUpperCase() || '?')}
-                          </AvatarFallback>
-                        </Avatar>
+                        <button onClick={() => !item.is_child && setSelectedProfile({ id: item.user_id, username: item.username, avatar_url: item.avatar_url })}>
+                          <Avatar className="w-10 h-10 shrink-0 ring-2 ring-emerald-500/20">
+                            <AvatarImage src={item.avatar_url || undefined} />
+                            <AvatarFallback className="text-sm font-bold bg-emerald-500/10 text-emerald-600">
+                              {item.is_child && item.child_emoji ? item.child_emoji : (item.username?.[0]?.toUpperCase() || '?')}
+                            </AvatarFallback>
+                          </Avatar>
+                        </button>
 
                         <div className="flex-1 min-w-0">
                           <p className="text-sm leading-snug">
-                            <span className="font-semibold">
+                            <button onClick={() => !item.is_child && setSelectedProfile({ id: item.user_id, username: item.username, avatar_url: item.avatar_url })} className="font-semibold hover:underline">
                               {isMe ? 'Du' : (item.username || 'Ukjent')}
                               {item.is_child && item.child_emoji ? ` ${item.child_emoji}` : ''}
-                            </span>
+                            </button>
                             <span className="text-muted-foreground"> nådde toppen av </span>
                             <span className="font-semibold">{item.peak_name}</span>
                           </p>
@@ -522,9 +540,9 @@ const PeakFeed = () => {
                                   }}
                                   className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/8 border border-emerald-500/15 hover:bg-emerald-500/15 transition-colors"
                                 >
-                                  <Avatar className="w-7 h-7">
+                                  <Avatar className="w-9 h-9">
                                     {ci.avatar_url ? <AvatarImage src={ci.avatar_url} /> : null}
-                                    <AvatarFallback className="text-[10px] bg-emerald-500/10 text-emerald-600">
+                                    <AvatarFallback className="text-xs bg-emerald-500/10 text-emerald-600">
                                       {ci.child_emoji || '👶'}
                                     </AvatarFallback>
                                   </Avatar>
@@ -691,6 +709,15 @@ const PeakFeed = () => {
             </div>
           </div>
         ))
+      )}
+
+      {/* User profile drawer */}
+      {selectedProfile && (
+        <UserProfileDrawer
+          user={selectedProfile as any}
+          open={!!selectedProfile}
+          onClose={() => setSelectedProfile(null)}
+        />
       )}
     </div>
   );

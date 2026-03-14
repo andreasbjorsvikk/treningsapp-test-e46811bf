@@ -1,12 +1,13 @@
 import { Peak } from '@/data/peaks';
 import { PeakCheckin, getDistanceMeters } from '@/services/peakCheckinService';
-import { Mountain, Check, Pencil, Trash2, Search, SlidersHorizontal, X } from 'lucide-react';
+import { Mountain, Pencil, Trash2, Search, SlidersHorizontal, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { useState, useMemo, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { getPeakIcon } from '@/utils/peakIcons';
 
 type Filter = 'all' | 'not_taken' | 'taken';
 
@@ -38,7 +39,6 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
 
   const checkedPeakIds = new Set(checkins.map(c => c.peak_id));
 
-  // Get unique municipalities
   const municipalities = useMemo(() => {
     const areas = new Set(peaks.map(p => p.area).filter(Boolean));
     return Array.from(areas).sort();
@@ -78,7 +78,6 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
       result = result.filter(p => p.area === selectedMunicipality);
     }
 
-    // Sort by distance (nearest first)
     result.sort((a, b) => {
       if (a.distance !== null && b.distance !== null) return a.distance - b.distance;
       if (a.distance !== null) return -1;
@@ -131,7 +130,6 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
               <SheetTitle>Filtrer topper</SheetTitle>
             </SheetHeader>
             <div className="space-y-6 pt-4">
-              {/* Elevation filter */}
               <div className="space-y-3">
                 <Label>Minimum høyde: {minElevation > 0 ? `${minElevation} moh` : 'Ingen'}</Label>
                 <Slider
@@ -142,8 +140,6 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
                   step={50}
                 />
               </div>
-
-              {/* Municipality filter */}
               <div className="space-y-3">
                 <Label>Kommune</Label>
                 {selectedMunicipality ? (
@@ -180,8 +176,6 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
                   </>
                 )}
               </div>
-
-              {/* Clear button */}
               {hasActiveFilters && (
                 <button
                   onClick={() => { setMinElevation(0); setSelectedMunicipality(null); }}
@@ -220,6 +214,7 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
           {filtered.map(peak => {
             const isTaken = checkedPeakIds.has(peak.id);
             const isUnpublished = peak.isPublished === false;
+            const iconSrc = getPeakIcon(peak.heightMoh, peak.id);
             return (
               <div
                 key={peak.id}
@@ -229,20 +224,23 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
                   onClick={() => onSelectPeak(peak)}
                   className="flex items-center gap-3 flex-1 min-w-0 text-left"
                 >
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                    isTaken ? 'bg-success/15 text-success' : isUnpublished ? 'bg-warning/15 text-warning' : 'bg-muted text-muted-foreground'
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                    isTaken ? 'bg-success/15' : isUnpublished ? 'bg-warning/15' : 'bg-muted'
                   }`}>
-                    <Mountain className="w-5 h-5" />
+                    <img
+                      src={iconSrc}
+                      alt=""
+                      className="w-6 h-6"
+                      style={{
+                        filter: isTaken
+                          ? 'brightness(0) saturate(100%) invert(58%) sepia(52%) saturate(501%) hue-rotate(93deg) brightness(95%) contrast(92%)'
+                          : 'brightness(0) opacity(0.5)',
+                      }}
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-display font-semibold text-sm truncate">{peak.name}</span>
-                      {isTaken && (
-                        <Badge variant="secondary" className="text-[10px] bg-success/15 text-success border-0 gap-0.5 shrink-0">
-                          <Check className="w-3 h-3" />
-                          Nådd
-                        </Badge>
-                      )}
                       {isUnpublished && (
                         <Badge variant="secondary" className="text-[10px] bg-warning/15 text-[hsl(var(--warning))] border-0 shrink-0">
                           Upublisert

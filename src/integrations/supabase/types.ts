@@ -479,6 +479,8 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           id: string
+          privacy_child_checkins: string
+          privacy_child_profile: string
           privacy_goals: string
           privacy_goals_friends: Json | null
           privacy_peak_checkins: string
@@ -495,6 +497,8 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           id: string
+          privacy_child_checkins?: string
+          privacy_child_profile?: string
           privacy_goals?: string
           privacy_goals_friends?: Json | null
           privacy_peak_checkins?: string
@@ -511,6 +515,8 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           id?: string
+          privacy_child_checkins?: string
+          privacy_child_profile?: string
           privacy_goals?: string
           privacy_goals_friends?: Json | null
           privacy_peak_checkins?: string

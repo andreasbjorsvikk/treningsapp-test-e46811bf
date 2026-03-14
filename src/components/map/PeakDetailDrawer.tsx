@@ -428,7 +428,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                   </Button>
                 ) : (
                   <Button variant="outline" size="sm" className="w-full" onClick={() => { onClose(); onShowRoute(peak); }}>
-                    Vis rute ({(peak.route_distance_m || 0) / 1000} km, {Math.round((peak.route_duration_s || 0) / 60)} min)
+                    Vis rute ({((peak.route_distance_m || 0) / 1000).toFixed(1)} km, {Math.round((peak.route_duration_s || 0) / 60)} min)
                   </Button>
                 )
               )}
