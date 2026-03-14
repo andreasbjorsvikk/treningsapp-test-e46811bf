@@ -341,17 +341,14 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
           ${peak.name} <span style="opacity:0.7;font-size:9px">${peak.heightMoh}m</span>
         </div>
         <div style="
-          width: 28px; height: 21px; overflow: hidden;
+          width: 28px; height: 28px; border-radius: 50%;
+          display: flex; align-items: flex-end; justify-content: center;
+          border: 2px solid ${isTaken ? 'hsl(152,60%,35%)' : 'rgba(255,255,255,0.7)'};
+          background: ${isTaken ? 'hsl(152,60%,42%)' : 'rgba(255,255,255,0.9)'};
+          clip-path: inset(0 0 25% 0);
+          overflow: hidden;
         ">
-          <div style="
-            width: 28px; height: 28px; border-radius: 50%;
-            display: flex; align-items: flex-end; justify-content: center;
-            border: 2px solid ${isTaken ? 'hsl(152,60%,35%)' : 'rgba(255,255,255,0.7)'};
-            background: ${isTaken ? 'hsl(152,60%,42%)' : 'rgba(255,255,255,0.9)'};
-            padding-bottom: 1px; box-sizing: border-box;
-          ">
-            <img src="${icon}" style="width:18px;height:18px;object-fit:contain" />
-          </div>
+          <img src="${icon}" style="width:24px;height:24px;object-fit:contain;object-position:center bottom" />
         </div>
       `;
 
