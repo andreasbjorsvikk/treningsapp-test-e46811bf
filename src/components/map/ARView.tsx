@@ -427,7 +427,9 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
     // cameraPitchDeg > 0 = looking up, < 0 = looking down
     const cameraPitchDeg = tilt - 90;
 
-    const verticalFov = HORIZONTAL_FOV * (containerHeight / containerWidth);
+    // Use realistic phone camera vertical FOV (~50-55°) instead of aspect-ratio-derived value
+    // which would give ~105° and make tilt response feel too sluggish
+    const verticalFov = 55;
 
     for (const peak of peaks) {
       const dist = calcDistance(userPos.lat, userPos.lng, peak.latitude, peak.longitude);
