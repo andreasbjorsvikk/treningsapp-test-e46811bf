@@ -36,9 +36,10 @@ interface PeakDetailDrawerProps {
   adminMode?: boolean;
   onEdit?: (peak: Peak) => void;
   onDelete?: (peakId: string) => void;
-  onShowRoute?: (peak: Peak) => void;
+  onShowRoute?: (peak: Peak, fromTopper?: boolean) => void;
   onHideRoute?: () => void;
   isRouteShown?: boolean;
+  fromTopperTab?: boolean;
 }
 
 const CHECKIN_RADIUS_METERS = 100;
