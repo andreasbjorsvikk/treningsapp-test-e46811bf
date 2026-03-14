@@ -245,7 +245,13 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
       pitch: 75,
       bearing: heading || 0,
       antialias: false,
-      interactive: false, // Sensor-driven, no touch
+      interactive: true,
+      dragPan: false,
+      dragRotate: false,
+      scrollZoom: true,
+      touchZoomRotate: true,
+      doubleClickZoom: true,
+      touchPitch: false,
     });
 
     map.on('style.load', () => {
