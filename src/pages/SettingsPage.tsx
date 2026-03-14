@@ -76,6 +76,12 @@ const SettingsPage = () => {
   const [gdprSubView, setGdprSubView] = useState<'main' | 'deleteData' | 'deleteAccount' | 'downloadData'>('main');
   const [helpOpenSections, setHelpOpenSections] = useState<Set<string>>(new Set());
 
+  // Child privacy options
+  const [hasChildren, setHasChildren] = useState(false);
+  const [childPrivacyProfile, setChildPrivacyProfile] = useState('friends');
+  const [childPrivacyCheckins, setChildPrivacyCheckins] = useState('friends');
+  const [childrenCount, setChildrenCount] = useState(0);
+
   // Check Strava connection on mount & after callback
   useEffect(() => {
     if (!user) return;
