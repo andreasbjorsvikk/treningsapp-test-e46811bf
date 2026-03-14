@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { ChildProfile, getChildProfiles, createChildProfile, updateChildProfile, deleteChildProfile, uploadChildAvatar } from '@/services/childProfileService';
+import { ChildProfile, getChildProfiles, createChildProfile, updateChildProfile, deleteChildProfile } from '@/services/childProfileService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -174,7 +174,7 @@ const ChildProfilesSection = () => {
     setUploadingId(cropChildId);
     try {
       // Use blob directly instead of File constructor for better iOS compatibility
-      const path = `children/${user.id}/${cropChildId}/avatar.png`;
+      const path = `${user.id}/children/${cropChildId}/avatar.png`;
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(path, blob, { upsert: true, contentType: 'image/png' });

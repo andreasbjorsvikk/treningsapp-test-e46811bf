@@ -71,7 +71,7 @@ export async function deleteChildProfile(childId: string): Promise<void> {
 }
 
 export async function uploadChildAvatar(childId: string, parentUserId: string, file: File): Promise<string> {
-  const path = `children/${parentUserId}/${childId}/avatar.png`;
+  const path = `${parentUserId}/children/${childId}/avatar.png`;
   const { error } = await supabase.storage
     .from('avatars')
     .upload(path, file, { upsert: true, contentType: file.type });
