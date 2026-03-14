@@ -45,9 +45,7 @@ const CheckinAnimation = () => {
                 : 'bg-card border-border'
             }`}
           >
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center ${phase === 'checked' ? 'bg-white/20 border border-white/40' : ''}`}>
-              <img src={peakIconTiers.high} alt="" className="w-7 h-7 object-contain rounded-full" />
-            </div>
+            <img src={peakIconTiers.high} alt="" className="w-6 h-6 object-contain" style={phase === 'checked' ? { filter: 'brightness(0) invert(1)' } : undefined} />
           </div>
           {/* Ripple effect */}
           {phase === 'checked' && (
@@ -179,7 +177,7 @@ const LongPressAnimation = () => {
         {phase === 'spawned' && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-scale-in">
             <div className="w-10 h-10 rounded-full bg-card border-2 border-border flex items-center justify-center shadow-lg">
-              <img src={peakIconTiers.medium} alt="" className="w-7 h-7 object-contain rounded-full" />
+              <img src={peakIconTiers.medium} alt="" className="w-6 h-6 object-contain" />
             </div>
           </div>
         )}
