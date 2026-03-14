@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { updateCheckinImage } from '@/services/peakCheckinService';
+import { updateCheckinImage, deleteCheckin } from '@/services/peakCheckinService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Mountain, Loader2, RefreshCw, Pencil } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Mountain, Loader2, RefreshCw, Pencil, Trash2, ImageIcon } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import CheckinImageUpload from '@/components/map/CheckinImageUpload';
@@ -38,6 +39,7 @@ const PeakFeed = () => {
   const [pendingImage, setPendingImage] = useState<File | null>(null);
   const [savingImage, setSavingImage] = useState(false);
   const [myChildIds, setMyChildIds] = useState<Set<string>>(new Set());
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -276,8 +278,44 @@ const PeakFeed = () => {
     return false;
   };
 
+  // Within 24h edit window
+  const isWithin24h = (item: FeedItem) => {
+    return Date.now() - new Date(item.checked_in_at).getTime() <= 24 * 60 * 60 * 1000;
+  };
+
+  const handleDeleteCheckin = async (itemId: string) => {
+    try {
+      await deleteCheckin(itemId);
+      setItems(prev => prev.filter(i => i.id !== itemId));
+      toast.success('Innsjekking slettet');
+    } catch { toast.error('Kunne ikke slette innsjekking'); }
+    setDeleteConfirmId(null);
+  };
+
+  const handleRemoveImage = async (itemId: string) => {
+    try {
+      await supabase.from('peak_checkins').update({ image_url: null }).eq('id', itemId);
+      setItems(prev => prev.map(i => i.id === itemId ? { ...i, image_url: null } : i));
+      setEditingItemId(null);
+      toast.success('Bilde fjernet');
+    } catch { toast.error('Kunne ikke fjerne bildet'); }
+  };
+
   return (
     <div className="flex flex-col gap-1 p-4">
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={(o) => !o && setDeleteConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Slett innsjekking</AlertDialogTitle>
+            <AlertDialogDescription>Er du sikker på at du vil slette denne innsjekkingen? Dette kan ikke angres.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteConfirmId && handleDeleteCheckin(deleteConfirmId)}>Slett</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {/* Filter + Refresh bar */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex gap-1 p-0.5 rounded-lg bg-secondary/50">
@@ -381,8 +419,8 @@ const PeakFeed = () => {
                         </div>
 
                         <div className="flex items-center gap-1 shrink-0">
-                          {/* Edit button for own posts and own children's posts */}
-                          {editable && (
+                          {/* Edit button for own posts and own children's posts within 24h */}
+                          {editable && isWithin24h(item) && (
                             <button
                               onClick={() => {
                                 if (isEditing) {
@@ -397,6 +435,16 @@ const PeakFeed = () => {
                               title="Rediger innlegg"
                             >
                               <Pencil className="w-4 h-4" />
+                            </button>
+                          )}
+                          {/* Delete button within 24h */}
+                          {editable && isWithin24h(item) && (
+                            <button
+                              onClick={() => setDeleteConfirmId(item.id)}
+                              className="p-2 rounded-lg hover:bg-destructive/10 transition-colors text-destructive"
+                              title="Slett innsjekking"
+                            >
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           )}
                           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-600/5 border border-emerald-500/10 flex items-center justify-center">
@@ -422,19 +470,30 @@ const PeakFeed = () => {
                         </div>
                       )}
 
-                      {/* Edit mode: image upload */}
+                      {/* Edit mode: image upload + delete */}
                       {isEditing && (
-                        <div className="mt-3 pt-3 border-t border-border/30">
+                        <div className="mt-3 pt-3 border-t border-border/30 space-y-2">
                           <CheckinImageUpload onImageReady={setPendingImage} />
                           {pendingImage && (
                             <Button
                               onClick={() => handleSaveEditImage(item.id, item.user_id)}
                               disabled={savingImage}
                               size="sm"
-                              className="w-full mt-2"
+                              className="w-full"
                             >
-                              {savingImage ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                              {savingImage ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ImageIcon className="w-4 h-4 mr-2" />}
                               {savingImage ? 'Lagrer...' : 'Lagre bilde'}
+                            </Button>
+                          )}
+                          {item.image_url && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full text-destructive hover:text-destructive"
+                              onClick={() => handleRemoveImage(item.id)}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Fjern bilde
                             </Button>
                           )}
                         </div>

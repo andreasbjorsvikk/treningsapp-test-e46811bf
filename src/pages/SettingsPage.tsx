@@ -855,73 +855,10 @@ const SettingsPage = () => {
     );
   }
 
-  // ========== ACCOUNT VIEW ==========
+  // ========== ACCOUNT VIEW (redirect to profile) ==========
   if (view === 'account' && user) {
-    return (
-      <div className="space-y-4">
-        {backButton(t('settings.account'))}
-
-        <div className="glass-card rounded-xl p-4 space-y-5">
-          {/* Avatar & name */}
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <Avatar className="w-16 h-16">
-                {avatarUrl ? (
-                  <AvatarImage src={avatarUrl} alt="Avatar" />
-                ) : null}
-                <AvatarFallback className="text-lg font-bold">
-                  {(username || user.email?.charAt(0) || 'U').charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:scale-110 transition-transform"
-              >
-                <Camera className="w-3.5 h-3.5" />
-              </button>
-              {avatarUrl && (
-                <button
-                  onClick={() => { setCropFile(null); setCropUrl(avatarUrl); setShowCropper(true); }}
-                  disabled={uploading}
-                  className="absolute -bottom-1 -left-1 w-7 h-7 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center shadow-md hover:scale-110 transition-transform"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-              )}
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarSelect} />
-              <AvatarCropper
-                open={showCropper}
-                imageFile={cropFile}
-                imageUrl={cropUrl}
-                onConfirm={handleCroppedUpload}
-                onCancel={() => { setShowCropper(false); setCropFile(null); setCropUrl(null); }}
-              />
-            </div>
-            <div className="min-w-0">
-              <p className="font-semibold truncate">{username || user.email?.split('@')[0]}</p>
-              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-            </div>
-          </div>
-
-          {/* Username */}
-          <div className="space-y-1.5">
-            <Label className="text-sm">{t('settings.username')}</Label>
-            <div className="flex gap-2">
-              <Input
-                value={username}
-                onChange={(e) => { setUsername(e.target.value); setUsernameSaved(false); }}
-                placeholder={t('settings.usernamePlaceholder')}
-                className="flex-1"
-              />
-              <Button size="sm" variant={usernameSaved ? 'ghost' : 'default'} onClick={handleSaveUsername} disabled={usernameLoading || usernameSaved}>
-                {usernameSaved ? t('settings.saved') : t('settings.save')}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    setView('profile');
+    return null;
   }
 
   // ========== PROFILE VIEW ==========
@@ -1154,7 +1091,7 @@ const SettingsPage = () => {
       {/* Profile header */}
       {user ? (
         <button
-          onClick={() => setView('account')}
+          onClick={() => setView('profile')}
           className="glass-card rounded-xl p-4 mb-4 w-full text-left hover:bg-muted/30 transition-colors"
         >
           <div className="flex items-center gap-3">
