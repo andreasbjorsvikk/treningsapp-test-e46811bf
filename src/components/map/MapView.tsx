@@ -421,25 +421,25 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       const peakIcon = getPeakIcon(peak.heightMoh, peak.id);
       
       const bg = isYearFiltered ? 'hsl(0, 0%, 100%)' : isTaken ? 'hsl(152, 60%, 42%)' : isUnpublished ? 'hsl(38, 85%, 50%)' : 'hsl(0, 0%, 100%)';
-        const borderColor = isYearFiltered ? 'hsl(220, 13%, 80%)' : isTaken ? 'hsl(152, 60%, 35%)' : isUnpublished ? 'hsl(38, 85%, 40%)' : 'hsl(220, 13%, 80%)';
         const imgFilter = isTaken && !isYearFiltered
           ? 'filter: drop-shadow(0 0 0.5px white) drop-shadow(0 0 0.5px white) drop-shadow(0 0 1px white) drop-shadow(0 0 2px rgba(255,255,255,0.5));'
           : '';
 
+      // Circle cut at 75% height polygon — traces upper arc of a circle then flat bottom
+      const peakClip = 'polygon(50% 0%, 59% 0.3%, 67% 1.2%, 75% 3%, 82% 6%, 88% 10%, 93% 15%, 96% 22%, 98.5% 29%, 99.7% 37%, 100% 45%, 100% 75%, 0% 75%, 0% 45%, 0.3% 37%, 1.5% 29%, 4% 22%, 7% 15%, 12% 10%, 18% 6%, 25% 3%, 33% 1.2%, 41% 0.3%)';
+
       el.style.cssText = `
-        width: 36px; height: 36px; cursor: pointer;
-        border-radius: 50%;
-        background: ${bg}; border: 2px solid ${borderColor};
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        clip-path: inset(0 0 25% 0);
+        width: 42px; height: 42px; cursor: pointer;
+        background: ${bg};
+        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        clip-path: ${peakClip};
         display: flex; align-items: flex-end; justify-content: center;
-        overflow: hidden;
         ${isUnpublished ? 'opacity: 0.7;' : ''}
         ${isYearFiltered ? 'opacity: 0.55;' : ''}
       `;
         
         el.innerHTML = `
-          <img src="${peakIcon}" alt="" style="width:32px;height:32px;object-fit:contain;object-position:center bottom;${imgFilter}" draggable="false" />
+          <img src="${peakIcon}" alt="" style="width:38px;height:38px;object-fit:cover;object-position:center bottom;${imgFilter}" draggable="false" />
         `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;
