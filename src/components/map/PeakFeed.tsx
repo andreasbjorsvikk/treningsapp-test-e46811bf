@@ -380,8 +380,23 @@ const PeakFeed = () => {
 
   const handleDeleteCheckin = async (itemId: string) => {
     try {
+      // Find the item and its children - cascade delete children
+      const item = items.find(i => i.id === itemId);
+      if (item && !item.is_child) {
+        // Find child checkins for this post
+        const childCheckins = items.filter(ci =>
+          ci.is_child &&
+          ci.peak_id === item.peak_id &&
+          ci.child_parent_id === item.user_id &&
+          Math.abs(new Date(ci.checked_in_at).getTime() - new Date(item.checked_in_at).getTime()) <= 60 * 60 * 1000
+        );
+        // Delete child checkins first
+        for (const ci of childCheckins) {
+          await deleteCheckin(ci.id);
+        }
+      }
       await deleteCheckin(itemId);
-      setItems(prev => prev.filter(i => i.id !== itemId));
+      loadFeed();
       toast.success('Innsjekking slettet');
     } catch { toast.error('Kunne ikke slette innsjekking'); }
     setDeleteConfirmId(null);
