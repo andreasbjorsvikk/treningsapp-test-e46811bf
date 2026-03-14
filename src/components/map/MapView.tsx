@@ -426,7 +426,6 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         width: 44px; height: 44px; cursor: pointer;
         filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
         display: flex; align-items: center; justify-content: center;
-        position: relative;
         ${isUnpublished ? 'opacity: 0.7;' : ''}
         ${isYearFiltered ? 'opacity: 0.55;' : ''}
       `;
