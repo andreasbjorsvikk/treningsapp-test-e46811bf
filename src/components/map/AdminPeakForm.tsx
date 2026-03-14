@@ -104,8 +104,40 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
     }
   }, [routeWaypoints, onWaypointsChange]);
 
+  const generateStraightLineRoute = (waypoints: {lat: number, lng: number}[]) => {
+    if (!routeStartLat || !routeStartLng || !lat || !lng) return;
+    const allPoints: [number, number][] = [
+      [Number(routeStartLng), Number(routeStartLat)],
+      ...waypoints.map(wp => [wp.lng, wp.lat] as [number, number]),
+      [Number(lng), Number(lat)],
+    ];
+    // Calculate total distance
+    let totalDist = 0;
+    for (let i = 1; i < allPoints.length; i++) {
+      const [lng1, lat1] = allPoints[i - 1];
+      const [lng2, lat2] = allPoints[i];
+      const R = 6371000;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+      totalDist += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+    const geometry = { type: 'LineString', coordinates: allPoints };
+    setRouteGeojson(geometry);
+    setRouteDistance(totalDist);
+    setRouteDuration(totalDist / 1.2); // ~4.3 km/h walking
+    setRouteStatus('preview');
+    if (onPreviewRoute) onPreviewRoute(geometry);
+  };
+
   const generateRouteWithWaypoints = async (waypoints: {lat: number, lng: number}[]) => {
     if (!routeStartLat || !routeStartLng || !lat || !lng) return;
+
+    if (straightLineMode) {
+      generateStraightLineRoute(waypoints);
+      return;
+    }
+
     try {
       const coords = [
         `${routeStartLng},${routeStartLat}`,
