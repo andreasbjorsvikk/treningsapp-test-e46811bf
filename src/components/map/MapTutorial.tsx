@@ -185,7 +185,6 @@ const LongPressAnimation = () => {
                 <img src={peakIconTiers.medium} alt="" className="w-10 h-10 object-cover object-bottom -mb-0.5" />
               </div>
             </div>
-            </div>
           </div>
         )}
       </div>
