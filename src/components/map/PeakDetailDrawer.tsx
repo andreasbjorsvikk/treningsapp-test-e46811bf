@@ -11,7 +11,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Mountain, MapPin, Check, Loader2, Pencil, Trash2, CalendarIcon, UserPlus, X, Search, List } from 'lucide-react';
+import { Mountain, MapPin, Check, Loader2, Pencil, Trash2, CalendarIcon, UserPlus, X, Search, List, Users } from 'lucide-react';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { RouteElevationChart } from '@/components/map/RouteElevationChart';
