@@ -209,17 +209,20 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
     return () => navigator.geolocation.clearWatch(watchId);
   }, [permissionsReady]);
 
-  // Compass listener
+  // Compass listener (added only after permission is granted)
   useEffect(() => {
-    if (!permissionsReady) return;
+    if (!permissionsReady || !compassEnabled) return;
+
     const handleOrientation = (e: DeviceOrientationEvent) => {
       let alpha: number | null = null;
+
       if ((e as any).webkitCompassHeading != null) {
-        alpha = (e as any).webkitCompassHeading;
+        alpha = Number((e as any).webkitCompassHeading);
       } else if (e.alpha != null) {
         alpha = (360 - e.alpha) % 360;
       }
-      if (alpha != null) {
+
+      if (alpha != null && Number.isFinite(alpha)) {
         if (headingSmoothed.current == null) {
           headingSmoothed.current = alpha;
         } else {
@@ -230,13 +233,20 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
         }
         setHeading(headingSmoothed.current);
       }
+
       if (e.beta != null) {
         setTilt(Math.max(0, Math.min(90, e.beta)));
       }
     };
-    window.addEventListener('deviceorientation', handleOrientation, true);
-    return () => window.removeEventListener('deviceorientation', handleOrientation, true);
-  }, [permissionsReady]);
+
+    window.addEventListener('deviceorientationabsolute', handleOrientation as EventListener, true);
+    window.addEventListener('deviceorientation', handleOrientation as EventListener, true);
+
+    return () => {
+      window.removeEventListener('deviceorientationabsolute', handleOrientation as EventListener, true);
+      window.removeEventListener('deviceorientation', handleOrientation as EventListener, true);
+    };
+  }, [permissionsReady, compassEnabled]);
 
   // Cleanup on unmount
   useEffect(() => () => {
