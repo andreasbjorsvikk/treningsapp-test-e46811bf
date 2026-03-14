@@ -421,6 +421,14 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
     const containerWidth = containerRef.current?.clientWidth || 400;
     const containerHeight = containerRef.current?.clientHeight || 700;
 
+    // Device pitch: beta ~90 = phone upright (looking at horizon), beta ~45 = tilted up (looking at sky)
+    // We define "camera pitch" as the vertical angle the camera is pointing above/below horizon
+    // When phone is vertical (beta=90), camera points at horizon (pitch=0)
+    // When phone tilts back (beta=60), camera points ~30° above horizon
+    const cameraPitchDeg = 90 - tilt; // positive = looking up, negative = looking down
+
+    const verticalFov = HORIZONTAL_FOV * (containerHeight / containerWidth);
+
     for (const peak of peaks) {
       const dist = calcDistance(userPos.lat, userPos.lng, peak.latitude, peak.longitude);
       if (dist > maxDist) continue;
@@ -433,13 +441,16 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
       const userAlt = userPos.altitude || 50;
       const elevDiff = peak.heightMoh - userAlt;
       const elevAngle = toDeg(Math.atan2(elevDiff, dist * 1000));
-      const verticalFov = HORIZONTAL_FOV * (containerHeight / containerWidth);
-      const tiltOffset = tilt - 70;
-      const adjustedAngle = elevAngle - tiltOffset;
-      const screenY = containerHeight / 2 - (adjustedAngle / (verticalFov / 2)) * (containerHeight / 2);
-      const clampedY = Math.max(60, Math.min(containerHeight - 80, screenY));
 
-      results.push({ peak, bearing, distance: dist, elevAngle, screenX, screenY: clampedY, isTaken: checkedPeakIds.has(peak.id) });
+      // How far above/below the camera center is this peak?
+      const angleFromCenter = elevAngle - cameraPitchDeg;
+      // Map to screen Y: positive angleFromCenter = above center = lower screenY
+      const screenY = containerHeight / 2 - (angleFromCenter / (verticalFov / 2)) * (containerHeight / 2);
+
+      // Allow peaks to go off-screen, but filter out ones way too far out
+      if (screenY < -100 || screenY > containerHeight + 100) continue;
+
+      results.push({ peak, bearing, distance: dist, elevAngle, screenX, screenY, isTaken: checkedPeakIds.has(peak.id) });
     }
 
     results.sort((a, b) => b.distance - a.distance);
