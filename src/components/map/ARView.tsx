@@ -71,6 +71,7 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
   const [tilt, setTilt] = useState<number>(0);
   const [permissionsReady, setPermissionsReady] = useState(false);
   const [maxDist, setMaxDist] = useState(MAX_DISTANCE_KM);
+  const [showMiniMap, setShowMiniMap] = useState(true);
   const headingSmoothed = useRef<number | null>(null);
 
   const checkedPeakIds = useMemo(() => new Set(checkins.map(c => c.peak_id)), [checkins]);
