@@ -130,6 +130,50 @@ const ChildProfilesSection = () => {
     setLoading(false);
   };
 
+  const loadPendingInvitations = async () => {
+    if (!user) return;
+    try {
+      const { data: access } = await supabase
+        .from('child_shared_access')
+        .select('id, child_id, invited_by, status')
+        .eq('shared_with_user_id', user.id)
+        .eq('status', 'pending');
+
+      if (!access || access.length === 0) { setPendingInvitations([]); return; }
+
+      const childIds = access.map(a => a.child_id);
+      const inviterIds = access.map(a => a.invited_by);
+
+      const [{ data: childData }, { data: inviterData }] = await Promise.all([
+        supabase.from('child_profiles').select('*').in('id', childIds),
+        supabase.from('profiles').select('id, username').in('id', inviterIds),
+      ]);
+
+      const childMap = new Map((childData || []).map(c => [c.id, c]));
+      const inviterMap = new Map((inviterData || []).map(p => [p.id, p]));
+
+      setPendingInvitations(access.map(a => ({
+        id: a.id,
+        child: childMap.get(a.child_id) as unknown as ChildProfile,
+        inviter_username: inviterMap.get(a.invited_by)?.username || null,
+      })).filter(i => i.child));
+    } catch {
+      console.error('Error loading pending invitations');
+    }
+  };
+
+  const handleRespondInvitation = async (accessId: string, accept: boolean) => {
+    setRespondingInvite(accessId);
+    try {
+      await supabase.from('child_shared_access').update({ status: accept ? 'accepted' : 'declined' }).eq('id', accessId);
+      toast.success(accept ? 'Invitasjon godkjent!' : 'Invitasjon avvist');
+      loadPendingInvitations();
+    } catch {
+      toast.error('Kunne ikke svare på invitasjon');
+    }
+    setRespondingInvite(null);
+  };
+
   const handleSave = async () => {
     if (!user || !name.trim()) return;
     setSaving(true);
