@@ -199,10 +199,10 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
     const containerHeight = containerRef.current?.clientHeight || 700;
 
     for (const peak of peaks) {
-      const dist = calcDistance(userPos.lat, userPos.lng, peak.lat, peak.lng);
+      const dist = calcDistance(userPos.lat, userPos.lng, peak.latitude, peak.longitude);
       if (dist > maxDist) continue;
 
-      const bearing = calcBearing(userPos.lat, userPos.lng, peak.lat, peak.lng);
+      const bearing = calcBearing(userPos.lat, userPos.lng, peak.latitude, peak.longitude);
       const hDiff = angleDiff(bearing, heading);
 
       // Only show peaks within FOV
@@ -213,13 +213,12 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
 
       // Elevation angle
       const userAlt = userPos.altitude || 50;
-      const elevDiff = peak.elevation - userAlt;
+      const elevDiff = peak.heightMoh - userAlt;
       const elevAngle = toDeg(Math.atan2(elevDiff, dist * 1000));
 
       // Screen Y: map elevation angle to vertical position
-      // Higher peaks = higher on screen
       const verticalFov = HORIZONTAL_FOV * (containerHeight / containerWidth);
-      const tiltOffset = tilt - 70; // neutral phone tilt ~70 degrees
+      const tiltOffset = tilt - 70;
       const adjustedAngle = elevAngle - tiltOffset;
       const screenY = containerHeight / 2 - (adjustedAngle / (verticalFov / 2)) * (containerHeight / 2);
       const clampedY = Math.max(60, Math.min(containerHeight - 80, screenY));
