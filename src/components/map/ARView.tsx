@@ -78,6 +78,7 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
   const [heading, setHeading] = useState<number | null>(null);
   const [tilt, setTilt] = useState<number>(0);
   const [permissionsReady, setPermissionsReady] = useState(false);
+  const [compassEnabled, setCompassEnabled] = useState(false);
   const [maxDist, setMaxDist] = useState(MAX_DISTANCE_KM);
   const [showMiniMap, setShowMiniMap] = useState(true);
   const [mode, setMode] = useState<ARMode>('camera');
@@ -102,38 +103,52 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
     setCameraActive(false);
   }, []);
 
-  // Init: getUserMedia MUST be called first directly in the gesture handler
+  const requestCompassPermission = useCallback(async () => {
+    const OrientationEvent = (window as any).DeviceOrientationEvent;
+
+    if (!OrientationEvent) {
+      setCompassEnabled(false);
+      return false;
+    }
+
+    if (typeof OrientationEvent.requestPermission === 'function') {
+      try {
+        const result = await OrientationEvent.requestPermission();
+        const granted = result === 'granted';
+        setCompassEnabled(granted);
+        return granted;
+      } catch (err) {
+        console.warn('Compass permission request failed', err);
+        setCompassEnabled(false);
+        return false;
+      }
+    }
+
+    // Android / browsers without explicit permission API
+    setCompassEnabled(true);
+    return true;
+  }, []);
+
+  // Init: getUserMedia directly in user gesture + attempt compass permission
   const init = useCallback(async () => {
-    // Camera first — must be in direct gesture context for iOS
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
       });
       streamRef.current = stream;
-      // Try to attach immediately if video element exists
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
       setCameraActive(true);
+      setPermissionsReady(true);
+      // Try once here (works on many devices). If denied/missed, user can retry from button.
+      await requestCompassPermission();
     } catch (err: any) {
       setCameraError('Kunne ikke starte kamera. Sjekk at du har gitt tilgang.');
       console.error('Camera error:', err);
     }
-    // Then orientation permission (iOS) — must also be in gesture context
-    if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
-      try {
-        const result = await (DeviceOrientationEvent as any).requestPermission();
-        if (result !== 'granted') {
-          setCameraError('Kompass-tilgang ble nektet.');
-        }
-      } catch {
-        // Non-critical, compass may still work on some devices
-        console.warn('Could not request orientation permission');
-      }
-    }
-    setPermissionsReady(true);
-  }, []);
+  }, [requestCompassPermission]);
 
   // Attach stream to video element when it mounts (after permissionsReady becomes true)
   useEffect(() => {
@@ -189,17 +204,20 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
     return () => navigator.geolocation.clearWatch(watchId);
   }, [permissionsReady]);
 
-  // Compass listener
+  // Compass listener (added only after permission is granted)
   useEffect(() => {
-    if (!permissionsReady) return;
+    if (!permissionsReady || !compassEnabled) return;
+
     const handleOrientation = (e: DeviceOrientationEvent) => {
       let alpha: number | null = null;
+
       if ((e as any).webkitCompassHeading != null) {
-        alpha = (e as any).webkitCompassHeading;
+        alpha = Number((e as any).webkitCompassHeading);
       } else if (e.alpha != null) {
         alpha = (360 - e.alpha) % 360;
       }
-      if (alpha != null) {
+
+      if (alpha != null && Number.isFinite(alpha)) {
         if (headingSmoothed.current == null) {
           headingSmoothed.current = alpha;
         } else {
@@ -210,13 +228,20 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
         }
         setHeading(headingSmoothed.current);
       }
+
       if (e.beta != null) {
         setTilt(Math.max(0, Math.min(90, e.beta)));
       }
     };
-    window.addEventListener('deviceorientation', handleOrientation, true);
-    return () => window.removeEventListener('deviceorientation', handleOrientation, true);
-  }, [permissionsReady]);
+
+    window.addEventListener('deviceorientationabsolute', handleOrientation as EventListener, true);
+    window.addEventListener('deviceorientation', handleOrientation as EventListener, true);
+
+    return () => {
+      window.removeEventListener('deviceorientationabsolute', handleOrientation as EventListener, true);
+      window.removeEventListener('deviceorientation', handleOrientation as EventListener, true);
+    };
+  }, [permissionsReady, compassEnabled]);
 
   // Cleanup on unmount
   useEffect(() => () => {
@@ -622,8 +647,23 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
         </div>
       )}
 
-      {/* No compass warning */}
-      {heading == null && userPos && (
+      {/* Compass state */}
+      {!compassEnabled && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/80 backdrop-blur-sm text-white text-xs font-medium shadow-lg">
+          <span>Kompass ikke aktivert</span>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-7 px-2 text-[11px]"
+            onClick={requestCompassPermission}
+          >
+            Aktiver kompass
+          </Button>
+        </div>
+      )}
+
+      {/* Waiting for compass data */}
+      {compassEnabled && heading == null && userPos && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 px-4 py-2 rounded-xl bg-amber-500/80 backdrop-blur-sm text-white text-xs font-medium shadow-lg">
           Venter på kompass...
         </div>
