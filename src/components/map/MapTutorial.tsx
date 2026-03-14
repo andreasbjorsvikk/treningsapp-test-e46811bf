@@ -179,7 +179,7 @@ const LongPressAnimation = () => {
         {phase === 'spawned' && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-scale-in">
             <div className="w-10 h-10 rounded-full bg-card border-2 border-border flex items-center justify-center shadow-lg">
-              <img src={peakMediumIcon} alt="" className="w-7 h-7 object-contain rounded-full" />
+              <img src={peakIconTiers.medium} alt="" className="w-7 h-7 object-contain rounded-full" />
             </div>
           </div>
         )}
