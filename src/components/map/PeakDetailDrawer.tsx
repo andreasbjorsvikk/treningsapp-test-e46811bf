@@ -403,7 +403,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
           onCheckinSuccess={onCheckinSuccess}
         />
       )}
-    </>;
+    </>
   );
 };
 
