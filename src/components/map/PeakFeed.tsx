@@ -303,6 +303,19 @@ const PeakFeed = () => {
 
   return (
     <div className="flex flex-col gap-1 p-4">
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={(o) => !o && setDeleteConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Slett innsjekking</AlertDialogTitle>
+            <AlertDialogDescription>Er du sikker på at du vil slette denne innsjekkingen? Dette kan ikke angres.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteConfirmId && handleDeleteCheckin(deleteConfirmId)}>Slett</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {/* Filter + Refresh bar */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex gap-1 p-0.5 rounded-lg bg-secondary/50">
