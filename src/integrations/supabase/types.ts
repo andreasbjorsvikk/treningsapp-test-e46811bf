@@ -88,6 +88,33 @@ export type Database = {
         }
         Relationships: []
       }
+      child_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          name: string
+          parent_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          parent_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          parent_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       community_notifications: {
         Row: {
           challenge_id: string | null
