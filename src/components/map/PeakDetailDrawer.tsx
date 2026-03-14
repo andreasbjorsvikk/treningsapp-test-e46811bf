@@ -3,6 +3,7 @@ import ChildCheckinSheet from '@/components/map/ChildCheckinSheet';
 import PeakOrbitMap from '@/components/map/PeakOrbitMap';
 import { PeakCheckin, checkinPeak, getDistanceMeters, adminCheckinPeak, searchProfiles, getAllCheckinsForPeak, CheckinWithProfile, deleteCheckin, updateCheckinImage } from '@/services/peakCheckinService';
 import { getAllChildProfiles, ChildProfile } from '@/services/childProfileService';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
