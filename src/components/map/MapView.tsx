@@ -421,7 +421,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       const peakIcon = getPeakIcon(peak.heightMoh, peak.id);
       
       el.style.cssText = `
-        width: 36px; height: 34px; cursor: pointer;
+        width: 36px; height: 32px; cursor: pointer;
         display: flex; align-items: flex-start; justify-content: center;
         overflow: hidden;
         background: ${isYearFiltered ? 'hsl(0, 0%, 100%)' : isTaken ? 'hsl(152, 60%, 42%)' : isUnpublished ? 'hsl(38, 85%, 50%)' : 'hsl(0, 0%, 100%)'};
@@ -431,11 +431,11 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         ${isYearFiltered ? 'opacity: 0.55;' : ''}
       `;
         const imgStyle = isTaken && !isYearFiltered
-          ? 'object-fit: cover; object-position: center top; filter: drop-shadow(0 0 0.5px white) drop-shadow(0 0 0.5px white) drop-shadow(0 0 1px white) drop-shadow(0 0 2px rgba(255,255,255,0.5));'
-          : 'object-fit: cover; object-position: center top;';
+          ? 'object-fit: cover; object-position: center 15%; filter: drop-shadow(0 0 0.5px white) drop-shadow(0 0 0.5px white) drop-shadow(0 0 1px white) drop-shadow(0 0 2px rgba(255,255,255,0.5));'
+          : 'object-fit: cover; object-position: center 15%;';
         
         el.innerHTML = `
-          <img src="${peakIcon}" alt="" width="34" height="34" style="${imgStyle}" draggable="false" />
+          <img src="${peakIcon}" alt="" width="40" height="40" style="${imgStyle}" draggable="false" />
         `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;
