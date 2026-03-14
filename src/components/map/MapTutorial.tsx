@@ -239,7 +239,7 @@ const steps: TutorialStep[] = [
   {
     title: 'Foreslå ny topp',
     text: 'For å foreslå en ny fjelltopp som ikke finnes her enda, trykk og hold inne på kartet der toppen er. Om du står på toppen vil du bli sjekket inn når den blir godkjent.',
-    icon: <PeakIcon src={peakMediumIcon} />,
+    icon: <PeakIcon src={peakIconTiers.medium} />,
     customContent: <LongPressAnimation />,
   },
   {
