@@ -340,8 +340,13 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
         ">
           ${peak.name} <span style="opacity:0.7;font-size:9px">${peak.heightMoh}m</span>
         </div>
-        <div style="width:30px;height:30px;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.3));">
-          <img src="${icon}" style="width:30px;height:30px;object-fit:contain;" />
+        <div style="
+          width: 28px; height: 28px; border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+          border: 2px solid ${isTaken ? 'hsl(152,60%,35%)' : 'rgba(255,255,255,0.7)'};
+          background: ${isTaken ? 'hsl(152,60%,42%)' : 'rgba(255,255,255,0.9)'};
+        ">
+          <img src="${icon}" style="width:18px;height:18px;object-fit:contain" />
         </div>
       `;
 
@@ -532,8 +537,12 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
             <span className="text-[9px] text-white/90 font-medium drop-shadow-lg">
               {distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}
             </span>
-            <div className="w-9 h-9" style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.3))' }}>
-              <img src={icon} alt="" className="w-9 h-9 object-contain" />
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 shadow-lg ${
+              isTaken
+                ? 'bg-[hsl(152,60%,42%)] border-[hsl(152,60%,35%)]'
+                : 'bg-white/90 border-white/60'
+            }`}>
+              <img src={icon} alt="" className="w-5 h-5 object-contain" />
             </div>
             <div className={`w-px h-4 ${isTaken ? 'bg-[hsl(152,60%,42%)]/50' : 'bg-white/30'}`} />
           </button>

@@ -419,37 +419,23 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
 
       const el = document.createElement('div');
       const peakIcon = getPeakIcon(peak.heightMoh, peak.id);
-
-      const takenAndVisible = isTaken && !isYearFiltered;
-
+      
       el.style.cssText = `
-        width: 44px; height: 44px; cursor: pointer;
-        filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
+        width: 36px; height: 36px; cursor: pointer;
         display: flex; align-items: center; justify-content: center;
+        background: ${isYearFiltered ? 'hsl(0, 0%, 100%)' : isTaken ? 'hsl(152, 60%, 42%)' : isUnpublished ? 'hsl(38, 85%, 50%)' : 'hsl(0, 0%, 100%)'};
+        border: 2px solid ${isYearFiltered ? 'hsl(220, 13%, 80%)' : isTaken ? 'hsl(152, 60%, 35%)' : isUnpublished ? 'hsl(38, 85%, 40%)' : 'hsl(220, 13%, 80%)'};
+        border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         ${isUnpublished ? 'opacity: 0.7;' : ''}
         ${isYearFiltered ? 'opacity: 0.55;' : ''}
       `;
-
-      const checkinBadge = takenAndVisible
-        ? `<div style="
-            position:absolute; bottom:-3px; right:-3px;
-            width:16px; height:16px; border-radius:50%;
-            background: linear-gradient(135deg, hsl(152,60%,42%), hsl(152,70%,48%));
-            border: 2px solid white;
-            display:flex; align-items:center; justify-content:center;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.25);
-            pointer-events:none;
-          ">
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-          </div>`
-        : '';
-
-      el.innerHTML = `
-        <div style="position:relative;width:40px;height:40px;">
-          <img src="${peakIcon}" alt="" style="width:40px;height:40px;object-fit:contain;" draggable="false" />
-          ${checkinBadge}
-        </div>
-      `;
+        const imgStyle = isTaken && !isYearFiltered
+          ? 'object-fit: contain; filter: drop-shadow(0 0 0.5px white) drop-shadow(0 0 0.5px white) drop-shadow(0 0 1px white) drop-shadow(0 0 2px rgba(255,255,255,0.5));'
+          : 'object-fit: contain;';
+        
+        el.innerHTML = `
+          <img src="${peakIcon}" alt="" width="26" height="26" style="${imgStyle}" draggable="false" />
+        `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;
       
