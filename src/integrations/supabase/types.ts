@@ -88,6 +88,33 @@ export type Database = {
         }
         Relationships: []
       }
+      child_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          name: string
+          parent_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          parent_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          parent_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       community_notifications: {
         Row: {
           challenge_id: string | null
@@ -625,6 +652,10 @@ export type Database = {
       }
       is_challenge_participant: {
         Args: { _challenge_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_parent_of: {
+        Args: { _child_id: string; _parent_id: string }
         Returns: boolean
       }
     }

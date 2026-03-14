@@ -19,6 +19,7 @@ import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, S
 import { getActivityColors, activityColorMap, saveActivityColors } from '@/utils/activityColors';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
+import ChildProfilesSection from '@/components/ChildProfilesSection';
 import { stravaService } from '@/services/stravaService';
 import { toast } from 'sonner';
 import { getFriends, Friend } from '@/services/communityService';
@@ -977,6 +978,9 @@ const SettingsPage = () => {
             </div>
           </div>
         </div>
+
+        {/* Child profiles */}
+        <ChildProfilesSection />
 
         {/* Change password */}
         <div className="glass-card rounded-xl p-4 space-y-3">

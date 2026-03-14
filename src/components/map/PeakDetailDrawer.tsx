@@ -1,4 +1,5 @@
 import { Peak } from '@/data/peaks';
+import ChildCheckinSheet from '@/components/map/ChildCheckinSheet';
 import PeakOrbitMap from '@/components/map/PeakOrbitMap';
 import { PeakCheckin, checkinPeak, getDistanceMeters, adminCheckinPeak, searchProfiles, getAllCheckinsForPeak, CheckinWithProfile, deleteCheckin, updateCheckinImage } from '@/services/peakCheckinService';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,7 +11,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Mountain, MapPin, Check, Loader2, Pencil, Trash2, CalendarIcon, UserPlus, X, Search, List } from 'lucide-react';
+import { Mountain, MapPin, Check, Loader2, Pencil, Trash2, CalendarIcon, UserPlus, X, Search, List, Users } from 'lucide-react';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { RouteElevationChart } from '@/components/map/RouteElevationChart';
@@ -45,6 +46,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
   const [showSuccessAnim, setShowSuccessAnim] = useState(false);
   const [savingImage, setSavingImage] = useState(false);
   const [pendingImage, setPendingImage] = useState<File | null>(null);
+  const [showChildCheckin, setShowChildCheckin] = useState(false);
   
   // Admin manual checkin state
   const [manualCheckinOpen, setManualCheckinOpen] = useState(false);
@@ -126,6 +128,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
       }
       await checkinPeak(user.id, peak.id);
       setShowSuccessAnim(true);
+      setShowChildCheckin(true);
       onCheckinSuccess();
     } catch (err: any) {
       if (err?.code === 1) toast.error('Lokasjonstilgang ble avslått. Aktiver GPS for å sjekke inn.');
@@ -242,6 +245,19 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                       </Button>
                     )}
                   </div>
+                )}
+
+                {/* Child checkin button - shown during cooldown */}
+                {isInCooldownWindow && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-2"
+                    onClick={() => setShowChildCheckin(true)}
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Sjekk inn barn
+                  </Button>
                 )}
               </div>
             ) : (
@@ -378,6 +394,15 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
           </div>
         </DrawerContent>
       </Drawer>
+      {peak && (
+        <ChildCheckinSheet
+          open={showChildCheckin}
+          onClose={() => setShowChildCheckin(false)}
+          peakId={peak.id}
+          peakName={peak.name}
+          onCheckinSuccess={onCheckinSuccess}
+        />
+      )}
     </>
   );
 };
