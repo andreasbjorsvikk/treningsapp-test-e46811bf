@@ -7,6 +7,7 @@ import UserProfileDrawer from '@/components/community/UserProfileDrawer';
 
 type Period = 'month' | 'year' | 'total';
 type Metric = 'unique' | 'total';
+type Scope = 'global' | 'friends';
 
 interface LeaderEntry {
   user_id: string;
@@ -27,15 +28,32 @@ const GlobalLeaderboard = () => {
   const { user } = useAuth();
   const [period, setPeriod] = useState<Period>('total');
   const [metric, setMetric] = useState<Metric>('unique');
+  const [scope, setScope] = useState<Scope>('global');
   const [entries, setEntries] = useState<LeaderEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState<{ id: string; username: string | null; avatar_url: string | null } | null>(null);
+  const [friendIds, setFriendIds] = useState<string[]>([]);
+
+  // Load friends once
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('friendships')
+      .select('user_id, friend_id')
+      .eq('status', 'accepted')
+      .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
+      .then(({ data }) => {
+        const ids = (data || []).map(f => f.user_id === user.id ? f.friend_id : f.user_id);
+        setFriendIds(ids);
+      });
+  }, [user]);
 
   useEffect(() => {
     loadLeaderboard();
-  }, [period]);
+  }, [period, scope, friendIds]);
 
   const loadLeaderboard = async () => {
+    if (!user) return;
     setLoading(true);
     try {
       let query = supabase.from('peak_checkins').select('user_id, peak_id, checked_in_at');
@@ -47,6 +65,13 @@ const GlobalLeaderboard = () => {
       } else if (period === 'year') {
         const start = new Date(new Date().getFullYear(), 0, 1).toISOString();
         query = query.gte('checked_in_at', start);
+      }
+
+      // For friends scope, filter by friend IDs + self
+      if (scope === 'friends') {
+        const scopeIds = [...friendIds, user.id];
+        if (scopeIds.length === 0) { setEntries([]); setLoading(false); return; }
+        query = query.in('user_id', scopeIds);
       }
 
       const { data: checkins } = await query;
@@ -110,6 +135,23 @@ const GlobalLeaderboard = () => {
 
   return (
     <div className="flex flex-col gap-3 p-4">
+      {/* Scope filter: Global / Venner */}
+      <div className="flex gap-1 p-0.5 rounded-lg bg-secondary/50">
+        {([{ id: 'global', label: 'Global' }, { id: 'friends', label: 'Venner' }] as { id: Scope; label: string }[]).map(s => (
+          <button
+            key={s.id}
+            onClick={() => setScope(s.id)}
+            className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              scope === s.id
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
       {/* Metric dropdown */}
       <select
         value={metric}
@@ -144,7 +186,9 @@ const GlobalLeaderboard = () => {
       ) : sortedEntries.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Mountain className="w-10 h-10 text-muted-foreground/50 mb-3" />
-          <p className="text-sm text-muted-foreground">Ingen innsjekkinger i denne perioden.</p>
+          <p className="text-sm text-muted-foreground">
+            {scope === 'friends' ? 'Ingen av vennene dine har innsjekkinger i denne perioden.' : 'Ingen innsjekkinger i denne perioden.'}
+          </p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
