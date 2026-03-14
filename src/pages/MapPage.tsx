@@ -164,8 +164,10 @@ const MapPage = () => {
     toast.info('Trykk på kartet for å velge startpunkt for ruten.');
   };
 
-  const handleShowRoute = (peak: Peak) => {
+  const handleShowRoute = (peak: Peak, fromTopper?: boolean) => {
     if (peak.route_status === 'approved' && peak.route_geojson) {
+      if (fromTopper) setRouteFromTopperPeak(peak);
+      else setRouteFromTopperPeak(null);
       setSubTab('kart');
       setActiveRouteGeojson(peak.route_geojson);
       setActiveRoutePeakId(peak.id);
