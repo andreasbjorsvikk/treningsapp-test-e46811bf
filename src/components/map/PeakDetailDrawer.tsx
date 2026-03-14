@@ -88,6 +88,23 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Load children when a user is selected for admin checkin
+  useEffect(() => {
+    if (!selectedUser || selectedUser.isChild) {
+      setAdminChildrenForUser([]);
+      setAdminSelectedChildIds(new Set());
+      return;
+    }
+    (async () => {
+      const { data } = await supabase
+        .from('child_profiles')
+        .select('id, name, emoji, avatar_url')
+        .eq('parent_user_id', selectedUser.id);
+      setAdminChildrenForUser((data || []) as any[]);
+      setAdminSelectedChildIds(new Set());
+    })();
+  }, [selectedUser?.id]);
+
   // Reset pending image when drawer closes or peak changes
   useEffect(() => {
     if (!open) {
