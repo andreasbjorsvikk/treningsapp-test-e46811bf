@@ -10,6 +10,7 @@ const tabs: { id: MapSubTab; label: string }[] = [
   { id: 'topper', label: 'Topper' },
   { id: 'feed', label: 'Feed' },
   { id: 'lederliste', label: 'Lederliste' },
+  { id: 'ar', label: 'AR' },
 ];
 
 const MapSubTabs = ({ active, onChange }: MapSubTabsProps) => {
