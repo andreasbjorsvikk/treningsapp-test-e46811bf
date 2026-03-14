@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { ChildProfile, getChildProfiles, getSharedChildProfiles } from '@/services/childProfileService';
-import { checkinPeak, PeakCheckin } from '@/services/peakCheckinService';
+import { checkinPeak, PeakCheckin, updateCheckinImage } from '@/services/peakCheckinService';
 import { supabase } from '@/integrations/supabase/client';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -17,23 +17,28 @@ interface ChildCheckinSheetProps {
   peakId: string;
   peakName: string;
   onCheckinSuccess: () => void;
+  parentCheckinId?: string | null;
 }
 
-const ChildCheckinSheet = ({ open, onClose, peakId, peakName, onCheckinSuccess }: ChildCheckinSheetProps) => {
+const ChildCheckinSheet = ({ open, onClose, peakId, peakName, onCheckinSuccess, parentCheckinId }: ChildCheckinSheetProps) => {
   const { user } = useAuth();
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [alreadyCheckedIn, setAlreadyCheckedIn] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [childImages, setChildImages] = useState<Map<string, File | null>>(new Map());
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
+  // Combined image upload state (for the parent's checkin)
+  const [pendingImage, setPendingImage] = useState<File | null>(null);
+  const [imageSubmitted, setImageSubmitted] = useState(false);
+
   useEffect(() => {
     if (open && user) {
       setSelectedIds(new Set());
-      setChildImages(new Map());
       setDone(false);
+      setPendingImage(null);
+      setImageSubmitted(false);
       setLoading(true);
 
       Promise.all([
@@ -73,25 +78,39 @@ const ChildCheckinSheet = ({ open, onClose, peakId, peakName, onCheckinSuccess }
   };
 
   const handleSubmit = async () => {
-    if (selectedIds.size === 0) return;
     setSubmitting(true);
     try {
       const now = new Date().toISOString();
+
+      // Check in selected children
       for (const childId of selectedIds) {
-        const imageFile = childImages.get(childId) || null;
-        await checkinPeak(childId, peakId, now, imageFile);
+        await checkinPeak(childId, peakId, now);
       }
+
+      // Upload image to parent's checkin if provided
+      if (pendingImage && parentCheckinId && user) {
+        await updateCheckinImage(parentCheckinId, user.id, pendingImage);
+      }
+
       setDone(true);
+      setImageSubmitted(!!pendingImage);
       onCheckinSuccess();
-      toast.success(`${selectedIds.size} barn sjekket inn på ${peakName}!`);
+
+      const parts: string[] = [];
+      if (selectedIds.size > 0) parts.push(`${selectedIds.size} barn sjekket inn`);
+      if (pendingImage) parts.push('bilde lagt til');
+      toast.success(parts.length > 0 ? parts.join(' og ') + '!' : 'Ferdig!');
       setTimeout(() => onClose(), 1500);
     } catch {
-      toast.error('Kunne ikke sjekke inn barn. Prøv igjen.');
+      toast.error('Kunne ikke fullføre. Prøv igjen.');
     }
     setSubmitting(false);
   };
 
   if (!open) return null;
+
+  const hasChildren = children.length > 0;
+  const hasSelections = selectedIds.size > 0 || pendingImage;
 
   return (
     <Drawer open={open} onOpenChange={(o) => !o && onClose()}>
@@ -111,11 +130,6 @@ const ChildCheckinSheet = ({ open, onClose, peakId, peakName, onCheckinSuccess }
             <div className="flex justify-center py-8">
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             </div>
-          ) : children.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-sm text-muted-foreground">Du har ingen barn-profiler ennå.</p>
-              <p className="text-xs text-muted-foreground mt-1">Legg til barn under Innstillinger → Profil.</p>
-            </div>
           ) : done ? (
             <div className="flex flex-col items-center py-8 gap-3">
               <div className="w-16 h-16 rounded-full bg-success/20 flex items-center justify-center">
@@ -125,13 +139,15 @@ const ChildCheckinSheet = ({ open, onClose, peakId, peakName, onCheckinSuccess }
             </div>
           ) : (
             <>
-              <div className="space-y-2">
-                {children.map(child => {
-                  const isSelected = selectedIds.has(child.id);
-                  const isAlready = alreadyCheckedIn.has(child.id);
-                  return (
-                    <div key={child.id} className="space-y-2">
+              {/* Children selection */}
+              {hasChildren && (
+                <div className="space-y-2">
+                  {children.map(child => {
+                    const isSelected = selectedIds.has(child.id);
+                    const isAlready = alreadyCheckedIn.has(child.id);
+                    return (
                       <button
+                        key={child.id}
                         onClick={() => toggleChild(child.id)}
                         disabled={isAlready}
                         className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors ${
@@ -154,21 +170,27 @@ const ChildCheckinSheet = ({ open, onClose, peakId, peakName, onCheckinSuccess }
                           {isAlready && <span className="text-xs text-muted-foreground ml-2">Allerede sjekket inn</span>}
                         </span>
                       </button>
-                      {isSelected && !isAlready && (
-                        <div className="ml-12 mr-2">
-                          <CheckinImageUpload onImageReady={(file) => {
-                            setChildImages(prev => new Map(prev).set(child.id, file));
-                          }} />
-                        </div>
-                      )}
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Image upload - for the parent's checkin */}
+              {parentCheckinId && (
+                <div>
+                  {imageSubmitted ? (
+                    <p className="text-xs font-medium text-success text-center">✓ Bilde lagt til</p>
+                  ) : (
+                    <div className="flex flex-col items-center">
+                      <CheckinImageUpload onImageReady={setPendingImage} />
                     </div>
-                  );
-                })}
-              </div>
+                  )}
+                </div>
+              )}
 
               <Button
                 onClick={handleSubmit}
-                disabled={selectedIds.size === 0 || submitting}
+                disabled={!hasSelections || submitting}
                 className="w-full"
               >
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}

@@ -1,0 +1,1 @@
+ALTER TABLE public.community_notifications DROP CONSTRAINT IF EXISTS community_notifications_challenge_id_fkey;

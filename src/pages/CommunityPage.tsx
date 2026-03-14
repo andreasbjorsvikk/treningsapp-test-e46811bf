@@ -220,7 +220,8 @@ const CommunityPage = () => {
         onNavigateToFriends={handleNavigateToFriends}
         onViewChallenge={handleViewChallenge}
         onNavigateToProfile={() => {
-          window.location.href = '/settings?view=profile';
+          setShowNotifications(false);
+          window.dispatchEvent(new CustomEvent('navigate-to-settings'));
         }}
       />
       <UserProfileDrawer

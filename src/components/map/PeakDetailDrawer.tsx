@@ -52,6 +52,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
   const [savingImage, setSavingImage] = useState(false);
   const [pendingImage, setPendingImage] = useState<File | null>(null);
   const [showChildCheckin, setShowChildCheckin] = useState(false);
+  const [lastNewCheckinId, setLastNewCheckinId] = useState<string | null>(null);
   
   // Admin manual checkin state
   const [manualCheckinOpen, setManualCheckinOpen] = useState(false);
@@ -168,7 +169,8 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
         setLoading(false);
         return;
       }
-      await checkinPeak(user.id, peak.id);
+      const newCheckin = await checkinPeak(user.id, peak.id);
+      setLastNewCheckinId(newCheckin.id);
       setShowSuccessAnim(true);
       setShowChildCheckin(true);
       onCheckinSuccess();
@@ -335,7 +337,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                 {/* Allow re-checkin */}
                 <Button onClick={handleCheckin} disabled={loading || !canCheckin} variant="outline" size="sm" className="w-full mt-2">
                   {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <MapPin className="w-4 h-4 mr-2" />}
-                  {canCheckin ? 'Sjekk inn igjen' : 'Vent minst 3 timer'}
+                  {canCheckin ? 'Sjekk inn' : 'Du er sjekket inn'}
                 </Button>
 
                 {/* Image upload/replace within 24h */}
@@ -597,6 +599,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
           peakId={peak.id}
           peakName={peak.name}
           onCheckinSuccess={onCheckinSuccess}
+          parentCheckinId={lastNewCheckinId || lastCheckin?.id || null}
         />
       )}
     </>

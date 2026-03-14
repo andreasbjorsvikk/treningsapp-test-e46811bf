@@ -5,12 +5,14 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Trophy, Loader2, Mountain } from 'lucide-react';
 
 type Period = 'month' | 'year' | 'total';
+type Metric = 'unique' | 'total';
 
 interface LeaderEntry {
   user_id: string;
   username: string | null;
   avatar_url: string | null;
   unique_peaks: number;
+  total_ascents: number;
   isChild?: boolean;
 }
 
@@ -23,6 +25,7 @@ const periods: { id: Period; label: string }[] = [
 const GlobalLeaderboard = () => {
   const { user } = useAuth();
   const [period, setPeriod] = useState<Period>('total');
+  const [metric, setMetric] = useState<Metric>('unique');
   const [entries, setEntries] = useState<LeaderEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -47,17 +50,18 @@ const GlobalLeaderboard = () => {
       const { data: checkins } = await query;
       if (!checkins) { setEntries([]); setLoading(false); return; }
 
-      // Count unique peaks per user
+      // Count unique peaks and total ascents per user
       const userPeaks = new Map<string, Set<string>>();
+      const userTotalAscents = new Map<string, number>();
       (checkins as any[]).forEach((c: any) => {
         if (!userPeaks.has(c.user_id)) userPeaks.set(c.user_id, new Set());
         userPeaks.get(c.user_id)!.add(c.peak_id);
+        userTotalAscents.set(c.user_id, (userTotalAscents.get(c.user_id) || 0) + 1);
       });
 
       const userIds = Array.from(userPeaks.keys());
       if (userIds.length === 0) { setEntries([]); setLoading(false); return; }
 
-      // Fetch profiles and child profiles in parallel
       const [{ data: profiles }, { data: childProfiles }] = await Promise.all([
         supabase.from('profiles').select('id, username, avatar_url').in('id', userIds),
         supabase.from('child_profiles').select('id, name, avatar_url').in('id', userIds),
@@ -74,9 +78,10 @@ const GlobalLeaderboard = () => {
           username: profile?.username || child?.name || null,
           avatar_url: profile?.avatar_url || child?.avatar_url || null,
           unique_peaks: userPeaks.get(uid)!.size,
+          total_ascents: userTotalAscents.get(uid) || 0,
           isChild: !!child && !profile,
         };
-      }).sort((a, b) => b.unique_peaks - a.unique_peaks);
+      });
 
       setEntries(leaderboard);
     } catch (e) {
@@ -84,6 +89,11 @@ const GlobalLeaderboard = () => {
     }
     setLoading(false);
   };
+
+  const sortedEntries = [...entries].sort((a, b) => {
+    if (metric === 'unique') return b.unique_peaks - a.unique_peaks;
+    return b.total_ascents - a.total_ascents;
+  });
 
   const getMedalColor = (index: number) => {
     if (index === 0) return 'text-yellow-500';
@@ -94,6 +104,16 @@ const GlobalLeaderboard = () => {
 
   return (
     <div className="flex flex-col gap-3 p-4">
+      {/* Metric dropdown */}
+      <select
+        value={metric}
+        onChange={(e) => setMetric(e.target.value as Metric)}
+        className="w-full px-3 py-2 rounded-lg border border-border bg-card text-sm font-medium text-foreground"
+      >
+        <option value="unique">Unike topper</option>
+        <option value="total">Totalt antall bestigninger</option>
+      </select>
+
       {/* Period filter */}
       <div className="flex gap-2">
         {periods.map(p => (
@@ -115,15 +135,17 @@ const GlobalLeaderboard = () => {
         <div className="flex items-center justify-center py-16">
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
-      ) : entries.length === 0 ? (
+      ) : sortedEntries.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Mountain className="w-10 h-10 text-muted-foreground/50 mb-3" />
           <p className="text-sm text-muted-foreground">Ingen innsjekkinger i denne perioden.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {entries.map((entry, index) => {
+          {sortedEntries.map((entry, index) => {
             const isMe = entry.user_id === user?.id;
+            const displayValue = metric === 'unique' ? entry.unique_peaks : entry.total_ascents;
+            const displayLabel = metric === 'unique' ? 'topper' : 'bestigninger';
             return (
               <div
                 key={entry.user_id}
@@ -150,8 +172,8 @@ const GlobalLeaderboard = () => {
                   </span>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className="font-display font-bold text-lg">{entry.unique_peaks}</span>
-                  <span className="text-xs text-muted-foreground ml-1">topper</span>
+                  <span className="font-display font-bold text-lg">{displayValue}</span>
+                  <span className="text-xs text-muted-foreground ml-1">{displayLabel}</span>
                 </div>
               </div>
             );
