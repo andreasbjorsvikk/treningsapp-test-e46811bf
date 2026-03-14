@@ -105,6 +105,13 @@ const ChildProfilesSection = () => {
   const [sharedUsers, setSharedUsers] = useState<SharedUser[]>([]);
   const [inviting, setInviting] = useState(false);
 
+  // Pending shared-with-me invitations
+  const [pendingInvitations, setPendingInvitations] = useState<{ id: string; child: ChildProfile; inviter_username: string | null }[]>([]);
+  const [respondingInvite, setRespondingInvite] = useState<string | null>(null);
+  
+  // Child profile detail
+  const [selectedChildDetail, setSelectedChildDetail] = useState<ChildProfile | null>(null);
+
   useEffect(() => {
     if (!user) return;
     loadChildren();
