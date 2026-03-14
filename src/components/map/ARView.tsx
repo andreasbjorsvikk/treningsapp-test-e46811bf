@@ -421,11 +421,11 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
     const containerWidth = containerRef.current?.clientWidth || 400;
     const containerHeight = containerRef.current?.clientHeight || 700;
 
-    // Device pitch: beta ~90 = phone upright (looking at horizon), beta ~45 = tilted up (looking at sky)
-    // We define "camera pitch" as the vertical angle the camera is pointing above/below horizon
-    // When phone is vertical (beta=90), camera points at horizon (pitch=0)
-    // When phone tilts back (beta=60), camera points ~30° above horizon
-    const cameraPitchDeg = 90 - tilt; // positive = looking up, negative = looking down
+    // Device pitch from beta (gyroscope):
+    // beta ~90 = phone upright (camera at horizon), beta decreases when tilting phone back (looking up)
+    // But on many devices the sign is inverted, so we use (tilt - 90) to get correct direction
+    // cameraPitchDeg > 0 = looking up, < 0 = looking down
+    const cameraPitchDeg = tilt - 90;
 
     const verticalFov = HORIZONTAL_FOV * (containerHeight / containerWidth);
 
