@@ -264,12 +264,20 @@ const ChildProfilesSection = () => {
       const child = children.find(c => c.id === sharingChildId);
       const childName = child?.name || 'et barn';
 
+      // Get the current user's username for the notification
+      const { data: myProfile } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', user.id)
+        .single();
+      const myName = myProfile?.username || 'Noen';
+
       await supabase.from('community_notifications').insert({
         user_id: targetUserId,
         from_user_id: user.id,
         type: 'child_share',
-        title: 'Barn-deling',
-        message: `Du er invitert til å ha ${childName} i din profil.`,
+        title: 'Delt barneprofil',
+        message: `${myName} har delt barneprofilen «${childName}» med deg.`,
         challenge_id: (insertedAccess as any).id,
       });
 
