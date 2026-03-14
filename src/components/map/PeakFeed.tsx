@@ -419,8 +419,8 @@ const PeakFeed = () => {
                         </div>
 
                         <div className="flex items-center gap-1 shrink-0">
-                          {/* Edit button for own posts and own children's posts */}
-                          {editable && (
+                          {/* Edit button for own posts and own children's posts within 24h */}
+                          {editable && isWithin24h(item) && (
                             <button
                               onClick={() => {
                                 if (isEditing) {
@@ -435,6 +435,16 @@ const PeakFeed = () => {
                               title="Rediger innlegg"
                             >
                               <Pencil className="w-4 h-4" />
+                            </button>
+                          )}
+                          {/* Delete button within 24h */}
+                          {editable && isWithin24h(item) && (
+                            <button
+                              onClick={() => setDeleteConfirmId(item.id)}
+                              className="p-2 rounded-lg hover:bg-destructive/10 transition-colors text-destructive"
+                              title="Slett innsjekking"
+                            >
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           )}
                           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-600/5 border border-emerald-500/10 flex items-center justify-center">
