@@ -325,24 +325,7 @@ const ChildProfilesSection = () => {
                 autoFocus
               />
             </div>
-            <div className="space-y-2">
-              <Label>Emoji</Label>
-              <div className="grid grid-cols-6 gap-1.5">
-                {CHILD_EMOJIS.map(e => (
-                  <button
-                    key={e.value}
-                    onClick={() => setEmoji(e.value)}
-                    className={`flex items-center justify-center p-1.5 rounded-lg border-2 transition-all ${
-                      emoji === e.value
-                        ? 'border-primary bg-primary/10'
-                        : 'border-border hover:border-primary/50'
-                    }`}
-                  >
-                    <span className="text-xl">{e.value}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+            <EmojiPicker emoji={emoji} onSelect={setEmoji} />
             <Button onClick={handleSave} disabled={!name.trim() || saving} className="w-full">
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               {editingChild ? 'Lagre' : 'Legg til'}
