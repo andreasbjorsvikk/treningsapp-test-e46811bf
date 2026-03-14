@@ -102,6 +102,18 @@ const PeakFeed = () => {
       const peakMap = new Map(peaks.map((p: any) => [p.id, p]));
       const profileMap = new Map(profiles.map(p => [p.id, p]));
 
+      // Fetch child profiles for user_ids not in profiles
+      const allCheckinUserIds = [...new Set((checkins as any[]).map((c: any) => c.user_id))];
+      const missingUserIds = allCheckinUserIds.filter(id => !profileMap.has(id));
+      let childMap = new Map<string, any>();
+      if (missingUserIds.length > 0) {
+        const { data: childProfiles } = await supabase
+          .from('child_profiles')
+          .select('id, name, avatar_url, parent_user_id')
+          .in('id', missingUserIds);
+        childMap = new Map(((childProfiles || []) as any[]).map(c => [c.id, c]));
+      }
+
       const feedItems: FeedItem[] = (checkins as any[]).map((c: any) => {
         const peak = peakMap.get(c.peak_id);
         const profile = profileMap.get(c.user_id);
