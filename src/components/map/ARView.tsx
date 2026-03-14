@@ -221,16 +221,8 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
         alpha = (360 - e.alpha) % 360;
       }
 
-      // Compensate heading for gamma (side-tilt) to prevent drift when tilting phone sideways
-      // When phone is tilted sideways, the raw compass heading shifts. We correct by subtracting
-      // the projected gamma component onto the horizontal plane.
-      if (alpha != null && Number.isFinite(alpha) && beta != null) {
-        const betaRad = toRad(beta);
-        const gammaRad = toRad(gamma);
-        // Heading correction: when phone is tilted sideways, gamma causes apparent heading shift
-        const correction = toDeg(Math.atan2(Math.sin(gammaRad), Math.cos(gammaRad) * Math.cos(betaRad)));
-        alpha = normalizeDeg(alpha + correction);
-        
+      // Use raw compass heading without gamma correction (gamma correction caused excessive drift)
+      if (alpha != null && Number.isFinite(alpha)) {
         if (headingSmoothed.current == null) {
           headingSmoothed.current = alpha;
         } else {
