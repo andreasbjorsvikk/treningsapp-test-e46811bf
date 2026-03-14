@@ -171,7 +171,7 @@ const PeakFeed = () => {
             .from('profiles')
             .select('id, username, avatar_url')
             .in('id', unknownUserIds);
-          (extraProfiles || []).forEach(p => profileMap.set(p.id, p));
+          (extraProfiles || []).forEach(p => profileMap.set(p.id, p as any));
         }
       }
 
