@@ -116,6 +116,7 @@ const ChildProfilesSection = () => {
   useEffect(() => {
     if (!user) return;
     loadChildren();
+    loadSharedChildren();
     loadPendingInvitations();
   }, [user]);
 
