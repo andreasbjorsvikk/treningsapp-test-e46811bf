@@ -278,6 +278,29 @@ const PeakFeed = () => {
     return false;
   };
 
+  // Within 24h edit window
+  const isWithin24h = (item: FeedItem) => {
+    return Date.now() - new Date(item.checked_in_at).getTime() <= 24 * 60 * 60 * 1000;
+  };
+
+  const handleDeleteCheckin = async (itemId: string) => {
+    try {
+      await deleteCheckin(itemId);
+      setItems(prev => prev.filter(i => i.id !== itemId));
+      toast.success('Innsjekking slettet');
+    } catch { toast.error('Kunne ikke slette innsjekking'); }
+    setDeleteConfirmId(null);
+  };
+
+  const handleRemoveImage = async (itemId: string) => {
+    try {
+      await supabase.from('peak_checkins').update({ image_url: null }).eq('id', itemId);
+      setItems(prev => prev.map(i => i.id === itemId ? { ...i, image_url: null } : i));
+      setEditingItemId(null);
+      toast.success('Bilde fjernet');
+    } catch { toast.error('Kunne ikke fjerne bildet'); }
+  };
+
   return (
     <div className="flex flex-col gap-1 p-4">
       {/* Filter + Refresh bar */}
