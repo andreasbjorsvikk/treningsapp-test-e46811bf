@@ -10,7 +10,7 @@ import CheckinImageUpload from '@/components/map/CheckinImageUpload';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
-type FeedFilter = 'all' | 'mine' | 'friends';
+type FeedFilter = 'all' | 'mine' | 'friends' | 'global';
 
 interface FeedItem {
   id: string;
@@ -23,6 +23,9 @@ interface FeedItem {
   peak_elevation: number;
   peak_area: string;
   image_url: string | null;
+  is_child: boolean;
+  child_parent_id: string | null;
+  child_emoji: string | null;
 }
 
 const PeakFeed = () => {
@@ -34,6 +37,7 @@ const PeakFeed = () => {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [pendingImage, setPendingImage] = useState<File | null>(null);
   const [savingImage, setSavingImage] = useState(false);
+  const [myChildIds, setMyChildIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!user) return;
@@ -44,6 +48,33 @@ const PeakFeed = () => {
     if (!user) return;
     setLoading(true);
     try {
+      // Load user's own children (owned + shared)
+      const { data: ownChildren } = await supabase
+        .from('child_profiles')
+        .select('id, name, avatar_url, parent_user_id, emoji')
+        .eq('parent_user_id', user.id);
+
+      const { data: sharedAccess } = await supabase
+        .from('child_shared_access')
+        .select('child_id')
+        .eq('shared_with_user_id', user.id)
+        .eq('status', 'accepted');
+
+      const sharedChildIds = (sharedAccess || []).map((s: any) => s.child_id);
+      let sharedChildren: any[] = [];
+      if (sharedChildIds.length > 0) {
+        const { data } = await supabase
+          .from('child_profiles')
+          .select('id, name, avatar_url, parent_user_id, emoji')
+          .in('id', sharedChildIds);
+        sharedChildren = data || [];
+      }
+
+      const allMyChildren = [...(ownChildren || []), ...sharedChildren];
+      const childIdSet = new Set(allMyChildren.map(c => c.id));
+      setMyChildIds(childIdSet);
+
+      // Load friends
       const { data: friendships } = await supabase
         .from('friendships')
         .select('user_id, friend_id')
@@ -54,12 +85,12 @@ const PeakFeed = () => {
         f.user_id === user.id ? f.friend_id : f.user_id
       );
 
-      const allUserIds = [...friendIds, user.id];
+      const allUserIds = [...friendIds, user.id, ...Array.from(childIdSet)];
 
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, username, avatar_url, privacy_peak_checkins, privacy_peak_checkins_friends')
-        .in('id', allUserIds);
+        .in('id', [...friendIds, user.id]);
 
       if (!profiles) { setItems([]); setLoading(false); return; }
 
@@ -75,19 +106,34 @@ const PeakFeed = () => {
         return true;
       }).map(p => p.id);
 
-      if (visibleUserIds.length === 0) { setItems([]); setLoading(false); return; }
+      // Include children in visible user IDs
+      const allVisibleIds = [...visibleUserIds, ...Array.from(childIdSet)];
 
-      const { data: checkins } = await supabase
-        .from('peak_checkins')
-        .select('*')
-        .in('user_id', visibleUserIds)
-        .order('checked_in_at', { ascending: false })
-        .limit(50);
+      if (allVisibleIds.length === 0) { setItems([]); setLoading(false); return; }
 
-      if (!checkins || checkins.length === 0) { setItems([]); setLoading(false); return; }
+      // For "global" filter, fetch all checkins (no user filter)
+      let checkins: any[];
+      if (filter === 'global') {
+        const { data } = await supabase
+          .from('peak_checkins')
+          .select('*')
+          .order('checked_in_at', { ascending: false })
+          .limit(50);
+        checkins = data || [];
+      } else {
+        const { data } = await supabase
+          .from('peak_checkins')
+          .select('*')
+          .in('user_id', allVisibleIds)
+          .order('checked_in_at', { ascending: false })
+          .limit(50);
+        checkins = data || [];
+      }
+
+      if (checkins.length === 0) { setItems([]); setLoading(false); return; }
 
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      const allPeakIds = [...new Set((checkins as any[]).map((c: any) => c.peak_id))];
+      const allPeakIds = [...new Set(checkins.map((c: any) => c.peak_id))];
       const validUuidPeakIds = allPeakIds.filter(id => uuidRegex.test(id));
 
       let peaks: any[] = [];
@@ -103,18 +149,33 @@ const PeakFeed = () => {
       const profileMap = new Map(profiles.map(p => [p.id, p]));
 
       // Fetch child profiles for user_ids not in profiles
-      const allCheckinUserIds = [...new Set((checkins as any[]).map((c: any) => c.user_id))];
+      const allCheckinUserIds = [...new Set(checkins.map((c: any) => c.user_id))];
       const missingUserIds = allCheckinUserIds.filter(id => !profileMap.has(id));
       let childMap = new Map<string, any>();
-      if (missingUserIds.length > 0) {
+
+      // Also include our known children
+      const childIdsToFetch = [...new Set([...missingUserIds, ...Array.from(childIdSet)])];
+      if (childIdsToFetch.length > 0) {
         const { data: childProfiles } = await supabase
           .from('child_profiles')
-          .select('id, name, avatar_url, parent_user_id')
-          .in('id', missingUserIds);
+          .select('id, name, avatar_url, parent_user_id, emoji')
+          .in('id', childIdsToFetch);
         childMap = new Map(((childProfiles || []) as any[]).map(c => [c.id, c]));
       }
 
-      const feedItems: FeedItem[] = (checkins as any[]).map((c: any) => {
+      // For global filter, fetch profiles for all checkin users we don't have yet
+      if (filter === 'global') {
+        const unknownUserIds = allCheckinUserIds.filter(id => !profileMap.has(id) && !childMap.has(id));
+        if (unknownUserIds.length > 0) {
+          const { data: extraProfiles } = await supabase
+            .from('profiles')
+            .select('id, username, avatar_url')
+            .in('id', unknownUserIds);
+          (extraProfiles || []).forEach(p => profileMap.set(p.id, p));
+        }
+      }
+
+      const feedItems: FeedItem[] = checkins.map((c: any) => {
         const peak = peakMap.get(c.peak_id);
         const profile = profileMap.get(c.user_id);
         const child = childMap.get(c.user_id);
@@ -129,6 +190,9 @@ const PeakFeed = () => {
           peak_elevation: peak?.elevation_moh || 0,
           peak_area: peak?.area || '',
           image_url: c.image_url || null,
+          is_child: !!child,
+          child_parent_id: child?.parent_user_id || null,
+          child_emoji: child?.emoji || null,
         };
       }).filter(item => item.peak_name !== 'Ukjent topp');
 
@@ -139,7 +203,14 @@ const PeakFeed = () => {
     setLoading(false);
   };
 
-  const handleSaveEditImage = async (itemId: string) => {
+  // Reload when filter changes to 'global' (needs different query)
+  useEffect(() => {
+    if (user && filter === 'global') {
+      loadFeed();
+    }
+  }, [filter]);
+
+  const handleSaveEditImage = async (itemId: string, targetUserId: string) => {
     if (!user || !pendingImage) return;
     setSavingImage(true);
     try {
@@ -158,8 +229,12 @@ const PeakFeed = () => {
 
   const filteredItems = items.filter(item => {
     if (filter === 'mine') return item.user_id === user?.id;
-    if (filter === 'friends') return item.user_id !== user?.id;
-    return true;
+    if (filter === 'friends') {
+      // Friends + my children
+      return item.user_id !== user?.id || myChildIds.has(item.user_id);
+    }
+    if (filter === 'global') return true;
+    return true; // 'all' = me + friends + children
   });
 
   if (loading) {
@@ -191,7 +266,15 @@ const PeakFeed = () => {
     { value: 'all', label: 'Alle' },
     { value: 'mine', label: 'Mine' },
     { value: 'friends', label: 'Venner' },
+    { value: 'global', label: 'Global' },
   ];
+
+  // Can edit own posts AND own children's posts
+  const canEdit = (item: FeedItem) => {
+    if (item.user_id === user?.id) return true;
+    if (item.is_child && myChildIds.has(item.user_id)) return true;
+    return false;
+  };
 
   return (
     <div className="flex flex-col gap-1 p-4">
@@ -232,7 +315,9 @@ const PeakFeed = () => {
               ? 'Du har ingen innsjekkinger å vise.'
               : filter === 'friends'
                 ? 'Vennene dine har ingen synlige innsjekkinger.'
-                : 'Når du eller vennene dine sjekker inn på fjelltopper, dukker de opp her!'}
+                : filter === 'global'
+                  ? 'Ingen globale innsjekkinger ennå.'
+                  : 'Når du eller vennene dine sjekker inn på fjelltopper, dukker de opp her!'}
           </p>
         </div>
       ) : (
@@ -248,8 +333,10 @@ const PeakFeed = () => {
             <div className="space-y-3">
               {dateItems.map(item => {
                 const isMe = item.user_id === user?.id;
+                const isMyChild = item.is_child && myChildIds.has(item.user_id);
                 const timeAgo = formatDistanceToNow(new Date(item.checked_in_at), { locale: nb, addSuffix: true });
                 const isEditing = editingItemId === item.id;
+                const editable = canEdit(item);
 
                 return (
                   <div
@@ -264,13 +351,16 @@ const PeakFeed = () => {
                         <Avatar className="w-10 h-10 shrink-0 ring-2 ring-emerald-500/20">
                           <AvatarImage src={item.avatar_url || undefined} />
                           <AvatarFallback className="text-sm font-bold bg-emerald-500/10 text-emerald-600">
-                            {item.username?.[0]?.toUpperCase() || '?'}
+                            {item.is_child && item.child_emoji ? item.child_emoji : (item.username?.[0]?.toUpperCase() || '?')}
                           </AvatarFallback>
                         </Avatar>
 
                         <div className="flex-1 min-w-0">
                           <p className="text-sm leading-snug">
-                            <span className="font-semibold">{isMe ? 'Du' : (item.username || 'Ukjent')}</span>
+                            <span className="font-semibold">
+                              {isMe ? 'Du' : (item.username || 'Ukjent')}
+                              {item.is_child && item.child_emoji ? ` ${item.child_emoji}` : ''}
+                            </span>
                             <span className="text-muted-foreground"> nådde toppen av </span>
                             <span className="font-semibold">{item.peak_name}</span>
                           </p>
@@ -291,8 +381,8 @@ const PeakFeed = () => {
                         </div>
 
                         <div className="flex items-center gap-1 shrink-0">
-                          {/* Edit button for own posts */}
-                          {isMe && (
+                          {/* Edit button for own posts and own children's posts */}
+                          {editable && (
                             <button
                               onClick={() => {
                                 if (isEditing) {
@@ -338,7 +428,7 @@ const PeakFeed = () => {
                           <CheckinImageUpload onImageReady={setPendingImage} />
                           {pendingImage && (
                             <Button
-                              onClick={() => handleSaveEditImage(item.id)}
+                              onClick={() => handleSaveEditImage(item.id, item.user_id)}
                               disabled={savingImage}
                               size="sm"
                               className="w-full mt-2"
