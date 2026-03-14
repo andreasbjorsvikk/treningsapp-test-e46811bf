@@ -285,7 +285,7 @@ const PeakFeed = () => {
   };
 
   const filteredItems = items.filter(item => {
-    if (filter === 'mine') return item.user_id === user?.id;
+    if (filter === 'mine') return item.user_id === user?.id || myChildIds.has(item.user_id);
     if (filter === 'friends') {
       return item.user_id !== user?.id || myChildIds.has(item.user_id);
     }
