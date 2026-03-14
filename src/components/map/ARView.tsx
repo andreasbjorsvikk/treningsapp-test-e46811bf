@@ -132,15 +132,50 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
     return true;
   }, []);
 
-  // Init
+  // Init: getUserMedia MUST be called first directly in the gesture handler
   const init = useCallback(async () => {
-    const orientationOk = await requestOrientationPermission();
-    if (!orientationOk) return;
-    await startCamera();
+    // Camera first — must be in direct gesture context for iOS
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+        setCameraActive(true);
+      }
+    } catch (err: any) {
+      setCameraError('Kunne ikke starte kamera. Sjekk at du har gitt tilgang.');
+      console.error('Camera error:', err);
+    }
+    // Then orientation permission (iOS)
+    await requestOrientationPermission();
     setPermissionsReady(true);
-  }, [requestOrientationPermission, startCamera]);
+  }, [requestOrientationPermission]);
 
-  // GPS watcher
+  // Pinch-to-zoom for camera mode
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      pinchStartDist.current = Math.hypot(dx, dy);
+      pinchStartZoom.current = cameraZoom;
+    }
+  }, [cameraZoom]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2 && pinchStartDist.current != null) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      const scale = dist / pinchStartDist.current;
+      setCameraZoom(Math.max(1, Math.min(5, pinchStartZoom.current * scale)));
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    pinchStartDist.current = null;
+  }, []);
   useEffect(() => {
     if (!permissionsReady) return;
     const watchId = navigator.geolocation.watchPosition(
