@@ -71,6 +71,7 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [userPos, setUserPos] = useState<UserPosition | null>(null);
@@ -89,47 +90,16 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
 
   const checkedPeakIds = useMemo(() => new Set(checkins.map(c => c.peak_id)), [checkins]);
 
-  // Start camera
-  const startCamera = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        setCameraActive(true);
-      }
-    } catch (err: any) {
-      setCameraError('Kunne ikke starte kamera. Sjekk at du har gitt tilgang.');
-      console.error('Camera error:', err);
-    }
-  }, []);
-
   // Stop camera
   const stopCamera = useCallback(() => {
-    if (videoRef.current?.srcObject) {
-      (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
     setCameraActive(false);
-  }, []);
-
-  // Request orientation permission (iOS)
-  const requestOrientationPermission = useCallback(async () => {
-    if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
-      try {
-        const result = await (DeviceOrientationEvent as any).requestPermission();
-        if (result !== 'granted') {
-          setCameraError('Kompass-tilgang ble nektet.');
-          return false;
-        }
-      } catch {
-        setCameraError('Kunne ikke be om kompass-tilgang.');
-        return false;
-      }
-    }
-    return true;
   }, []);
 
   // Init: getUserMedia MUST be called first directly in the gesture handler
@@ -139,19 +109,44 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
       });
+      streamRef.current = stream;
+      // Try to attach immediately if video element exists
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
-        setCameraActive(true);
       }
+      setCameraActive(true);
     } catch (err: any) {
       setCameraError('Kunne ikke starte kamera. Sjekk at du har gitt tilgang.');
       console.error('Camera error:', err);
     }
-    // Then orientation permission (iOS)
-    await requestOrientationPermission();
+    // Then orientation permission (iOS) — must also be in gesture context
+    if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+      try {
+        const result = await (DeviceOrientationEvent as any).requestPermission();
+        if (result !== 'granted') {
+          setCameraError('Kompass-tilgang ble nektet.');
+        }
+      } catch {
+        // Non-critical, compass may still work on some devices
+        console.warn('Could not request orientation permission');
+      }
+    }
     setPermissionsReady(true);
-  }, [requestOrientationPermission]);
+  }, []);
+
+  // Attach stream to video element when it mounts (after permissionsReady becomes true)
+  useEffect(() => {
+    if (!permissionsReady || !streamRef.current) return;
+    const attachStream = () => {
+      if (videoRef.current && streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+        videoRef.current.play().catch(err => console.error('Video play error:', err));
+      }
+    };
+    // Small delay to ensure DOM is ready
+    requestAnimationFrame(attachStream);
+  }, [permissionsReady]);
 
   // Pinch-to-zoom for camera mode
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -378,8 +373,9 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
         }
       } else {
         // Resume camera
-        if (videoRef.current && videoRef.current.srcObject) {
-          videoRef.current.play();
+        if (videoRef.current && streamRef.current) {
+          videoRef.current.srcObject = streamRef.current;
+          videoRef.current.play().catch(() => {});
         }
         // Remove 3D map
         if (mapRef.current) {
