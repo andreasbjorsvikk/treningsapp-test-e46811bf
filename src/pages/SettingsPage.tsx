@@ -125,6 +125,21 @@ const SettingsPage = () => {
     return () => window.removeEventListener('navigate-to-profile', handler);
   }, []);
 
+  // Load child profiles for privacy
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('child_profiles').select('id').eq('parent_user_id', user.id).then(({ data }) => {
+      setHasChildren((data || []).length > 0);
+      setChildrenCount((data || []).length);
+    });
+    supabase.from('profiles').select('privacy_child_profile, privacy_child_checkins').eq('id', user.id).single().then(({ data }) => {
+      if (data) {
+        setChildPrivacyProfile((data as any).privacy_child_profile || 'friends');
+        setChildPrivacyCheckins((data as any).privacy_child_checkins || 'friends');
+      }
+    });
+  }, [user]);
+
   const handleSaveUsername = async () => {
     if (!user) return;
     setUsernameLoading(true);
