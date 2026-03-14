@@ -16,6 +16,7 @@ import MapSettingsSheet from '@/components/map/MapSettingsSheet';
 import PeakFeed from '@/components/map/PeakFeed';
 import GlobalLeaderboard from '@/components/map/GlobalLeaderboard';
 import MapTutorial from '@/components/map/MapTutorial';
+import ARView from '@/components/map/ARView';
 import { Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 
