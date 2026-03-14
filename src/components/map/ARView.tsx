@@ -230,7 +230,7 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
       }
 
       if (e.beta != null) {
-        setTilt(Math.max(0, Math.min(90, e.beta)));
+        setTilt(e.beta);
       }
     };
 
