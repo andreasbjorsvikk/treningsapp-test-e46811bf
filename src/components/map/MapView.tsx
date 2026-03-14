@@ -421,20 +421,27 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       const peakIcon = getPeakIcon(peak.heightMoh, peak.id);
       
       el.style.cssText = `
-        width: 36px; height: 36px; cursor: pointer;
-        display: flex; align-items: center; justify-content: center;
-        background: ${isYearFiltered ? 'hsl(0, 0%, 100%)' : isTaken ? 'hsl(152, 60%, 42%)' : isUnpublished ? 'hsl(38, 85%, 50%)' : 'hsl(0, 0%, 100%)'};
-        border: 2px solid ${isYearFiltered ? 'hsl(220, 13%, 80%)' : isTaken ? 'hsl(152, 60%, 35%)' : isUnpublished ? 'hsl(38, 85%, 40%)' : 'hsl(220, 13%, 80%)'};
-        border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        width: 36px; height: 27px; cursor: pointer;
+        overflow: hidden; position: relative;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         ${isUnpublished ? 'opacity: 0.7;' : ''}
         ${isYearFiltered ? 'opacity: 0.55;' : ''}
       `;
+        const bg = isYearFiltered ? 'hsl(0, 0%, 100%)' : isTaken ? 'hsl(152, 60%, 42%)' : isUnpublished ? 'hsl(38, 85%, 50%)' : 'hsl(0, 0%, 100%)';
+        const borderColor = isYearFiltered ? 'hsl(220, 13%, 80%)' : isTaken ? 'hsl(152, 60%, 35%)' : isUnpublished ? 'hsl(38, 85%, 40%)' : 'hsl(220, 13%, 80%)';
         const imgStyle = isTaken && !isYearFiltered
           ? 'object-fit: contain; filter: drop-shadow(0 0 0.5px white) drop-shadow(0 0 0.5px white) drop-shadow(0 0 1px white) drop-shadow(0 0 2px rgba(255,255,255,0.5));'
           : 'object-fit: contain;';
         
         el.innerHTML = `
-          <img src="${peakIcon}" alt="" width="26" height="26" style="${imgStyle}" draggable="false" />
+          <div style="
+            width: 36px; height: 36px; border-radius: 50%;
+            background: ${bg}; border: 2px solid ${borderColor};
+            display: flex; align-items: flex-end; justify-content: center;
+            padding-bottom: 2px; box-sizing: border-box;
+          ">
+            <img src="${peakIcon}" alt="" width="26" height="26" style="${imgStyle}" draggable="false" />
+          </div>
         `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;
