@@ -45,8 +45,10 @@ const CheckinAnimation = () => {
                 : 'bg-card border-border'
             }`}
           >
-            <div className={`w-9 h-9 rounded-full flex items-end justify-center [clip-path:inset(0_0_25%_0)] overflow-hidden ${phase === 'checked' ? 'bg-white/20 border border-white/40' : ''}`}>
-              <img src={peakIconTiers.high} alt="" className="w-8 h-8 object-contain object-bottom" />
+            <div className={`w-10 h-10 flex items-end justify-center ${phase === 'checked' ? 'bg-white/20' : ''}`}
+              style={{ clipPath: 'polygon(50% 0%, 59% 0.3%, 67% 1.2%, 75% 3%, 82% 6%, 88% 10%, 93% 15%, 96% 22%, 98.5% 29%, 99.7% 37%, 100% 45%, 100% 75%, 0% 75%, 0% 45%, 0.3% 37%, 1.5% 29%, 4% 22%, 7% 15%, 12% 10%, 18% 6%, 25% 3%, 33% 1.2%, 41% 0.3%)' }}
+            >
+              <img src={peakIconTiers.high} alt="" className="w-9 h-9 object-cover object-bottom" />
             </div>
           </div>
           {/* Ripple effect */}
