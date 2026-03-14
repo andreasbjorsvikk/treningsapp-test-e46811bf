@@ -187,16 +187,33 @@ const ChildProfilesSection = () => {
     if (!sharingChildId || !user) return;
     setInviting(true);
     try {
-      const { error } = await supabase
+      const { data: insertedAccess, error } = await supabase
         .from('child_shared_access')
         .insert({
           child_id: sharingChildId,
           shared_with_user_id: targetUserId,
           invited_by: user.id,
-        });
+        })
+        .select()
+        .single();
       if (error) throw error;
+
+      // Find the child name for the notification
+      const child = children.find(c => c.id === sharingChildId);
+      const childName = child?.name || 'et barn';
+
+      // Send notification to target user
+      await supabase.from('community_notifications').insert({
+        user_id: targetUserId,
+        from_user_id: user.id,
+        type: 'child_share',
+        title: 'Barn-deling',
+        message: `Du er invitert til å ha ${childName} i din profil.`,
+        challenge_id: (insertedAccess as any).id, // repurpose challenge_id to store access id
+      });
+
       toast.success('Invitasjon sendt!');
-      openSharing(sharingChildId); // refresh
+      openSharing(sharingChildId);
     } catch (e: any) {
       if (e?.code === '23505') {
         toast.info('Allerede invitert');
