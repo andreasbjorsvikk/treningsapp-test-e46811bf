@@ -386,12 +386,14 @@ const ChildProfilesSection = () => {
             {children.map(child => (
               <div key={child.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/30 transition-colors">
                 <div className="relative">
-                  <Avatar className="w-10 h-10">
-                    {child.avatar_url ? <AvatarImage src={child.avatar_url} /> : null}
-                    <AvatarFallback className="text-sm font-bold">
-                      {(child as any).emoji || '👶'}
-                    </AvatarFallback>
-                  </Avatar>
+                  <button onClick={() => setSelectedChildDetail(child as unknown as ChildProfile)}>
+                    <Avatar className="w-10 h-10">
+                      {child.avatar_url ? <AvatarImage src={child.avatar_url} /> : null}
+                      <AvatarFallback className="text-sm font-bold">
+                        {(child as any).emoji || '👶'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
                   <button
                     onClick={() => handleAvatarSelect(child.id)}
                     disabled={uploadingId === child.id}
@@ -404,10 +406,10 @@ const ChildProfilesSection = () => {
                     )}
                   </button>
                 </div>
-                <div className="flex-1 min-w-0">
+                <button onClick={() => setSelectedChildDetail(child as unknown as ChildProfile)} className="flex-1 min-w-0 text-left">
                   <span className="text-sm font-medium">{child.name}</span>
                   <span className="ml-1 text-sm">{(child as any).emoji || '👶'}</span>
-                </div>
+                </button>
                 <button onClick={() => openSharing(child.id)} className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground" title="Del med andre">
                   <UserPlus className="w-3.5 h-3.5" />
                 </button>
@@ -422,6 +424,53 @@ const ChildProfilesSection = () => {
           </div>
         )}
       </div>
+
+      {/* Pending shared invitations */}
+      {pendingInvitations.length > 0 && (
+        <div className="glass-card rounded-xl p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-muted-foreground" />
+            <Label className="text-sm font-semibold">Delte barneprofiler</Label>
+          </div>
+          <div className="space-y-2">
+            {pendingInvitations.map(inv => (
+              <div key={inv.id} className="p-3 rounded-lg border border-border/50 bg-card space-y-2">
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-10 h-10">
+                    {inv.child.avatar_url ? <AvatarImage src={inv.child.avatar_url} /> : null}
+                    <AvatarFallback className="text-sm font-bold">{inv.child.emoji || '👶'}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{inv.child.name} {inv.child.emoji}</p>
+                    <p className="text-xs text-muted-foreground">Delt av {inv.inviter_username || 'ukjent'}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handleRespondInvitation(inv.id, true)}
+                    disabled={respondingInvite === inv.id}
+                  >
+                    {respondingInvite === inv.id ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Check className="w-3.5 h-3.5 mr-1" />}
+                    Godta
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => handleRespondInvitation(inv.id, false)}
+                    disabled={respondingInvite === inv.id}
+                  >
+                    <X className="w-3.5 h-3.5 mr-1" />
+                    Avvis
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
       
