@@ -18,6 +18,61 @@ const EMOJI_CATEGORIES = [
   { base: '👧', label: 'Jente', variants: ['👧', '👧🏻', '👧🏼', '👧🏽', '👧🏾', '👧🏿'] },
 ];
 
+const EmojiPicker = ({ emoji, onSelect }: { emoji: string; onSelect: (v: string) => void }) => {
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const currentCategory = EMOJI_CATEGORIES.find(c => c.variants.includes(emoji));
+
+  return (
+    <div className="space-y-2">
+      <Label>Emoji</Label>
+      <div className="flex gap-2">
+        {EMOJI_CATEGORIES.map(cat => {
+          const isExpanded = expandedCategory === cat.base;
+          const isSelected = currentCategory?.base === cat.base;
+          return (
+            <button
+              key={cat.base}
+              onClick={() => {
+                if (isExpanded) {
+                  setExpandedCategory(null);
+                } else {
+                  setExpandedCategory(cat.base);
+                  if (!isSelected) onSelect(cat.base);
+                }
+              }}
+              className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl border-2 transition-all flex-1 ${
+                isSelected
+                  ? 'border-primary bg-primary/10'
+                  : 'border-border hover:border-primary/50'
+              }`}
+            >
+              <span className="text-2xl">{isSelected ? emoji : cat.base}</span>
+              <span className="text-[10px] text-muted-foreground">{cat.label}</span>
+            </button>
+          );
+        })}
+      </div>
+      {expandedCategory && (
+        <div className="flex gap-1.5 justify-center pt-1">
+          {EMOJI_CATEGORIES.find(c => c.base === expandedCategory)?.variants.map(v => (
+            <button
+              key={v}
+              onClick={() => onSelect(v)}
+              className={`flex items-center justify-center w-9 h-9 rounded-lg border-2 transition-all ${
+                emoji === v
+                  ? 'border-primary bg-primary/10 scale-110'
+                  : 'border-border hover:border-primary/50'
+              }`}
+            >
+              <span className="text-xl">{v}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 interface SharedUser {
   child_id: string;
   shared_with_user_id: string;
