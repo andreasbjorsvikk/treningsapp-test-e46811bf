@@ -111,6 +111,19 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
         alreadyResponded = true;
       }
 
+      // Check child share invitations
+      if (n.type === 'child_share' && n.challenge_id) {
+        // challenge_id is repurposed to store child_shared_access id
+        const { data: access } = await supabase
+          .from('child_shared_access')
+          .select('status')
+          .eq('id', n.challenge_id)
+          .single();
+        if (access && access.status !== 'pending') {
+          alreadyResponded = true;
+        }
+      }
+
       return {
         ...n,
         currentChallengeName: n.challenge_id ? challengeNameMap[n.challenge_id] : undefined,
