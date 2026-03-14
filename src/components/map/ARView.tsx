@@ -3,10 +3,7 @@ import { Peak } from '@/data/peaks';
 import { PeakCheckin } from '@/services/peakCheckinService';
 import { Camera, CameraOff, Compass, Mountain, Navigation, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import peakLowIcon from '@/assets/icons/peak-low.png';
-import peakMediumIcon from '@/assets/icons/peak-medium.png';
-import peakHighIcon from '@/assets/icons/peak-high.png';
-import peakVeryHighIcon from '@/assets/icons/peak-veryhigh.png';
+import { getPeakIcon } from '@/utils/peakIcons';
 
 interface ARViewProps {
   peaks: Peak[];
