@@ -1,4 +1,5 @@
 import { Peak } from '@/data/peaks';
+import ChildCheckinSheet from '@/components/map/ChildCheckinSheet';
 import PeakOrbitMap from '@/components/map/PeakOrbitMap';
 import { PeakCheckin, checkinPeak, getDistanceMeters, adminCheckinPeak, searchProfiles, getAllCheckinsForPeak, CheckinWithProfile, deleteCheckin, updateCheckinImage } from '@/services/peakCheckinService';
 import { useAuth } from '@/hooks/useAuth';
