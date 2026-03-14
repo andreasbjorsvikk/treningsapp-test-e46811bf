@@ -1154,7 +1154,7 @@ const SettingsPage = () => {
       {/* Profile header */}
       {user ? (
         <button
-          onClick={() => setView('account')}
+          onClick={() => setView('profile')}
           className="glass-card rounded-xl p-4 mb-4 w-full text-left hover:bg-muted/30 transition-colors"
         >
           <div className="flex items-center gap-3">
