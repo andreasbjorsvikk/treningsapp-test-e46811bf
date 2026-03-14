@@ -179,6 +179,7 @@ const ChildProfilesSection = () => {
       await supabase.from('child_shared_access').update({ status: accept ? 'accepted' : 'declined' }).eq('id', accessId);
       toast.success(accept ? 'Invitasjon godkjent!' : 'Invitasjon avvist');
       loadPendingInvitations();
+      if (accept) loadSharedChildren();
     } catch {
       toast.error('Kunne ikke svare på invitasjon');
     }
