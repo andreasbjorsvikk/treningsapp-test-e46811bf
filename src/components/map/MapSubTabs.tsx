@@ -1,4 +1,4 @@
-export type MapSubTab = 'kart' | 'topper' | 'feed' | 'lederliste';
+export type MapSubTab = 'kart' | 'topper' | 'feed' | 'lederliste' | 'ar';
 
 interface MapSubTabsProps {
   active: MapSubTab;
