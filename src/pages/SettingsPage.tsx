@@ -517,6 +517,7 @@ const SettingsPage = () => {
                   <SelectContent>
                      <SelectItem value="me">{t('privacy.onlyMe')}</SelectItem>
                      <SelectItem value="friends">{t('privacy.friends')}</SelectItem>
+                     <SelectItem value="all">Alle</SelectItem>
                      <SelectItem value="selected">{t('privacy.selectedFriends')}</SelectItem>
                   </SelectContent>
                 </Select>
