@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Plus, Pencil, Trash2, Camera, Loader2, Users, UserPlus, Search, X, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import AvatarCropper from '@/components/AvatarCropper';
+import ChildProfileDetailDrawer from '@/components/map/ChildProfileDetailDrawer';
 import { supabase } from '@/integrations/supabase/client';
 
 // Emoji categories with skin tone variants
