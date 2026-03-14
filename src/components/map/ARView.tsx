@@ -81,8 +81,11 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
   const [showMiniMap, setShowMiniMap] = useState(true);
   const [mode, setMode] = useState<ARMode>('camera');
   const [mapReady, setMapReady] = useState(false);
+  const [cameraZoom, setCameraZoom] = useState(1);
   const headingSmoothed = useRef<number | null>(null);
   const lastMapUpdate = useRef(0);
+  const pinchStartDist = useRef<number | null>(null);
+  const pinchStartZoom = useRef(1);
 
   const checkedPeakIds = useMemo(() => new Set(checkins.map(c => c.peak_id)), [checkins]);
 
@@ -129,13 +132,50 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
     return true;
   }, []);
 
-  // Init
+  // Init: getUserMedia MUST be called first directly in the gesture handler
   const init = useCallback(async () => {
-    const orientationOk = await requestOrientationPermission();
-    if (!orientationOk) return;
-    await startCamera();
+    // Camera first — must be in direct gesture context for iOS
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+        setCameraActive(true);
+      }
+    } catch (err: any) {
+      setCameraError('Kunne ikke starte kamera. Sjekk at du har gitt tilgang.');
+      console.error('Camera error:', err);
+    }
+    // Then orientation permission (iOS)
+    await requestOrientationPermission();
     setPermissionsReady(true);
-  }, [requestOrientationPermission, startCamera]);
+  }, [requestOrientationPermission]);
+
+  // Pinch-to-zoom for camera mode
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      pinchStartDist.current = Math.hypot(dx, dy);
+      pinchStartZoom.current = cameraZoom;
+    }
+  }, [cameraZoom]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2 && pinchStartDist.current != null) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      const scale = dist / pinchStartDist.current;
+      setCameraZoom(Math.max(1, Math.min(5, pinchStartZoom.current * scale)));
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    pinchStartDist.current = null;
+  }, []);
 
   // GPS watcher
   useEffect(() => {
@@ -207,7 +247,13 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
       pitch: 75,
       bearing: heading || 0,
       antialias: false,
-      interactive: false, // Sensor-driven, no touch
+      interactive: true,
+      dragPan: false,
+      dragRotate: false,
+      scrollZoom: true,
+      touchZoomRotate: true,
+      doubleClickZoom: true,
+      touchPitch: false,
     });
 
     map.on('style.load', () => {
@@ -417,11 +463,18 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
 
   // ── Main AR view ──
   return (
-    <div ref={containerRef} className="relative w-full h-full overflow-hidden bg-black">
+    <div
+      ref={containerRef}
+      className="relative w-full h-full overflow-hidden bg-black"
+      onTouchStart={mode === 'camera' ? handleTouchStart : undefined}
+      onTouchMove={mode === 'camera' ? handleTouchMove : undefined}
+      onTouchEnd={mode === 'camera' ? handleTouchEnd : undefined}
+    >
       {/* Camera feed (visible in camera mode) */}
       <video
         ref={videoRef}
         className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${mode === 'camera' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        style={{ transform: `scale(${cameraZoom})`, transformOrigin: 'center center' }}
         playsInline
         muted
         autoPlay
@@ -482,7 +535,16 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
         <span className="text-white/60 text-xs">{heading != null ? `${Math.round(heading)}°` : '—'}</span>
       </div>
 
-      {/* HUD: Top-right controls */}
+      {/* Zoom indicator (camera mode) */}
+      {mode === 'camera' && cameraZoom > 1.05 && (
+        <button
+          onClick={() => setCameraZoom(1)}
+          className="absolute top-14 left-1/2 -translate-x-1/2 z-30 px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white text-xs font-medium"
+        >
+          {cameraZoom.toFixed(1)}x ✕
+        </button>
+      )}
+
       <div className="absolute top-4 right-4 z-30 flex gap-2">
         {/* Mode toggle */}
         <button
