@@ -107,7 +107,6 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
     const OrientationEvent = (window as any).DeviceOrientationEvent;
 
     if (!OrientationEvent) {
-      setCompassStatus('denied');
       setCompassEnabled(false);
       return false;
     }
@@ -116,19 +115,16 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
       try {
         const result = await OrientationEvent.requestPermission();
         const granted = result === 'granted';
-        setCompassStatus(granted ? 'granted' : 'denied');
         setCompassEnabled(granted);
         return granted;
       } catch (err) {
         console.warn('Compass permission request failed', err);
-        setCompassStatus('denied');
         setCompassEnabled(false);
         return false;
       }
     }
 
     // Android / browsers without explicit permission API
-    setCompassStatus('granted');
     setCompassEnabled(true);
     return true;
   }, []);
