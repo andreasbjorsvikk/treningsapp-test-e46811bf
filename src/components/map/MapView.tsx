@@ -421,25 +421,28 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       const peakIcon = getPeakIcon(peak.heightMoh, peak.id);
       
       const bg = isYearFiltered ? 'hsl(0, 0%, 100%)' : isTaken ? 'hsl(152, 60%, 42%)' : isUnpublished ? 'hsl(38, 85%, 50%)' : 'hsl(0, 0%, 100%)';
+        const borderColor = isYearFiltered ? 'hsl(220, 13%, 80%)' : isTaken ? 'hsl(152, 60%, 35%)' : isUnpublished ? 'hsl(38, 85%, 40%)' : 'hsl(220, 13%, 80%)';
         const imgFilter = isTaken && !isYearFiltered
           ? 'filter: drop-shadow(0 0 0.5px white) drop-shadow(0 0 0.5px white) drop-shadow(0 0 1px white) drop-shadow(0 0 2px rgba(255,255,255,0.5));'
           : '';
 
-      // Circle cut at 75% height polygon — traces upper arc of a circle then flat bottom
-      const peakClip = 'polygon(50% 0%, 59% 0.3%, 67% 1.2%, 75% 3%, 82% 6%, 88% 10%, 93% 15%, 96% 22%, 98.5% 29%, 99.7% 37%, 100% 45%, 100% 75%, 0% 75%, 0% 45%, 0.3% 37%, 1.5% 29%, 4% 22%, 7% 15%, 12% 10%, 18% 6%, 25% 3%, 33% 1.2%, 41% 0.3%)';
-
+      // Outer wrapper clips the circle at 75% height; drop-shadow follows visible shape
       el.style.cssText = `
-        width: 42px; height: 42px; cursor: pointer;
-        background: ${bg};
-        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-        clip-path: ${peakClip};
-        display: flex; align-items: flex-end; justify-content: center;
+        width: 44px; height: 33px; overflow: hidden; cursor: pointer;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
         ${isUnpublished ? 'opacity: 0.7;' : ''}
         ${isYearFiltered ? 'opacity: 0.55;' : ''}
       `;
         
         el.innerHTML = `
-          <img src="${peakIcon}" alt="" style="width:38px;height:38px;object-fit:cover;object-position:center bottom;${imgFilter}" draggable="false" />
+          <div style="
+            width: 44px; height: 44px; border-radius: 50%;
+            background: ${bg}; border: 2px solid ${borderColor};
+            display: flex; align-items: flex-end; justify-content: center;
+            box-sizing: border-box;
+          ">
+            <img src="${peakIcon}" alt="" style="width:36px;height:36px;object-fit:cover;object-position:center bottom;margin-bottom:-2px;${imgFilter}" draggable="false" />
+          </div>
         `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;

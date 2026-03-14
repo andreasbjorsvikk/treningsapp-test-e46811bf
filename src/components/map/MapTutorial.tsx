@@ -45,10 +45,10 @@ const CheckinAnimation = () => {
                 : 'bg-card border-border'
             }`}
           >
-            <div className={`w-10 h-10 flex items-end justify-center ${phase === 'checked' ? 'bg-white/20' : ''}`}
-              style={{ clipPath: 'polygon(50% 0%, 59% 0.3%, 67% 1.2%, 75% 3%, 82% 6%, 88% 10%, 93% 15%, 96% 22%, 98.5% 29%, 99.7% 37%, 100% 45%, 100% 75%, 0% 75%, 0% 45%, 0.3% 37%, 1.5% 29%, 4% 22%, 7% 15%, 12% 10%, 18% 6%, 25% 3%, 33% 1.2%, 41% 0.3%)' }}
-            >
-              <img src={peakIconTiers.high} alt="" className="w-9 h-9 object-cover object-bottom" />
+            <div className="w-10 h-[30px] overflow-hidden">
+              <div className={`w-10 h-10 rounded-full flex items-end justify-center ${phase === 'checked' ? 'bg-white/20 border border-white/40' : ''}`}>
+                <img src={peakIconTiers.high} alt="" className="w-8 h-8 object-cover object-bottom -mb-0.5" />
+              </div>
             </div>
           </div>
           {/* Ripple effect */}
@@ -180,10 +180,10 @@ const LongPressAnimation = () => {
         {/* Spawned peak icon */}
         {phase === 'spawned' && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-scale-in">
-            <div className="w-12 h-12 bg-card flex items-end justify-center shadow-lg"
-              style={{ clipPath: 'polygon(50% 0%, 59% 0.3%, 67% 1.2%, 75% 3%, 82% 6%, 88% 10%, 93% 15%, 96% 22%, 98.5% 29%, 99.7% 37%, 100% 45%, 100% 75%, 0% 75%, 0% 45%, 0.3% 37%, 1.5% 29%, 4% 22%, 7% 15%, 12% 10%, 18% 6%, 25% 3%, 33% 1.2%, 41% 0.3%)' }}
-            >
-              <img src={peakIconTiers.medium} alt="" className="w-11 h-11 object-cover object-bottom" />
+            <div className="w-12 h-9 overflow-hidden" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.2))' }}>
+              <div className="w-12 h-12 rounded-full bg-card border-2 border-border flex items-end justify-center box-border">
+                <img src={peakIconTiers.medium} alt="" className="w-10 h-10 object-cover object-bottom -mb-0.5" />
+              </div>
             </div>
           </div>
         )}
