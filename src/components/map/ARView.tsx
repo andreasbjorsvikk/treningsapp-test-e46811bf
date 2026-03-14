@@ -341,17 +341,14 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
           ${peak.name} <span style="opacity:0.7;font-size:9px">${peak.heightMoh}m</span>
         </div>
         <div style="
-          width: 28px; height: 21px; overflow: hidden;
+          width: 28px; height: 28px; border-radius: 50%;
+          display: flex; align-items: flex-end; justify-content: center;
+          border: 2px solid ${isTaken ? 'hsl(152,60%,35%)' : 'rgba(255,255,255,0.7)'};
+          background: ${isTaken ? 'hsl(152,60%,42%)' : 'rgba(255,255,255,0.9)'};
+          clip-path: inset(0 0 25% 0);
+          overflow: hidden;
         ">
-          <div style="
-            width: 28px; height: 28px; border-radius: 50%;
-            display: flex; align-items: flex-end; justify-content: center;
-            border: 2px solid ${isTaken ? 'hsl(152,60%,35%)' : 'rgba(255,255,255,0.7)'};
-            background: ${isTaken ? 'hsl(152,60%,42%)' : 'rgba(255,255,255,0.9)'};
-            padding-bottom: 1px; box-sizing: border-box;
-          ">
-            <img src="${icon}" style="width:18px;height:18px;object-fit:contain" />
-          </div>
+          <img src="${icon}" style="width:24px;height:24px;object-fit:contain;object-position:center bottom" />
         </div>
       `;
 
@@ -542,14 +539,12 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
             <span className="text-[9px] text-white/90 font-medium drop-shadow-lg">
               {distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}
             </span>
-            <div className="w-8 h-6 overflow-hidden shadow-lg">
-              <div className={`w-8 h-8 rounded-full flex items-end justify-center border-2 pb-0.5 box-border ${
-                isTaken
-                  ? 'bg-[hsl(152,60%,42%)] border-[hsl(152,60%,35%)]'
-                  : 'bg-white/90 border-white/60'
-              }`}>
-                <img src={icon} alt="" className="w-5 h-5 object-contain" />
-              </div>
+            <div className={`w-8 h-8 rounded-full flex items-end justify-center border-2 shadow-lg [clip-path:inset(0_0_25%_0)] overflow-hidden ${
+              isTaken
+                ? 'bg-[hsl(152,60%,42%)] border-[hsl(152,60%,35%)]'
+                : 'bg-white/90 border-white/60'
+            }`}>
+              <img src={icon} alt="" className="w-7 h-7 object-contain object-bottom" />
             </div>
             <div className={`w-px h-4 ${isTaken ? 'bg-[hsl(152,60%,42%)]/50' : 'bg-white/30'}`} />
           </button>

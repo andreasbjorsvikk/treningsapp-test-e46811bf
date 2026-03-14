@@ -45,10 +45,8 @@ const CheckinAnimation = () => {
                 : 'bg-card border-border'
             }`}
           >
-            <div className={`w-9 h-7 overflow-hidden ${phase === 'checked' ? '' : ''}`}>
-              <div className={`w-9 h-9 rounded-full flex items-end justify-center pb-0.5 ${phase === 'checked' ? 'bg-white/20 border border-white/40' : ''}`}>
-                <img src={peakIconTiers.high} alt="" className="w-7 h-7 object-contain" />
-              </div>
+            <div className={`w-9 h-9 rounded-full flex items-end justify-center [clip-path:inset(0_0_25%_0)] overflow-hidden ${phase === 'checked' ? 'bg-white/20 border border-white/40' : ''}`}>
+              <img src={peakIconTiers.high} alt="" className="w-8 h-8 object-contain object-bottom" />
             </div>
           </div>
           {/* Ripple effect */}
@@ -180,10 +178,8 @@ const LongPressAnimation = () => {
         {/* Spawned peak icon */}
         {phase === 'spawned' && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-scale-in">
-            <div className="w-10 h-[30px] overflow-hidden shadow-lg">
-              <div className="w-10 h-10 rounded-full bg-card border-2 border-border flex items-end justify-center pb-0.5">
-                <img src={peakIconTiers.medium} alt="" className="w-7 h-7 object-contain" />
-              </div>
+            <div className="w-10 h-10 rounded-full bg-card border-2 border-border flex items-end justify-center [clip-path:inset(0_0_25%_0)] overflow-hidden shadow-lg">
+              <img src={peakIconTiers.medium} alt="" className="w-9 h-9 object-contain object-bottom" />
             </div>
           </div>
         )}

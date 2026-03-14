@@ -420,28 +420,26 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       const el = document.createElement('div');
       const peakIcon = getPeakIcon(peak.heightMoh, peak.id);
       
+      const bg = isYearFiltered ? 'hsl(0, 0%, 100%)' : isTaken ? 'hsl(152, 60%, 42%)' : isUnpublished ? 'hsl(38, 85%, 50%)' : 'hsl(0, 0%, 100%)';
+        const borderColor = isYearFiltered ? 'hsl(220, 13%, 80%)' : isTaken ? 'hsl(152, 60%, 35%)' : isUnpublished ? 'hsl(38, 85%, 40%)' : 'hsl(220, 13%, 80%)';
+        const imgFilter = isTaken && !isYearFiltered
+          ? 'filter: drop-shadow(0 0 0.5px white) drop-shadow(0 0 0.5px white) drop-shadow(0 0 1px white) drop-shadow(0 0 2px rgba(255,255,255,0.5));'
+          : '';
+
       el.style.cssText = `
-        width: 36px; height: 27px; cursor: pointer;
-        overflow: hidden; position: relative;
+        width: 36px; height: 36px; cursor: pointer;
+        border-radius: 50%;
+        background: ${bg}; border: 2px solid ${borderColor};
         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        clip-path: inset(0 0 25% 0);
+        display: flex; align-items: flex-end; justify-content: center;
+        overflow: hidden;
         ${isUnpublished ? 'opacity: 0.7;' : ''}
         ${isYearFiltered ? 'opacity: 0.55;' : ''}
       `;
-        const bg = isYearFiltered ? 'hsl(0, 0%, 100%)' : isTaken ? 'hsl(152, 60%, 42%)' : isUnpublished ? 'hsl(38, 85%, 50%)' : 'hsl(0, 0%, 100%)';
-        const borderColor = isYearFiltered ? 'hsl(220, 13%, 80%)' : isTaken ? 'hsl(152, 60%, 35%)' : isUnpublished ? 'hsl(38, 85%, 40%)' : 'hsl(220, 13%, 80%)';
-        const imgStyle = isTaken && !isYearFiltered
-          ? 'object-fit: contain; filter: drop-shadow(0 0 0.5px white) drop-shadow(0 0 0.5px white) drop-shadow(0 0 1px white) drop-shadow(0 0 2px rgba(255,255,255,0.5));'
-          : 'object-fit: contain;';
         
         el.innerHTML = `
-          <div style="
-            width: 36px; height: 36px; border-radius: 50%;
-            background: ${bg}; border: 2px solid ${borderColor};
-            display: flex; align-items: flex-end; justify-content: center;
-            padding-bottom: 2px; box-sizing: border-box;
-          ">
-            <img src="${peakIcon}" alt="" width="26" height="26" style="${imgStyle}" draggable="false" />
-          </div>
+          <img src="${peakIcon}" alt="" style="width:32px;height:32px;object-fit:contain;object-position:center bottom;${imgFilter}" draggable="false" />
         `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;
