@@ -11,29 +11,11 @@ import { toast } from 'sonner';
 import AvatarCropper from '@/components/AvatarCropper';
 import { supabase } from '@/integrations/supabase/client';
 
-// All baby/child emoji variants with skin tones
-const CHILD_EMOJIS = [
-  // Baby
-  { value: '👶', label: 'Baby' },
-  { value: '👶🏻', label: 'Baby' },
-  { value: '👶🏼', label: 'Baby' },
-  { value: '👶🏽', label: 'Baby' },
-  { value: '👶🏾', label: 'Baby' },
-  { value: '👶🏿', label: 'Baby' },
-  // Boy
-  { value: '👦', label: 'Gutt' },
-  { value: '👦🏻', label: 'Gutt' },
-  { value: '👦🏼', label: 'Gutt' },
-  { value: '👦🏽', label: 'Gutt' },
-  { value: '👦🏾', label: 'Gutt' },
-  { value: '👦🏿', label: 'Gutt' },
-  // Girl
-  { value: '👧', label: 'Jente' },
-  { value: '👧🏻', label: 'Jente' },
-  { value: '👧🏼', label: 'Jente' },
-  { value: '👧🏽', label: 'Jente' },
-  { value: '👧🏾', label: 'Jente' },
-  { value: '👧🏿', label: 'Jente' },
+// Emoji categories with skin tone variants
+const EMOJI_CATEGORIES = [
+  { base: '👶', label: 'Baby', variants: ['👶', '👶🏻', '👶🏼', '👶🏽', '👶🏾', '👶🏿'] },
+  { base: '👦', label: 'Gutt', variants: ['👦', '👦🏻', '👦🏼', '👦🏽', '👦🏾', '👦🏿'] },
+  { base: '👧', label: 'Jente', variants: ['👧', '👧🏻', '👧🏼', '👧🏽', '👧🏾', '👧🏿'] },
 ];
 
 interface SharedUser {
