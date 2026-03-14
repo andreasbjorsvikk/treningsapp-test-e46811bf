@@ -85,6 +85,7 @@ interface SharedUser {
 const ChildProfilesSection = () => {
   const { user } = useAuth();
   const [children, setChildren] = useState<(ChildProfile & { emoji?: string })[]>([]);
+  const [sharedChildren, setSharedChildren] = useState<(ChildProfile & { emoji?: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingChild, setEditingChild] = useState<(ChildProfile & { emoji?: string }) | null>(null);
