@@ -648,7 +648,7 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
       )}
 
       {/* Compass state */}
-      {!compassEnabled && userPos && (
+      {!compassEnabled && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/80 backdrop-blur-sm text-white text-xs font-medium shadow-lg">
           <span>Kompass ikke aktivert</span>
           <Button
