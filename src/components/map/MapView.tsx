@@ -439,11 +439,11 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         ${isUnpublished ? 'opacity: 0.7;' : ''}
         ${isYearFiltered ? 'opacity: 0.55;' : ''}
       `;
-      const glowFilter = isTaken && !isYearFiltered
-        ? 'drop-shadow(0 0 2px rgba(255,255,255,0.9)) drop-shadow(0 0 4px rgba(255,255,255,0.5))'
-        : '';
+      const imgStyle = isTaken && !isYearFiltered
+        ? 'object-fit: contain; filter: drop-shadow(0 0 0.5px white) drop-shadow(0 0 0.5px white) drop-shadow(0 0 0.5px white) drop-shadow(0 0 0.5px white);'
+        : 'object-fit: contain;';
       el.innerHTML = `
-        <img src="${peakIcon}" alt="" width="26" height="26" style="object-fit: contain; filter: ${glowFilter};" draggable="false" />
+        <img src="${peakIcon}" alt="" width="26" height="26" style="${imgStyle}" draggable="false" />
       `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;
