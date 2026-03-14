@@ -654,6 +654,10 @@ export type Database = {
         Args: { _challenge_id: string; _user_id: string }
         Returns: boolean
       }
+      is_parent_of: {
+        Args: { _child_id: string; _parent_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "user"
