@@ -140,19 +140,44 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
       });
+      streamRef.current = stream;
+      // Try to attach immediately if video element exists
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
-        setCameraActive(true);
       }
+      setCameraActive(true);
     } catch (err: any) {
       setCameraError('Kunne ikke starte kamera. Sjekk at du har gitt tilgang.');
       console.error('Camera error:', err);
     }
-    // Then orientation permission (iOS)
-    await requestOrientationPermission();
+    // Then orientation permission (iOS) — must also be in gesture context
+    if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+      try {
+        const result = await (DeviceOrientationEvent as any).requestPermission();
+        if (result !== 'granted') {
+          setCameraError('Kompass-tilgang ble nektet.');
+        }
+      } catch {
+        // Non-critical, compass may still work on some devices
+        console.warn('Could not request orientation permission');
+      }
+    }
     setPermissionsReady(true);
-  }, [requestOrientationPermission]);
+  }, []);
+
+  // Attach stream to video element when it mounts (after permissionsReady becomes true)
+  useEffect(() => {
+    if (!permissionsReady || !streamRef.current) return;
+    const attachStream = () => {
+      if (videoRef.current && streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+        videoRef.current.play().catch(err => console.error('Video play error:', err));
+      }
+    };
+    // Small delay to ensure DOM is ready
+    requestAnimationFrame(attachStream);
+  }, [permissionsReady]);
 
   // Pinch-to-zoom for camera mode
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
