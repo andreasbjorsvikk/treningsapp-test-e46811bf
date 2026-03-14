@@ -209,7 +209,9 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
               const timeAgo = getTimeAgo(n.created_at);
               const isFriendRequest = n.type === 'friend_request';
               const isChallengeInvite = n.type === 'invite';
+              const isChildShare = n.type === 'child_share';
               const showActions = isChallengeInvite && n.challenge_id && !n.alreadyResponded;
+              const showChildShareActions = isChildShare && n.challenge_id && !n.alreadyResponded;
               return (
                 <div
                   key={n.id}
@@ -251,6 +253,42 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
                           className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-secondary text-foreground text-xs font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50"
                         >
                           <X className="w-3 h-3" /> {t('notifications.decline')}
+                        </button>
+                      </div>
+                    )}
+                    {showChildShareActions && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          onClick={async () => {
+                            setRespondingTo(n.challenge_id);
+                            try {
+                              await supabase.from('child_shared_access').update({ status: 'accepted' }).eq('id', n.challenge_id);
+                              toast.success('Barn-tilgang godkjent!');
+                              const updated = await enrichNotifications();
+                              setNotifications(updated);
+                            } catch { toast.error('Kunne ikke godkjenne'); }
+                            setRespondingTo(null);
+                          }}
+                          disabled={respondingTo === n.challenge_id}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                        >
+                          <Check className="w-3 h-3" /> Godta
+                        </button>
+                        <button
+                          onClick={async () => {
+                            setRespondingTo(n.challenge_id);
+                            try {
+                              await supabase.from('child_shared_access').update({ status: 'declined' }).eq('id', n.challenge_id);
+                              toast.success('Avvist');
+                              const updated = await enrichNotifications();
+                              setNotifications(updated);
+                            } catch { toast.error('Kunne ikke avvise'); }
+                            setRespondingTo(null);
+                          }}
+                          disabled={respondingTo === n.challenge_id}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-secondary text-foreground text-xs font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50"
+                        >
+                          <X className="w-3 h-3" /> Avvis
                         </button>
                       </div>
                     )}
