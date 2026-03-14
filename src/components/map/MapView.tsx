@@ -421,21 +421,24 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       const peakIcon = getPeakIcon(peak.heightMoh, peak.id);
       
       el.style.cssText = `
-        width: 36px; height: 32px; cursor: pointer;
-        display: flex; align-items: flex-start; justify-content: center;
+        width: 40px; height: 28px; cursor: pointer;
         overflow: hidden;
         background: ${isYearFiltered ? 'hsl(0, 0%, 100%)' : isTaken ? 'hsl(152, 60%, 42%)' : isUnpublished ? 'hsl(38, 85%, 50%)' : 'hsl(0, 0%, 100%)'};
         border: 2px solid ${isYearFiltered ? 'hsl(220, 13%, 80%)' : isTaken ? 'hsl(152, 60%, 35%)' : isUnpublished ? 'hsl(38, 85%, 40%)' : 'hsl(220, 13%, 80%)'};
-        border-radius: 50% 50% 4px 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         ${isUnpublished ? 'opacity: 0.7;' : ''}
         ${isYearFiltered ? 'opacity: 0.55;' : ''}
+        position: relative;
       `;
-        const imgStyle = isTaken && !isYearFiltered
-          ? 'object-fit: cover; object-position: center 15%; filter: drop-shadow(0 0 0.5px white) drop-shadow(0 0 0.5px white) drop-shadow(0 0 1px white) drop-shadow(0 0 2px rgba(255,255,255,0.5));'
-          : 'object-fit: cover; object-position: center 15%;';
+        const imgStyle = `position: absolute; top: -4px; left: 50%; transform: translateX(-50%); object-fit: contain;${
+          isTaken && !isYearFiltered
+            ? ' filter: drop-shadow(0 0 0.5px white) drop-shadow(0 0 0.5px white) drop-shadow(0 0 1px white) drop-shadow(0 0 2px rgba(255,255,255,0.5));'
+            : ''
+        }`;
         
         el.innerHTML = `
-          <img src="${peakIcon}" alt="" width="40" height="40" style="${imgStyle}" draggable="false" />
+          <img src="${peakIcon}" alt="" width="36" height="36" style="${imgStyle}" draggable="false" />
         `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;
