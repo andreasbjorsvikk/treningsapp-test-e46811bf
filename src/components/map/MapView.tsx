@@ -432,9 +432,10 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         const imgStyle = isTaken && !isYearFiltered
           ? 'object-fit: contain; filter: brightness(0) invert(1);'
           : 'object-fit: contain;';
+        const nudgeUp = peak.heightMoh >= 650 ? 'margin-top: -1.5px;' : '';
         
         el.innerHTML = `
-          <img src="${peakIcon}" alt="" width="24" height="24" style="${imgStyle}" draggable="false" />
+          <img src="${peakIcon}" alt="" width="24" height="24" style="${imgStyle} ${nudgeUp}" draggable="false" />
         `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;
