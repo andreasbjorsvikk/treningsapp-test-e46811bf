@@ -537,12 +537,14 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
             <span className="text-[9px] text-white/90 font-medium drop-shadow-lg">
               {distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}
             </span>
-            <div className={`w-8 h-8 rounded-full flex items-end justify-center border-2 shadow-lg [clip-path:inset(0_0_25%_0)] overflow-hidden ${
+            <div className={`w-10 h-10 flex items-end justify-center shadow-lg ${
               isTaken
-                ? 'bg-[hsl(152,60%,42%)] border-[hsl(152,60%,35%)]'
-                : 'bg-white/90 border-white/60'
-            }`}>
-              <img src={icon} alt="" className="w-7 h-7 object-contain object-bottom" />
+                ? 'bg-[hsl(152,60%,42%)]'
+                : 'bg-white/90'
+            }`}
+              style={{ clipPath: 'polygon(50% 0%, 59% 0.3%, 67% 1.2%, 75% 3%, 82% 6%, 88% 10%, 93% 15%, 96% 22%, 98.5% 29%, 99.7% 37%, 100% 45%, 100% 75%, 0% 75%, 0% 45%, 0.3% 37%, 1.5% 29%, 4% 22%, 7% 15%, 12% 10%, 18% 6%, 25% 3%, 33% 1.2%, 41% 0.3%)' }}
+            >
+              <img src={icon} alt="" className="w-9 h-9 object-cover object-bottom" />
             </div>
             <div className={`w-px h-4 ${isTaken ? 'bg-[hsl(152,60%,42%)]/50' : 'bg-white/30'}`} />
           </button>
