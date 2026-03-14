@@ -104,7 +104,12 @@ const MapPage = () => {
     fetchPendingSuggestions().then(setSuggestedPeaks).catch(() => {});
   }, [user]);
 
-  const handleSelectPeak = (peak: Peak) => setSelectedPeak(peak);
+  const [peakOpenedFromTopper, setPeakOpenedFromTopper] = useState(false);
+
+  const handleSelectPeak = (peak: Peak) => {
+    setPeakOpenedFromTopper(subTab === 'topper');
+    setSelectedPeak(peak);
+  };
 
   const handleMapClick = (lat: number, lng: number) => {
     if (adminMode && addMode) {
