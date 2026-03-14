@@ -46,7 +46,7 @@ const CHECKIN_RADIUS_METERS = 100;
 const CHECKIN_COOLDOWN_MS = 3 * 60 * 60 * 1000; // 3 hours
 const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adminMode, onEdit, onDelete, onShowRoute, onHideRoute, isRouteShown }: PeakDetailDrawerProps) => {
+const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adminMode, onEdit, onDelete, onShowRoute, onHideRoute, isRouteShown, fromTopperTab }: PeakDetailDrawerProps) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showSuccessAnim, setShowSuccessAnim] = useState(false);
