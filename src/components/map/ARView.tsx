@@ -407,8 +407,9 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
         }
       } else {
         // Resume camera
-        if (videoRef.current && videoRef.current.srcObject) {
-          videoRef.current.play();
+        if (videoRef.current && streamRef.current) {
+          videoRef.current.srcObject = streamRef.current;
+          videoRef.current.play().catch(() => {});
         }
         // Remove 3D map
         if (mapRef.current) {
