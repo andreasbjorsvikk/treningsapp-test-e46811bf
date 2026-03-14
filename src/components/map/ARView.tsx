@@ -90,23 +90,6 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
 
   const checkedPeakIds = useMemo(() => new Set(checkins.map(c => c.peak_id)), [checkins]);
 
-  // Start camera
-  const startCamera = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        setCameraActive(true);
-      }
-    } catch (err: any) {
-      setCameraError('Kunne ikke starte kamera. Sjekk at du har gitt tilgang.');
-      console.error('Camera error:', err);
-    }
-  }, []);
-
   // Stop camera
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
@@ -117,23 +100,6 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
       videoRef.current.srcObject = null;
     }
     setCameraActive(false);
-  }, []);
-
-  // Request orientation permission (iOS)
-  const requestOrientationPermission = useCallback(async () => {
-    if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
-      try {
-        const result = await (DeviceOrientationEvent as any).requestPermission();
-        if (result !== 'granted') {
-          setCameraError('Kompass-tilgang ble nektet.');
-          return false;
-        }
-      } catch {
-        setCameraError('Kunne ikke be om kompass-tilgang.');
-        return false;
-      }
-    }
-    return true;
   }, []);
 
   // Init: getUserMedia MUST be called first directly in the gesture handler
