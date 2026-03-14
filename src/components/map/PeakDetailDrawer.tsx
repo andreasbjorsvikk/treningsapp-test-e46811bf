@@ -14,6 +14,7 @@ import { Mountain, MapPin, Check, Loader2, Pencil, Trash2, CalendarIcon, UserPlu
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { RouteElevationChart } from '@/components/map/RouteElevationChart';
+import PeakWeather from '@/components/map/PeakWeather';
 import PeakLeaderboard from '@/components/map/PeakLeaderboard';
 import CheckinSuccessAnimation from '@/components/map/CheckinSuccessAnimation';
 import CheckinImageUpload from '@/components/map/CheckinImageUpload';
