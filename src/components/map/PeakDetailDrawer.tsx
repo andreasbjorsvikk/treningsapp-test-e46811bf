@@ -166,6 +166,9 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
   // Check if last checkin already has an image
   const lastCheckinHasImage = lastCheckin && (lastCheckin as any).image_url;
 
+  // Should we show the check-in section?
+  const showCheckinSection = !fromTopperTab || (userDistanceToPeak !== null && userDistanceToPeak <= CHECKIN_RADIUS_METERS);
+
   if (!peak) return null;
 
   const handleCheckin = async () => {
