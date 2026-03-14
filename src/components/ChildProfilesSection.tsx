@@ -115,6 +115,7 @@ const ChildProfilesSection = () => {
   useEffect(() => {
     if (!user) return;
     loadChildren();
+    loadPendingInvitations();
   }, [user]);
 
   const loadChildren = async () => {
