@@ -311,7 +311,7 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
                 : 'bg-black/60 text-white border-white/20'
             }`}>
               <span>{peak.name}</span>
-              <span className="ml-1.5 text-[10px] opacity-80">{peak.elevation}m</span>
+              <span className="ml-1.5 text-[10px] opacity-80">{peak.heightMoh}m</span>
             </div>
             {/* Distance */}
             <span className="text-[9px] text-white/90 font-medium drop-shadow-lg">
