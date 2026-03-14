@@ -76,6 +76,12 @@ const SettingsPage = () => {
   const [gdprSubView, setGdprSubView] = useState<'main' | 'deleteData' | 'deleteAccount' | 'downloadData'>('main');
   const [helpOpenSections, setHelpOpenSections] = useState<Set<string>>(new Set());
 
+  // Child privacy options
+  const [hasChildren, setHasChildren] = useState(false);
+  const [childPrivacyProfile, setChildPrivacyProfile] = useState('friends');
+  const [childPrivacyCheckins, setChildPrivacyCheckins] = useState('friends');
+  const [childrenCount, setChildrenCount] = useState(0);
+
   // Check Strava connection on mount & after callback
   useEffect(() => {
     if (!user) return;
@@ -118,6 +124,21 @@ const SettingsPage = () => {
     window.addEventListener('navigate-to-profile', handler);
     return () => window.removeEventListener('navigate-to-profile', handler);
   }, []);
+
+  // Load child profiles for privacy
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('child_profiles').select('id').eq('parent_user_id', user.id).then(({ data }) => {
+      setHasChildren((data || []).length > 0);
+      setChildrenCount((data || []).length);
+    });
+    supabase.from('profiles').select('privacy_child_profile, privacy_child_checkins').eq('id', user.id).single().then(({ data }) => {
+      if (data) {
+        setChildPrivacyProfile((data as any).privacy_child_profile || 'friends');
+        setChildPrivacyCheckins((data as any).privacy_child_checkins || 'friends');
+      }
+    });
+  }, [user]);
 
   const handleSaveUsername = async () => {
     if (!user) return;
@@ -452,25 +473,6 @@ const SettingsPage = () => {
       { key: 'privacyPeakCheckins' as const, label: 'Fjelltopp-innsjekkinger', desc: 'Hvem kan se dine innsjekkinger på fjelltopper' },
     ];
 
-    // Child privacy options - only shown if user has children
-    const [hasChildren, setHasChildren] = useState(false);
-    const [childPrivacyProfile, setChildPrivacyProfile] = useState('friends');
-    const [childPrivacyCheckins, setChildPrivacyCheckins] = useState('friends');
-    const [childrenCount, setChildrenCount] = useState(0);
-
-    useEffect(() => {
-      if (!user) return;
-      supabase.from('child_profiles').select('id').eq('parent_user_id', user.id).then(({ data }) => {
-        setHasChildren((data || []).length > 0);
-        setChildrenCount((data || []).length);
-      });
-      supabase.from('profiles').select('privacy_child_profile, privacy_child_checkins').eq('id', user.id).single().then(({ data }) => {
-        if (data) {
-          setChildPrivacyProfile((data as any).privacy_child_profile || 'friends');
-          setChildPrivacyCheckins((data as any).privacy_child_checkins || 'friends');
-        }
-      });
-    }, [user]);
     const friends = realFriends;
     return (
       <div className="space-y-4">
