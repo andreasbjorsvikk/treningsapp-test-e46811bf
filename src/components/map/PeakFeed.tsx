@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { updateCheckinImage } from '@/services/peakCheckinService';
+import { updateCheckinImage, deleteCheckin } from '@/services/peakCheckinService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Mountain, Loader2, RefreshCw, Pencil } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Mountain, Loader2, RefreshCw, Pencil, Trash2, ImageIcon } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import CheckinImageUpload from '@/components/map/CheckinImageUpload';

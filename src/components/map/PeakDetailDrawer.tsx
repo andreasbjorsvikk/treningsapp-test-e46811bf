@@ -2,6 +2,7 @@ import { Peak } from '@/data/peaks';
 import ChildCheckinSheet from '@/components/map/ChildCheckinSheet';
 import PeakOrbitMap from '@/components/map/PeakOrbitMap';
 import { PeakCheckin, checkinPeak, getDistanceMeters, adminCheckinPeak, searchProfiles, getAllCheckinsForPeak, CheckinWithProfile, deleteCheckin, updateCheckinImage } from '@/services/peakCheckinService';
+import { getAllChildProfiles, ChildProfile } from '@/services/childProfileService';
 import { useAuth } from '@/hooks/useAuth';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
@@ -10,8 +11,9 @@ import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Mountain, MapPin, Check, Loader2, Pencil, Trash2, CalendarIcon, UserPlus, X, Search, List, Users } from 'lucide-react';
+import { Mountain, MapPin, Check, Loader2, Pencil, Trash2, CalendarIcon, UserPlus, X, Search, List, Users, ImageIcon } from 'lucide-react';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { RouteElevationChart } from '@/components/map/RouteElevationChart';
@@ -39,6 +41,7 @@ interface PeakDetailDrawerProps {
 
 const CHECKIN_RADIUS_METERS = 100;
 const CHECKIN_COOLDOWN_MS = 3 * 60 * 60 * 1000; // 3 hours
+const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adminMode, onEdit, onDelete, onShowRoute, onHideRoute, isRouteShown }: PeakDetailDrawerProps) => {
   const { user } = useAuth();
@@ -51,22 +54,33 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
   // Admin manual checkin state
   const [manualCheckinOpen, setManualCheckinOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<{ id: string; username: string | null; avatar_url: string | null }[]>([]);
-  const [selectedUser, setSelectedUser] = useState<{ id: string; username: string | null; avatar_url: string | null } | null>(null);
+  const [searchResults, setSearchResults] = useState<{ id: string; username: string | null; avatar_url: string | null; isChild?: boolean }[]>([]);
+  const [selectedUser, setSelectedUser] = useState<{ id: string; username: string | null; avatar_url: string | null; isChild?: boolean } | null>(null);
   const [checkinDate, setCheckinDate] = useState<Date>(new Date());
   const [searching, setSearching] = useState(false);
   const [submittingCheckin, setSubmittingCheckin] = useState(false);
 
   // Admin all checkins state
   const [allCheckinsOpen, setAllCheckinsOpen] = useState(false);
-  const [allCheckins, setAllCheckins] = useState<CheckinWithProfile[]>([]);
+  const [allCheckins, setAllCheckins] = useState<(CheckinWithProfile & { childProfile?: ChildProfile | null })[]>([]);
   const [loadingAllCheckins, setLoadingAllCheckins] = useState(false);
+
+  // Delete confirmation
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!searchQuery.trim()) { setSearchResults([]); return; }
     const timer = setTimeout(async () => {
       setSearching(true);
-      try { setSearchResults(await searchProfiles(searchQuery)); } catch {}
+      try {
+        const profiles = await searchProfiles(searchQuery);
+        // Also search children
+        const children = await getAllChildProfiles();
+        const matchingChildren = children
+          .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+          .map(c => ({ id: c.id, username: `${c.name} ${c.emoji}`, avatar_url: c.avatar_url, isChild: true }));
+        setSearchResults([...profiles, ...matchingChildren]);
+      } catch {}
       setSearching(false);
     }, 300);
     return () => clearTimeout(timer);
@@ -102,6 +116,13 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
     if (!lastCheckin) return false;
     const elapsed = Date.now() - new Date(lastCheckin.checked_in_at).getTime();
     return elapsed <= CHECKIN_COOLDOWN_MS;
+  }, [lastCheckin]);
+
+  // Is within 24h edit window
+  const isInEditWindow = useMemo(() => {
+    if (!lastCheckin) return false;
+    const elapsed = Date.now() - new Date(lastCheckin.checked_in_at).getTime();
+    return elapsed <= EDIT_WINDOW_MS;
   }, [lastCheckin]);
 
   // Check if last checkin already has an image
@@ -173,18 +194,71 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
   const loadAllCheckins = async () => {
     if (!peak) return;
     setLoadingAllCheckins(true);
-    try { setAllCheckins(await getAllCheckinsForPeak(peak.id)); } catch { toast.error('Kunne ikke laste innsjekkinger'); }
+    try {
+      const checkinData = await getAllCheckinsForPeak(peak.id);
+      // Also fetch child profiles for user_ids not in profiles
+      const userIdsWithoutProfile = checkinData.filter(c => !c.profiles).map(c => c.user_id);
+      let childMap = new Map<string, ChildProfile>();
+      if (userIdsWithoutProfile.length > 0) {
+        const children = await getAllChildProfiles();
+        childMap = new Map(children.map(c => [c.id, c]));
+      }
+      setAllCheckins(checkinData.map(c => ({
+        ...c,
+        childProfile: childMap.get(c.user_id) || null,
+      })));
+    } catch { toast.error('Kunne ikke laste innsjekkinger'); }
     setLoadingAllCheckins(false);
   };
 
   const handleDeleteCheckin = async (checkinId: string) => {
-    if (!confirm('Er du sikker på at du vil slette denne innsjekkingen?')) return;
-    try { await deleteCheckin(checkinId); toast.success('Innsjekking slettet'); loadAllCheckins(); onCheckinSuccess(); } catch { toast.error('Kunne ikke slette innsjekking'); }
+    try {
+      await deleteCheckin(checkinId);
+      toast.success('Innsjekking slettet');
+      loadAllCheckins();
+      onCheckinSuccess();
+    } catch { toast.error('Kunne ikke slette innsjekking'); }
+    setDeleteConfirmId(null);
+  };
+
+  const handleDeleteOwnCheckin = async () => {
+    if (!lastCheckin) return;
+    try {
+      await deleteCheckin(lastCheckin.id);
+      toast.success('Innsjekking slettet');
+      onCheckinSuccess();
+    } catch { toast.error('Kunne ikke slette innsjekking'); }
+    setDeleteConfirmId(null);
   };
 
   return (
     <>
       <CheckinSuccessAnimation show={showSuccessAnim} onDone={() => setShowSuccessAnim(false)} peakName={peak.name} />
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={(o) => !o && setDeleteConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Slett innsjekking</AlertDialogTitle>
+            <AlertDialogDescription>
+              Er du sikker på at du vil slette denne innsjekkingen? Dette kan ikke angres.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteConfirmId === 'own') handleDeleteOwnCheckin();
+                else if (deleteConfirmId) handleDeleteCheckin(deleteConfirmId);
+              }}
+            >
+              Slett
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Drawer open={open} onOpenChange={(o) => !o && onClose()}>
         <DrawerContent className="max-h-[90vh]">
           <DrawerHeader className="pb-2">
@@ -234,17 +308,63 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                   {canCheckin ? 'Sjekk inn igjen' : 'Vent minst 3 timer'}
                 </Button>
 
-                {/* Image upload after checkin - shown during cooldown */}
-                {isInCooldownWindow && !lastCheckinHasImage && (
+                {/* Image upload/replace within 24h */}
+                {isInEditWindow && (
                   <div className="mt-3 pt-3 border-t border-border/30">
-                    <CheckinImageUpload onImageReady={setPendingImage} />
-                    {pendingImage && (
-                      <Button onClick={handleSaveImage} disabled={savingImage} size="sm" className="w-full mt-2">
-                        {savingImage ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                        {savingImage ? 'Lagrer...' : 'Lagre bilde'}
-                      </Button>
+                    {lastCheckinHasImage ? (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">Du kan endre bildet innen 24 timer.</p>
+                        <CheckinImageUpload onImageReady={setPendingImage} />
+                        {pendingImage && (
+                          <Button onClick={handleSaveImage} disabled={savingImage} size="sm" className="w-full">
+                            {savingImage ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ImageIcon className="w-4 h-4 mr-2" />}
+                            {savingImage ? 'Lagrer...' : 'Bytt bilde'}
+                          </Button>
+                        )}
+                        {/* Delete image */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-destructive hover:text-destructive"
+                          onClick={async () => {
+                            if (!lastCheckin) return;
+                            try {
+                              const { supabase } = await import('@/integrations/supabase/client');
+                              await supabase.from('peak_checkins').update({ image_url: null }).eq('id', lastCheckin.id);
+                              toast.success('Bilde fjernet');
+                              onCheckinSuccess();
+                            } catch { toast.error('Kunne ikke fjerne bildet'); }
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Fjern bilde
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <CheckinImageUpload onImageReady={setPendingImage} />
+                        {pendingImage && (
+                          <Button onClick={handleSaveImage} disabled={savingImage} size="sm" className="w-full mt-2">
+                            {savingImage ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                            {savingImage ? 'Lagrer...' : 'Lagre bilde'}
+                          </Button>
+                        )}
+                      </>
                     )}
                   </div>
+                )}
+
+                {/* Delete own checkin */}
+                {isInEditWindow && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-2 text-destructive hover:text-destructive"
+                    onClick={() => setDeleteConfirmId('own')}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Slett innsjekking
+                  </Button>
                 )}
 
                 {/* Child checkin button - shown during cooldown */}
@@ -311,18 +431,21 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                     <DialogHeader><DialogTitle>Manuell innsjekking</DialogTitle></DialogHeader>
                     <div className="space-y-4 pt-2">
                       <div className="space-y-2">
-                        <Label>Søk etter bruker</Label>
+                        <Label>Søk etter bruker eller barn</Label>
                         <div className="relative">
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Brukernavn..." className="pl-9" />
+                          <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Brukernavn eller barnenavn..." className="pl-9" />
                         </div>
                         {searching && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="w-3 h-3 animate-spin" />Søker...</div>}
                         {searchResults.length > 0 && !selectedUser && (
                           <div className="border border-border rounded-lg overflow-hidden max-h-40 overflow-y-auto">
                             {searchResults.map((profile) => (
                               <button key={profile.id} onClick={() => { setSelectedUser(profile); setSearchQuery(''); setSearchResults([]); }} className="w-full flex items-center gap-3 p-2 hover:bg-muted transition-colors text-left">
-                                <Avatar className="w-8 h-8"><AvatarImage src={profile.avatar_url || undefined} /><AvatarFallback>{profile.username?.[0]?.toUpperCase() || '?'}</AvatarFallback></Avatar>
-                                <span className="text-sm font-medium">{profile.username || 'Ukjent'}</span>
+                                <Avatar className="w-8 h-8"><AvatarImage src={profile.avatar_url || undefined} /><AvatarFallback>{profile.isChild ? '👶' : (profile.username?.[0]?.toUpperCase() || '?')}</AvatarFallback></Avatar>
+                                <span className="text-sm font-medium">
+                                  {profile.username || 'Ukjent'}
+                                  {profile.isChild && <span className="text-xs text-muted-foreground ml-1">(barn)</span>}
+                                </span>
                               </button>
                             ))}
                           </div>
@@ -331,7 +454,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                       {selectedUser && (
                         <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                           <div className="flex items-center gap-3">
-                            <Avatar className="w-10 h-10"><AvatarImage src={selectedUser.avatar_url || undefined} /><AvatarFallback>{selectedUser.username?.[0]?.toUpperCase() || '?'}</AvatarFallback></Avatar>
+                            <Avatar className="w-10 h-10"><AvatarImage src={selectedUser.avatar_url || undefined} /><AvatarFallback>{selectedUser.isChild ? '👶' : (selectedUser.username?.[0]?.toUpperCase() || '?')}</AvatarFallback></Avatar>
                             <span className="font-medium">{selectedUser.username || 'Ukjent'}</span>
                           </div>
                           <button onClick={() => setSelectedUser(null)} className="p-1 rounded hover:bg-muted transition-colors"><X className="w-4 h-4 text-muted-foreground" /></button>
@@ -372,18 +495,29 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                         <p className="text-sm text-muted-foreground text-center py-8">Ingen innsjekkinger ennå</p>
                       ) : (
                         <div className="space-y-2">
-                          {allCheckins.map((checkin) => (
-                            <div key={checkin.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/50">
-                              <div className="flex items-center gap-3">
-                                <Avatar className="w-10 h-10"><AvatarImage src={checkin.profiles?.avatar_url || undefined} /><AvatarFallback>{checkin.profiles?.username?.[0]?.toUpperCase() || '?'}</AvatarFallback></Avatar>
-                                <div>
-                                  <p className="font-medium text-sm">{checkin.profiles?.username || 'Ukjent bruker'}</p>
-                                  <p className="text-xs text-muted-foreground">{format(new Date(checkin.checked_in_at), "d. MMM yyyy, HH:mm", { locale: nb })}</p>
+                          {allCheckins.map((checkin) => {
+                            const displayName = checkin.profiles?.username || checkin.childProfile?.name || 'Ukjent bruker';
+                            const displayAvatar = checkin.profiles?.avatar_url || checkin.childProfile?.avatar_url || undefined;
+                            const displayEmoji = checkin.childProfile?.emoji;
+                            return (
+                              <div key={checkin.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/50">
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="w-10 h-10">
+                                    <AvatarImage src={displayAvatar} />
+                                    <AvatarFallback>{displayEmoji || displayName[0]?.toUpperCase() || '?'}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="font-medium text-sm">
+                                      {displayName}
+                                      {checkin.childProfile && <span className="text-xs text-muted-foreground ml-1">(barn)</span>}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">{format(new Date(checkin.checked_in_at), "d. MMM yyyy, HH:mm", { locale: nb })}</p>
+                                  </div>
                                 </div>
+                                <button onClick={() => setDeleteConfirmId(checkin.id)} className="p-2 rounded-lg hover:bg-destructive/10 transition-colors text-destructive" title="Slett innsjekking"><Trash2 className="w-4 h-4" /></button>
                               </div>
-                              <button onClick={() => handleDeleteCheckin(checkin.id)} className="p-2 rounded-lg hover:bg-destructive/10 transition-colors text-destructive" title="Slett innsjekking"><Trash2 className="w-4 h-4" /></button>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>
