@@ -281,6 +281,16 @@ const MapPage = () => {
             <GlobalLeaderboard />
           </div>
         )}
+
+        {subTab === 'ar' && (
+          <div className="h-full">
+            <ARView
+              peaks={peaks}
+              checkins={checkins}
+              onSelectPeak={handleSelectPeak}
+            />
+          </div>
+        )}
       </div>
 
       {/* Map settings sheet */}
