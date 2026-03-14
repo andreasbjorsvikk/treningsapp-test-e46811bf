@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { updateCheckinImage, deleteCheckin } from '@/services/peakCheckinService';
+import { updateCheckinImage, deleteCheckin, checkinPeak } from '@/services/peakCheckinService';
+import { getChildProfiles, getSharedChildProfiles, ChildProfile } from '@/services/childProfileService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Mountain, Loader2, RefreshCw, Pencil, Trash2, ImageIcon } from 'lucide-react';
+import { Mountain, Loader2, RefreshCw, Pencil, Trash2, ImageIcon, Users } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import CheckinImageUpload from '@/components/map/CheckinImageUpload';
+import ChildProfileDetailDrawer from '@/components/map/ChildProfileDetailDrawer';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 
 type FeedFilter = 'all' | 'mine' | 'friends' | 'global';
@@ -29,6 +32,12 @@ interface FeedItem {
   child_emoji: string | null;
 }
 
+// Group key: parent_user_id + peak_id + date (within 1hr window)
+interface GroupedFeedPost {
+  parentItem: FeedItem;
+  childItems: FeedItem[];
+}
+
 const PeakFeed = () => {
   const { user } = useAuth();
   const [items, setItems] = useState<FeedItem[]>([]);
@@ -40,17 +49,37 @@ const PeakFeed = () => {
   const [savingImage, setSavingImage] = useState(false);
   const [myChildIds, setMyChildIds] = useState<Set<string>>(new Set());
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  
+  // Add child to existing checkin
+  const [myChildren, setMyChildren] = useState<ChildProfile[]>([]);
+  const [addChildSelectedIds, setAddChildSelectedIds] = useState<Set<string>>(new Set());
+  const [addingChildren, setAddingChildren] = useState(false);
+
+  // Child profile detail
+  const [selectedChildProfile, setSelectedChildProfile] = useState<ChildProfile | null>(null);
+  const [childProfileMap, setChildProfileMap] = useState<Map<string, ChildProfile>>(new Map());
 
   useEffect(() => {
     if (!user) return;
     loadFeed();
+    loadMyChildren();
   }, [user]);
+
+  const loadMyChildren = async () => {
+    if (!user) return;
+    try {
+      const [owned, shared] = await Promise.all([
+        getChildProfiles(user.id),
+        getSharedChildProfiles(user.id),
+      ]);
+      setMyChildren([...owned, ...shared]);
+    } catch {}
+  };
 
   const loadFeed = async () => {
     if (!user) return;
     setLoading(true);
     try {
-      // Load user's own children (owned + shared)
       const { data: ownChildren } = await supabase
         .from('child_profiles')
         .select('id, name, avatar_url, parent_user_id, emoji')
@@ -76,7 +105,6 @@ const PeakFeed = () => {
       const childIdSet = new Set(allMyChildren.map(c => c.id));
       setMyChildIds(childIdSet);
 
-      // Load friends
       const { data: friendships } = await supabase
         .from('friendships')
         .select('user_id, friend_id')
@@ -86,8 +114,6 @@ const PeakFeed = () => {
       const friendIds = (friendships || []).map(f =>
         f.user_id === user.id ? f.friend_id : f.user_id
       );
-
-      const allUserIds = [...friendIds, user.id, ...Array.from(childIdSet)];
 
       const { data: profiles } = await supabase
         .from('profiles')
@@ -108,12 +134,9 @@ const PeakFeed = () => {
         return true;
       }).map(p => p.id);
 
-      // Include children in visible user IDs
       const allVisibleIds = [...visibleUserIds, ...Array.from(childIdSet)];
-
       if (allVisibleIds.length === 0) { setItems([]); setLoading(false); return; }
 
-      // For "global" filter, fetch all checkins (no user filter)
       let checkins: any[];
       if (filter === 'global') {
         const { data } = await supabase
@@ -150,12 +173,10 @@ const PeakFeed = () => {
       const peakMap = new Map(peaks.map((p: any) => [p.id, p]));
       const profileMap = new Map(profiles.map(p => [p.id, p]));
 
-      // Fetch child profiles for user_ids not in profiles
       const allCheckinUserIds = [...new Set(checkins.map((c: any) => c.user_id))];
       const missingUserIds = allCheckinUserIds.filter(id => !profileMap.has(id));
       let childMap = new Map<string, any>();
 
-      // Also include our known children
       const childIdsToFetch = [...new Set([...missingUserIds, ...Array.from(childIdSet)])];
       if (childIdsToFetch.length > 0) {
         const { data: childProfiles } = await supabase
@@ -163,9 +184,14 @@ const PeakFeed = () => {
           .select('id, name, avatar_url, parent_user_id, emoji')
           .in('id', childIdsToFetch);
         childMap = new Map(((childProfiles || []) as any[]).map(c => [c.id, c]));
+        // Store for profile detail view
+        const cpMap = new Map<string, ChildProfile>();
+        for (const cp of (childProfiles || [])) {
+          cpMap.set(cp.id, cp as unknown as ChildProfile);
+        }
+        setChildProfileMap(cpMap);
       }
 
-      // For global filter, fetch profiles for all checkin users we don't have yet
       if (filter === 'global') {
         const unknownUserIds = allCheckinUserIds.filter(id => !profileMap.has(id) && !childMap.has(id));
         if (unknownUserIds.length > 0) {
@@ -174,6 +200,17 @@ const PeakFeed = () => {
             .select('id, username, avatar_url')
             .in('id', unknownUserIds);
           (extraProfiles || []).forEach(p => profileMap.set(p.id, p as any));
+        }
+        // Also fetch child profiles for global
+        const unknownChildIds = allCheckinUserIds.filter(id => !profileMap.has(id) && !childMap.has(id));
+        if (unknownChildIds.length > 0) {
+          const { data: extraChildren } = await supabase
+            .from('child_profiles')
+            .select('id, name, avatar_url, parent_user_id, emoji')
+            .in('id', unknownChildIds);
+          for (const c of (extraChildren || [])) {
+            childMap.set(c.id, c);
+          }
         }
       }
 
@@ -205,14 +242,13 @@ const PeakFeed = () => {
     setLoading(false);
   };
 
-  // Reload when filter changes to 'global' (needs different query)
   useEffect(() => {
     if (user && filter === 'global') {
       loadFeed();
     }
   }, [filter]);
 
-  const handleSaveEditImage = async (itemId: string, targetUserId: string) => {
+  const handleSaveEditImage = async (itemId: string) => {
     if (!user || !pendingImage) return;
     setSavingImage(true);
     try {
@@ -229,15 +265,65 @@ const PeakFeed = () => {
     setSavingImage(false);
   };
 
+  const handleAddChildrenToCheckin = async (parentItem: FeedItem) => {
+    if (addChildSelectedIds.size === 0) return;
+    setAddingChildren(true);
+    try {
+      for (const childId of addChildSelectedIds) {
+        await checkinPeak(childId, parentItem.peak_id, parentItem.checked_in_at);
+      }
+      toast.success(`${addChildSelectedIds.size} barn lagt til i innsjekkingen!`);
+      setAddChildSelectedIds(new Set());
+      setEditingItemId(null);
+      loadFeed();
+    } catch {
+      toast.error('Kunne ikke legge til barn.');
+    }
+    setAddingChildren(false);
+  };
+
   const filteredItems = items.filter(item => {
     if (filter === 'mine') return item.user_id === user?.id;
     if (filter === 'friends') {
-      // Friends + my children
       return item.user_id !== user?.id || myChildIds.has(item.user_id);
     }
     if (filter === 'global') return true;
-    return true; // 'all' = me + friends + children
+    return true;
   });
+
+  // Group child checkins with parent posts
+  const groupPosts = (items: FeedItem[]): GroupedFeedPost[] => {
+    const posts: GroupedFeedPost[] = [];
+    const usedIds = new Set<string>();
+
+    for (const item of items) {
+      if (usedIds.has(item.id)) continue;
+      if (item.is_child) continue; // children get grouped under parents
+
+      // Find child checkins for same peak within 1 hour
+      const childItems = items.filter(ci => {
+        if (usedIds.has(ci.id)) return false;
+        if (!ci.is_child) return false;
+        if (ci.peak_id !== item.peak_id) return false;
+        if (ci.child_parent_id !== item.user_id) return false;
+        const timeDiff = Math.abs(new Date(ci.checked_in_at).getTime() - new Date(item.checked_in_at).getTime());
+        return timeDiff <= 60 * 60 * 1000; // 1 hour window
+      });
+
+      usedIds.add(item.id);
+      childItems.forEach(ci => usedIds.add(ci.id));
+      posts.push({ parentItem: item, childItems });
+    }
+
+    // Add orphan child items (no matching parent post)
+    for (const item of items) {
+      if (usedIds.has(item.id)) continue;
+      usedIds.add(item.id);
+      posts.push({ parentItem: item, childItems: [] });
+    }
+
+    return posts;
+  };
 
   if (loading) {
     return (
@@ -247,11 +333,12 @@ const PeakFeed = () => {
     );
   }
 
-  const grouped = new Map<string, FeedItem[]>();
-  for (const item of filteredItems) {
-    const dateKey = format(new Date(item.checked_in_at), 'yyyy-MM-dd');
+  const grouped = new Map<string, GroupedFeedPost[]>();
+  const groupedPosts = groupPosts(filteredItems);
+  for (const post of groupedPosts) {
+    const dateKey = format(new Date(post.parentItem.checked_in_at), 'yyyy-MM-dd');
     if (!grouped.has(dateKey)) grouped.set(dateKey, []);
-    grouped.get(dateKey)!.push(item);
+    grouped.get(dateKey)!.push(post);
   }
 
   const formatGroupDate = (dateStr: string) => {
@@ -271,14 +358,12 @@ const PeakFeed = () => {
     { value: 'global', label: 'Global' },
   ];
 
-  // Can edit own posts AND own children's posts
   const canEdit = (item: FeedItem) => {
     if (item.user_id === user?.id) return true;
     if (item.is_child && myChildIds.has(item.user_id)) return true;
     return false;
   };
 
-  // Within 24h edit window
   const isWithin24h = (item: FeedItem) => {
     return Date.now() - new Date(item.checked_in_at).getTime() <= 24 * 60 * 60 * 1000;
   };
@@ -301,9 +386,14 @@ const PeakFeed = () => {
     } catch { toast.error('Kunne ikke fjerne bildet'); }
   };
 
+  // Get children not already checked in for this peak+time
+  const getAvailableChildrenForPost = (post: GroupedFeedPost) => {
+    const checkedChildIds = new Set(post.childItems.map(ci => ci.user_id));
+    return myChildren.filter(c => !checkedChildIds.has(c.id));
+  };
+
   return (
     <div className="flex flex-col gap-1 p-4">
-      {/* Delete confirmation */}
       <AlertDialog open={!!deleteConfirmId} onOpenChange={(o) => !o && setDeleteConfirmId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -316,6 +406,14 @@ const PeakFeed = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Child profile detail drawer */}
+      <ChildProfileDetailDrawer
+        child={selectedChildProfile}
+        open={!!selectedChildProfile}
+        onClose={() => setSelectedChildProfile(null)}
+      />
+
       {/* Filter + Refresh bar */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex gap-1 p-0.5 rounded-lg bg-secondary/50">
@@ -342,7 +440,7 @@ const PeakFeed = () => {
         </button>
       </div>
 
-      {filteredItems.length === 0 ? (
+      {groupedPosts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
           <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
             <Mountain className="w-8 h-8 text-primary/60" />
@@ -359,7 +457,7 @@ const PeakFeed = () => {
           </p>
         </div>
       ) : (
-        Array.from(grouped.entries()).map(([dateKey, dateItems]) => (
+        Array.from(grouped.entries()).map(([dateKey, datePosts]) => (
           <div key={dateKey} className="mb-4">
             <div className="flex items-center gap-3 mb-2.5">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider capitalize">
@@ -369,19 +467,19 @@ const PeakFeed = () => {
             </div>
 
             <div className="space-y-3">
-              {dateItems.map(item => {
+              {datePosts.map(post => {
+                const item = post.parentItem;
                 const isMe = item.user_id === user?.id;
-                const isMyChild = item.is_child && myChildIds.has(item.user_id);
                 const timeAgo = formatDistanceToNow(new Date(item.checked_in_at), { locale: nb, addSuffix: true });
                 const isEditing = editingItemId === item.id;
                 const editable = canEdit(item);
+                const availableChildren = isEditing ? getAvailableChildrenForPost(post) : [];
 
                 return (
                   <div
                     key={item.id}
                     className="group relative rounded-2xl bg-card border border-border/40 overflow-hidden hover:border-border/80 transition-all duration-200"
                   >
-                    {/* Top accent bar */}
                     <div className="h-0.5 bg-gradient-to-r from-emerald-500/60 via-emerald-400/30 to-transparent" />
 
                     <div className="p-3.5">
@@ -403,6 +501,32 @@ const PeakFeed = () => {
                             <span className="font-semibold">{item.peak_name}</span>
                           </p>
 
+                          {/* Child companions */}
+                          {post.childItems.length > 0 && (
+                            <div className="flex items-center gap-2 mt-2 flex-wrap">
+                              {post.childItems.map(ci => (
+                                <button
+                                  key={ci.id}
+                                  onClick={() => {
+                                    const cp = childProfileMap.get(ci.user_id);
+                                    if (cp) setSelectedChildProfile(cp);
+                                  }}
+                                  className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/8 border border-emerald-500/15 hover:bg-emerald-500/15 transition-colors"
+                                >
+                                  <Avatar className="w-5 h-5">
+                                    {ci.avatar_url ? <AvatarImage src={ci.avatar_url} /> : null}
+                                    <AvatarFallback className="text-[9px] bg-emerald-500/10 text-emerald-600">
+                                      {ci.child_emoji || '👶'}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="text-[11px] text-muted-foreground">
+                                    <span className="font-medium text-foreground">{ci.username}</span> var med
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
                           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-secondary/60 text-[11px] font-medium text-muted-foreground">
                               <Mountain className="w-3 h-3" />
@@ -419,16 +543,17 @@ const PeakFeed = () => {
                         </div>
 
                         <div className="flex items-center gap-1 shrink-0">
-                          {/* Edit button for own posts and own children's posts within 24h */}
                           {editable && isWithin24h(item) && (
                             <button
                               onClick={() => {
                                 if (isEditing) {
                                   setEditingItemId(null);
                                   setPendingImage(null);
+                                  setAddChildSelectedIds(new Set());
                                 } else {
                                   setEditingItemId(item.id);
                                   setPendingImage(null);
+                                  setAddChildSelectedIds(new Set());
                                 }
                               }}
                               className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
@@ -437,7 +562,6 @@ const PeakFeed = () => {
                               <Pencil className="w-4 h-4" />
                             </button>
                           )}
-                          {/* Delete button within 24h */}
                           {editable && isWithin24h(item) && (
                             <button
                               onClick={() => setDeleteConfirmId(item.id)}
@@ -470,31 +594,84 @@ const PeakFeed = () => {
                         </div>
                       )}
 
-                      {/* Edit mode: image upload + delete */}
+                      {/* Edit mode */}
                       {isEditing && (
-                        <div className="mt-3 pt-3 border-t border-border/30 space-y-2">
-                          <CheckinImageUpload onImageReady={setPendingImage} />
-                          {pendingImage && (
-                            <Button
-                              onClick={() => handleSaveEditImage(item.id, item.user_id)}
-                              disabled={savingImage}
-                              size="sm"
-                              className="w-full"
-                            >
-                              {savingImage ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ImageIcon className="w-4 h-4 mr-2" />}
-                              {savingImage ? 'Lagrer...' : 'Lagre bilde'}
-                            </Button>
-                          )}
-                          {item.image_url && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full text-destructive hover:text-destructive"
-                              onClick={() => handleRemoveImage(item.id)}
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Fjern bilde
-                            </Button>
+                        <div className="mt-3 pt-3 border-t border-border/30 space-y-3">
+                          {/* Image upload */}
+                          <div className="space-y-2">
+                            <p className="text-xs font-medium text-muted-foreground">Bilde</p>
+                            <CheckinImageUpload onImageReady={setPendingImage} />
+                            {pendingImage && (
+                              <Button
+                                onClick={() => handleSaveEditImage(item.id)}
+                                disabled={savingImage}
+                                size="sm"
+                                className="w-full"
+                              >
+                                {savingImage ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ImageIcon className="w-4 h-4 mr-2" />}
+                                {savingImage ? 'Lagrer...' : 'Lagre bilde'}
+                              </Button>
+                            )}
+                            {item.image_url && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full text-destructive hover:text-destructive"
+                                onClick={() => handleRemoveImage(item.id)}
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Fjern bilde
+                              </Button>
+                            )}
+                          </div>
+
+                          {/* Add children to checkin */}
+                          {!item.is_child && availableChildren.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                                <Users className="w-3.5 h-3.5" />
+                                Legg til barn i innsjekkingen
+                              </p>
+                              <div className="space-y-1">
+                                {availableChildren.map(child => {
+                                  const isSelected = addChildSelectedIds.has(child.id);
+                                  return (
+                                    <button
+                                      key={child.id}
+                                      onClick={() => {
+                                        setAddChildSelectedIds(prev => {
+                                          const next = new Set(prev);
+                                          if (next.has(child.id)) next.delete(child.id);
+                                          else next.add(child.id);
+                                          return next;
+                                        });
+                                      }}
+                                      className={`w-full flex items-center gap-2 p-2 rounded-lg border transition-colors ${
+                                        isSelected ? 'bg-primary/5 border-primary/30' : 'border-border/50 hover:border-border'
+                                      }`}
+                                    >
+                                      <Checkbox checked={isSelected} className="pointer-events-none" />
+                                      <Avatar className="w-6 h-6">
+                                        {child.avatar_url ? <AvatarImage src={child.avatar_url} /> : null}
+                                        <AvatarFallback className="text-[10px]">{child.emoji || '👶'}</AvatarFallback>
+                                      </Avatar>
+                                      <span className="text-sm">{child.name} {child.emoji}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              {addChildSelectedIds.size > 0 && (
+                                <Button
+                                  onClick={() => handleAddChildrenToCheckin(item)}
+                                  disabled={addingChildren}
+                                  size="sm"
+                                  className="w-full"
+                                >
+                                  {addingChildren ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Users className="w-4 h-4 mr-2" />}
+                                  Sjekk inn {addChildSelectedIds.size} barn
+                                </Button>
+                              )}
+                            </div>
                           )}
                         </div>
                       )}

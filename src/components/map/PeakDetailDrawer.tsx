@@ -3,9 +3,11 @@ import ChildCheckinSheet from '@/components/map/ChildCheckinSheet';
 import PeakOrbitMap from '@/components/map/PeakOrbitMap';
 import { PeakCheckin, checkinPeak, getDistanceMeters, adminCheckinPeak, searchProfiles, getAllCheckinsForPeak, CheckinWithProfile, deleteCheckin, updateCheckinImage } from '@/services/peakCheckinService';
 import { getAllChildProfiles, ChildProfile } from '@/services/childProfileService';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
@@ -59,6 +61,8 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
   const [checkinDate, setCheckinDate] = useState<Date>(new Date());
   const [searching, setSearching] = useState(false);
   const [submittingCheckin, setSubmittingCheckin] = useState(false);
+  const [adminChildrenForUser, setAdminChildrenForUser] = useState<{ id: string; name: string; emoji: string; avatar_url: string | null }[]>([]);
+  const [adminSelectedChildIds, setAdminSelectedChildIds] = useState<Set<string>>(new Set());
 
   // Admin all checkins state
   const [allCheckinsOpen, setAllCheckinsOpen] = useState(false);
@@ -85,6 +89,23 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  // Load children when a user is selected for admin checkin
+  useEffect(() => {
+    if (!selectedUser || selectedUser.isChild) {
+      setAdminChildrenForUser([]);
+      setAdminSelectedChildIds(new Set());
+      return;
+    }
+    (async () => {
+      const { data } = await supabase
+        .from('child_profiles')
+        .select('id, name, emoji, avatar_url')
+        .eq('parent_user_id', selectedUser.id);
+      setAdminChildrenForUser((data || []) as any[]);
+      setAdminSelectedChildIds(new Set());
+    })();
+  }, [selectedUser?.id]);
 
   // Reset pending image when drawer closes or peak changes
   useEffect(() => {
@@ -178,11 +199,20 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
     setSubmittingCheckin(true);
     try {
       await adminCheckinPeak(selectedUser.id, peak.id, checkinDate.toISOString());
-      toast.success(`Innsjekking registrert for ${selectedUser.username}`);
+      // Also check in selected children
+      for (const childId of adminSelectedChildIds) {
+        await adminCheckinPeak(childId, peak.id, checkinDate.toISOString());
+      }
+      const childCount = adminSelectedChildIds.size;
+      const msg = childCount > 0
+        ? `Innsjekking registrert for ${selectedUser.username} og ${childCount} barn`
+        : `Innsjekking registrert for ${selectedUser.username}`;
+      toast.success(msg);
       setManualCheckinOpen(false);
       setSelectedUser(null);
       setSearchQuery('');
       setCheckinDate(new Date());
+      setAdminSelectedChildIds(new Set());
       onCheckinSuccess();
     } catch (e: any) {
       const msg = e?.message || 'Ukjent feil';
@@ -458,6 +488,38 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                             <span className="font-medium">{selectedUser.username || 'Ukjent'}</span>
                           </div>
                           <button onClick={() => setSelectedUser(null)} className="p-1 rounded hover:bg-muted transition-colors"><X className="w-4 h-4 text-muted-foreground" /></button>
+                        </div>
+                      )}
+                      {/* Children of selected user */}
+                      {selectedUser && !selectedUser.isChild && adminChildrenForUser.length > 0 && (
+                        <div className="space-y-2">
+                          <Label className="text-xs text-muted-foreground">Inkluder barn</Label>
+                          {adminChildrenForUser.map(child => {
+                            const isSelected = adminSelectedChildIds.has(child.id);
+                            return (
+                              <button
+                                key={child.id}
+                                onClick={() => {
+                                  setAdminSelectedChildIds(prev => {
+                                    const next = new Set(prev);
+                                    if (next.has(child.id)) next.delete(child.id);
+                                    else next.add(child.id);
+                                    return next;
+                                  });
+                                }}
+                                className={`w-full flex items-center gap-2 p-2 rounded-lg border transition-colors ${
+                                  isSelected ? 'bg-primary/5 border-primary/30' : 'border-border/50 hover:border-border'
+                                }`}
+                              >
+                                <Checkbox checked={isSelected} className="pointer-events-none" />
+                                <Avatar className="w-6 h-6">
+                                  {child.avatar_url && <AvatarImage src={child.avatar_url} />}
+                                  <AvatarFallback className="text-[10px]">{child.emoji || '👶'}</AvatarFallback>
+                                </Avatar>
+                                <span className="text-sm">{child.name} {child.emoji}</span>
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                       <div className="space-y-2">
