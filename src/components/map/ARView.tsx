@@ -85,6 +85,8 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
   const [mapReady, setMapReady] = useState(false);
   const [cameraZoom, setCameraZoom] = useState(1);
   const headingSmoothed = useRef<number | null>(null);
+  const tiltSmoothed = useRef<number | null>(null);
+  const gammaRef = useRef<number>(0);
   const lastMapUpdate = useRef(0);
   const pinchStartDist = useRef<number | null>(null);
   const pinchStartZoom = useRef(1);
