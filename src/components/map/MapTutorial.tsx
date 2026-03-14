@@ -3,6 +3,8 @@ import { X, ChevronRight, Mountain, Map, MapPin, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import peakHighIcon from '@/assets/icons/peak-high.png';
 import peakMediumIcon from '@/assets/icons/peak-medium.png';
+import peakLowIcon from '@/assets/icons/peak-low.png';
+import peakVeryHighIcon from '@/assets/icons/peak-veryhigh.png';
 
 const TUTORIAL_KEY = 'treningslogg_map_tutorial_done';
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
