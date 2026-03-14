@@ -173,10 +173,18 @@ const ChildProfilesSection = () => {
     setCropFile(null);
     setUploadingId(cropChildId);
     try {
-      const file = new File([blob], 'avatar.png', { type: 'image/png' });
-      await uploadChildAvatar(cropChildId, user.id, file);
+      // Use blob directly instead of File constructor for better iOS compatibility
+      const path = `children/${user.id}/${cropChildId}/avatar.png`;
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, blob, { upsert: true, contentType: 'image/png' });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+      const url = `${urlData.publicUrl}?t=${Date.now()}`;
+      await updateChildProfile(cropChildId, { avatar_url: url });
       loadChildren();
-    } catch {
+    } catch (e) {
+      console.error('Child avatar upload error:', e);
       toast.error('Kunne ikke laste opp bilde');
     }
     setUploadingId(null);

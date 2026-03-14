@@ -432,7 +432,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         const imgStyle = isTaken && !isYearFiltered
           ? 'object-fit: contain; filter: brightness(0) invert(1);'
           : 'object-fit: contain;';
-        const nudgeUp = peak.heightMoh >= 650 ? 'margin-top: -1.5px;' : '';
+        const nudgeUp = peak.heightMoh >= 650 ? 'margin-top: -3.5px;' : '';
         
         el.innerHTML = `
           <img src="${peakIcon}" alt="" width="24" height="24" style="${imgStyle} ${nudgeUp}" draggable="false" />
