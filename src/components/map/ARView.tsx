@@ -29,6 +29,7 @@ interface VisiblePeak {
 
 const MAX_DISTANCE_KM = 30;
 const HORIZONTAL_FOV = 60; // degrees
+const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
 function toRad(deg: number) { return deg * Math.PI / 180; }
 function toDeg(rad: number) { return rad * 180 / Math.PI; }
