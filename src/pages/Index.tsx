@@ -223,6 +223,13 @@ const IndexContent = () => {
     getUnreadNotificationCount().then(setUnreadNotifications);
   }, [user, activeTab]);
 
+  // Listen for navigate-to-settings events
+  useEffect(() => {
+    const handler = () => setActiveTab('settings');
+    window.addEventListener('navigate-to-settings', handler);
+    return () => window.removeEventListener('navigate-to-settings', handler);
+  }, []);
+
   // Load pinned challenges
   useEffect(() => {
     if (!user || !settings.pinnedChallengeIds?.length) {
