@@ -39,6 +39,7 @@ const PeakFeed = () => {
   const [pendingImage, setPendingImage] = useState<File | null>(null);
   const [savingImage, setSavingImage] = useState(false);
   const [myChildIds, setMyChildIds] = useState<Set<string>>(new Set());
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
