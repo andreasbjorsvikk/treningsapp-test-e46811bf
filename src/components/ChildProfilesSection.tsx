@@ -132,6 +132,15 @@ const ChildProfilesSection = () => {
     setLoading(false);
   };
 
+  const loadSharedChildren = async () => {
+    if (!user) return;
+    try {
+      const { getSharedChildProfiles } = await import('@/services/childProfileService');
+      const data = await getSharedChildProfiles(user.id);
+      setSharedChildren(data as any);
+    } catch {}
+  };
+
   const loadPendingInvitations = async () => {
     if (!user) return;
     try {
