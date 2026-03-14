@@ -128,6 +128,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
       }
       await checkinPeak(user.id, peak.id);
       setShowSuccessAnim(true);
+      setShowChildCheckin(true);
       onCheckinSuccess();
     } catch (err: any) {
       if (err?.code === 1) toast.error('Lokasjonstilgang ble avslått. Aktiver GPS for å sjekke inn.');
