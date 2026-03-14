@@ -354,6 +354,7 @@ const MapPage = () => {
         onShowRoute={handleShowRoute}
         onHideRoute={handleHideRoute}
         isRouteShown={!!activeRoutePeakId && activeRoutePeakId === selectedPeak?.id}
+        fromTopperTab={peakOpenedFromTopper}
       />
 
       {/* Admin: Add new peak form */}
