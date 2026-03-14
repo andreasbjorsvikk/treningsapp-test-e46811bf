@@ -44,7 +44,7 @@ const PeakFeed = () => {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState<{ id: string; username: string | null; avatar_url: string | null } | null>(null);
-  const [filter, setFilter] = useState<FeedFilter>('all');
+  const [filter, setFilter] = useState<FeedFilter>('friends');
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [pendingImage, setPendingImage] = useState<File | null>(null);
