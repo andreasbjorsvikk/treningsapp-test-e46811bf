@@ -470,19 +470,30 @@ const PeakFeed = () => {
                         </div>
                       )}
 
-                      {/* Edit mode: image upload */}
+                      {/* Edit mode: image upload + delete */}
                       {isEditing && (
-                        <div className="mt-3 pt-3 border-t border-border/30">
+                        <div className="mt-3 pt-3 border-t border-border/30 space-y-2">
                           <CheckinImageUpload onImageReady={setPendingImage} />
                           {pendingImage && (
                             <Button
                               onClick={() => handleSaveEditImage(item.id, item.user_id)}
                               disabled={savingImage}
                               size="sm"
-                              className="w-full mt-2"
+                              className="w-full"
                             >
-                              {savingImage ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                              {savingImage ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ImageIcon className="w-4 h-4 mr-2" />}
                               {savingImage ? 'Lagrer...' : 'Lagre bilde'}
+                            </Button>
+                          )}
+                          {item.image_url && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full text-destructive hover:text-destructive"
+                              onClick={() => handleRemoveImage(item.id)}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Fjern bilde
                             </Button>
                           )}
                         </div>
