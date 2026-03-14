@@ -245,7 +245,7 @@ const steps: TutorialStep[] = [
   {
     title: 'Utforsk de andre fanene',
     text: '',
-    icon: <PeakIcon src={peakLowIcon} />,
+    icon: <PeakIcon src={peakIconTiers.low} />,
     customContent: <OverviewContent />,
   },
 ];
