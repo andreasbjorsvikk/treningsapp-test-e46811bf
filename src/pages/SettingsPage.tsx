@@ -979,6 +979,9 @@ const SettingsPage = () => {
           </div>
         </div>
 
+        {/* Child profiles */}
+        <ChildProfilesSection />
+
         {/* Change password */}
         <div className="glass-card rounded-xl p-4 space-y-3">
            <Label className="text-sm font-semibold">{t('profile.changePassword')}</Label>
