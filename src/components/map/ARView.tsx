@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Peak } from '@/data/peaks';
 import { PeakCheckin } from '@/services/peakCheckinService';
-import { Camera, CameraOff, Compass, Mountain, Navigation, X } from 'lucide-react';
+import { Camera, CameraOff, Compass, Mountain, Navigation, X, Map as MapIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getPeakIcon } from '@/utils/peakIcons';
 
