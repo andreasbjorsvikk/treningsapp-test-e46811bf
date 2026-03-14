@@ -245,7 +245,7 @@ const PeakFeed = () => {
   };
 
   useEffect(() => {
-    if (user && filter === 'global') {
+    if (user) {
       loadFeed();
     }
   }, [filter]);
