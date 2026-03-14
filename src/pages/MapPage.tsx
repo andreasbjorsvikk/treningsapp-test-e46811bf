@@ -63,6 +63,9 @@ const MapPage = () => {
   // Suggested peaks (pending, visible to all)
   const [suggestedPeaks, setSuggestedPeaks] = useState<PeakSuggestion[]>([]);
 
+  // Track if route was shown from topper tab for back navigation
+  const [routeFromTopperPeak, setRouteFromTopperPeak] = useState<Peak | null>(null);
+
   const checkedPeakIds = useMemo(() => new Set(checkins.map(c => c.peak_id)), [checkins]);
 
   // Filter peaks for map display
