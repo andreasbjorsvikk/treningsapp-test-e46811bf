@@ -113,8 +113,23 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
   useEffect(() => {
     if (!open) {
       setPendingImage(null);
+      setUserDistanceToPeak(null);
     }
   }, [open, peak?.id]);
+
+  // Get user distance for fromTopperTab
+  const [userDistanceToPeak, setUserDistanceToPeak] = useState<number | null>(null);
+  useEffect(() => {
+    if (!open || !peak || !fromTopperTab) return;
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => {
+        const dist = getDistanceMeters(pos.coords.latitude, pos.coords.longitude, peak.latitude, peak.longitude);
+        setUserDistanceToPeak(dist);
+      },
+      () => setUserDistanceToPeak(null),
+      { enableHighAccuracy: false, timeout: 5000 }
+    );
+  }, [open, peak?.id, fromTopperTab]);
 
   // Checkin stats for this peak
   const peakCheckins = useMemo(() => {
