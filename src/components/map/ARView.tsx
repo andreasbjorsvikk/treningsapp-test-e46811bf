@@ -78,6 +78,8 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
   const [heading, setHeading] = useState<number | null>(null);
   const [tilt, setTilt] = useState<number>(0);
   const [permissionsReady, setPermissionsReady] = useState(false);
+  const [compassEnabled, setCompassEnabled] = useState(false);
+  const [compassStatus, setCompassStatus] = useState<'idle' | 'granted' | 'denied'>('idle');
   const [maxDist, setMaxDist] = useState(MAX_DISTANCE_KM);
   const [showMiniMap, setShowMiniMap] = useState(true);
   const [mode, setMode] = useState<ARMode>('camera');
