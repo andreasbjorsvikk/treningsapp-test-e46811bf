@@ -54,32 +54,29 @@ const PeakWeather = ({ latitude, longitude }: PeakWeatherProps) => {
   if (loading || !weather) return null;
 
   return (
-    <div className="flex flex-col items-center justify-center gap-2 px-3 py-2 rounded-lg bg-muted/40 border border-border/30">
-      <div className="flex items-center justify-center gap-3">
-        <img
-          src={`${WEATHER_ICON_BASE}${weather.symbolCode}.svg`}
-          alt=""
-          className="w-8 h-8"
-          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-        />
-        <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-          <span className="flex items-center gap-1 font-medium text-foreground">
-            <Thermometer className="w-3.5 h-3.5" />
-            {weather.temperature}°
-          </span>
+    <div className="flex items-center justify-center gap-3 px-3 py-2 rounded-lg bg-muted/40 border border-border/30">
+      <img
+        src={`${WEATHER_ICON_BASE}${weather.symbolCode}.svg`}
+        alt=""
+        className="w-8 h-8"
+        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+      />
+      <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+        <span className="flex items-center gap-1 font-medium text-foreground">
+          <Thermometer className="w-3.5 h-3.5" />
+          {weather.temperature}°
+        </span>
+        <span className="flex items-center gap-1">
+          <Wind className="w-3.5 h-3.5" />
+          {weather.windSpeed} m/s
+        </span>
+        {weather.precipitation > 0 && (
           <span className="flex items-center gap-1">
-            <Wind className="w-3.5 h-3.5" />
-            {weather.windSpeed} m/s
+            <Droplets className="w-3.5 h-3.5" />
+            {weather.precipitation} mm
           </span>
-          {weather.precipitation > 0 && (
-            <span className="flex items-center gap-1">
-              <Droplets className="w-3.5 h-3.5" />
-              {weather.precipitation} mm
-            </span>
-          )}
-        </div>
+        )}
       </div>
-      <span className="text-[9px] text-muted-foreground/60">yr.no</span>
     </div>
   );
 };
