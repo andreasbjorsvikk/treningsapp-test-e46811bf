@@ -91,6 +91,19 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
       }
     }
 
+    // Pre-fetch child share statuses
+    const childShareIds = raw.filter(n => n.type === 'child_share' && n.challenge_id).map(n => n.challenge_id!);
+    const respondedChildShares = new Set<string>();
+    if (childShareIds.length > 0) {
+      const { data: accesses } = await supabase
+        .from('child_shared_access')
+        .select('id, status')
+        .in('id', childShareIds);
+      for (const a of accesses || []) {
+        if ((a as any).status !== 'pending') respondedChildShares.add((a as any).id);
+      }
+    }
+
     const enriched = raw.map(n => {
       let alreadyResponded = false;
 
@@ -111,17 +124,8 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
         alreadyResponded = true;
       }
 
-      // Check child share invitations
-      if (n.type === 'child_share' && n.challenge_id) {
-        // challenge_id is repurposed to store child_shared_access id
-        const { data: access } = await supabase
-          .from('child_shared_access')
-          .select('status')
-          .eq('id', n.challenge_id)
-          .single();
-        if (access && access.status !== 'pending') {
-          alreadyResponded = true;
-        }
+      if (n.type === 'child_share' && n.challenge_id && respondedChildShares.has(n.challenge_id)) {
+        alreadyResponded = true;
       }
 
       return {
