@@ -176,6 +176,8 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
   const handleTouchEnd = useCallback(() => {
     pinchStartDist.current = null;
   }, []);
+
+  // GPS watcher
   useEffect(() => {
     if (!permissionsReady) return;
     const watchId = navigator.geolocation.watchPosition(
