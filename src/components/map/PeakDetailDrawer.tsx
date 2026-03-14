@@ -489,6 +489,38 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                           <button onClick={() => setSelectedUser(null)} className="p-1 rounded hover:bg-muted transition-colors"><X className="w-4 h-4 text-muted-foreground" /></button>
                         </div>
                       )}
+                      {/* Children of selected user */}
+                      {selectedUser && !selectedUser.isChild && adminChildrenForUser.length > 0 && (
+                        <div className="space-y-2">
+                          <Label className="text-xs text-muted-foreground">Inkluder barn</Label>
+                          {adminChildrenForUser.map(child => {
+                            const isSelected = adminSelectedChildIds.has(child.id);
+                            return (
+                              <button
+                                key={child.id}
+                                onClick={() => {
+                                  setAdminSelectedChildIds(prev => {
+                                    const next = new Set(prev);
+                                    if (next.has(child.id)) next.delete(child.id);
+                                    else next.add(child.id);
+                                    return next;
+                                  });
+                                }}
+                                className={`w-full flex items-center gap-2 p-2 rounded-lg border transition-colors ${
+                                  isSelected ? 'bg-primary/5 border-primary/30' : 'border-border/50 hover:border-border'
+                                }`}
+                              >
+                                <Checkbox checked={isSelected} className="pointer-events-none" />
+                                <Avatar className="w-6 h-6">
+                                  {child.avatar_url && <AvatarImage src={child.avatar_url} />}
+                                  <AvatarFallback className="text-[10px]">{child.emoji || '👶'}</AvatarFallback>
+                                </Avatar>
+                                <span className="text-sm">{child.name} {child.emoji}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                       <div className="space-y-2">
                         <Label>Dato for innsjekking</Label>
                         <Popover>
