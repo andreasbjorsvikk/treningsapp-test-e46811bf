@@ -363,9 +363,8 @@ const PeakFeed = () => {
   };
 
   const filterOptions: { value: FeedFilter; label: string }[] = [
-    { value: 'all', label: 'Alle' },
-    { value: 'mine', label: 'Mine' },
     { value: 'friends', label: 'Venner' },
+    { value: 'mine', label: 'Mine' },
     { value: 'global', label: 'Global' },
   ];
 
