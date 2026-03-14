@@ -426,27 +426,29 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         width: 44px; height: 44px; cursor: pointer;
         filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
         display: flex; align-items: center; justify-content: center;
-        position: relative;
         ${isUnpublished ? 'opacity: 0.7;' : ''}
         ${isYearFiltered ? 'opacity: 0.55;' : ''}
       `;
 
       const checkinBadge = takenAndVisible
         ? `<div style="
-            position:absolute; bottom:-2px; right:-2px; z-index:2;
+            position:absolute; bottom:-3px; right:-3px;
             width:16px; height:16px; border-radius:50%;
             background: linear-gradient(135deg, hsl(152,60%,42%), hsl(152,70%,48%));
             border: 2px solid white;
             display:flex; align-items:center; justify-content:center;
             box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+            pointer-events:none;
           ">
             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
           </div>`
         : '';
 
       el.innerHTML = `
-        <img src="${peakIcon}" alt="" style="width:40px;height:40px;object-fit:contain;" draggable="false" />
-        ${checkinBadge}
+        <div style="position:relative;width:40px;height:40px;">
+          <img src="${peakIcon}" alt="" style="width:40px;height:40px;object-fit:contain;" draggable="false" />
+          ${checkinBadge}
+        </div>
       `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;
