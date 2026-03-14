@@ -48,12 +48,7 @@ function calcBearing(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return (toDeg(Math.atan2(y, x)) + 360) % 360;
 }
 
-function getPeakIcon(heightMoh: number): string {
-  if (heightMoh >= 800) return peakVeryHighIcon;
-  if (heightMoh >= 500) return peakHighIcon;
-  if (heightMoh >= 200) return peakMediumIcon;
-  return peakLowIcon;
-}
+// getPeakIcon imported from utils
 
 function normalizeDeg(deg: number): number {
   return ((deg % 360) + 360) % 360;

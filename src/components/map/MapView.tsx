@@ -418,7 +418,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       const isYearFiltered = onlyReachedThisYear && !thisYearCheckedIds.has(peak.id);
 
       const el = document.createElement('div');
-      const peakIcon = getPeakIconByElevation(peak.heightMoh);
+      const peakIcon = getPeakIcon(peak.heightMoh, peak.id);
       
       el.style.cssText = `
         width: 36px; height: 36px; cursor: pointer;
