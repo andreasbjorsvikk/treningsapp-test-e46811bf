@@ -340,16 +340,8 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
         ">
           ${peak.name} <span style="opacity:0.7;font-size:9px">${peak.heightMoh}m</span>
         </div>
-        <div style="width:34px;height:26px;overflow:hidden;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-          <div style="
-            width: 34px; height: 34px; border-radius: 50%;
-            display: flex; align-items: flex-end; justify-content: center;
-            border: 2px solid ${isTaken ? 'hsl(152,60%,35%)' : 'rgba(255,255,255,0.7)'};
-            background: ${isTaken ? 'hsl(152,60%,42%)' : 'rgba(255,255,255,0.9)'};
-            box-sizing: border-box;
-          ">
-            <img src="${icon}" style="width:28px;height:28px;object-fit:cover;object-position:center bottom;margin-bottom:-2px;" />
-          </div>
+        <div style="width:30px;height:30px;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.3));">
+          <img src="${icon}" style="width:30px;height:30px;object-fit:contain;" />
         </div>
       `;
 
@@ -540,14 +532,8 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
             <span className="text-[9px] text-white/90 font-medium drop-shadow-lg">
               {distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}
             </span>
-            <div className="w-10 h-[30px] overflow-hidden" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}>
-              <div className={`w-10 h-10 rounded-full flex items-end justify-center border-2 box-border ${
-                isTaken
-                  ? 'bg-[hsl(152,60%,42%)] border-[hsl(152,60%,35%)]'
-                  : 'bg-white/90 border-white/60'
-              }`}>
-                <img src={icon} alt="" className="w-8 h-8 object-cover object-bottom -mb-0.5" />
-              </div>
+            <div className="w-9 h-9" style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.3))' }}>
+              <img src={icon} alt="" className="w-9 h-9 object-contain" />
             </div>
             <div className={`w-px h-4 ${isTaken ? 'bg-[hsl(152,60%,42%)]/50' : 'bg-white/30'}`} />
           </button>

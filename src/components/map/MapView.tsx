@@ -420,29 +420,20 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       const el = document.createElement('div');
       const peakIcon = getPeakIcon(peak.heightMoh, peak.id);
       
-      const bg = isYearFiltered ? 'hsl(0, 0%, 100%)' : isTaken ? 'hsl(152, 60%, 42%)' : isUnpublished ? 'hsl(38, 85%, 50%)' : 'hsl(0, 0%, 100%)';
-        const borderColor = isYearFiltered ? 'hsl(220, 13%, 80%)' : isTaken ? 'hsl(152, 60%, 35%)' : isUnpublished ? 'hsl(38, 85%, 40%)' : 'hsl(220, 13%, 80%)';
-        const imgFilter = isTaken && !isYearFiltered
+      const imgFilter = isTaken && !isYearFiltered
           ? 'filter: drop-shadow(0 0 0.5px white) drop-shadow(0 0 0.5px white) drop-shadow(0 0 1px white) drop-shadow(0 0 2px rgba(255,255,255,0.5));'
           : '';
 
-      // Outer wrapper clips the circle at 75% height; drop-shadow follows visible shape
       el.style.cssText = `
-        width: 44px; height: 33px; overflow: hidden; cursor: pointer;
-        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+        width: 40px; height: 40px; cursor: pointer;
+        filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
+        display: flex; align-items: center; justify-content: center;
         ${isUnpublished ? 'opacity: 0.7;' : ''}
         ${isYearFiltered ? 'opacity: 0.55;' : ''}
       `;
         
         el.innerHTML = `
-          <div style="
-            width: 44px; height: 44px; border-radius: 50%;
-            background: ${bg}; border: 2px solid ${borderColor};
-            display: flex; align-items: flex-end; justify-content: center;
-            box-sizing: border-box;
-          ">
-            <img src="${peakIcon}" alt="" style="width:36px;height:36px;object-fit:cover;object-position:center bottom;margin-bottom:-2px;${imgFilter}" draggable="false" />
-          </div>
+          <img src="${peakIcon}" alt="" style="width:40px;height:40px;object-fit:contain;${imgFilter}" draggable="false" />
         `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;
