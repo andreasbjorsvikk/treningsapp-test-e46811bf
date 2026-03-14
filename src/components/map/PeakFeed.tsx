@@ -509,19 +509,21 @@ const PeakFeed = () => {
 
                     <div className="p-3.5">
                       <div className="flex items-start gap-3">
-                        <Avatar className="w-10 h-10 shrink-0 ring-2 ring-emerald-500/20">
-                          <AvatarImage src={item.avatar_url || undefined} />
-                          <AvatarFallback className="text-sm font-bold bg-emerald-500/10 text-emerald-600">
-                            {item.is_child && item.child_emoji ? item.child_emoji : (item.username?.[0]?.toUpperCase() || '?')}
-                          </AvatarFallback>
-                        </Avatar>
+                        <button onClick={() => !item.is_child && setSelectedProfile({ id: item.user_id, username: item.username, avatar_url: item.avatar_url })}>
+                          <Avatar className="w-10 h-10 shrink-0 ring-2 ring-emerald-500/20">
+                            <AvatarImage src={item.avatar_url || undefined} />
+                            <AvatarFallback className="text-sm font-bold bg-emerald-500/10 text-emerald-600">
+                              {item.is_child && item.child_emoji ? item.child_emoji : (item.username?.[0]?.toUpperCase() || '?')}
+                            </AvatarFallback>
+                          </Avatar>
+                        </button>
 
                         <div className="flex-1 min-w-0">
                           <p className="text-sm leading-snug">
-                            <span className="font-semibold">
+                            <button onClick={() => !item.is_child && setSelectedProfile({ id: item.user_id, username: item.username, avatar_url: item.avatar_url })} className="font-semibold hover:underline">
                               {isMe ? 'Du' : (item.username || 'Ukjent')}
                               {item.is_child && item.child_emoji ? ` ${item.child_emoji}` : ''}
-                            </span>
+                            </button>
                             <span className="text-muted-foreground"> nådde toppen av </span>
                             <span className="font-semibold">{item.peak_name}</span>
                           </p>
