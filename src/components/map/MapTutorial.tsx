@@ -222,29 +222,33 @@ const OverviewContent = () => (
   </div>
 );
 
+const PeakIcon = ({ src }: { src: string }) => (
+  <img src={src} alt="" className="w-10 h-10 object-contain" />
+);
+
 const steps: TutorialStep[] = [
   {
     title: 'Velkommen til fjelltopp-kartet! ⛰️',
     text: 'Her kan du sjekke inn på fjelltopper som du bestiger. Du kan sjekke inn flere ganger på hver topp og øke scoren din på lederlistene.',
-    icon: <Mountain className="w-8 h-8" />,
+    icon: <PeakIcon src={peakVeryHighIcon} />,
     customContent: <CheckinAnimation />,
   },
   {
     title: 'Kartvisning',
     text: 'Bytt mellom satellitt- og terrengvisning. Du kan også veksle mellom 2D og 3D-visning.',
-    icon: <Map className="w-8 h-8" />,
+    icon: <PeakIcon src={peakHighIcon} />,
     customContent: <MapStylePreview />,
   },
   {
     title: 'Foreslå ny topp',
     text: 'For å foreslå en ny fjelltopp som ikke finnes her enda, trykk og hold inne på kartet der toppen er. Om du står på toppen vil du bli sjekket inn når den blir godkjent.',
-    icon: <MapPin className="w-8 h-8" />,
+    icon: <PeakIcon src={peakMediumIcon} />,
     customContent: <LongPressAnimation />,
   },
   {
     title: 'Utforsk de andre fanene',
     text: '',
-    icon: null,
+    icon: <PeakIcon src={peakLowIcon} />,
     customContent: <OverviewContent />,
   },
 ];
