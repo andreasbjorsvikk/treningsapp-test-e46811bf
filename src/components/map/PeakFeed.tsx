@@ -43,6 +43,7 @@ const PeakFeed = () => {
   const { user } = useAuth();
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedProfile, setSelectedProfile] = useState<{ id: string; username: string | null; avatar_url: string | null } | null>(null);
   const [filter, setFilter] = useState<FeedFilter>('all');
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
