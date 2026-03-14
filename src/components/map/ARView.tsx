@@ -212,6 +212,8 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
 
     const handleOrientation = (e: DeviceOrientationEvent) => {
       let alpha: number | null = null;
+      const beta = e.beta;
+      const gamma = e.gamma ?? 0;
 
       if ((e as any).webkitCompassHeading != null) {
         alpha = Number((e as any).webkitCompassHeading);
@@ -219,7 +221,16 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
         alpha = (360 - e.alpha) % 360;
       }
 
-      if (alpha != null && Number.isFinite(alpha)) {
+      // Compensate heading for gamma (side-tilt) to prevent drift when tilting phone sideways
+      // When phone is tilted sideways, the raw compass heading shifts. We correct by subtracting
+      // the projected gamma component onto the horizontal plane.
+      if (alpha != null && Number.isFinite(alpha) && beta != null) {
+        const betaRad = toRad(beta);
+        const gammaRad = toRad(gamma);
+        // Heading correction: when phone is tilted sideways, gamma causes apparent heading shift
+        const correction = toDeg(Math.atan2(Math.sin(gammaRad), Math.cos(gammaRad) * Math.cos(betaRad)));
+        alpha = normalizeDeg(alpha + correction);
+        
         if (headingSmoothed.current == null) {
           headingSmoothed.current = alpha;
         } else {
@@ -231,8 +242,15 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
         setHeading(headingSmoothed.current);
       }
 
-      if (e.beta != null) {
-        setTilt(e.beta);
+      // Smooth the tilt (beta) to prevent jumps near the 90° boundary
+      if (beta != null) {
+        if (tiltSmoothed.current == null) {
+          tiltSmoothed.current = beta;
+        } else {
+          tiltSmoothed.current += (beta - tiltSmoothed.current) * 0.2;
+        }
+        setTilt(tiltSmoothed.current);
+        gammaRef.current = gamma;
       }
     };
 
