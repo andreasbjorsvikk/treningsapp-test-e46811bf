@@ -710,6 +710,15 @@ const PeakFeed = () => {
           </div>
         ))
       )}
+
+      {/* User profile drawer */}
+      {selectedProfile && (
+        <UserProfileDrawer
+          user={selectedProfile as any}
+          open={!!selectedProfile}
+          onClose={() => setSelectedProfile(null)}
+        />
+      )}
     </div>
   );
 };

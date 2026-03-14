@@ -530,6 +530,44 @@ const SettingsPage = () => {
           })}
         </div>
 
+        {/* Child privacy - only if user has children */}
+        {hasChildren && (
+          <div className="glass-card rounded-xl p-4 space-y-1">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Barn</h4>
+            {[
+              { key: 'privacy_child_profile', label: childrenCount > 1 ? 'Mine barns profiler' : 'Mitt barns profil', value: childPrivacyProfile, setter: setChildPrivacyProfile },
+              { key: 'privacy_child_checkins', label: childrenCount > 1 ? 'Mine barns fjelltopp-innsjekkinger' : 'Mitt barns fjelltopp-innsjekkinger', value: childPrivacyCheckins, setter: setChildPrivacyCheckins },
+            ].map(opt => (
+              <div key={opt.key} className="py-3 border-b border-border/50 last:border-0">
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0 flex-1 pr-4">
+                    <p className="text-sm font-medium">{opt.label}</p>
+                  </div>
+                  <Select
+                    value={opt.value}
+                    onValueChange={(v) => {
+                      opt.setter(v);
+                      if (user) {
+                        supabase.from('profiles').update({ [opt.key]: v } as any).eq('id', user.id).then(() => {});
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-[120px] h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="me">{t('privacy.onlyMe')}</SelectItem>
+                      <SelectItem value="friends">{t('privacy.friends')}</SelectItem>
+                      <SelectItem value="all">Alle</SelectItem>
+                      <SelectItem value="selected">{t('privacy.selectedFriends')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         <Dialog open={showFriendPicker} onOpenChange={setShowFriendPicker}>
           <DialogContent className="max-w-[min(calc(100vw-2rem),22rem)]">
             <DialogHeader>
