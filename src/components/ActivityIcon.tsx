@@ -13,7 +13,7 @@ import fotballIcon from '@/assets/icons/fotball.svg';
 import trappemaskinIcon from '@/assets/icons/trappemaskin.svg';
 import roingIcon from '@/assets/icons/roing.svg';
 import kajakkIcon from '@/assets/icons/kajakk.svg';
-import tredemolleIcon from '@/assets/icons/tredemølle.svg';
+import tredemolleIcon from '@/assets/icons/tredemlle.svg';
 
 const iconMap: Record<string, string> = {
   styrke: styrkeIcon,

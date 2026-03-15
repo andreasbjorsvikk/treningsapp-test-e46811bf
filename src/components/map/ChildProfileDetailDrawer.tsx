@@ -92,9 +92,11 @@ const ChildProfileDetailDrawer = ({ child, open, onClose }: ChildProfileDetailDr
     <Drawer open={open} onOpenChange={(o) => !o && onClose()}>
       <DrawerContent className="max-h-[85vh]">
         <DrawerHeader className="pb-2">
-          <div className="flex flex-col items-center gap-3">
+         <div className="flex flex-col items-center gap-3">
             <Avatar className="w-20 h-20 ring-4 ring-emerald-500/20">
-              {child.avatar_url ? <AvatarImage src={child.avatar_url} /> : null}
+              {child.avatar_url ? (
+                <AvatarImage src={child.avatar_url} alt={child.name} />
+              ) : null}
               <AvatarFallback className="text-3xl font-bold bg-emerald-500/10 text-emerald-600">
                 {child.emoji || '👶'}
               </AvatarFallback>
