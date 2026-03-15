@@ -752,6 +752,7 @@ const IndexContent = () => {
         {activeTab === 'kart' && <MapPage />}
         {activeTab === 'trening' && <TrainingPage initialStatPeriod={initialStatPeriod} />}
         {activeTab === 'fellesskap' && <CommunityPage />}
+        {activeTab === 'admin' && adminMode && <AdminDashboard />}
         {activeTab === 'settings' && <SettingsPage />}
       </main>
 
