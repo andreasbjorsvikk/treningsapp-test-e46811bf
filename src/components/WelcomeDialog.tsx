@@ -48,10 +48,10 @@ const WelcomeDialog = ({ open, onClose, username }: WelcomeDialogProps) => {
               </div>
               <div className="text-center space-y-2">
                 <h3 className="font-display font-bold text-xl text-foreground">
-                  Velkommen{username ? `, ${username}` : ''}! 🎉
+                  Velkommen{username ? `, ${username}` : ''}!
                 </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Flott at du er her! La oss ta en rask titt på hva du kan gjøre i appen.
+                  La oss ta en rask titt på hva du kan gjøre i appen.
                 </p>
               </div>
             </>

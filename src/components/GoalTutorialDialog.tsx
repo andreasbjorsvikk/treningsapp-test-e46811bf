@@ -3,6 +3,7 @@ import { X, ChevronRight, Target, Sparkles, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import GoalProgressVisual from '@/components/GoalProgressVisual';
+import GoalWheelsPreview from '@/components/tutorial/GoalWheelsPreview';
 
 interface GoalTutorialDialogProps {
   open: boolean;
@@ -72,6 +73,7 @@ const GoalTutorialDialog = ({ open, onClose }: GoalTutorialDialogProps) => {
                   Her kan du sette et generelt treningsmål på hvor mange treningsøkter du vil ha som mål hver uke, måned, eller år. Fremdriftshjulene vil vise deg hvordan du ligger an dag for dag. Du kan når som helst justere målet senere om du ønsker det.
                 </p>
               </div>
+              <GoalWheelsPreview />
             </>
           ) : (
             <>
