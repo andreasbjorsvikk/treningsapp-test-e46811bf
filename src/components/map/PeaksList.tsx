@@ -234,7 +234,7 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
                       style={{
                         filter: isTaken
                           ? 'brightness(0) saturate(100%) invert(58%) sepia(52%) saturate(501%) hue-rotate(93deg) brightness(95%) contrast(92%)'
-                          : 'brightness(0) opacity(0.4)',
+                          : 'brightness(0) opacity(0.3)',
                       }}
                     />
                   </div>

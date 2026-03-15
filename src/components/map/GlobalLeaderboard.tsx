@@ -129,7 +129,6 @@ const GlobalLeaderboard = () => {
   };
 
   const handleProfileClick = (entry: LeaderEntry) => {
-    if (entry.isChild) return;
     setSelectedProfile({ id: entry.user_id, username: entry.username, avatar_url: entry.avatar_url });
   };
 
