@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { lovable } from '@/integrations/lovable/index';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, UserPlus, LogIn, Flame, Activity, Mountain, Timer } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, UserPlus, LogIn, Flame, Activity, Mountain, Timer, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
