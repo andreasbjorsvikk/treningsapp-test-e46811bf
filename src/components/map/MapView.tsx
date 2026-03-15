@@ -306,43 +306,43 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
 
     whenStyleReady(m, () => {
       if (routeGeojson) {
-        if (!m.getSource(sourceId)) {
-          m.addSource(sourceId, {
-            type: 'geojson',
-            data: routeGeojson,
-          });
-          m.addLayer({
-            id: layerId,
-            type: 'line',
-            source: sourceId,
-            layout: {
-              'line-join': 'round',
-              'line-cap': 'round',
-            },
-            paint: {
-              'line-color': '#10b981',
-              'line-width': 6,
-              'line-opacity': 0.8,
-            },
-          });
-        } else {
-          (m.getSource(sourceId) as mapboxgl.GeoJSONSource).setData(routeGeojson);
+        // Normalize to a proper GeoJSON FeatureCollection for the source
+        let geojsonData: any = routeGeojson;
+        if (routeGeojson.type === 'LineString') {
+          geojsonData = { type: 'Feature', geometry: routeGeojson, properties: {} };
+        } else if (routeGeojson.type === 'Feature') {
+          geojsonData = routeGeojson;
         }
 
+        // Always clean up old source/layer first to avoid stale state
+        try {
+          if (m.getLayer(layerId)) m.removeLayer(layerId);
+          if (m.getSource(sourceId)) m.removeSource(sourceId);
+        } catch {}
+
+        m.addSource(sourceId, { type: 'geojson', data: geojsonData });
+        m.addLayer({
+          id: layerId,
+          type: 'line',
+          source: sourceId,
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: { 'line-color': '#10b981', 'line-width': 6, 'line-opacity': 0.8 },
+        });
+
+        // Fit bounds to route
         const bounds = new mapboxgl.LngLatBounds();
-        // Handle various GeoJSON formats
         const coords = routeGeojson.coordinates
           || routeGeojson?.geometry?.coordinates
           || (routeGeojson?.features?.[0]?.geometry?.coordinates);
         if (coords && Array.isArray(coords)) {
-          coords.forEach((coord: [number, number]) => {
-            bounds.extend(coord);
-          });
+          coords.forEach((coord: [number, number]) => bounds.extend(coord));
           m.fitBounds(bounds, { padding: 50, duration: 1000 });
         }
       } else {
-        if (m.getLayer(layerId)) m.removeLayer(layerId);
-        if (m.getSource(sourceId)) m.removeSource(sourceId);
+        try {
+          if (m.getLayer(layerId)) m.removeLayer(layerId);
+          if (m.getSource(sourceId)) m.removeSource(sourceId);
+        } catch {}
       }
     });
   }, [routeGeojson, mapLoaded, whenStyleReady]);
@@ -435,7 +435,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       `;
         const imgStyle = isTaken && !isYearFiltered
           ? 'object-fit: contain; filter: brightness(0) invert(1);'
-          : 'object-fit: contain; filter: brightness(0) opacity(0.3);';
+          : 'object-fit: contain; filter: brightness(0) opacity(0.5);';
         const nudgeUp = peak.heightMoh >= 650 ? 'margin-top: -3.5px;' : '';
         
         el.innerHTML = `
