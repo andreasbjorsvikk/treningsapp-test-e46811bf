@@ -9,8 +9,10 @@ import { getChallenges, getChallengeParticipants, getChallengeProgress, getUnrea
 import { ChallengeWithParticipants } from '@/pages/CommunityPage';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAdmin } from '@/hooks/useAdmin';
 
 import BottomNav, { TabId } from '@/components/BottomNav';
+import AdminDashboard from '@/components/map/AdminDashboard';
 import StatsOverview from '@/components/StatsOverview';
 import SessionCard from '@/components/SessionCard';
 import WorkoutDialog from '@/components/WorkoutDialog';
