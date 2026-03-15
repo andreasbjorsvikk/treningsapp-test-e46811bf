@@ -74,7 +74,7 @@ const IndexContent = () => {
   const { settings, updateSettings } = useSettings();
   const { t } = useTranslation();
   const { user, signOut } = useAuth();
-  const { adminMode } = useAdmin();
+  const { isAdmin, adminMode } = useAdmin();
   const navigate = useNavigate();
   const appData = useAppDataContext();
   const isMobile = useIsMobile();
