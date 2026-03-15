@@ -298,7 +298,8 @@ const MapPage = () => {
               routeGeojson={activeRouteGeojson}
               routeFocus={routeFocus}
               suppressInitialGeolocate={!!routeFocus || !!pendingTopperRoute}
-              onClearRoute={() => setActiveRouteGeojson(null)}
+              onClearRoute={handleHideRoute}
+              onMapReady={() => setIsMapReady(true)}
               previewWaypoints={previewWaypoints}
               onWaypointClick={(index) => setWaypointClickEvent({ index, timestamp: Date.now() })}
               onWaypointDrag={(index, lat, lng) => setWaypointDragEvent({ index, lat, lng, timestamp: Date.now() })}

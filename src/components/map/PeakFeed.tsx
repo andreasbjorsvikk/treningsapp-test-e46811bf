@@ -136,20 +136,44 @@ const PeakFeed = () => {
         return true;
       }).map(p => p.id);
 
+      const visibleChildParentIds = profiles
+        .filter((p) => {
+          if (p.id === user.id) return true;
+          const childPrivacy = (p as any).privacy_child_checkins || 'friends';
+          if (childPrivacy === 'me') return false;
+          if (childPrivacy === 'all') return true;
+          return friendIds.includes(p.id);
+        })
+        .map((p) => p.id);
+
+      const { data: visibleChildren } = visibleChildParentIds.length > 0
+        ? await supabase
+            .from('child_profiles')
+            .select('id, parent_user_id')
+            .in('parent_user_id', visibleChildParentIds)
+        : { data: [] as { id: string; parent_user_id: string }[] };
+
+      const friendChildIds = (visibleChildren || [])
+        .filter((c) => c.parent_user_id !== user.id)
+        .map((c) => c.id);
+
+      const ownAndSharedChildIds = Array.from(childIdSet);
+      const friendChildIdSet = new Set(friendChildIds.filter((id) => !childIdSet.has(id)));
+
       // Determine which user IDs to fetch based on filter
       let fetchUserIds: string[];
       if (filter === 'global') {
         // Global: fetch all (no user_id filter)
         fetchUserIds = [];
       } else if (filter === 'mine') {
-        // Mine: own + own children
-        fetchUserIds = [user.id, ...Array.from(childIdSet)];
+        // Mine: own + own/shared children
+        fetchUserIds = [user.id, ...ownAndSharedChildIds];
       } else if (filter === 'friends') {
-        // Venner: only friends (not self, not children)
-        fetchUserIds = visibleFriendIds.filter(id => id !== user.id);
+        // Venner: friends + their children
+        fetchUserIds = [...visibleFriendIds.filter(id => id !== user.id), ...Array.from(friendChildIdSet)];
       } else {
-        // Alle: own + friends + own children
-        fetchUserIds = [...visibleFriendIds, ...Array.from(childIdSet)];
+        // Alle: own + friends + own/shared children + friends' children
+        fetchUserIds = [...visibleFriendIds, ...ownAndSharedChildIds, ...Array.from(friendChildIdSet)];
       }
 
       let checkins: any[];

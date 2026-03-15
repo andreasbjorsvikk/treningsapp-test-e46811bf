@@ -267,6 +267,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     m.on('style.load', () => {
       addEnhancedTerrain(m, { exaggeration: 1.4 });
       setMapLoaded(true);
+      onMapReadyRef.current?.();
     });
 
     map.current = m;

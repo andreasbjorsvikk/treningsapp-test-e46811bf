@@ -27,7 +27,7 @@ const ChallengeExamples = () => {
   const renderExample = (type: 'løping' | 'styrke' | 'fjelltur', title: string, subtitle: string) => {
     const colors = getColors(type);
     return (
-      <div className="flex items-center justify-center gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
+      <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
         <div
           className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
           style={{ backgroundColor: isDark ? colors.darkBg : colors.lightBg }}
@@ -38,7 +38,7 @@ const ChallengeExamples = () => {
             colorOverride={isDark ? '#ffffff' : colors.lightText}
           />
         </div>
-        <div className="min-w-0 text-center">
+        <div className="min-w-0 text-left">
           <p className="text-sm font-semibold text-foreground">{title}</p>
           <p className="text-[11px] text-muted-foreground">{subtitle}</p>
         </div>
