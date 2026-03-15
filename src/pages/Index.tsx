@@ -906,6 +906,9 @@ const IndexContent = () => {
 
       {/* Goal tip popup - multi-step */}
       <GoalTutorialDialog open={showGoalTip} onClose={() => setShowGoalTip(false)} />
+      <TrainingTutorialDialog open={showTrainingTutorial} onClose={() => setShowTrainingTutorial(false)} />
+      <CalendarTutorialDialog open={showCalendarTutorial} onClose={() => setShowCalendarTutorial(false)} />
+      <WelcomeDialog open={showWelcome} onClose={() => setShowWelcome(false)} username={username} />
     </div>
   );
 };
