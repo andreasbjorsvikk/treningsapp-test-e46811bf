@@ -59,6 +59,8 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   const [showStyleMenu, setShowStyleMenu] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressCoords = useRef<{ lat: number; lng: number } | null>(null);
+  const routeSourceId = 'peak-route-source';
+  const routeLayerId = 'peak-route-layer';
 
   // Helper: safely run map operations only when style is loaded
   const whenStyleReady = useCallback((m: mapboxgl.Map, fn: () => void) => {
@@ -66,6 +68,28 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       fn();
     } else {
       m.once('style.load', fn);
+    }
+  }, []);
+
+  const ensureRouteLayer = useCallback((m: mapboxgl.Map) => {
+    if (!m.getSource(routeSourceId)) {
+      m.addSource(routeSourceId, {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: [],
+        } as any,
+      });
+    }
+
+    if (!m.getLayer(routeLayerId)) {
+      m.addLayer({
+        id: routeLayerId,
+        type: 'line',
+        source: routeSourceId,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': 'hsl(var(--success))', 'line-width': 6, 'line-opacity': 0.9 },
+      });
     }
   }, []);
 
