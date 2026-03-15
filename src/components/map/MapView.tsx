@@ -373,60 +373,53 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     });
   }, [mapStyle, mapLoaded, whenStyleReady]);
 
+  // Route focus (especially important when opening route from Topper tab)
+  useEffect(() => {
+    if (!map.current || !mapLoaded || !routeFocus) return;
+    const m = map.current;
+
+    whenStyleReady(m, () => {
+      m.resize();
+      m.easeTo({
+        center: [routeFocus.longitude, routeFocus.latitude],
+        zoom: Math.max(m.getZoom(), 12.5),
+        duration: 700,
+      });
+    });
+  }, [routeFocus, mapLoaded, whenStyleReady]);
+
   // Draw route if provided
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
     const m = map.current;
 
-    const sourceId = 'peak-route-source';
-    const layerId = 'peak-route-layer';
-
     whenStyleReady(m, () => {
-      if (routeCoordinates.length > 0) {
-        const geojsonData = {
+      ensureRouteLayer(m);
+      const source = m.getSource(routeSourceId) as mapboxgl.GeoJSONSource | undefined;
+      if (!source) return;
+
+      if (routeCoordinates.length >= 2) {
+        source.setData({
           type: 'Feature',
           geometry: {
             type: 'LineString',
             coordinates: routeCoordinates,
           },
           properties: {},
-        };
+        } as any);
 
-        // Always clean up old source/layer first to avoid stale state
-        try {
-          if (m.getLayer(layerId)) m.removeLayer(layerId);
-          if (m.getSource(sourceId)) m.removeSource(sourceId);
-        } catch {}
-
-        m.addSource(sourceId, { type: 'geojson', data: geojsonData as any });
-        m.addLayer({
-          id: layerId,
-          type: 'line',
-          source: sourceId,
-          layout: { 'line-join': 'round', 'line-cap': 'round' },
-          paint: { 'line-color': '#10b981', 'line-width': 6, 'line-opacity': 0.8 },
-        });
-
-        // Fit bounds to route (run twice to avoid camera race with map load/geolocate)
         const bounds = new mapboxgl.LngLatBounds();
         routeCoordinates.forEach((coord) => bounds.extend(coord));
 
-        if (routeCoordinates.length === 1) {
-          m.easeTo({ center: routeCoordinates[0], zoom: 14, duration: 900 });
-        } else {
-          m.fitBounds(bounds, { padding: 50, duration: 1000 });
-          window.setTimeout(() => {
-            m.fitBounds(bounds, { padding: 50, duration: 600 });
-          }, 450);
-        }
+        m.fitBounds(bounds, { padding: 60, duration: 900, maxZoom: 15 });
+        window.setTimeout(() => {
+          m.fitBounds(bounds, { padding: 60, duration: 500, maxZoom: 15 });
+        }, 350);
       } else {
-        try {
-          if (m.getLayer(layerId)) m.removeLayer(layerId);
-          if (m.getSource(sourceId)) m.removeSource(sourceId);
-        } catch {}
+        source.setData({ type: 'FeatureCollection', features: [] } as any);
       }
     });
-  }, [routeCoordinates, mapLoaded, whenStyleReady]);
+  }, [routeCoordinates, mapLoaded, whenStyleReady, ensureRouteLayer]);
 
   // Handle preview waypoints
   useEffect(() => {
