@@ -4,6 +4,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Trophy, Loader2, Mountain } from 'lucide-react';
 import UserProfileDrawer from '@/components/community/UserProfileDrawer';
+import ChildProfileDetailDrawer from '@/components/map/ChildProfileDetailDrawer';
+import { ChildProfile } from '@/services/childProfileService';
 
 type Period = 'month' | 'year' | 'total';
 type Metric = 'unique' | 'total';
@@ -32,7 +34,9 @@ const GlobalLeaderboard = () => {
   const [entries, setEntries] = useState<LeaderEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState<{ id: string; username: string | null; avatar_url: string | null } | null>(null);
+  const [selectedChildProfile, setSelectedChildProfile] = useState<ChildProfile | null>(null);
   const [friendIds, setFriendIds] = useState<string[]>([]);
+  const [childProfileMap, setChildProfileMap] = useState<Map<string, ChildProfile>>(new Map());
 
   // Load friends once
   useEffect(() => {
@@ -90,11 +94,12 @@ const GlobalLeaderboard = () => {
 
       const [{ data: profiles }, { data: childProfiles }] = await Promise.all([
         supabase.from('profiles').select('id, username, avatar_url').in('id', userIds),
-        supabase.from('child_profiles').select('id, name, avatar_url').in('id', userIds),
+        supabase.from('child_profiles').select('id, name, avatar_url, parent_user_id, emoji, created_at, updated_at').in('id', userIds),
       ]);
 
       const profileMap = new Map((profiles || []).map(p => [p.id, p]));
-      const childMap = new Map(((childProfiles || []) as any[]).map(c => [c.id, c]));
+      const childMap = new Map(((childProfiles || []) as ChildProfile[]).map(c => [c.id, c]));
+      setChildProfileMap(childMap);
 
       const leaderboard: LeaderEntry[] = userIds.map(uid => {
         const profile = profileMap.get(uid);
@@ -129,6 +134,11 @@ const GlobalLeaderboard = () => {
   };
 
   const handleProfileClick = (entry: LeaderEntry) => {
+    if (entry.isChild) {
+      const child = childProfileMap.get(entry.user_id);
+      if (child) setSelectedChildProfile(child);
+      return;
+    }
     setSelectedProfile({ id: entry.user_id, username: entry.username, avatar_url: entry.avatar_url });
   };
 
@@ -240,6 +250,13 @@ const GlobalLeaderboard = () => {
           onClose={() => setSelectedProfile(null)}
         />
       )}
+
+      {/* Child profile drawer */}
+      <ChildProfileDetailDrawer
+        child={selectedChildProfile}
+        open={!!selectedChildProfile}
+        onClose={() => setSelectedChildProfile(null)}
+      />
     </div>
   );
 };
