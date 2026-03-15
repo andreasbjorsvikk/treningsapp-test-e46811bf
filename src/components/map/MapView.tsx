@@ -109,10 +109,22 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
 
     const sanitizeCoordinates = (coords: any): [number, number][] => {
       if (!Array.isArray(coords)) return [];
-      return coords
+
+      const normalized = coords
         .filter((coord) => Array.isArray(coord) && coord.length >= 2)
         .map((coord) => [Number(coord[0]), Number(coord[1])] as [number, number])
-        .filter(([lng, lat]) => Number.isFinite(lng) && Number.isFinite(lat));
+        .filter(([lng, lat]) => Number.isFinite(lng) && Number.isFinite(lat))
+        .filter(([lng, lat]) => lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90);
+
+      const deduped: [number, number][] = [];
+      normalized.forEach((coord) => {
+        const last = deduped[deduped.length - 1];
+        if (!last || last[0] !== coord[0] || last[1] !== coord[1]) {
+          deduped.push(coord);
+        }
+      });
+
+      return deduped;
     };
 
     if (route?.type === 'LineString') return sanitizeCoordinates(route.coordinates);
