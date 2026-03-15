@@ -779,6 +779,7 @@ const IndexContent = () => {
           window.scrollTo({ top: 0 });
         }}
         notificationCount={unreadNotifications}
+        showAdmin={adminMode}
         profileButton={
           !isMobile && user ? (
             <ProfileButton className="ml-1" />
