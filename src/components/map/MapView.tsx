@@ -431,7 +431,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       `;
         const imgStyle = isTaken && !isYearFiltered
           ? 'object-fit: contain; filter: brightness(0) invert(1);'
-          : 'object-fit: contain;';
+          : 'object-fit: contain; filter: brightness(0) opacity(0.3);';
         const nudgeUp = peak.heightMoh >= 650 ? 'margin-top: -3.5px;' : '';
         
         el.innerHTML = `
