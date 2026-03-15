@@ -477,7 +477,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         source.setData({ type: 'FeatureCollection', features: [] } as any);
       }
     });
-  }, [routeCoordinates, mapLoaded, whenStyleReady, ensureRouteLayer]);
+  }, [routeCoordinates, routeFocus, mapLoaded, whenStyleReady, ensureRouteLayer]);
 
   // Handle preview waypoints
   useEffect(() => {
