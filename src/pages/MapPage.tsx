@@ -181,23 +181,42 @@ const MapPage = () => {
     toast.info('Trykk på kartet for å velge startpunkt for ruten.');
   };
 
+  const applyRouteForPeak = useCallback((peak: Peak) => {
+    setActiveRouteGeojson(peak.route_geojson);
+    setActiveRoutePeakId(peak.id);
+    setRouteFocus({ latitude: peak.latitude, longitude: peak.longitude, requestId: Date.now() });
+  }, []);
+
   const handleShowRoute = (peak: Peak, fromTopper?: boolean) => {
-    if (peak.route_status === 'approved' && peak.route_geojson) {
-      if (fromTopper) setRouteFromTopperPeak(peak);
-      else setRouteFromTopperPeak(null);
+    if (peak.route_status !== 'approved' || !peak.route_geojson) return;
+
+    if (fromTopper) {
+      setRouteFromTopperPeak(peak);
+      setPendingTopperRoute(peak);
       setSubTab('kart');
-      setActiveRouteGeojson(peak.route_geojson);
-      setActiveRoutePeakId(peak.id);
-      setTimeout(() => {
-        const evt = new CustomEvent('zoom-to-route', { detail: peak.route_geojson });
-        window.dispatchEvent(evt);
-      }, 300);
+      return;
     }
+
+    setRouteFromTopperPeak(null);
+    applyRouteForPeak(peak);
   };
+
+  useEffect(() => {
+    if (subTab !== 'kart' || !pendingTopperRoute) return;
+    applyRouteForPeak(pendingTopperRoute);
+    setPendingTopperRoute(null);
+  }, [subTab, pendingTopperRoute, applyRouteForPeak]);
+
+  useEffect(() => {
+    if (showSuggestions && adminMode) {
+      window.dispatchEvent(new CustomEvent('admin-peak-suggestions-opened'));
+    }
+  }, [showSuggestions, adminMode]);
 
   const handleHideRoute = () => {
     setActiveRouteGeojson(null);
     setActiveRoutePeakId(null);
+    setRouteFocus(null);
   };
 
   return (
