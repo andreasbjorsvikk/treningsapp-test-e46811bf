@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 
-type FeedFilter = 'mine' | 'friends' | 'global';
+type FeedFilter = 'alle' | 'friends' | 'mine' | 'global';
 
 interface FeedItem {
   id: string;
@@ -44,7 +44,7 @@ const PeakFeed = () => {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState<{ id: string; username: string | null; avatar_url: string | null } | null>(null);
-  const [filter, setFilter] = useState<FeedFilter>('friends');
+  const [filter, setFilter] = useState<FeedFilter>('alle');
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [pendingImage, setPendingImage] = useState<File | null>(null);
@@ -124,11 +124,11 @@ const PeakFeed = () => {
 
       if (!profiles) { setItems([]); setLoading(false); return; }
 
-      const visibleUserIds = profiles.filter(p => {
+      const visibleFriendIds = profiles.filter(p => {
         if (p.id === user.id) return true;
         const privacy = p.privacy_peak_checkins || 'friends';
         if (privacy === 'me') return false;
-        if (privacy === 'friends') return true;
+        if (privacy === 'friends' || privacy === 'all') return true;
         if (privacy === 'selected') {
           const allowed = (p.privacy_peak_checkins_friends as string[]) || [];
           return allowed.includes(user.id);
@@ -136,8 +136,21 @@ const PeakFeed = () => {
         return true;
       }).map(p => p.id);
 
-      const allVisibleIds = [...visibleUserIds, ...Array.from(childIdSet)];
-      if (allVisibleIds.length === 0) { setItems([]); setLoading(false); return; }
+      // Determine which user IDs to fetch based on filter
+      let fetchUserIds: string[];
+      if (filter === 'global') {
+        // Global: fetch all (no user_id filter)
+        fetchUserIds = [];
+      } else if (filter === 'mine') {
+        // Mine: own + own children
+        fetchUserIds = [user.id, ...Array.from(childIdSet)];
+      } else if (filter === 'friends') {
+        // Venner: only friends (not self, not children)
+        fetchUserIds = visibleFriendIds.filter(id => id !== user.id);
+      } else {
+        // Alle: own + friends + own children
+        fetchUserIds = [...visibleFriendIds, ...Array.from(childIdSet)];
+      }
 
       let checkins: any[];
       if (filter === 'global') {
@@ -148,10 +161,11 @@ const PeakFeed = () => {
           .limit(50);
         checkins = data || [];
       } else {
+        if (fetchUserIds.length === 0) { setItems([]); setLoading(false); return; }
         const { data } = await supabase
           .from('peak_checkins')
           .select('*')
-          .in('user_id', allVisibleIds)
+          .in('user_id', fetchUserIds)
           .order('checked_in_at', { ascending: false })
           .limit(50);
         checkins = data || [];
@@ -186,7 +200,6 @@ const PeakFeed = () => {
           .select('id, name, avatar_url, parent_user_id, emoji')
           .in('id', childIdsToFetch);
         childMap = new Map(((childProfiles || []) as any[]).map(c => [c.id, c]));
-        // Store for profile detail view
         const cpMap = new Map<string, ChildProfile>();
         for (const cp of (childProfiles || [])) {
           cpMap.set(cp.id, cp as unknown as ChildProfile);
@@ -203,7 +216,6 @@ const PeakFeed = () => {
             .in('id', unknownUserIds);
           (extraProfiles || []).forEach(p => profileMap.set(p.id, p as any));
         }
-        // Also fetch child profiles for global
         const unknownChildIds = allCheckinUserIds.filter(id => !profileMap.has(id) && !childMap.has(id));
         if (unknownChildIds.length > 0) {
           const { data: extraChildren } = await supabase
@@ -284,14 +296,8 @@ const PeakFeed = () => {
     setAddingChildren(false);
   };
 
-  const filteredItems = items.filter(item => {
-    if (filter === 'mine') return item.user_id === user?.id || myChildIds.has(item.user_id);
-    if (filter === 'friends') {
-      return item.user_id !== user?.id || myChildIds.has(item.user_id);
-    }
-    if (filter === 'global') return true;
-    return true;
-  });
+  // No client-side filtering needed - the query already handles it
+  const filteredItems = items;
 
   // Group child checkins with parent posts
   const groupPosts = (items: FeedItem[]): GroupedFeedPost[] => {
@@ -300,20 +306,18 @@ const PeakFeed = () => {
 
     for (const item of items) {
       if (usedIds.has(item.id)) continue;
-      if (item.is_child) continue; // children get grouped under parents
+      if (item.is_child) continue;
 
-      // Find child checkins for same peak within 1 hour
       const childItems = items.filter(ci => {
         if (usedIds.has(ci.id)) return false;
         if (!ci.is_child) return false;
         if (ci.peak_id !== item.peak_id) return false;
         if (ci.child_parent_id !== item.user_id) return false;
         const timeDiff = Math.abs(new Date(ci.checked_in_at).getTime() - new Date(item.checked_in_at).getTime());
-        return timeDiff <= 60 * 60 * 1000; // 1 hour window
+        return timeDiff <= 60 * 60 * 1000;
       });
 
       usedIds.add(item.id);
-      // Deduplicate children by user_id (prevent same child appearing twice)
       const seenChildUserIds = new Set<string>();
       const dedupedChildren: FeedItem[] = [];
       for (const ci of childItems) {
@@ -326,7 +330,6 @@ const PeakFeed = () => {
       posts.push({ parentItem: item, childItems: dedupedChildren });
     }
 
-    // Add orphan child items (no matching parent post)
     for (const item of items) {
       if (usedIds.has(item.id)) continue;
       usedIds.add(item.id);
@@ -362,12 +365,6 @@ const PeakFeed = () => {
     return format(d, "EEEE d. MMMM", { locale: nb });
   };
 
-  const filterOptions: { value: FeedFilter; label: string }[] = [
-    { value: 'friends', label: 'Venner' },
-    { value: 'mine', label: 'Mine' },
-    { value: 'global', label: 'Global' },
-  ];
-
   const canEdit = (item: FeedItem) => {
     if (item.user_id === user?.id) return true;
     if (item.is_child && myChildIds.has(item.user_id)) return true;
@@ -380,17 +377,14 @@ const PeakFeed = () => {
 
   const handleDeleteCheckin = async (itemId: string) => {
     try {
-      // Find the item and its children - cascade delete children
       const item = items.find(i => i.id === itemId);
       if (item && !item.is_child) {
-        // Find child checkins for this post
         const childCheckins = items.filter(ci =>
           ci.is_child &&
           ci.peak_id === item.peak_id &&
           ci.child_parent_id === item.user_id &&
           Math.abs(new Date(ci.checked_in_at).getTime() - new Date(item.checked_in_at).getTime()) <= 60 * 60 * 1000
         );
-        // Delete child checkins first
         for (const ci of childCheckins) {
           await deleteCheckin(ci.id);
         }
@@ -411,7 +405,6 @@ const PeakFeed = () => {
     } catch { toast.error('Kunne ikke fjerne bildet'); }
   };
 
-  // Get children not already checked in for this peak+time
   const getAvailableChildrenForPost = (post: GroupedFeedPost) => {
     const checkedChildIds = new Set(post.childItems.map(ci => ci.user_id));
     return myChildren.filter(c => !checkedChildIds.has(c.id));
@@ -432,299 +425,263 @@ const PeakFeed = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Child profile detail drawer */}
       <ChildProfileDetailDrawer
         child={selectedChildProfile}
         open={!!selectedChildProfile}
         onClose={() => setSelectedChildProfile(null)}
       />
 
-      {/* Filter + Refresh bar */}
+      {/* Filter bar: Alle/Venner/Mine grouped + Global separate */}
       <div className="flex items-center justify-between mb-3">
-        <div className="flex gap-1 p-0.5 rounded-lg bg-secondary/50">
-          {filterOptions.map(opt => (
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1 p-0.5 rounded-lg bg-secondary/50">
+            {(['alle', 'friends', 'mine'] as FeedFilter[]).map(opt => (
+              <button
+                key={opt}
+                onClick={() => setFilter(opt)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  filter === opt
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {opt === 'alle' ? 'Alle' : opt === 'friends' ? 'Venner' : 'Mine'}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-1 p-0.5 rounded-lg bg-secondary/50">
             <button
-              key={opt.value}
-              onClick={() => setFilter(opt.value)}
+              onClick={() => setFilter('global')}
               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                filter === opt.value
+                filter === 'global'
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              {opt.label}
+              Global
             </button>
-          ))}
+          </div>
         </div>
         <button
           onClick={loadFeed}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
-          Oppdater
         </button>
       </div>
 
+      {/* Feed content */}
       {groupedPosts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-            <Mountain className="w-8 h-8 text-primary/60" />
-          </div>
-          <p className="text-sm font-medium text-foreground mb-1">Ingen innsjekkinger ennå</p>
-          <p className="text-xs text-muted-foreground max-w-[240px]">
-            {filter === 'mine'
-              ? 'Du har ingen innsjekkinger å vise.'
-              : filter === 'friends'
-                ? 'Vennene dine har ingen synlige innsjekkinger.'
-                : filter === 'global'
-                  ? 'Ingen globale innsjekkinger ennå.'
-                  : 'Når du eller vennene dine sjekker inn på fjelltopper, dukker de opp her!'}
-          </p>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Mountain className="w-10 h-10 text-muted-foreground/50 mb-3" />
+          <p className="text-sm text-muted-foreground">Ingen innsjekkinger å vise.</p>
         </div>
       ) : (
-        Array.from(grouped.entries()).map(([dateKey, datePosts]) => (
-          <div key={dateKey} className="mb-4">
-            <div className="flex items-center gap-3 mb-2.5">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider capitalize">
+        <div className="flex flex-col gap-4">
+          {Array.from(grouped.entries()).map(([dateKey, posts]) => (
+            <div key={dateKey}>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 capitalize">
                 {formatGroupDate(dateKey)}
-              </span>
-              <div className="flex-1 h-px bg-border/50" />
-            </div>
-
-            <div className="space-y-3">
-              {datePosts.map(post => {
-                const item = post.parentItem;
-                const isMe = item.user_id === user?.id;
-                const timeAgo = formatDistanceToNow(new Date(item.checked_in_at), { locale: nb, addSuffix: true });
-                const isEditing = editingItemId === item.id;
-                const editable = canEdit(item);
-                const availableChildren = isEditing ? getAvailableChildrenForPost(post) : [];
-
-                return (
-                  <div
-                    key={item.id}
-                    className="group relative rounded-2xl bg-card border border-border/40 overflow-hidden hover:border-border/80 transition-all duration-200"
-                  >
-                    <div className="h-0.5 bg-gradient-to-r from-emerald-500/60 via-emerald-400/30 to-transparent" />
-
-                    <div className="p-3.5">
-                      <div className="flex items-start gap-3">
-                        <button onClick={() => !item.is_child && setSelectedProfile({ id: item.user_id, username: item.username, avatar_url: item.avatar_url })}>
-                          <Avatar className="w-10 h-10 shrink-0 ring-2 ring-emerald-500/20">
-                            <AvatarImage src={item.avatar_url || undefined} />
-                            <AvatarFallback className="text-sm font-bold bg-emerald-500/10 text-emerald-600">
-                              {item.is_child && item.child_emoji ? item.child_emoji : (item.username?.[0]?.toUpperCase() || '?')}
-                            </AvatarFallback>
+              </p>
+              <div className="flex flex-col gap-2">
+                {posts.map(({ parentItem, childItems }) => {
+                  const isEditing = editingItemId === parentItem.id;
+                  const availableChildren = getAvailableChildrenForPost({ parentItem, childItems });
+                  return (
+                    <div key={parentItem.id} className="rounded-xl bg-card border border-border/50 p-3 space-y-2">
+                      {/* Header row */}
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => {
+                          if (!parentItem.is_child) {
+                            setSelectedProfile({ id: parentItem.user_id, username: parentItem.username, avatar_url: parentItem.avatar_url });
+                          } else {
+                            const cp = childProfileMap.get(parentItem.user_id);
+                            if (cp) setSelectedChildProfile(cp);
+                          }
+                        }}>
+                          <Avatar className="w-9 h-9">
+                            <AvatarImage src={parentItem.avatar_url || undefined} />
+                            <AvatarFallback className="text-xs">{parentItem.username?.[0]?.toUpperCase() || '?'}</AvatarFallback>
                           </Avatar>
                         </button>
-
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm leading-snug">
-                            <button onClick={() => !item.is_child && setSelectedProfile({ id: item.user_id, username: item.username, avatar_url: item.avatar_url })} className="font-semibold hover:underline">
-                              {isMe ? 'Du' : (item.username || 'Ukjent')}
-                              {item.is_child && item.child_emoji ? ` ${item.child_emoji}` : ''}
-                            </button>
-                            <span className="text-muted-foreground"> nådde toppen av </span>
-                            <span className="font-semibold">{item.peak_name}</span>
+                          <button
+                            className="text-sm font-semibold truncate block text-left"
+                            onClick={() => {
+                              if (!parentItem.is_child) {
+                                setSelectedProfile({ id: parentItem.user_id, username: parentItem.username, avatar_url: parentItem.avatar_url });
+                              } else {
+                                const cp = childProfileMap.get(parentItem.user_id);
+                                if (cp) setSelectedChildProfile(cp);
+                              }
+                            }}
+                          >
+                            {parentItem.username || 'Ukjent'}
+                          </button>
+                          <p className="text-[11px] text-muted-foreground">
+                            {formatDistanceToNow(new Date(parentItem.checked_in_at), { addSuffix: true, locale: nb })}
                           </p>
-
-                          {/* Child companions */}
-                          {post.childItems.length > 0 && (
-                            <div className="flex items-center gap-2 mt-2 flex-wrap">
-                              {post.childItems.map(ci => (
-                                <div key={ci.id} className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/8 border border-emerald-500/15">
-                                  <button
-                                    onClick={() => {
-                                      const cp = childProfileMap.get(ci.user_id);
-                                      if (cp) setSelectedChildProfile(cp);
-                                    }}
-                                    className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
-                                  >
-                                    <Avatar className="w-9 h-9">
-                                      {ci.avatar_url ? <AvatarImage src={ci.avatar_url} /> : null}
-                                      <AvatarFallback className="text-xs bg-emerald-500/10 text-emerald-600">
-                                        {ci.child_emoji || '👶'}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <span className="text-[11px] text-muted-foreground">
-                                      <span className="font-medium text-foreground">{ci.username}</span> var med
-                                    </span>
-                                  </button>
-                                  {isEditing && (
-                                    <button
-                                      onClick={async () => {
-                                        try {
-                                          await deleteCheckin(ci.id);
-                                          loadFeed();
-                                          toast.success(`${ci.username} fjernet fra innsjekkingen`);
-                                        } catch { toast.error('Kunne ikke fjerne barnet'); }
-                                      }}
-                                      className="p-0.5 rounded hover:bg-destructive/10 text-destructive/60 hover:text-destructive transition-colors ml-1"
-                                      title="Fjern barn"
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </button>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-secondary/60 text-[11px] font-medium text-muted-foreground">
-                              <Mountain className="w-3 h-3" />
-                              {item.peak_elevation} moh
-                            </span>
-                            {item.peak_area && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-secondary/60 text-[11px] font-medium text-muted-foreground">
-                                📍 {item.peak_area}
-                              </span>
-                            )}
-                          </div>
-
-                          <p className="text-[11px] text-muted-foreground/70 mt-1.5">{timeAgo}</p>
                         </div>
-
-                        <div className="flex items-center gap-1 shrink-0">
-                          {editable && isWithin24h(item) && (
-                            <button
-                              onClick={() => {
-                                if (isEditing) {
-                                  setEditingItemId(null);
-                                  setPendingImage(null);
-                                  setAddChildSelectedIds(new Set());
-                                } else {
-                                  setEditingItemId(item.id);
-                                  setPendingImage(null);
-                                  setAddChildSelectedIds(new Set());
-                                }
-                              }}
-                              className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
-                              title="Rediger innlegg"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                          )}
-                          {editable && isWithin24h(item) && (
-                            <button
-                              onClick={() => setDeleteConfirmId(item.id)}
-                              className="p-2 rounded-lg hover:bg-destructive/10 transition-colors text-destructive"
-                              title="Slett innsjekking"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-600/5 border border-emerald-500/10 flex items-center justify-center">
-                            <Mountain className="w-5 h-5 text-emerald-500" />
-                          </div>
-                        </div>
+                        {canEdit(parentItem) && isWithin24h(parentItem) && (
+                          <button
+                            onClick={() => {
+                              if (isEditing) {
+                                setEditingItemId(null);
+                                setPendingImage(null);
+                                setAddChildSelectedIds(new Set());
+                              } else {
+                                setEditingItemId(parentItem.id);
+                              }
+                            }}
+                            className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
 
-                      {/* Check-in image */}
-                      {item.image_url && !isEditing && (
-                        <div
-                          className="mt-3 rounded-xl overflow-hidden border border-border/30 cursor-pointer"
-                          onClick={() => setExpandedImage(expandedImage === item.id ? null : item.id)}
-                        >
-                          <img
-                            src={item.image_url}
-                            alt={`${item.peak_name} toppbilde`}
-                            className={`w-full object-cover transition-all duration-300 ${
-                              expandedImage === item.id ? 'max-h-[500px]' : 'max-h-[200px]'
-                            }`}
-                            loading="lazy"
-                          />
+                      {/* Peak info */}
+                      <div className="flex items-center gap-2 px-1">
+                        <Mountain className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium">{parentItem.peak_name}</span>
+                        <span className="text-xs text-muted-foreground">{parentItem.peak_elevation} moh · {parentItem.peak_area}</span>
+                      </div>
+
+                      {/* Image */}
+                      {parentItem.image_url && (
+                        <button onClick={() => setExpandedImage(parentItem.image_url)} className="w-full">
+                          <img src={parentItem.image_url} alt="" className="w-full h-40 object-cover rounded-lg" />
+                        </button>
+                      )}
+
+                      {/* Child "var med" rows */}
+                      {childItems.length > 0 && (
+                        <div className="pt-1 space-y-1">
+                          {childItems.map(ci => (
+                            <div key={ci.id} className="flex items-center gap-2 px-1">
+                              <button onClick={() => {
+                                const cp = childProfileMap.get(ci.user_id);
+                                if (cp) setSelectedChildProfile(cp);
+                              }}>
+                                <Avatar className="w-9 h-9">
+                                  <AvatarImage src={ci.avatar_url || undefined} />
+                                  <AvatarFallback className="text-[10px]">{ci.child_emoji || '👶'}</AvatarFallback>
+                                </Avatar>
+                              </button>
+                              <span className="text-xs text-muted-foreground">
+                                <span className="font-medium text-foreground">{ci.username}</span> var med
+                              </span>
+                              {/* Remove child button in edit mode */}
+                              {isEditing && (
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      await deleteCheckin(ci.id);
+                                      toast.success(`${ci.username} fjernet fra innsjekkingen`);
+                                      loadFeed();
+                                    } catch { toast.error('Kunne ikke fjerne barn'); }
+                                  }}
+                                  className="ml-auto p-1 rounded hover:bg-destructive/10 text-destructive"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
                         </div>
                       )}
 
                       {/* Edit mode */}
                       {isEditing && (
-                        <div className="mt-3 pt-3 border-t border-border/30 space-y-3">
-                          {/* Image upload */}
+                        <div className="pt-2 border-t border-border/30 space-y-3">
+                          {/* Image editing */}
                           <div className="space-y-2">
-                            <p className="text-xs font-medium text-muted-foreground">Bilde</p>
+                            {parentItem.image_url ? (
+                              <div className="flex gap-2">
+                                <Button variant="outline" size="sm" className="flex-1" onClick={() => handleRemoveImage(parentItem.id)}>
+                                  <Trash2 className="w-3.5 h-3.5 mr-1.5" />Fjern bilde
+                                </Button>
+                              </div>
+                            ) : null}
                             <CheckinImageUpload onImageReady={setPendingImage} />
                             {pendingImage && (
-                              <Button
-                                onClick={() => handleSaveEditImage(item.id)}
-                                disabled={savingImage}
-                                size="sm"
-                                className="w-full"
-                              >
-                                {savingImage ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ImageIcon className="w-4 h-4 mr-2" />}
-                                {savingImage ? 'Lagrer...' : 'Lagre bilde'}
-                              </Button>
-                            )}
-                            {item.image_url && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full text-destructive hover:text-destructive"
-                                onClick={() => handleRemoveImage(item.id)}
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Fjern bilde
+                              <Button onClick={() => handleSaveEditImage(parentItem.id)} disabled={savingImage} size="sm" className="w-full">
+                                {savingImage ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <ImageIcon className="w-4 h-4 mr-1.5" />}
+                                {savingImage ? 'Lagrer...' : parentItem.image_url ? 'Bytt bilde' : 'Lagre bilde'}
                               </Button>
                             )}
                           </div>
 
-                          {/* Add children to checkin */}
-                          {!item.is_child && availableChildren.length > 0 && (
+                          {/* Add children */}
+                          {myChildren.length > 0 && availableChildren.length > 0 && (
                             <div className="space-y-2">
-                              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                                <Users className="w-3.5 h-3.5" />
-                                Legg til barn i innsjekkingen
-                              </p>
-                              <div className="space-y-1">
-                                {availableChildren.map(child => {
-                                  const isSelected = addChildSelectedIds.has(child.id);
-                                  return (
-                                    <button
-                                      key={child.id}
-                                      onClick={() => {
-                                        setAddChildSelectedIds(prev => {
-                                          const next = new Set(prev);
-                                          if (next.has(child.id)) next.delete(child.id);
-                                          else next.add(child.id);
-                                          return next;
-                                        });
-                                      }}
-                                      className={`w-full flex items-center gap-2 p-2 rounded-lg border transition-colors ${
-                                        isSelected ? 'bg-primary/5 border-primary/30' : 'border-border/50 hover:border-border'
-                                      }`}
-                                    >
-                                      <Checkbox checked={isSelected} className="pointer-events-none" />
-                                      <Avatar className="w-6 h-6">
-                                        {child.avatar_url ? <AvatarImage src={child.avatar_url} /> : null}
-                                        <AvatarFallback className="text-[10px]">{child.emoji || '👶'}</AvatarFallback>
-                                      </Avatar>
-                                      <span className="text-sm">{child.name} {child.emoji}</span>
-                                    </button>
-                                  );
-                                })}
-                              </div>
+                              <p className="text-xs font-medium text-muted-foreground">Legg til barn</p>
+                              {availableChildren.map(child => {
+                                const isSelected = addChildSelectedIds.has(child.id);
+                                return (
+                                  <button
+                                    key={child.id}
+                                    onClick={() => {
+                                      setAddChildSelectedIds(prev => {
+                                        const next = new Set(prev);
+                                        if (next.has(child.id)) next.delete(child.id);
+                                        else next.add(child.id);
+                                        return next;
+                                      });
+                                    }}
+                                    className={`w-full flex items-center gap-2 p-2 rounded-lg border transition-colors ${
+                                      isSelected ? 'bg-primary/5 border-primary/30' : 'border-border/50 hover:border-border'
+                                    }`}
+                                  >
+                                    <Checkbox checked={isSelected} className="pointer-events-none" />
+                                    <Avatar className="w-6 h-6">
+                                      {child.avatar_url && <AvatarImage src={child.avatar_url} />}
+                                      <AvatarFallback className="text-[10px]">{child.emoji || '👶'}</AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-sm">{child.name} {child.emoji}</span>
+                                  </button>
+                                );
+                              })}
                               {addChildSelectedIds.size > 0 && (
                                 <Button
-                                  onClick={() => handleAddChildrenToCheckin(item)}
+                                  onClick={() => handleAddChildrenToCheckin(parentItem)}
                                   disabled={addingChildren}
                                   size="sm"
                                   className="w-full"
                                 >
-                                  {addingChildren ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Users className="w-4 h-4 mr-2" />}
-                                  Sjekk inn {addChildSelectedIds.size} barn
+                                  {addingChildren ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Users className="w-4 h-4 mr-1.5" />}
+                                  Legg til {addChildSelectedIds.size} barn
                                 </Button>
                               )}
                             </div>
                           )}
+
+                          {/* Delete */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full text-destructive hover:text-destructive"
+                            onClick={() => setDeleteConfirmId(parentItem.id)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                            Slett innsjekking
+                          </Button>
                         </div>
                       )}
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))
+          ))}
+        </div>
+      )}
+
+      {/* Expanded image overlay */}
+      {expandedImage && (
+        <div className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4" onClick={() => setExpandedImage(null)}>
+          <img src={expandedImage} alt="" className="max-w-full max-h-full object-contain rounded-lg" />
+        </div>
       )}
 
       {/* User profile drawer */}

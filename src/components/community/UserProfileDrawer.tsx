@@ -12,6 +12,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { getMonthTarget, getYearTarget, getActiveGoalForDate, getYearExpectedProgress, getEarliestStart, convertGoalValue } from '@/services/primaryGoalService';
 import ChallengeDetail from '@/components/community/ChallengeDetail';
 import { ChallengeWithParticipants } from '@/pages/CommunityPage';
+import { getPeakIcon } from '@/utils/peakIcons';
 
 interface UserProfileDrawerProps {
   user: Friend | null;
@@ -21,6 +22,7 @@ interface UserProfileDrawerProps {
 }
 
 type StatPeriod = 'week' | 'month' | 'year';
+type ProfileTab = 'fjelltopper' | 'trening';
 
 interface PeriodStats {
   sessions: number;
@@ -47,6 +49,15 @@ interface RecentSession {
   distance: number | null;
   duration_minutes: number;
   title: string | null;
+}
+
+interface PeakVisit {
+  peak_id: string;
+  peak_name: string;
+  peak_elevation: number;
+  peak_area: string;
+  count: number;
+  last_visit: string;
 }
 
 function getWeekStart(): Date {
@@ -80,6 +91,7 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
   const { user: me } = useAuth();
   const { settings } = useSettings();
   const [loading, setLoading] = useState(false);
+  const [profileTab, setProfileTab] = useState<ProfileTab>('fjelltopper');
   const [statPeriod, setStatPeriod] = useState<StatPeriod>('week');
   const [periodStats, setPeriodStats] = useState<Record<StatPeriod, PeriodStats>>({
     week: { sessions: 0, duration: 0, distance: 0, elevation: 0 },
@@ -99,11 +111,15 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
     workoutsFriends: string[]; statsFriends: string[]; goalsFriends: string[]; peakCheckinsFriends: string[];
   }>({ workouts: 'me', stats: 'me', goals: 'me', peakCheckins: 'friends', workoutsFriends: [], statsFriends: [], goalsFriends: [], peakCheckinsFriends: [] });
 
-  // Helper to check if current user can see a privacy-protected section
+  // Peak data for Fjelltopper tab
+  const [peakVisits, setPeakVisits] = useState<PeakVisit[]>([]);
+  const [loadingPeaks, setLoadingPeaks] = useState(false);
+
   const canSee = (level: string, friendsList: string[]): boolean => {
     if (!me) return false;
     if (level === 'me') return false;
-    if (level === 'friends') return true; // already friends (RLS ensures this)
+    if (level === 'all') return true;
+    if (level === 'friends') return true;
     if (level === 'selected') return friendsList.includes(me.id);
     return false;
   };
@@ -111,6 +127,7 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
   const canSeeWorkouts = canSee(friendPrivacy.workouts, friendPrivacy.workoutsFriends);
   const canSeeStats = canSee(friendPrivacy.stats, friendPrivacy.statsFriends);
   const canSeeGoals = canSee(friendPrivacy.goals, friendPrivacy.goalsFriends);
+  const canSeePeakCheckins = canSee(friendPrivacy.peakCheckins, friendPrivacy.peakCheckinsFriends);
 
   useEffect(() => {
     if (!user || !open || !me) return;
@@ -118,7 +135,6 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
     const load = async () => {
       setLoading(true);
 
-      // Load friend's privacy settings
       const { data: profileData } = await supabase
         .from('profiles')
         .select('privacy_workouts, privacy_stats, privacy_goals, privacy_peak_checkins, privacy_workouts_friends, privacy_stats_friends, privacy_goals_friends, privacy_peak_checkins_friends')
@@ -140,11 +156,11 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
       const canSeeW = canSee(privacy.workouts, privacy.workoutsFriends);
       const canSeeS = canSee(privacy.stats, privacy.statsFriends);
       const canSeeG = canSee(privacy.goals, privacy.goalsFriends);
+      const canSeePC = canSee(privacy.peakCheckins, privacy.peakCheckinsFriends);
       const weekStart = getWeekStart();
       const monthStart = getMonthStart();
       const yearStart = getYearStart();
 
-      // Fetch friend's sessions (only if allowed)
       if (!canSeeW && !canSeeS) {
         setPeriodStats({ week: { sessions: 0, duration: 0, distance: 0, elevation: 0 }, month: { sessions: 0, duration: 0, distance: 0, elevation: 0 }, year: { sessions: 0, duration: 0, distance: 0, elevation: 0 } });
         setRecentSessions([]);
@@ -158,7 +174,6 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
         .order('date', { ascending: false })
         .limit(500) : { data: null };
 
-      // We need goal periods loaded first to filter year sessions correctly
       let loadedGoalPeriods: PrimaryGoalPeriod[] = [];
       if (canSeeG) {
         try {
@@ -196,7 +211,6 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
           if (d >= yearStart) {
             year.sessions++; year.duration += s.duration_minutes || 0;
             year.distance += s.distance || 0; year.elevation += s.elevation_gain || 0;
-            // Only count sessions from earliest goal start for year goal progress
             if (!earliestStart || d >= earliestStart) {
               yearSessionsForGoal++;
             }
@@ -211,10 +225,64 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
             .map(([type, count]) => ({ type, count }))
             .sort((a, b) => b.count - a.count)
         );
-        setRecentSessions(sessions.slice(0, 6));
+        setRecentSessions(sessions.slice(0, 5));
       }
 
-      // Goal periods already loaded above
+      // Load peak visits
+      if (canSeePC) {
+        setLoadingPeaks(true);
+        try {
+          const { data: checkins } = await supabase
+            .from('peak_checkins')
+            .select('peak_id, checked_in_at')
+            .eq('user_id', user.id)
+            .order('checked_in_at', { ascending: false });
+
+          if (checkins && checkins.length > 0) {
+            const peakCounts = new Map<string, { count: number; last_visit: string }>();
+            for (const c of checkins) {
+              const existing = peakCounts.get(c.peak_id);
+              if (existing) existing.count++;
+              else peakCounts.set(c.peak_id, { count: 1, last_visit: c.checked_in_at });
+            }
+
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            const peakIds = [...peakCounts.keys()].filter(id => uuidRegex.test(id));
+            let peakData: any[] = [];
+            if (peakIds.length > 0) {
+              const { data } = await supabase
+                .from('peaks_db')
+                .select('id, name_no, elevation_moh, area')
+                .in('id', peakIds);
+              peakData = data || [];
+            }
+
+            const peakDataMap = new Map(peakData.map(p => [p.id, p]));
+            const visits: PeakVisit[] = [];
+            for (const [peakId, info] of peakCounts) {
+              const peak = peakDataMap.get(peakId);
+              if (!peak) continue;
+              visits.push({
+                peak_id: peakId,
+                peak_name: peak.name_no,
+                peak_elevation: peak.elevation_moh,
+                peak_area: peak.area,
+                count: info.count,
+                last_visit: info.last_visit,
+              });
+            }
+            visits.sort((a, b) => b.count - a.count);
+            setPeakVisits(visits);
+          } else {
+            setPeakVisits([]);
+          }
+        } catch {
+          setPeakVisits([]);
+        }
+        setLoadingPeaks(false);
+      } else {
+        setPeakVisits([]);
+      }
 
       // Fetch shared challenges
       try {
@@ -234,7 +302,6 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
               myProgress: progress[me.id] || 0, friendProgress: progress[user.id] || 0,
               isActive: c.period_end >= now,
             });
-            // Build full challenge data for detail view
             const { data: profiles } = await supabase.from('profiles').select('id, username, avatar_url').in('id', acceptedIds);
             const profileMap = new Map((profiles || []).map(p => [p.id, p]));
             const participantData = acceptedParts.map(p => {
@@ -273,7 +340,6 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
   const monthPct = monthTarget > 0 ? Math.min(100, (friendMonthSessions / monthTarget) * 100) : 0;
   const yearPct = yearTarget > 0 ? Math.min(100, (friendYearSessions / yearTarget) * 100) : 0;
 
-  // Compute pace diff accounting for goal start date
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const monthEnd = new Date(currentYear, currentMonth + 1, 0);
   const activeGoalForMonth = getActiveGoalForDate(friendGoalPeriods, monthEnd);
@@ -345,143 +411,213 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
             )}
           </div>
 
+          {/* Profile tabs: Fjelltopper / Trening */}
+          <div className="px-4 mb-4">
+            <div className="flex gap-1 p-0.5 rounded-lg bg-secondary/50">
+              {(['fjelltopper', 'trening'] as ProfileTab[]).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setProfileTab(tab)}
+                  className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    profileTab === tab
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {tab === 'fjelltopper' ? 'Fjelltopper' : 'Trening'}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {loading ? (
             <div className="flex justify-center py-12">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
           ) : (
             <div className="px-4 space-y-5">
-              {/* Stats section - requires workouts or stats permission */}
-              {canSeeStats ? (
+              {/* FJELLTOPPER TAB */}
+              {profileTab === 'fjelltopper' && (
                 <>
-                  {/* Period selector */}
-                  <div className="flex gap-1">
-                    {(['week', 'month', 'year'] as StatPeriod[]).map(p => (
-                      <button
-                        key={p}
-                        onClick={() => setStatPeriod(p)}
-                        className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                          statPeriod === p ? 'bg-primary text-primary-foreground' : 'bg-secondary/60 text-muted-foreground hover:bg-secondary'
-                        }`}
-                      >
-                        {p === 'week' ? 'Uke' : p === 'month' ? 'Måned' : 'År'}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Stats grid */}
-                  <div className="space-y-2">
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{periodLabels[statPeriod]}</h3>
-                    <div className="grid grid-cols-2 gap-2">
-                      <StatTile icon={<Activity className="w-3.5 h-3.5" />} value={String(stats.sessions)} label="Økter" />
-                      <StatTile icon={<Clock className="w-3.5 h-3.5" />} value={formatDuration(stats.duration)} label="Tid" />
-                      <StatTile icon={<TrendingUp className="w-3.5 h-3.5" />} value={`${stats.distance.toFixed(1)} km`} label="Distanse" />
-                      <StatTile icon={<Mountain className="w-3.5 h-3.5" />} value={`${stats.elevation} m`} label="Høydemeter" />
+                  {canSeePeakCheckins ? (
+                    loadingPeaks ? (
+                      <div className="flex justify-center py-8">
+                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : peakVisits.length === 0 ? (
+                      <div className="flex flex-col items-center py-8 text-center">
+                        <Mountain className="w-8 h-8 text-muted-foreground/40 mb-2" />
+                        <p className="text-sm text-muted-foreground">Ingen fjelltopper besøkt ennå</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground mb-3 text-center">
+                          {peakVisits.length} {peakVisits.length === 1 ? 'topp' : 'topper'} besøkt
+                        </p>
+                        {peakVisits.map(p => {
+                          const iconSrc = getPeakIcon(p.peak_elevation, p.peak_id);
+                          return (
+                            <div key={p.peak_id} className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border/40">
+                              <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center shrink-0">
+                                <img
+                                  src={iconSrc}
+                                  alt=""
+                                  className="w-6 h-6"
+                                  style={{
+                                    filter: 'brightness(0) saturate(100%) invert(58%) sepia(52%) saturate(501%) hue-rotate(93deg) brightness(95%) contrast(92%)',
+                                  }}
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold truncate">{p.peak_name}</p>
+                                <p className="text-[11px] text-muted-foreground">
+                                  {p.peak_elevation} moh · {p.peak_area}
+                                </p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <span className="text-sm font-bold text-success">{p.count}×</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )
+                  ) : (
+                    <div className="rounded-xl bg-secondary/40 p-4 text-center">
+                      <Shield className="w-5 h-5 mx-auto mb-1.5 text-muted-foreground/50" />
+                      <p className="text-xs text-muted-foreground">Fjelltopp-innsjekkinger er skjult</p>
                     </div>
-                  </div>
+                  )}
                 </>
-              ) : (
-                <div className="rounded-xl bg-secondary/40 p-4 text-center">
-                  <Shield className="w-5 h-5 mx-auto mb-1.5 text-muted-foreground/50" />
-                  <p className="text-xs text-muted-foreground">Statistikk er skjult</p>
-                </div>
               )}
 
-              {/* Goal progress bars - side by side */}
-              {canSeeGoals && (monthTarget > 0 || yearTarget > 0) && (
-                <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Målprogresjon</h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    {monthTarget > 0 && (
-                      <GoalProgressBar
-                        label="Måned"
-                        current={friendMonthSessions}
-                        target={Math.round(monthTarget)}
-                        percent={monthPct}
-                        diff={monthDiff}
-                      />
-                    )}
-                    {yearTarget > 0 && (
-                      <GoalProgressBar
-                        label="År"
-                        current={friendYearSessions}
-                        target={Math.round(yearTarget)}
-                        percent={yearPct}
-                        diff={yearDiff}
-                      />
-                    )}
-                  </div>
-                </div>
-              )}
+              {/* TRENING TAB */}
+              {profileTab === 'trening' && (
+                <>
+                  {canSeeStats ? (
+                    <>
+                      <div className="flex gap-1">
+                        {(['week', 'month', 'year'] as StatPeriod[]).map(p => (
+                          <button
+                            key={p}
+                            onClick={() => setStatPeriod(p)}
+                            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                              statPeriod === p ? 'bg-primary text-primary-foreground' : 'bg-secondary/60 text-muted-foreground hover:bg-secondary'
+                            }`}
+                          >
+                            {p === 'week' ? 'Uke' : p === 'month' ? 'Måned' : 'År'}
+                          </button>
+                        ))}
+                      </div>
 
-              {/* Recent sessions */}
-              {/* Recent sessions */}
-              {canSeeWorkouts && recentSessions.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Siste økter</h3>
-                  <div className="space-y-1.5">
-                    {recentSessions.map((s, i) => {
-                      const colors = getActivityColors(s.type as SessionType, settings.darkMode);
-                      return (
-                        <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-secondary/40">
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: colors.bg }}>
-                            <ActivityIcon type={s.type as SessionType} className="w-4 h-4" colorOverride={!settings.darkMode ? colors.text : undefined} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{s.title || s.type}</p>
-                            <p className="text-[11px] text-muted-foreground">
-                              {new Date(s.date).toLocaleDateString('nb-NO', { day: 'numeric', month: 'short' })}
-                            </p>
-                          </div>
-                          <div className="text-right shrink-0">
-                            {s.distance ? <p className="text-sm font-medium">{s.distance.toFixed(1)} km</p> : null}
-                            <p className="text-[11px] text-muted-foreground">{formatDuration(s.duration_minutes)}</p>
-                          </div>
+                      <div className="space-y-2">
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{periodLabels[statPeriod]}</h3>
+                        <div className="grid grid-cols-2 gap-2">
+                          <StatTile icon={<Activity className="w-3.5 h-3.5" />} value={String(stats.sessions)} label="Økter" />
+                          <StatTile icon={<Clock className="w-3.5 h-3.5" />} value={formatDuration(stats.duration)} label="Tid" />
+                          <StatTile icon={<TrendingUp className="w-3.5 h-3.5" />} value={`${stats.distance.toFixed(1)} km`} label="Distanse" />
+                          <StatTile icon={<Mountain className="w-3.5 h-3.5" />} value={`${stats.elevation} m`} label="Høydemeter" />
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Shared challenges - at bottom */}
-              {sharedChallenges.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                    <Trophy className="w-3.5 h-3.5" /> Felles utfordringer
-                  </h3>
-                  
-                  {/* Active challenges */}
-                  {sharedChallenges.filter(c => c.isActive).length > 0 && (
-                    <div className="space-y-1.5">
-                      <p className="text-[11px] font-medium text-muted-foreground">Aktive</p>
-                      {sharedChallenges.filter(c => c.isActive).map(ch => (
-                        <div key={ch.id} className="cursor-pointer" onClick={() => setChallengeDetailData(fullChallengeData.get(ch.id) || null)}>
-                          <ChallengeComparisonCard challenge={ch} friendName={user.username?.split(' ')[0] || '?'} />
-                        </div>
-                      ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="rounded-xl bg-secondary/40 p-4 text-center">
+                      <Shield className="w-5 h-5 mx-auto mb-1.5 text-muted-foreground/50" />
+                      <p className="text-xs text-muted-foreground">Statistikk er skjult</p>
                     </div>
                   )}
 
-                  {/* Past challenges */}
-                  {sharedChallenges.filter(c => !c.isActive).length > 0 && (
-                    <div className="space-y-1.5">
-                      <p className="text-[11px] font-medium text-muted-foreground">Tidligere</p>
-                      {sharedChallenges.filter(c => !c.isActive).map(ch => (
-                        <div key={ch.id} className="cursor-pointer" onClick={() => setChallengeDetailData(fullChallengeData.get(ch.id) || null)}>
-                          <ChallengeComparisonCard challenge={ch} friendName={user.username?.split(' ')[0] || '?'} />
-                        </div>
-                      ))}
+                  {canSeeGoals && (monthTarget > 0 || yearTarget > 0) && (
+                    <div className="space-y-2">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Målprogresjon</h3>
+                      <div className="grid grid-cols-2 gap-2">
+                        {monthTarget > 0 && (
+                          <GoalProgressBar
+                            label="Måned"
+                            current={friendMonthSessions}
+                            target={Math.round(monthTarget)}
+                            percent={monthPct}
+                            diff={monthDiff}
+                          />
+                        )}
+                        {yearTarget > 0 && (
+                          <GoalProgressBar
+                            label="År"
+                            current={friendYearSessions}
+                            target={Math.round(yearTarget)}
+                            percent={yearPct}
+                            diff={yearDiff}
+                          />
+                        )}
+                      </div>
                     </div>
                   )}
-                </div>
-              )}
 
-              {periodStats.year.sessions === 0 && periodStats.month.sessions === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Activity className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">Ingen treningsdata å vise ennå</p>
-                </div>
+                  {canSeeWorkouts && recentSessions.length > 0 && (
+                    <div className="space-y-2">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Siste økter</h3>
+                      <div className="space-y-1.5">
+                        {recentSessions.map((s, i) => {
+                          const colors = getActivityColors(s.type as SessionType, settings.darkMode);
+                          return (
+                            <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-secondary/40">
+                              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: colors.bg }}>
+                                <ActivityIcon type={s.type as SessionType} className="w-4 h-4" colorOverride={!settings.darkMode ? colors.text : undefined} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">{s.title || s.type}</p>
+                                <p className="text-[11px] text-muted-foreground">
+                                  {new Date(s.date).toLocaleDateString('nb-NO', { day: 'numeric', month: 'short' })}
+                                </p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                {s.distance ? <p className="text-sm font-medium">{s.distance.toFixed(1)} km</p> : null}
+                                <p className="text-[11px] text-muted-foreground">{formatDuration(s.duration_minutes)}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {sharedChallenges.length > 0 && (
+                    <div className="space-y-2">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                        <Trophy className="w-3.5 h-3.5" /> Felles utfordringer
+                      </h3>
+                      
+                      {sharedChallenges.filter(c => c.isActive).length > 0 && (
+                        <div className="space-y-1.5">
+                          <p className="text-[11px] font-medium text-muted-foreground">Aktive</p>
+                          {sharedChallenges.filter(c => c.isActive).map(ch => (
+                            <div key={ch.id} className="cursor-pointer" onClick={() => setChallengeDetailData(fullChallengeData.get(ch.id) || null)}>
+                              <ChallengeComparisonCard challenge={ch} friendName={user.username?.split(' ')[0] || '?'} />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {sharedChallenges.filter(c => !c.isActive).length > 0 && (
+                        <div className="space-y-1.5">
+                          <p className="text-[11px] font-medium text-muted-foreground">Tidligere</p>
+                          {sharedChallenges.filter(c => !c.isActive).map(ch => (
+                            <div key={ch.id} className="cursor-pointer" onClick={() => setChallengeDetailData(fullChallengeData.get(ch.id) || null)}>
+                              <ChallengeComparisonCard challenge={ch} friendName={user.username?.split(' ')[0] || '?'} />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {periodStats.year.sessions === 0 && periodStats.month.sessions === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Activity className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                      <p className="text-sm">Ingen treningsdata å vise ennå</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -509,7 +645,6 @@ function StatTile({ icon, value, label }: { icon: React.ReactNode; value: string
 }
 
 function getProgressColor(diff: number): string {
-  // Match ProgressWheel's getPaceColor logic
   if (diff >= 5) return 'hsl(152, 58%, 38%)';
   if (diff >= 1) return 'hsl(142, 50%, 48%)';
   if (diff >= -0.5) return 'hsl(142, 50%, 48%)';

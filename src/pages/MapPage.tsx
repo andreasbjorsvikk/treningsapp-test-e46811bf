@@ -15,7 +15,6 @@ import SuggestPeakDrawer from '@/components/map/SuggestPeakDrawer';
 import MapSettingsSheet from '@/components/map/MapSettingsSheet';
 import PeakFeed from '@/components/map/PeakFeed';
 import GlobalLeaderboard from '@/components/map/GlobalLeaderboard';
-import AdminDashboard from '@/components/map/AdminDashboard';
 import MapTutorial from '@/components/map/MapTutorial';
 import ARView from '@/components/map/ARView';
 import { Settings2 } from 'lucide-react';
@@ -192,7 +191,7 @@ const MapPage = () => {
     <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)]">
       {/* Sub-tab bar */}
       <div className="px-4 pt-3 pb-2">
-        <MapSubTabs active={subTab} onChange={setSubTab} showAdmin={adminMode} />
+        <MapSubTabs active={subTab} onChange={setSubTab} />
       </div>
 
       {/* Admin toolbar */}
@@ -315,12 +314,6 @@ const MapPage = () => {
               checkins={checkins}
               onSelectPeak={handleSelectPeak}
             />
-          </div>
-        )}
-
-        {subTab === 'admin' && adminMode && (
-          <div className="h-full overflow-y-auto">
-            <AdminDashboard />
           </div>
         )}
       </div>

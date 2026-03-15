@@ -9,8 +9,10 @@ import { getChallenges, getChallengeParticipants, getChallengeProgress, getUnrea
 import { ChallengeWithParticipants } from '@/pages/CommunityPage';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAdmin } from '@/hooks/useAdmin';
 
 import BottomNav, { TabId } from '@/components/BottomNav';
+import AdminDashboard from '@/components/map/AdminDashboard';
 import StatsOverview from '@/components/StatsOverview';
 import SessionCard from '@/components/SessionCard';
 import WorkoutDialog from '@/components/WorkoutDialog';
@@ -68,6 +70,7 @@ const IndexContent = () => {
   const { settings, updateSettings } = useSettings();
   const { t } = useTranslation();
   const { user, signOut } = useAuth();
+  const { adminMode } = useAdmin();
   const navigate = useNavigate();
   const appData = useAppDataContext();
   const isMobile = useIsMobile();
@@ -752,6 +755,7 @@ const IndexContent = () => {
         {activeTab === 'kart' && <MapPage />}
         {activeTab === 'trening' && <TrainingPage initialStatPeriod={initialStatPeriod} />}
         {activeTab === 'fellesskap' && <CommunityPage />}
+        {activeTab === 'admin' && adminMode && <AdminDashboard />}
         {activeTab === 'settings' && <SettingsPage />}
       </main>
 
@@ -775,6 +779,7 @@ const IndexContent = () => {
           window.scrollTo({ top: 0 });
         }}
         notificationCount={unreadNotifications}
+        showAdmin={adminMode}
         profileButton={
           !isMobile && user ? (
             <ProfileButton className="ml-1" />

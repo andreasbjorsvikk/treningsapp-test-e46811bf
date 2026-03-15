@@ -330,8 +330,12 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         }
 
         const bounds = new mapboxgl.LngLatBounds();
-        if (routeGeojson.coordinates) {
-          routeGeojson.coordinates.forEach((coord: [number, number]) => {
+        // Handle various GeoJSON formats
+        const coords = routeGeojson.coordinates
+          || routeGeojson?.geometry?.coordinates
+          || (routeGeojson?.features?.[0]?.geometry?.coordinates);
+        if (coords && Array.isArray(coords)) {
+          coords.forEach((coord: [number, number]) => {
             bounds.extend(coord);
           });
           m.fitBounds(bounds, { padding: 50, duration: 1000 });
@@ -431,7 +435,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       `;
         const imgStyle = isTaken && !isYearFiltered
           ? 'object-fit: contain; filter: brightness(0) invert(1);'
-          : 'object-fit: contain;';
+          : 'object-fit: contain; filter: brightness(0) opacity(0.3);';
         const nudgeUp = peak.heightMoh >= 650 ? 'margin-top: -3.5px;' : '';
         
         el.innerHTML = `
