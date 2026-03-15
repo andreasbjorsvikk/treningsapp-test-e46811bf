@@ -27,6 +27,8 @@ interface MapViewProps {
   onDeletePeak?: (peakId: string) => void;
   onLongPress?: (lat: number, lng: number) => void;
   routeGeojson?: any;
+  routeFocus?: { latitude: number; longitude: number; requestId: number } | null;
+  suppressInitialGeolocate?: boolean;
   onClearRoute?: () => void;
   previewWaypoints?: { lat: number; lng: number }[] | null;
   onWaypointClick?: (index: number) => void;
@@ -40,7 +42,7 @@ interface MapViewProps {
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
-const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, onClearRoute, previewWaypoints, onWaypointClick, onWaypointDrag, showHeatmap, heatmapPeriod, showAreaStats, onlyReachedThisYear, suggestedPeaks }: MapViewProps) => {
+const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, routeFocus, suppressInitialGeolocate, onClearRoute, previewWaypoints, onWaypointClick, onWaypointDrag, showHeatmap, heatmapPeriod, showAreaStats, onlyReachedThisYear, suggestedPeaks }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -57,6 +59,8 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   const [showStyleMenu, setShowStyleMenu] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressCoords = useRef<{ lat: number; lng: number } | null>(null);
+  const routeSourceId = 'peak-route-source';
+  const routeLayerId = 'peak-route-layer';
 
   // Helper: safely run map operations only when style is loaded
   const whenStyleReady = useCallback((m: mapboxgl.Map, fn: () => void) => {
@@ -64,6 +68,28 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       fn();
     } else {
       m.once('style.load', fn);
+    }
+  }, []);
+
+  const ensureRouteLayer = useCallback((m: mapboxgl.Map) => {
+    if (!m.getSource(routeSourceId)) {
+      m.addSource(routeSourceId, {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: [],
+        } as any,
+      });
+    }
+
+    if (!m.getLayer(routeLayerId)) {
+      m.addLayer({
+        id: routeLayerId,
+        type: 'line',
+        source: routeSourceId,
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': 'hsl(var(--success))', 'line-width': 6, 'line-opacity': 0.9 },
+      });
     }
   }, []);
 
@@ -83,10 +109,22 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
 
     const sanitizeCoordinates = (coords: any): [number, number][] => {
       if (!Array.isArray(coords)) return [];
-      return coords
+
+      const normalized = coords
         .filter((coord) => Array.isArray(coord) && coord.length >= 2)
         .map((coord) => [Number(coord[0]), Number(coord[1])] as [number, number])
-        .filter(([lng, lat]) => Number.isFinite(lng) && Number.isFinite(lat));
+        .filter(([lng, lat]) => Number.isFinite(lng) && Number.isFinite(lat))
+        .filter(([lng, lat]) => lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90);
+
+      const deduped: [number, number][] = [];
+      normalized.forEach((coord) => {
+        const last = deduped[deduped.length - 1];
+        if (!last || last[0] !== coord[0] || last[1] !== coord[1]) {
+          deduped.push(coord);
+        }
+      });
+
+      return deduped;
     };
 
     if (route?.type === 'LineString') return sanitizeCoordinates(route.coordinates);
@@ -163,7 +201,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     });
     
     m.on('load', () => {
-      if (!hasStoredPos) {
+      if (!hasStoredPos && !suppressInitialGeolocate) {
         geolocate.trigger();
       }
     });
@@ -335,60 +373,53 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     });
   }, [mapStyle, mapLoaded, whenStyleReady]);
 
+  // Route focus (especially important when opening route from Topper tab)
+  useEffect(() => {
+    if (!map.current || !mapLoaded || !routeFocus) return;
+    const m = map.current;
+
+    whenStyleReady(m, () => {
+      m.resize();
+      m.easeTo({
+        center: [routeFocus.longitude, routeFocus.latitude],
+        zoom: Math.max(m.getZoom(), 12.5),
+        duration: 700,
+      });
+    });
+  }, [routeFocus, mapLoaded, whenStyleReady]);
+
   // Draw route if provided
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
     const m = map.current;
 
-    const sourceId = 'peak-route-source';
-    const layerId = 'peak-route-layer';
-
     whenStyleReady(m, () => {
-      if (routeCoordinates.length > 0) {
-        const geojsonData = {
+      ensureRouteLayer(m);
+      const source = m.getSource(routeSourceId) as mapboxgl.GeoJSONSource | undefined;
+      if (!source) return;
+
+      if (routeCoordinates.length >= 2) {
+        source.setData({
           type: 'Feature',
           geometry: {
             type: 'LineString',
             coordinates: routeCoordinates,
           },
           properties: {},
-        };
+        } as any);
 
-        // Always clean up old source/layer first to avoid stale state
-        try {
-          if (m.getLayer(layerId)) m.removeLayer(layerId);
-          if (m.getSource(sourceId)) m.removeSource(sourceId);
-        } catch {}
-
-        m.addSource(sourceId, { type: 'geojson', data: geojsonData as any });
-        m.addLayer({
-          id: layerId,
-          type: 'line',
-          source: sourceId,
-          layout: { 'line-join': 'round', 'line-cap': 'round' },
-          paint: { 'line-color': '#10b981', 'line-width': 6, 'line-opacity': 0.8 },
-        });
-
-        // Fit bounds to route (run twice to avoid camera race with map load/geolocate)
         const bounds = new mapboxgl.LngLatBounds();
         routeCoordinates.forEach((coord) => bounds.extend(coord));
 
-        if (routeCoordinates.length === 1) {
-          m.easeTo({ center: routeCoordinates[0], zoom: 14, duration: 900 });
-        } else {
-          m.fitBounds(bounds, { padding: 50, duration: 1000 });
-          window.setTimeout(() => {
-            m.fitBounds(bounds, { padding: 50, duration: 600 });
-          }, 450);
-        }
+        m.fitBounds(bounds, { padding: 60, duration: 900, maxZoom: 15 });
+        window.setTimeout(() => {
+          m.fitBounds(bounds, { padding: 60, duration: 500, maxZoom: 15 });
+        }, 350);
       } else {
-        try {
-          if (m.getLayer(layerId)) m.removeLayer(layerId);
-          if (m.getSource(sourceId)) m.removeSource(sourceId);
-        } catch {}
+        source.setData({ type: 'FeatureCollection', features: [] } as any);
       }
     });
-  }, [routeCoordinates, mapLoaded, whenStyleReady]);
+  }, [routeCoordinates, mapLoaded, whenStyleReady, ensureRouteLayer]);
 
   // Handle preview waypoints
   useEffect(() => {
