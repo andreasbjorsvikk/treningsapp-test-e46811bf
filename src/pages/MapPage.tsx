@@ -105,6 +105,17 @@ const MapPage = () => {
     fetchPendingSuggestions().then(setSuggestedPeaks).catch(() => {});
   }, [user]);
 
+  useEffect(() => {
+    const handleOpenAdminSuggestions = () => {
+      if (!adminMode) return;
+      setSubTab('kart');
+      setShowSuggestions(true);
+    };
+
+    window.addEventListener('open-admin-peak-suggestions', handleOpenAdminSuggestions);
+    return () => window.removeEventListener('open-admin-peak-suggestions', handleOpenAdminSuggestions);
+  }, [adminMode]);
+
   const [peakOpenedFromTopper, setPeakOpenedFromTopper] = useState(false);
 
   const handleSelectPeak = (peak: Peak) => {
