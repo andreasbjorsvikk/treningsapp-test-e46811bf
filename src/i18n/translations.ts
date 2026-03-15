@@ -61,7 +61,7 @@ const no: Record<string, string> = {
   // Goals
   'goals.generalGoal': 'Generelt treningsmål',
   'goals.otherGoals': 'Andre mål',
-  'goals.addGoal': 'Legg til mål',
+  'goals.addGoal': 'Legg til annet mål',
   'goals.noGoalsYet': 'Ingen andre mål ennå.',
   'goals.setGoal': 'Sett ditt treningsmål',
   'goals.sessionsPerWeek': 'økter per uke',
