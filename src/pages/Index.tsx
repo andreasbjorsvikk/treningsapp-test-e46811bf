@@ -37,9 +37,13 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import GoalTutorialDialog from '@/components/GoalTutorialDialog';
+import TrainingTutorialDialog from '@/components/TrainingTutorialDialog';
+import CalendarTutorialDialog from '@/components/CalendarTutorialDialog';
+import WelcomeDialog from '@/components/WelcomeDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { HealthEvent } from '@/types/workout';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchPendingSuggestions } from '@/services/peakSuggestionService';
 
 const Index = () => {
   return (
