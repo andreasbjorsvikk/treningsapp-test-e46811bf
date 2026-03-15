@@ -330,8 +330,12 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         }
 
         const bounds = new mapboxgl.LngLatBounds();
-        if (routeGeojson.coordinates) {
-          routeGeojson.coordinates.forEach((coord: [number, number]) => {
+        // Handle various GeoJSON formats
+        const coords = routeGeojson.coordinates
+          || routeGeojson?.geometry?.coordinates
+          || (routeGeojson?.features?.[0]?.geometry?.coordinates);
+        if (coords && Array.isArray(coords)) {
+          coords.forEach((coord: [number, number]) => {
             bounds.extend(coord);
           });
           m.fitBounds(bounds, { padding: 50, duration: 1000 });
