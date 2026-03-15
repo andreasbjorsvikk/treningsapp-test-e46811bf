@@ -257,7 +257,14 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
 
   return (
     <div className="space-y-4">
-      <TrainingSubTabs active={subTab} onChange={(tab) => { setSubTab(tab); window.scrollTo({ top: 0 }); }} />
+      <TrainingSubTabs active={subTab} onChange={(tab) => {
+        setSubTab(tab);
+        window.scrollTo({ top: 0 });
+        // Show goal tutorial if navigating to goals and no primary goal set
+        if (tab === 'mål' && !currentPrimaryGoal) {
+          setShowGoalTutorial(true);
+        }
+      }} />
 
       {subTab === 'statistikk' && (
         <StatistikkContent
