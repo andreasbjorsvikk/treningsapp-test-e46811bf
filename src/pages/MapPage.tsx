@@ -187,7 +187,9 @@ const MapPage = () => {
   const handleShowRoute = (peak: Peak, fromTopper?: boolean) => {
     if (peak.route_status !== 'approved' || !peak.route_geojson) return;
 
-    if (fromTopper) {
+    const openedFromTopper = subTab === 'topper' || fromTopper === true;
+
+    if (openedFromTopper) {
       setRouteFromTopperPeak(peak);
       setPendingTopperRoute(peak);
       setSubTab('kart');
