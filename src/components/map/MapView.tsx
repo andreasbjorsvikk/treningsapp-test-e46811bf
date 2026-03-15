@@ -62,6 +62,11 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   const longPressCoords = useRef<{ lat: number; lng: number } | null>(null);
   const routeSourceId = 'peak-route-source';
   const routeLayerId = 'peak-route-layer';
+  const onMapReadyRef = useRef(onMapReady);
+
+  useEffect(() => {
+    onMapReadyRef.current = onMapReady;
+  }, [onMapReady]);
 
   const getMapboxColorFromToken = useCallback((tokenName: string, fallback = 'rgb(34, 197, 94)') => {
     if (typeof window === 'undefined') return fallback;
