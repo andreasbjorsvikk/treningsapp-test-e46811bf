@@ -52,6 +52,7 @@ const MapPage = () => {
   const [routeFocus, setRouteFocus] = useState<{ latitude: number; longitude: number; requestId: number } | null>(null);
   const [pendingTopperRoute, setPendingTopperRoute] = useState<Peak | null>(null);
   const [previewWaypoints, setPreviewWaypoints] = useState<{lat: number, lng: number}[]>([]);
+  const [isMapReady, setIsMapReady] = useState(false);
 
   // Map settings
   const [showSettings, setShowSettings] = useState(false);
