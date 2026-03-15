@@ -540,30 +540,16 @@ const PeakFeed = () => {
                         )}
                       </div>
 
-                      {/* Peak info */}
-                      <div className="flex items-center gap-2 px-1">
-                        <Mountain className="w-4 h-4 text-muted-foreground shrink-0" />
-                        <span className="text-sm font-medium">{parentItem.peak_name}</span>
-                        <span className="text-xs text-muted-foreground">{parentItem.peak_elevation} moh · {parentItem.peak_area}</span>
-                      </div>
-
-                      {/* Image */}
-                      {parentItem.image_url && (
-                        <button onClick={() => setExpandedImage(parentItem.image_url)} className="w-full">
-                          <img src={parentItem.image_url} alt="" className="w-full h-40 object-cover rounded-lg" />
-                        </button>
-                      )}
-
-                      {/* Child "var med" rows */}
+                      {/* Children in check-in (shown above peak name) */}
                       {childItems.length > 0 && (
-                        <div className="pt-1 space-y-1">
+                        <div className="pt-1 space-y-1 ml-2">
                           {childItems.map(ci => (
                             <div key={ci.id} className="flex items-center gap-2 px-1">
                               <button onClick={() => {
                                 const cp = childProfileMap.get(ci.user_id);
                                 if (cp) setSelectedChildProfile(cp);
                               }}>
-                                <Avatar className="w-9 h-9">
+                                <Avatar className="w-7 h-7">
                                   <AvatarImage src={ci.avatar_url || undefined} />
                                   <AvatarFallback className="text-[10px]">{ci.child_emoji || '👶'}</AvatarFallback>
                                 </Avatar>
@@ -589,6 +575,20 @@ const PeakFeed = () => {
                             </div>
                           ))}
                         </div>
+                      )}
+
+                      {/* Peak info */}
+                      <div className="flex items-center gap-2 px-1">
+                        <Mountain className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium">{parentItem.peak_name}</span>
+                        <span className="text-xs text-muted-foreground">{parentItem.peak_elevation} moh · {parentItem.peak_area}</span>
+                      </div>
+
+                      {/* Image */}
+                      {parentItem.image_url && (
+                        <button onClick={() => setExpandedImage(parentItem.image_url)} className="w-full">
+                          <img src={parentItem.image_url} alt="" className="w-full h-40 object-cover rounded-lg" />
+                        </button>
                       )}
 
                       {/* Edit mode */}

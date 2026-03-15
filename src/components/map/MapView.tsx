@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Peak } from '@/data/peaks';
@@ -68,6 +68,45 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   }, []);
 
   const checkedPeakIds = new Set(checkins.map(c => c.peak_id));
+
+  const extractRouteCoordinates = useCallback((rawRoute: any): [number, number][] => {
+    if (!rawRoute) return [];
+
+    let route = rawRoute;
+    if (typeof route === 'string') {
+      try {
+        route = JSON.parse(route);
+      } catch {
+        return [];
+      }
+    }
+
+    const sanitizeCoordinates = (coords: any): [number, number][] => {
+      if (!Array.isArray(coords)) return [];
+      return coords
+        .filter((coord) => Array.isArray(coord) && coord.length >= 2)
+        .map((coord) => [Number(coord[0]), Number(coord[1])] as [number, number])
+        .filter(([lng, lat]) => Number.isFinite(lng) && Number.isFinite(lat));
+    };
+
+    if (route?.type === 'LineString') return sanitizeCoordinates(route.coordinates);
+
+    if (route?.type === 'Feature' && route?.geometry?.type === 'LineString') {
+      return sanitizeCoordinates(route.geometry.coordinates);
+    }
+
+    if (route?.type === 'FeatureCollection' && Array.isArray(route.features)) {
+      const firstLine = route.features.find((f: any) => f?.geometry?.type === 'LineString');
+      return sanitizeCoordinates(firstLine?.geometry?.coordinates);
+    }
+
+    if (Array.isArray(route?.coordinates)) return sanitizeCoordinates(route.coordinates);
+    if (Array.isArray(route?.geometry?.coordinates)) return sanitizeCoordinates(route.geometry.coordinates);
+
+    return [];
+  }, []);
+
+  const routeCoordinates = useMemo(() => extractRouteCoordinates(routeGeojson), [routeGeojson, extractRouteCoordinates]);
   
   // Checkins this year
   const thisYearCheckedIds = new Set(
@@ -305,14 +344,15 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     const layerId = 'peak-route-layer';
 
     whenStyleReady(m, () => {
-      if (routeGeojson) {
-        // Normalize to a proper GeoJSON FeatureCollection for the source
-        let geojsonData: any = routeGeojson;
-        if (routeGeojson.type === 'LineString') {
-          geojsonData = { type: 'Feature', geometry: routeGeojson, properties: {} };
-        } else if (routeGeojson.type === 'Feature') {
-          geojsonData = routeGeojson;
-        }
+      if (routeCoordinates.length > 0) {
+        const geojsonData = {
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: routeCoordinates,
+          },
+          properties: {},
+        };
 
         // Always clean up old source/layer first to avoid stale state
         try {
@@ -320,7 +360,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           if (m.getSource(sourceId)) m.removeSource(sourceId);
         } catch {}
 
-        m.addSource(sourceId, { type: 'geojson', data: geojsonData });
+        m.addSource(sourceId, { type: 'geojson', data: geojsonData as any });
         m.addLayer({
           id: layerId,
           type: 'line',
@@ -329,14 +369,17 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           paint: { 'line-color': '#10b981', 'line-width': 6, 'line-opacity': 0.8 },
         });
 
-        // Fit bounds to route
+        // Fit bounds to route (run twice to avoid camera race with map load/geolocate)
         const bounds = new mapboxgl.LngLatBounds();
-        const coords = routeGeojson.coordinates
-          || routeGeojson?.geometry?.coordinates
-          || (routeGeojson?.features?.[0]?.geometry?.coordinates);
-        if (coords && Array.isArray(coords)) {
-          coords.forEach((coord: [number, number]) => bounds.extend(coord));
+        routeCoordinates.forEach((coord) => bounds.extend(coord));
+
+        if (routeCoordinates.length === 1) {
+          m.easeTo({ center: routeCoordinates[0], zoom: 14, duration: 900 });
+        } else {
           m.fitBounds(bounds, { padding: 50, duration: 1000 });
+          window.setTimeout(() => {
+            m.fitBounds(bounds, { padding: 50, duration: 600 });
+          }, 450);
         }
       } else {
         try {
@@ -345,7 +388,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         } catch {}
       }
     });
-  }, [routeGeojson, mapLoaded, whenStyleReady]);
+  }, [routeCoordinates, mapLoaded, whenStyleReady]);
 
   // Handle preview waypoints
   useEffect(() => {
@@ -386,7 +429,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     }
 
     // Handle route start marker (if we have a route, put a green dot at the start)
-    if (routeGeojson && routeGeojson.coordinates && routeGeojson.coordinates.length > 0) {
+    if (routeCoordinates.length > 0) {
       if (!routeStartMarkerRef.current) {
         const el = document.createElement('div');
         el.className = 'route-start-marker';
@@ -397,17 +440,17 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         `;
         routeStartMarkerRef.current = new mapboxgl.Marker({ element: el })
-          .setLngLat(routeGeojson.coordinates[0])
+          .setLngLat(routeCoordinates[0])
           .addTo(map.current);
       } else {
-        routeStartMarkerRef.current.setLngLat(routeGeojson.coordinates[0]);
+        routeStartMarkerRef.current.setLngLat(routeCoordinates[0]);
       }
     } else if (routeStartMarkerRef.current) {
       routeStartMarkerRef.current.remove();
       routeStartMarkerRef.current = null;
     }
 
-  }, [previewWaypoints, routeGeojson, mapLoaded, onWaypointClick]);
+  }, [previewWaypoints, routeCoordinates, mapLoaded, onWaypointClick]);
 
   // Add/update markers
   useEffect(() => {
