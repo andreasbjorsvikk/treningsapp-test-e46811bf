@@ -116,10 +116,7 @@ const MapPage = () => {
     return () => window.removeEventListener('open-admin-peak-suggestions', handleOpenAdminSuggestions);
   }, [adminMode]);
 
-  const [peakOpenedFromTopper, setPeakOpenedFromTopper] = useState(false);
-
   const handleSelectPeak = (peak: Peak) => {
-    setPeakOpenedFromTopper(subTab === 'topper');
     setSelectedPeak(peak);
   };
 
