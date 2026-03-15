@@ -821,10 +821,27 @@ const IndexContent = () => {
             setDragId(null);
             setDragOrder([]);
           }
+          // Show training tutorial on first visit
+          if (tab === 'trening') {
+            const seen = localStorage.getItem('treningslogg_training_tutorial_shown');
+            if (!seen) {
+              setShowTrainingTutorial(true);
+              localStorage.setItem('treningslogg_training_tutorial_shown', 'true');
+            }
+          }
+          // Show calendar tutorial on first visit
+          if (tab === 'kalender') {
+            const seen = localStorage.getItem('treningslogg_calendar_tutorial_shown');
+            if (!seen) {
+              setShowCalendarTutorial(true);
+              localStorage.setItem('treningslogg_calendar_tutorial_shown', 'true');
+            }
+          }
           setActiveTab(tab);
           window.scrollTo({ top: 0 });
         }}
         notificationCount={unreadNotifications}
+        settingsDot={isAdmin && adminSuggestionsDot}
         showAdmin={adminMode}
         profileButton={
           !isMobile && user ? (
