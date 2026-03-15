@@ -124,6 +124,27 @@ const LoginPage = () => {
               </div>
             </div>
 
+            {mode === 'signup' && (
+              <div className="space-y-1.5">
+                <Label htmlFor="displayName" className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                  Navn
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="displayName"
+                    type="text"
+                    value={displayName}
+                    onChange={e => setDisplayName(e.target.value)}
+                    placeholder="Ditt navn"
+                    className="pl-10 bg-background/50"
+                    required
+                    autoComplete="name"
+                  />
+                </div>
+              </div>
+            )}
+
             {mode !== 'forgot' && (
               <div className="space-y-1.5">
                 <Label htmlFor="password" className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
