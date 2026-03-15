@@ -462,6 +462,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
         }}
         event={editHealthEvent}
       />
+      <GoalTutorialDialog open={showGoalTutorial} onClose={() => setShowGoalTutorial(false)} />
     </div>
   );
 };
