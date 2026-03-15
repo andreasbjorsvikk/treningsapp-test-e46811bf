@@ -201,7 +201,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     });
     
     m.on('load', () => {
-      if (!hasStoredPos) {
+      if (!hasStoredPos && !suppressInitialGeolocate) {
         geolocate.trigger();
       }
     });
