@@ -33,6 +33,12 @@ const LoginPage = () => {
       return;
     }
 
+    if (mode === 'signup' && !displayName.trim()) {
+      setSubmitting(false);
+      setError('Du må oppgi et navn.');
+      return;
+    }
+
     const fn = mode === 'login' ? signIn : signUp;
     const { error } = await fn(email, password);
     setSubmitting(false);
@@ -45,6 +51,8 @@ const LoginPage = () => {
     }
 
     if (mode === 'signup') {
+      // Save display name to localStorage to be applied after email confirmation
+      localStorage.setItem('treningslogg_pending_username', displayName.trim());
       setMessage('Sjekk e-posten din for å bekrefte kontoen. Etter bekreftelse kan du logge inn.');
     } else {
       navigate('/');
