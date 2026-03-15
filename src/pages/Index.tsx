@@ -464,27 +464,6 @@ const IndexContent = () => {
     setDragId(null);
   };
 
-  // Streak / motivational data
-  const currentStreak = useMemo(() => {
-    if (allSessions.length === 0) return 0;
-    let streak = 0;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const dayMs = 86400000;
-    for (let d = 0; d < 365; d++) {
-      const checkDate = new Date(today.getTime() - d * dayMs);
-      const dateStr = checkDate.toISOString().split('T')[0];
-      if (allSessions.some(s => s.date === dateStr)) {
-        streak++;
-      } else if (d > 0) {
-        break;
-      }
-    }
-    return streak;
-  }, [allSessions]);
-
-  const totalThisWeek = appData.weekStats.totalSessions;
-
   const StatModeToggle = () => (
     <div className="flex items-center gap-1 mb-1">
       <button
