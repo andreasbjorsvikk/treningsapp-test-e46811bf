@@ -30,6 +30,7 @@ interface MapViewProps {
   routeFocus?: { latitude: number; longitude: number; requestId: number } | null;
   suppressInitialGeolocate?: boolean;
   onClearRoute?: () => void;
+  onMapReady?: () => void;
   previewWaypoints?: { lat: number; lng: number }[] | null;
   onWaypointClick?: (index: number) => void;
   onWaypointDrag?: (index: number, lat: number, lng: number) => void;
@@ -42,7 +43,7 @@ interface MapViewProps {
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
-const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, routeFocus, suppressInitialGeolocate, onClearRoute, previewWaypoints, onWaypointClick, onWaypointDrag, showHeatmap, heatmapPeriod, showAreaStats, onlyReachedThisYear, suggestedPeaks }: MapViewProps) => {
+const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, routeFocus, suppressInitialGeolocate, onClearRoute, onMapReady, previewWaypoints, onWaypointClick, onWaypointDrag, showHeatmap, heatmapPeriod, showAreaStats, onlyReachedThisYear, suggestedPeaks }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -61,6 +62,11 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   const longPressCoords = useRef<{ lat: number; lng: number } | null>(null);
   const routeSourceId = 'peak-route-source';
   const routeLayerId = 'peak-route-layer';
+  const onMapReadyRef = useRef(onMapReady);
+
+  useEffect(() => {
+    onMapReadyRef.current = onMapReady;
+  }, [onMapReady]);
 
   const getMapboxColorFromToken = useCallback((tokenName: string, fallback = 'rgb(34, 197, 94)') => {
     if (typeof window === 'undefined') return fallback;
@@ -261,6 +267,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     m.on('style.load', () => {
       addEnhancedTerrain(m, { exaggeration: 1.4 });
       setMapLoaded(true);
+      onMapReadyRef.current?.();
     });
 
     map.current = m;

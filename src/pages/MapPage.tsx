@@ -52,6 +52,7 @@ const MapPage = () => {
   const [routeFocus, setRouteFocus] = useState<{ latitude: number; longitude: number; requestId: number } | null>(null);
   const [pendingTopperRoute, setPendingTopperRoute] = useState<Peak | null>(null);
   const [previewWaypoints, setPreviewWaypoints] = useState<{lat: number, lng: number}[]>([]);
+  const [isMapReady, setIsMapReady] = useState(false);
 
   // Map settings
   const [showSettings, setShowSettings] = useState(false);
@@ -116,6 +117,12 @@ const MapPage = () => {
     return () => window.removeEventListener('open-admin-peak-suggestions', handleOpenAdminSuggestions);
   }, [adminMode]);
 
+  useEffect(() => {
+    if (subTab !== 'kart') {
+      setIsMapReady(false);
+    }
+  }, [subTab]);
+
   const handleSelectPeak = (peak: Peak) => {
     setSelectedPeak(peak);
   };
@@ -178,11 +185,25 @@ const MapPage = () => {
     toast.info('Trykk på kartet for å velge startpunkt for ruten.');
   };
 
+  const normalizeRouteGeojson = useCallback((route: Peak['route_geojson']) => {
+    if (!route) return null;
+    if (typeof route === 'string') return route;
+
+    try {
+      return JSON.parse(JSON.stringify(route));
+    } catch {
+      return route;
+    }
+  }, []);
+
   const applyRouteForPeak = useCallback((peak: Peak) => {
-    setActiveRouteGeojson(peak.route_geojson);
+    const routePayload = normalizeRouteGeojson(peak.route_geojson);
+    if (!routePayload) return;
+
+    setActiveRouteGeojson(routePayload);
     setActiveRoutePeakId(peak.id);
     setRouteFocus({ latitude: peak.latitude, longitude: peak.longitude, requestId: Date.now() });
-  }, []);
+  }, [normalizeRouteGeojson]);
 
   const handleShowRoute = (peak: Peak, fromTopper?: boolean) => {
     if (peak.route_status !== 'approved' || !peak.route_geojson) return;
@@ -201,10 +222,17 @@ const MapPage = () => {
   };
 
   useEffect(() => {
-    if (subTab !== 'kart' || !pendingTopperRoute) return;
-    applyRouteForPeak(pendingTopperRoute);
+    if (subTab !== 'kart' || !pendingTopperRoute || !isMapReady) return;
+
+    const peakToShow = pendingTopperRoute;
     setPendingTopperRoute(null);
-  }, [subTab, pendingTopperRoute, applyRouteForPeak]);
+
+    const frame = window.requestAnimationFrame(() => {
+      applyRouteForPeak(peakToShow);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [subTab, pendingTopperRoute, isMapReady, applyRouteForPeak]);
 
   useEffect(() => {
     if (showSuggestions && adminMode) {
@@ -270,7 +298,8 @@ const MapPage = () => {
               routeGeojson={activeRouteGeojson}
               routeFocus={routeFocus}
               suppressInitialGeolocate={!!routeFocus || !!pendingTopperRoute}
-              onClearRoute={() => setActiveRouteGeojson(null)}
+              onClearRoute={handleHideRoute}
+              onMapReady={() => setIsMapReady(true)}
               previewWaypoints={previewWaypoints}
               onWaypointClick={(index) => setWaypointClickEvent({ index, timestamp: Date.now() })}
               onWaypointDrag={(index, lat, lng) => setWaypointDragEvent({ index, lat, lng, timestamp: Date.now() })}
