@@ -68,6 +68,45 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   }, []);
 
   const checkedPeakIds = new Set(checkins.map(c => c.peak_id));
+
+  const extractRouteCoordinates = useCallback((rawRoute: any): [number, number][] => {
+    if (!rawRoute) return [];
+
+    let route = rawRoute;
+    if (typeof route === 'string') {
+      try {
+        route = JSON.parse(route);
+      } catch {
+        return [];
+      }
+    }
+
+    const sanitizeCoordinates = (coords: any): [number, number][] => {
+      if (!Array.isArray(coords)) return [];
+      return coords
+        .filter((coord) => Array.isArray(coord) && coord.length >= 2)
+        .map((coord) => [Number(coord[0]), Number(coord[1])] as [number, number])
+        .filter(([lng, lat]) => Number.isFinite(lng) && Number.isFinite(lat));
+    };
+
+    if (route?.type === 'LineString') return sanitizeCoordinates(route.coordinates);
+
+    if (route?.type === 'Feature' && route?.geometry?.type === 'LineString') {
+      return sanitizeCoordinates(route.geometry.coordinates);
+    }
+
+    if (route?.type === 'FeatureCollection' && Array.isArray(route.features)) {
+      const firstLine = route.features.find((f: any) => f?.geometry?.type === 'LineString');
+      return sanitizeCoordinates(firstLine?.geometry?.coordinates);
+    }
+
+    if (Array.isArray(route?.coordinates)) return sanitizeCoordinates(route.coordinates);
+    if (Array.isArray(route?.geometry?.coordinates)) return sanitizeCoordinates(route.geometry.coordinates);
+
+    return [];
+  }, []);
+
+  const routeCoordinates = useMemo(() => extractRouteCoordinates(routeGeojson), [routeGeojson, extractRouteCoordinates]);
   
   // Checkins this year
   const thisYearCheckedIds = new Set(
