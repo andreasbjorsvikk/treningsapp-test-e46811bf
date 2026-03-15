@@ -380,7 +380,7 @@ const MapPage = () => {
         onShowRoute={handleShowRoute}
         onHideRoute={handleHideRoute}
         isRouteShown={!!activeRoutePeakId && activeRoutePeakId === selectedPeak?.id}
-        fromTopperTab={peakOpenedFromTopper}
+        fromTopperTab={subTab === 'topper'}
       />
 
       {/* Admin: Add new peak form */}
