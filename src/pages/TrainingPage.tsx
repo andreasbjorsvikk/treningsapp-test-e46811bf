@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import GoalTutorialDialog from '@/components/GoalTutorialDialog';
 import { SessionType, WorkoutSession, HealthEvent } from '@/types/workout';
 import GoalsSection from '@/components/GoalsSection';
 import StatistikkContent from '@/components/StatistikkContent';
@@ -29,6 +30,7 @@ interface TrainingPageProps {
 
 const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
   const [subTab, setSubTab] = useState<TrainingSubTab>('statistikk');
+  const [showGoalTutorial, setShowGoalTutorial] = useState(false);
   const { t } = useTranslation();
   const monthNames = Array.from({ length: 12 }, (_, i) => t(`month.${i}`));
   const appData = useAppDataContext();
@@ -255,7 +257,14 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
 
   return (
     <div className="space-y-4">
-      <TrainingSubTabs active={subTab} onChange={(tab) => { setSubTab(tab); window.scrollTo({ top: 0 }); }} />
+      <TrainingSubTabs active={subTab} onChange={(tab) => {
+        setSubTab(tab);
+        window.scrollTo({ top: 0 });
+        // Show goal tutorial if navigating to goals and no primary goal set
+        if (tab === 'mål' && !currentPrimaryGoal) {
+          setShowGoalTutorial(true);
+        }
+      }} />
 
       {subTab === 'statistikk' && (
         <StatistikkContent
@@ -453,6 +462,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
         }}
         event={editHealthEvent}
       />
+      <GoalTutorialDialog open={showGoalTutorial} onClose={() => setShowGoalTutorial(false)} />
     </div>
   );
 };

@@ -61,7 +61,7 @@ const no: Record<string, string> = {
   // Goals
   'goals.generalGoal': 'Generelt treningsmål',
   'goals.otherGoals': 'Andre mål',
-  'goals.addGoal': 'Legg til mål',
+  'goals.addGoal': 'Legg til annet mål',
   'goals.noGoalsYet': 'Ingen andre mål ennå.',
   'goals.setGoal': 'Sett ditt treningsmål',
   'goals.sessionsPerWeek': 'økter per uke',
@@ -699,7 +699,7 @@ const en: Record<string, string> = {
   // Goals
   'goals.generalGoal': 'General training goal',
   'goals.otherGoals': 'Other goals',
-  'goals.addGoal': 'Add goal',
+  'goals.addGoal': 'Add another goal',
   'goals.noGoalsYet': 'No other goals yet.',
   'goals.setGoal': 'Set your training goal',
   'goals.sessionsPerWeek': 'workouts per week',

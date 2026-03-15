@@ -9,6 +9,7 @@ interface BottomNavProps {
   active: TabId;
   onNavigate: (tab: TabId) => void;
   notificationCount?: number;
+  settingsDot?: boolean;
   profileButton?: ReactNode;
   showAdmin?: boolean;
 }
@@ -21,7 +22,7 @@ const tabConfig: { id: TabId; labelKey: string; icon: typeof Home }[] = [
   { id: 'fellesskap', labelKey: 'nav.community', icon: Users },
 ];
 
-const BottomNav = ({ active, onNavigate, notificationCount = 0, profileButton, showAdmin }: BottomNavProps) => {
+const BottomNav = ({ active, onNavigate, notificationCount = 0, settingsDot, profileButton, showAdmin }: BottomNavProps) => {
   const { t } = useTranslation();
 
   const tabs = showAdmin
@@ -55,11 +56,14 @@ const BottomNav = ({ active, onNavigate, notificationCount = 0, profileButton, s
         <div className="hidden lg:flex lg:flex-1" />
         <button
           onClick={() => onNavigate('settings')}
-          className={`flex flex-col items-center gap-0.5 py-2 px-3 transition-colors lg:flex-row lg:gap-2 lg:py-3 lg:px-4 lg:rounded-md ${
+          className={`relative flex flex-col items-center gap-0.5 py-2 px-3 transition-colors lg:flex-row lg:gap-2 lg:py-3 lg:px-4 lg:rounded-md ${
             active === 'settings' ? 'text-primary lg:bg-primary/10' : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           <Settings className="w-4 h-4 lg:w-5 lg:h-5" />
+          {settingsDot && (
+            <span className="absolute top-1 left-1/2 translate-x-1.5 lg:top-2.5 lg:left-auto lg:right-2.5 lg:translate-x-0 w-2 h-2 rounded-full bg-destructive" />
+          )}
           <span className="text-[10px] font-medium lg:hidden">{t('nav.settings')}</span>
         </button>
         {profileButton && (

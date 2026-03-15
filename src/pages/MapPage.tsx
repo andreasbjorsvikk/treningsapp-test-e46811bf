@@ -269,6 +269,8 @@ const MapPage = () => {
               onDeletePeak={handleDeletePeak}
               onLongPress={handleLongPress}
               routeGeojson={activeRouteGeojson}
+              routeFocus={routeFocus}
+              suppressInitialGeolocate={!!routeFocus}
               onClearRoute={() => setActiveRouteGeojson(null)}
               previewWaypoints={previewWaypoints}
               onWaypointClick={(index) => setWaypointClickEvent({ index, timestamp: Date.now() })}

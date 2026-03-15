@@ -37,9 +37,13 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import GoalTutorialDialog from '@/components/GoalTutorialDialog';
+import TrainingTutorialDialog from '@/components/TrainingTutorialDialog';
+import CalendarTutorialDialog from '@/components/CalendarTutorialDialog';
+import WelcomeDialog from '@/components/WelcomeDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { HealthEvent } from '@/types/workout';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchPendingSuggestions } from '@/services/peakSuggestionService';
 
 const Index = () => {
   return (
@@ -70,7 +74,7 @@ const IndexContent = () => {
   const { settings, updateSettings } = useSettings();
   const { t } = useTranslation();
   const { user, signOut } = useAuth();
-  const { adminMode } = useAdmin();
+  const { isAdmin, adminMode } = useAdmin();
   const navigate = useNavigate();
   const appData = useAppDataContext();
   const isMobile = useIsMobile();
@@ -87,6 +91,10 @@ const IndexContent = () => {
   const [detailSession, setDetailSession] = useState<WorkoutSession | null>(null);
   const [challengeDetail, setChallengeDetail] = useState<ChallengeWithParticipants | null>(null);
   const [showGoalTip, setShowGoalTip] = useState(false);
+  const [showTrainingTutorial, setShowTrainingTutorial] = useState(false);
+  const [showCalendarTutorial, setShowCalendarTutorial] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [adminSuggestionsDot, setAdminSuggestionsDot] = useState(false);
 
   // Profile info
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -98,8 +106,46 @@ const IndexContent = () => {
       .then(({ data }) => {
         if (data?.username) setUsername(data.username);
         if (data?.avatar_url) setAvatarUrl(data.avatar_url);
+        // Check if first login (no username set yet) and apply pending username
+        const pendingName = localStorage.getItem('treningslogg_pending_username');
+        if (pendingName && !data?.username) {
+          supabase.from('profiles').update({ username: pendingName }).eq('id', user.id).then(() => {
+            setUsername(pendingName);
+            localStorage.removeItem('treningslogg_pending_username');
+          });
+        }
+        // Show welcome on first login
+        const welcomeShown = localStorage.getItem('treningslogg_welcome_shown');
+        if (!welcomeShown) {
+          setShowWelcome(true);
+          localStorage.setItem('treningslogg_welcome_shown', 'true');
+        }
       });
   }, [user]);
+
+  // Check admin pending suggestions for red dot
+  useEffect(() => {
+    if (!user || !isAdmin) { setAdminSuggestionsDot(false); return; }
+    const lastSeen = parseInt(localStorage.getItem('treningslogg_admin_suggestions_seen') || '0');
+    fetchPendingSuggestions().then(pending => {
+      const hasNew = pending.some(s => new Date(s.created_at).getTime() > lastSeen);
+      setAdminSuggestionsDot(hasNew && pending.length > 0);
+    }).catch(() => {});
+
+    const handler = () => setAdminSuggestionsDot(false);
+    window.addEventListener('admin-suggestions-seen', handler);
+    return () => window.removeEventListener('admin-suggestions-seen', handler);
+  }, [user, isAdmin]);
+
+  // Listen for navigate-to-map-suggestions from settings
+  useEffect(() => {
+    const handler = () => {
+      setActiveTab('kart');
+      setTimeout(() => window.dispatchEvent(new CustomEvent('open-admin-peak-suggestions')), 100);
+    };
+    window.addEventListener('navigate-to-map-suggestions', handler);
+    return () => window.removeEventListener('navigate-to-map-suggestions', handler);
+  }, []);
 
   // Direct drag-and-drop reordering
   const [isDragging, setIsDragging] = useState(false);
@@ -775,10 +821,27 @@ const IndexContent = () => {
             setDragId(null);
             setDragOrder([]);
           }
+          // Show training tutorial on first visit
+          if (tab === 'trening') {
+            const seen = localStorage.getItem('treningslogg_training_tutorial_shown');
+            if (!seen) {
+              setShowTrainingTutorial(true);
+              localStorage.setItem('treningslogg_training_tutorial_shown', 'true');
+            }
+          }
+          // Show calendar tutorial on first visit
+          if (tab === 'kalender') {
+            const seen = localStorage.getItem('treningslogg_calendar_tutorial_shown');
+            if (!seen) {
+              setShowCalendarTutorial(true);
+              localStorage.setItem('treningslogg_calendar_tutorial_shown', 'true');
+            }
+          }
           setActiveTab(tab);
           window.scrollTo({ top: 0 });
         }}
         notificationCount={unreadNotifications}
+        settingsDot={isAdmin && adminSuggestionsDot}
         showAdmin={adminMode}
         profileButton={
           !isMobile && user ? (
@@ -843,6 +906,9 @@ const IndexContent = () => {
 
       {/* Goal tip popup - multi-step */}
       <GoalTutorialDialog open={showGoalTip} onClose={() => setShowGoalTip(false)} />
+      <TrainingTutorialDialog open={showTrainingTutorial} onClose={() => setShowTrainingTutorial(false)} />
+      <CalendarTutorialDialog open={showCalendarTutorial} onClose={() => setShowCalendarTutorial(false)} />
+      <WelcomeDialog open={showWelcome} onClose={() => setShowWelcome(false)} username={username} />
     </div>
   );
 };

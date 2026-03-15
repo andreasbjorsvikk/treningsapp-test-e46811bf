@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { lovable } from '@/integrations/lovable/index';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, UserPlus, LogIn, Flame, Activity, Mountain, Timer } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, UserPlus, LogIn, Flame, Activity, Mountain, Timer, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +13,7 @@ const LoginPage = () => {
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -32,6 +33,12 @@ const LoginPage = () => {
       return;
     }
 
+    if (mode === 'signup' && !displayName.trim()) {
+      setSubmitting(false);
+      setError('Du må oppgi et navn.');
+      return;
+    }
+
     const fn = mode === 'login' ? signIn : signUp;
     const { error } = await fn(email, password);
     setSubmitting(false);
@@ -44,6 +51,8 @@ const LoginPage = () => {
     }
 
     if (mode === 'signup') {
+      // Save display name to localStorage to be applied after email confirmation
+      localStorage.setItem('treningslogg_pending_username', displayName.trim());
       setMessage('Sjekk e-posten din for å bekrefte kontoen. Etter bekreftelse kan du logge inn.');
     } else {
       navigate('/');
@@ -114,6 +123,27 @@ const LoginPage = () => {
                 />
               </div>
             </div>
+
+            {mode === 'signup' && (
+              <div className="space-y-1.5">
+                <Label htmlFor="displayName" className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                  Navn
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="displayName"
+                    type="text"
+                    value={displayName}
+                    onChange={e => setDisplayName(e.target.value)}
+                    placeholder="Ditt navn"
+                    className="pl-10 bg-background/50"
+                    required
+                    autoComplete="name"
+                  />
+                </div>
+              </div>
+            )}
 
             {mode !== 'forgot' && (
               <div className="space-y-1.5">

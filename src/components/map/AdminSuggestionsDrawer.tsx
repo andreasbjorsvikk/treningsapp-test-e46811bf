@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Check, X, Loader2, Mountain, MapPin, User, Clock } from 'lucide-react';
+import { Check, X, Loader2, Mountain, MapPin, User, Clock, FolderOpen, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -26,13 +26,13 @@ const AdminSuggestionsDrawer = ({ open, onClose, onApproved }: AdminSuggestionsD
   const [adminComment, setAdminComment] = useState('');
   const [processing, setProcessing] = useState(false);
   const [submitterNames, setSubmitterNames] = useState<Record<string, string>>({});
+  const [showPrevious, setShowPrevious] = useState(false);
 
   const load = async () => {
     setLoading(true);
     try {
       const data = await fetchSuggestions();
       setSuggestions(data);
-      // Fetch submitter names
       const userIds = [...new Set(data.map(s => s.submitted_by))];
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
@@ -50,6 +50,9 @@ const AdminSuggestionsDrawer = ({ open, onClose, onApproved }: AdminSuggestionsD
   useEffect(() => {
     if (open) load();
   }, [open]);
+
+  const pendingSuggestions = suggestions.filter(s => s.status === 'pending');
+  const previousSuggestions = suggestions.filter(s => s.status !== 'pending');
 
   const handleReview = async (status: 'approved' | 'rejected') => {
     if (!selected || !user) return;
@@ -127,6 +130,27 @@ const AdminSuggestionsDrawer = ({ open, onClose, onApproved }: AdminSuggestionsD
 
   const mapboxToken = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
+  const renderSuggestionItem = (s: PeakSuggestion) => (
+    <button
+      key={s.id}
+      onClick={() => { setSelected(s); setAdminComment(''); }}
+      className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-colors text-left"
+    >
+      <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-muted text-muted-foreground">
+        <Mountain className="w-5 h-5" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="font-display font-semibold text-sm">{s.name}</span>
+          {statusBadge(s.status)}
+        </div>
+        <span className="text-xs text-muted-foreground">
+          {submitterNames[s.submitted_by] || 'Ukjent'} · {new Date(s.created_at).toLocaleDateString('nb-NO')}
+        </span>
+      </div>
+    </button>
+  );
+
   return (
     <Drawer open={open} onOpenChange={(o) => !o && onClose()}>
       <DrawerContent className="max-h-[90vh]">
@@ -186,30 +210,38 @@ const AdminSuggestionsDrawer = ({ open, onClose, onApproved }: AdminSuggestionsD
                 </>
               )}
             </div>
-          ) : suggestions.length === 0 ? (
+          ) : pendingSuggestions.length === 0 && previousSuggestions.length === 0 ? (
             <p className="text-muted-foreground text-sm text-center py-8">Ingen forslag å vise.</p>
           ) : (
-            <div className="space-y-2">
-              {suggestions.map(s => (
-                <button
-                  key={s.id}
-                  onClick={() => { setSelected(s); setAdminComment(''); }}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-colors text-left"
-                >
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-muted text-muted-foreground">
-                    <Mountain className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-display font-semibold text-sm">{s.name}</span>
-                      {statusBadge(s.status)}
+            <div className="space-y-4">
+              {/* Pending suggestions */}
+              {pendingSuggestions.length === 0 ? (
+                <p className="text-muted-foreground text-sm text-center py-4">Ingen ventende forslag.</p>
+              ) : (
+                <div className="space-y-2">
+                  {pendingSuggestions.map(renderSuggestionItem)}
+                </div>
+              )}
+
+              {/* Previous suggestions (collapsible) */}
+              {previousSuggestions.length > 0 && (
+                <div>
+                  <button
+                    onClick={() => setShowPrevious(!showPrevious)}
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
+                  >
+                    <FolderOpen className="w-4 h-4" />
+                    <span className="font-medium">Tidligere forespørsler</span>
+                    <span className="text-xs bg-muted rounded-full px-2 py-0.5">{previousSuggestions.length}</span>
+                    <ChevronDown className={`w-3.5 h-3.5 ml-auto transition-transform ${showPrevious ? '' : '-rotate-90'}`} />
+                  </button>
+                  {showPrevious && (
+                    <div className="space-y-2 mt-2">
+                      {previousSuggestions.map(renderSuggestionItem)}
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {submitterNames[s.submitted_by] || 'Ukjent'} · {new Date(s.created_at).toLocaleDateString('nb-NO')}
-                    </span>
-                  </div>
-                </button>
-              ))}
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
