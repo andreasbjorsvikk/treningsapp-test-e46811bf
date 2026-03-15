@@ -62,6 +62,53 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   const routeSourceId = 'peak-route-source';
   const routeLayerId = 'peak-route-layer';
 
+  const getMapboxColorFromToken = useCallback((tokenName: string, fallback = 'rgb(34, 197, 94)') => {
+    if (typeof window === 'undefined') return fallback;
+
+    const tokenValue = getComputedStyle(document.documentElement)
+      .getPropertyValue(tokenName)
+      .trim();
+
+    if (!tokenValue) return fallback;
+
+    if (/^(#|rgb\(|hsl\()/i.test(tokenValue)) return tokenValue;
+
+    const hslMatch = tokenValue.match(/^(-?\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%$/);
+    if (!hslMatch) return fallback;
+
+    const h = ((Number(hslMatch[1]) % 360) + 360) % 360;
+    const s = Math.min(100, Math.max(0, Number(hslMatch[2]))) / 100;
+    const l = Math.min(100, Math.max(0, Number(hslMatch[3]))) / 100;
+
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    const m = l - c / 2;
+
+    let r1 = 0;
+    let g1 = 0;
+    let b1 = 0;
+
+    if (h < 60) {
+      r1 = c; g1 = x; b1 = 0;
+    } else if (h < 120) {
+      r1 = x; g1 = c; b1 = 0;
+    } else if (h < 180) {
+      r1 = 0; g1 = c; b1 = x;
+    } else if (h < 240) {
+      r1 = 0; g1 = x; b1 = c;
+    } else if (h < 300) {
+      r1 = x; g1 = 0; b1 = c;
+    } else {
+      r1 = c; g1 = 0; b1 = x;
+    }
+
+    const r = Math.round((r1 + m) * 255);
+    const g = Math.round((g1 + m) * 255);
+    const b = Math.round((b1 + m) * 255);
+
+    return `rgb(${r}, ${g}, ${b})`;
+  }, []);
+
   // Helper: safely run map operations only when style is loaded
   const whenStyleReady = useCallback((m: mapboxgl.Map, fn: () => void) => {
     if (m.isStyleLoaded()) {
@@ -72,6 +119,8 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   }, []);
 
   const ensureRouteLayer = useCallback((m: mapboxgl.Map) => {
+    const routeColor = getMapboxColorFromToken('--success');
+
     if (!m.getSource(routeSourceId)) {
       m.addSource(routeSourceId, {
         type: 'geojson',
@@ -88,10 +137,12 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         type: 'line',
         source: routeSourceId,
         layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': 'hsl(var(--success))', 'line-width': 6, 'line-opacity': 0.9 },
+        paint: { 'line-color': routeColor, 'line-width': 6, 'line-opacity': 0.9 },
       });
+    } else {
+      m.setPaintProperty(routeLayerId, 'line-color', routeColor);
     }
-  }, []);
+  }, [getMapboxColorFromToken]);
 
   const checkedPeakIds = new Set(checkins.map(c => c.peak_id));
 
