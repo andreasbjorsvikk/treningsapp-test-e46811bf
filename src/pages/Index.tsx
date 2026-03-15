@@ -568,16 +568,6 @@ const IndexContent = () => {
     </button>
   );
 
-  // Greeting based on time of day
-  const greeting = useMemo(() => {
-    const h = new Date().getHours();
-    if (h < 6) return t('greeting.goodNight');
-    if (h < 12) return t('greeting.goodMorning');
-    if (h < 18) return t('greeting.hello');
-    return t('greeting.goodEvening');
-  }, [t]);
-  const displayName = username || user?.email?.split('@')[0] || '';
-
   // Section gradient styles - subtle gradients
   const sectionGradients: Record<string, string> = {};
 
