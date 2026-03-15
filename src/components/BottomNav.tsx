@@ -9,6 +9,7 @@ interface BottomNavProps {
   active: TabId;
   onNavigate: (tab: TabId) => void;
   notificationCount?: number;
+  settingsDot?: boolean;
   profileButton?: ReactNode;
   showAdmin?: boolean;
 }
