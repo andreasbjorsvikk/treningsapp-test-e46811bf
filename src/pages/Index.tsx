@@ -106,8 +106,46 @@ const IndexContent = () => {
       .then(({ data }) => {
         if (data?.username) setUsername(data.username);
         if (data?.avatar_url) setAvatarUrl(data.avatar_url);
+        // Check if first login (no username set yet) and apply pending username
+        const pendingName = localStorage.getItem('treningslogg_pending_username');
+        if (pendingName && !data?.username) {
+          supabase.from('profiles').update({ username: pendingName }).eq('id', user.id).then(() => {
+            setUsername(pendingName);
+            localStorage.removeItem('treningslogg_pending_username');
+          });
+        }
+        // Show welcome on first login
+        const welcomeShown = localStorage.getItem('treningslogg_welcome_shown');
+        if (!welcomeShown) {
+          setShowWelcome(true);
+          localStorage.setItem('treningslogg_welcome_shown', 'true');
+        }
       });
   }, [user]);
+
+  // Check admin pending suggestions for red dot
+  useEffect(() => {
+    if (!user || !isAdmin) { setAdminSuggestionsDot(false); return; }
+    const lastSeen = parseInt(localStorage.getItem('treningslogg_admin_suggestions_seen') || '0');
+    fetchPendingSuggestions().then(pending => {
+      const hasNew = pending.some(s => new Date(s.created_at).getTime() > lastSeen);
+      setAdminSuggestionsDot(hasNew && pending.length > 0);
+    }).catch(() => {});
+
+    const handler = () => setAdminSuggestionsDot(false);
+    window.addEventListener('admin-suggestions-seen', handler);
+    return () => window.removeEventListener('admin-suggestions-seen', handler);
+  }, [user, isAdmin]);
+
+  // Listen for navigate-to-map-suggestions from settings
+  useEffect(() => {
+    const handler = () => {
+      setActiveTab('kart');
+      setTimeout(() => window.dispatchEvent(new CustomEvent('open-admin-peak-suggestions')), 100);
+    };
+    window.addEventListener('navigate-to-map-suggestions', handler);
+    return () => window.removeEventListener('navigate-to-map-suggestions', handler);
+  }, []);
 
   // Direct drag-and-drop reordering
   const [isDragging, setIsDragging] = useState(false);
