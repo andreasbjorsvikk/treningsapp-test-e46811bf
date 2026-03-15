@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, ChevronRight, BarChart3, Target, History, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import GoalWheelsPreview from '@/components/tutorial/GoalWheelsPreview';
 
 interface TrainingTutorialDialogProps {
   open: boolean;
@@ -12,12 +13,13 @@ const steps = [
   {
     icon: BarChart3,
     title: 'Statistikk',
-    description: 'Her får du oversikt over treningsstatistikken din. Se antall økter, distanse, tid og høydemeter – filtrert på uke, måned eller år.',
+    description: 'Her får du oversikt over treningsstatistikken din. Se antall økter, distanse, tid og høydemeter – filtrert på måned, år eller totalt.',
   },
   {
     icon: Target,
     title: 'Mål',
     description: 'Sett deg et generelt treningsmål, eller lag mer spesifikke mål for ulike aktiviteter. Fremdriftshjulene viser deg hvordan du ligger an.',
+    customContent: <GoalWheelsPreview />,
   },
   {
     icon: History,
@@ -27,7 +29,7 @@ const steps = [
   {
     icon: Trophy,
     title: 'Rekorder',
-    description: 'Se dine personlige rekorder! Lengste tur, raskeste tempo, mest høydemeter – appen registrerer automatisk når du setter nye rekorder.',
+    description: 'Se dine personlige rekorder! Distanserekorder for løping og sykling oppdateres automatisk hvis du har synkronisert med Strava. For fjelltur kan du manuelt legge inn fjelltopper med dine rekordtider på.',
   },
 ];
 
@@ -64,6 +66,8 @@ const TrainingTutorialDialog = ({ open, onClose }: TrainingTutorialDialogProps) 
             <h3 className="font-display font-bold text-lg text-foreground">{current.title}</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">{current.description}</p>
           </div>
+
+          {current.customContent}
 
           <div className="flex items-center justify-between pt-2">
             <div className="flex gap-1.5">

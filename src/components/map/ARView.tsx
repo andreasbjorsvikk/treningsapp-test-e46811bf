@@ -30,7 +30,7 @@ interface VisiblePeak {
 }
 
 const MAX_DISTANCE_KM = 30;
-const HORIZONTAL_FOV = 60;
+const HORIZONTAL_FOV = 55;
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -61,6 +61,16 @@ function angleDiff(a: number, b: number): number {
   let diff = normalizeDeg(a - b);
   if (diff > 180) diff -= 360;
   return diff;
+}
+
+function getScreenOrientationAngle(): number {
+  const screenAngle = window.screen?.orientation?.angle;
+  if (typeof screenAngle === 'number' && Number.isFinite(screenAngle)) {
+    return screenAngle;
+  }
+
+  const legacyAngle = (window as any).orientation;
+  return typeof legacyAngle === 'number' && Number.isFinite(legacyAngle) ? legacyAngle : 0;
 }
 
 type ARMode = 'camera' | '3d';
@@ -210,26 +220,37 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
   useEffect(() => {
     if (!permissionsReady || !compassEnabled) return;
 
-    const handleOrientation = (e: DeviceOrientationEvent) => {
-      let alpha: number | null = null;
+    const orientationEventName = 'ondeviceorientationabsolute' in window
+      ? 'deviceorientationabsolute'
+      : 'deviceorientation';
+
+    const handleOrientation = (event: Event) => {
+      const e = event as DeviceOrientationEvent & {
+        webkitCompassHeading?: number;
+        webkitCompassAccuracy?: number;
+      };
+
       const beta = e.beta;
       const gamma = e.gamma ?? 0;
+      let rawHeading: number | null = null;
 
-      if ((e as any).webkitCompassHeading != null) {
-        alpha = Number((e as any).webkitCompassHeading);
-      } else if (e.alpha != null) {
-        alpha = (360 - e.alpha) % 360;
+      if (typeof e.webkitCompassHeading === 'number' && Number.isFinite(e.webkitCompassHeading)) {
+        if (typeof e.webkitCompassAccuracy === 'number' && e.webkitCompassAccuracy > 35) {
+          return;
+        }
+        rawHeading = normalizeDeg(e.webkitCompassHeading);
+      } else if (typeof e.alpha === 'number' && Number.isFinite(e.alpha)) {
+        rawHeading = normalizeDeg(360 - e.alpha + getScreenOrientationAngle());
       }
 
-      // Use raw compass heading without gamma correction (gamma correction caused excessive drift)
-      if (alpha != null && Number.isFinite(alpha)) {
+      if (rawHeading != null) {
         if (headingSmoothed.current == null) {
-          headingSmoothed.current = alpha;
+          headingSmoothed.current = rawHeading;
         } else {
-          let diff = alpha - headingSmoothed.current;
-          if (diff > 180) diff -= 360;
-          if (diff < -180) diff += 360;
-          headingSmoothed.current = normalizeDeg(headingSmoothed.current + diff * 0.15);
+          const diff = angleDiff(rawHeading, headingSmoothed.current);
+          const absDiff = Math.abs(diff);
+          const smoothing = absDiff > 25 ? 0.38 : absDiff > 10 ? 0.28 : 0.2;
+          headingSmoothed.current = normalizeDeg(headingSmoothed.current + diff * smoothing);
         }
         setHeading(headingSmoothed.current);
       }
@@ -246,12 +267,10 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
       }
     };
 
-    window.addEventListener('deviceorientationabsolute', handleOrientation as EventListener, true);
-    window.addEventListener('deviceorientation', handleOrientation as EventListener, true);
+    window.addEventListener(orientationEventName, handleOrientation as EventListener, true);
 
     return () => {
-      window.removeEventListener('deviceorientationabsolute', handleOrientation as EventListener, true);
-      window.removeEventListener('deviceorientation', handleOrientation as EventListener, true);
+      window.removeEventListener(orientationEventName, handleOrientation as EventListener, true);
     };
   }, [permissionsReady, compassEnabled]);
 

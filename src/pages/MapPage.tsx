@@ -116,10 +116,7 @@ const MapPage = () => {
     return () => window.removeEventListener('open-admin-peak-suggestions', handleOpenAdminSuggestions);
   }, [adminMode]);
 
-  const [peakOpenedFromTopper, setPeakOpenedFromTopper] = useState(false);
-
   const handleSelectPeak = (peak: Peak) => {
-    setPeakOpenedFromTopper(subTab === 'topper');
     setSelectedPeak(peak);
   };
 
@@ -190,7 +187,9 @@ const MapPage = () => {
   const handleShowRoute = (peak: Peak, fromTopper?: boolean) => {
     if (peak.route_status !== 'approved' || !peak.route_geojson) return;
 
-    if (fromTopper) {
+    const openedFromTopper = subTab === 'topper' || fromTopper === true;
+
+    if (openedFromTopper) {
       setRouteFromTopperPeak(peak);
       setPendingTopperRoute(peak);
       setSubTab('kart');
@@ -381,7 +380,7 @@ const MapPage = () => {
         onShowRoute={handleShowRoute}
         onHideRoute={handleHideRoute}
         isRouteShown={!!activeRoutePeakId && activeRoutePeakId === selectedPeak?.id}
-        fromTopperTab={peakOpenedFromTopper}
+        fromTopperTab={subTab === 'topper'}
       />
 
       {/* Admin: Add new peak form */}

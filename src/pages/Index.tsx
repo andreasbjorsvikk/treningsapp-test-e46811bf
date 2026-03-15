@@ -30,7 +30,7 @@ import DraggableGoalGrid from '@/components/DraggableGoalGrid';
 import ChallengeCard from '@/components/community/ChallengeCard';
 import ChallengeDetail from '@/components/community/ChallengeDetail';
 import GoalCompletionOverlay from '@/components/GoalCompletionOverlay';
-import { Plus, Sun, Moon, Dumbbell, Ambulance, LogIn, RefreshCw, Loader2, GripVertical, Check, User, TrendingUp, Flame, Target } from 'lucide-react';
+import { Plus, Sun, Moon, Dumbbell, Ambulance, LogIn, RefreshCw, Loader2, GripVertical, Check, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -464,27 +464,6 @@ const IndexContent = () => {
     setDragId(null);
   };
 
-  // Streak / motivational data
-  const currentStreak = useMemo(() => {
-    if (allSessions.length === 0) return 0;
-    let streak = 0;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const dayMs = 86400000;
-    for (let d = 0; d < 365; d++) {
-      const checkDate = new Date(today.getTime() - d * dayMs);
-      const dateStr = checkDate.toISOString().split('T')[0];
-      if (allSessions.some(s => s.date === dateStr)) {
-        streak++;
-      } else if (d > 0) {
-        break;
-      }
-    }
-    return streak;
-  }, [allSessions]);
-
-  const totalThisWeek = appData.weekStats.totalSessions;
-
   const StatModeToggle = () => (
     <div className="flex items-center gap-1 mb-1">
       <button
@@ -589,16 +568,6 @@ const IndexContent = () => {
     </button>
   );
 
-  // Greeting based on time of day
-  const greeting = useMemo(() => {
-    const h = new Date().getHours();
-    if (h < 6) return t('greeting.goodNight');
-    if (h < 12) return t('greeting.goodMorning');
-    if (h < 18) return t('greeting.hello');
-    return t('greeting.goodEvening');
-  }, [t]);
-  const displayName = username || user?.email?.split('@')[0] || '';
-
   // Section gradient styles - subtle gradients
   const sectionGradients: Record<string, string> = {};
 
@@ -608,28 +577,19 @@ const IndexContent = () => {
         {activeTab === 'hjem' && (
           <>
             {/* ===== HERO HEADER ===== */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-energy/10 via-background to-accent/5 border border-border/30 px-5 py-5">
-              {/* Decorative shapes */}
-              <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-energy/10 blur-2xl" />
-              <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-accent/10 blur-2xl" />
-              
-              <div className="relative flex items-center justify-between">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-energy/10 via-background to-accent/5 border border-border/30 px-4 py-3">
+              <div className="relative flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
                   {user && <ProfileButton />}
-                  <div className="min-w-0">
-                    <p className="text-xs text-muted-foreground font-medium">{greeting}</p>
-                    <h1 className="font-display font-bold text-lg text-foreground truncate">{displayName}</h1>
+                  <div className="leading-tight">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t('home.thisWeek')}</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t('home.thisMonth')}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  {currentStreak > 0 && (
-                    <div className="flex items-center gap-1 bg-energy/15 text-energy rounded-full px-2.5 py-1 mr-1">
-                      <Flame className="w-3.5 h-3.5" />
-                      <span className="text-xs font-bold">{currentStreak}</span>
-                    </div>
-                  )}
+
+                <div className="flex items-center gap-1.5 shrink-0">
                   {user && (
-                    <Button size="icon" variant="ghost" className="rounded-full h-9 w-9" onClick={handleManualSync} disabled={stravaSyncing}>
+                    <Button size="icon" variant="ghost" className="rounded-full h-10 w-10" onClick={handleManualSync} disabled={stravaSyncing}>
                       {stravaSyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                     </Button>
                   )}
@@ -649,22 +609,6 @@ const IndexContent = () => {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-              </div>
-
-              {/* Quick stats bar */}
-              <div className="relative flex items-center gap-4 mt-4 pt-3 border-t border-border/30">
-                <div className="flex items-center gap-1.5">
-                  <Target className="w-3.5 h-3.5 text-energy" />
-                   <span className="text-xs text-muted-foreground">{t('home.thisWeekSessions')}</span>
-                   <span className="text-sm font-bold text-foreground">{totalThisWeek} {t('home.sessions')}</span>
-                </div>
-                {primaryGoal && (
-                  <div className="flex items-center gap-1.5">
-                    <TrendingUp className="w-3.5 h-3.5 text-accent" />
-                    <span className="text-xs text-muted-foreground">{t('home.goal')}</span>
-                    <span className="text-sm font-bold text-foreground">{monthData.current}/{monthData.target}</span>
-                  </div>
-                )}
               </div>
             </div>
 
