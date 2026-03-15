@@ -1,9 +1,8 @@
-export type MapSubTab = 'kart' | 'topper' | 'feed' | 'lederliste' | 'ar' | 'admin';
+export type MapSubTab = 'kart' | 'topper' | 'feed' | 'lederliste' | 'ar';
 
 interface MapSubTabsProps {
   active: MapSubTab;
   onChange: (tab: MapSubTab) => void;
-  showAdmin?: boolean;
 }
 
 const baseTabs: { id: MapSubTab; label: string }[] = [
@@ -14,11 +13,10 @@ const baseTabs: { id: MapSubTab; label: string }[] = [
   { id: 'ar', label: 'AR' },
 ];
 
-const MapSubTabs = ({ active, onChange, showAdmin }: MapSubTabsProps) => {
-  const tabs = showAdmin ? [...baseTabs, { id: 'admin' as MapSubTab, label: 'Admin' }] : baseTabs;
+const MapSubTabs = ({ active, onChange }: MapSubTabsProps) => {
   return (
     <div className="flex bg-muted rounded-lg p-1 gap-1">
-      {tabs.map(tab => (
+      {baseTabs.map(tab => (
         <button
           key={tab.id}
           onClick={() => onChange(tab.id)}
