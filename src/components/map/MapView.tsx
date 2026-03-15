@@ -462,10 +462,17 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         const bounds = new mapboxgl.LngLatBounds();
         routeCoordinates.forEach((coord) => bounds.extend(coord));
 
-        m.fitBounds(bounds, { padding: 60, duration: 900, maxZoom: 15 });
-        window.setTimeout(() => {
-          m.fitBounds(bounds, { padding: 60, duration: 500, maxZoom: 15 });
-        }, 350);
+        if (routeFocus) {
+          bounds.extend([routeFocus.longitude, routeFocus.latitude]);
+        }
+
+        m.resize();
+        window.requestAnimationFrame(() => {
+          m.fitBounds(bounds, { padding: 60, duration: 900, maxZoom: 15 });
+          window.setTimeout(() => {
+            m.fitBounds(bounds, { padding: 60, duration: 500, maxZoom: 15 });
+          }, 350);
+        });
       } else {
         source.setData({ type: 'FeatureCollection', features: [] } as any);
       }
