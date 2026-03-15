@@ -30,6 +30,7 @@ interface TrainingPageProps {
 
 const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
   const [subTab, setSubTab] = useState<TrainingSubTab>('statistikk');
+  const [showGoalTutorial, setShowGoalTutorial] = useState(false);
   const { t } = useTranslation();
   const monthNames = Array.from({ length: 12 }, (_, i) => t(`month.${i}`));
   const appData = useAppDataContext();
