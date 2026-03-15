@@ -91,6 +91,10 @@ const IndexContent = () => {
   const [detailSession, setDetailSession] = useState<WorkoutSession | null>(null);
   const [challengeDetail, setChallengeDetail] = useState<ChallengeWithParticipants | null>(null);
   const [showGoalTip, setShowGoalTip] = useState(false);
+  const [showTrainingTutorial, setShowTrainingTutorial] = useState(false);
+  const [showCalendarTutorial, setShowCalendarTutorial] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [adminSuggestionsDot, setAdminSuggestionsDot] = useState(false);
 
   // Profile info
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
