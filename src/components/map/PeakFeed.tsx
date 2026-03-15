@@ -119,7 +119,7 @@ const PeakFeed = () => {
 
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, username, avatar_url, privacy_peak_checkins, privacy_peak_checkins_friends')
+        .select('id, username, avatar_url, privacy_peak_checkins, privacy_peak_checkins_friends, privacy_child_checkins')
         .in('id', [...friendIds, user.id]);
 
       if (!profiles) { setItems([]); setLoading(false); return; }

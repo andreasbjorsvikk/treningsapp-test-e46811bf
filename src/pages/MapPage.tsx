@@ -185,7 +185,7 @@ const MapPage = () => {
     toast.info('Trykk på kartet for å velge startpunkt for ruten.');
   };
 
-  const normalizeRouteGeojson = (route: Peak['route_geojson']) => {
+  const normalizeRouteGeojson = useCallback((route: Peak['route_geojson']) => {
     if (!route) return null;
     if (typeof route === 'string') return route;
 
@@ -194,7 +194,7 @@ const MapPage = () => {
     } catch {
       return route;
     }
-  };
+  }, []);
 
   const applyRouteForPeak = useCallback((peak: Peak) => {
     const routePayload = normalizeRouteGeojson(peak.route_geojson);
@@ -203,7 +203,7 @@ const MapPage = () => {
     setActiveRouteGeojson(routePayload);
     setActiveRoutePeakId(peak.id);
     setRouteFocus({ latitude: peak.latitude, longitude: peak.longitude, requestId: Date.now() });
-  }, []);
+  }, [normalizeRouteGeojson]);
 
   const handleShowRoute = (peak: Peak, fromTopper?: boolean) => {
     if (peak.route_status !== 'approved' || !peak.route_geojson) return;
