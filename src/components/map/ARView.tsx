@@ -30,7 +30,7 @@ interface VisiblePeak {
 }
 
 const MAX_DISTANCE_KM = 30;
-const HORIZONTAL_FOV = 60;
+const HORIZONTAL_FOV = 55;
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -61,6 +61,16 @@ function angleDiff(a: number, b: number): number {
   let diff = normalizeDeg(a - b);
   if (diff > 180) diff -= 360;
   return diff;
+}
+
+function getScreenOrientationAngle(): number {
+  const screenAngle = window.screen?.orientation?.angle;
+  if (typeof screenAngle === 'number' && Number.isFinite(screenAngle)) {
+    return screenAngle;
+  }
+
+  const legacyAngle = (window as any).orientation;
+  return typeof legacyAngle === 'number' && Number.isFinite(legacyAngle) ? legacyAngle : 0;
 }
 
 type ARMode = 'camera' | '3d';
