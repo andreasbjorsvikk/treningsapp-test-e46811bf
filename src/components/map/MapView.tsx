@@ -429,7 +429,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     }
 
     // Handle route start marker (if we have a route, put a green dot at the start)
-    if (routeGeojson && routeGeojson.coordinates && routeGeojson.coordinates.length > 0) {
+    if (routeCoordinates.length > 0) {
       if (!routeStartMarkerRef.current) {
         const el = document.createElement('div');
         el.className = 'route-start-marker';
@@ -440,17 +440,17 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         `;
         routeStartMarkerRef.current = new mapboxgl.Marker({ element: el })
-          .setLngLat(routeGeojson.coordinates[0])
+          .setLngLat(routeCoordinates[0])
           .addTo(map.current);
       } else {
-        routeStartMarkerRef.current.setLngLat(routeGeojson.coordinates[0]);
+        routeStartMarkerRef.current.setLngLat(routeCoordinates[0]);
       }
     } else if (routeStartMarkerRef.current) {
       routeStartMarkerRef.current.remove();
       routeStartMarkerRef.current = null;
     }
 
-  }, [previewWaypoints, routeGeojson, mapLoaded, onWaypointClick]);
+  }, [previewWaypoints, routeCoordinates, mapLoaded, onWaypointClick]);
 
   // Add/update markers
   useEffect(() => {
