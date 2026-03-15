@@ -22,7 +22,7 @@ const tabConfig: { id: TabId; labelKey: string; icon: typeof Home }[] = [
   { id: 'fellesskap', labelKey: 'nav.community', icon: Users },
 ];
 
-const BottomNav = ({ active, onNavigate, notificationCount = 0, profileButton, showAdmin }: BottomNavProps) => {
+const BottomNav = ({ active, onNavigate, notificationCount = 0, settingsDot, profileButton, showAdmin }: BottomNavProps) => {
   const { t } = useTranslation();
 
   const tabs = showAdmin
