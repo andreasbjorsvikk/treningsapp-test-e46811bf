@@ -49,6 +49,8 @@ const MapPage = () => {
   // Active route
   const [activeRouteGeojson, setActiveRouteGeojson] = useState<any>(null);
   const [activeRoutePeakId, setActiveRoutePeakId] = useState<string | null>(null);
+  const [routeFocus, setRouteFocus] = useState<{ latitude: number; longitude: number; requestId: number } | null>(null);
+  const [pendingTopperRoute, setPendingTopperRoute] = useState<Peak | null>(null);
   const [previewWaypoints, setPreviewWaypoints] = useState<{lat: number, lng: number}[]>([]);
 
   // Map settings
