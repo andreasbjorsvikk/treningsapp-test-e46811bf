@@ -179,8 +179,22 @@ const MapPage = () => {
     toast.info('Trykk på kartet for å velge startpunkt for ruten.');
   };
 
+  const normalizeRouteGeojson = (route: Peak['route_geojson']) => {
+    if (!route) return null;
+    if (typeof route === 'string') return route;
+
+    try {
+      return JSON.parse(JSON.stringify(route));
+    } catch {
+      return route;
+    }
+  };
+
   const applyRouteForPeak = useCallback((peak: Peak) => {
-    setActiveRouteGeojson(peak.route_geojson);
+    const routePayload = normalizeRouteGeojson(peak.route_geojson);
+    if (!routePayload) return;
+
+    setActiveRouteGeojson(routePayload);
     setActiveRoutePeakId(peak.id);
     setRouteFocus({ latitude: peak.latitude, longitude: peak.longitude, requestId: Date.now() });
   }, []);
@@ -202,10 +216,17 @@ const MapPage = () => {
   };
 
   useEffect(() => {
-    if (subTab !== 'kart' || !pendingTopperRoute) return;
-    applyRouteForPeak(pendingTopperRoute);
+    if (subTab !== 'kart' || !pendingTopperRoute || !isMapReady) return;
+
+    const peakToShow = pendingTopperRoute;
     setPendingTopperRoute(null);
-  }, [subTab, pendingTopperRoute, applyRouteForPeak]);
+
+    const frame = window.requestAnimationFrame(() => {
+      applyRouteForPeak(peakToShow);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [subTab, pendingTopperRoute, isMapReady, applyRouteForPeak]);
 
   useEffect(() => {
     if (showSuggestions && adminMode) {
