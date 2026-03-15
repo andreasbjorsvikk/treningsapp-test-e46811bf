@@ -269,7 +269,7 @@ const MapPage = () => {
               onLongPress={handleLongPress}
               routeGeojson={activeRouteGeojson}
               routeFocus={routeFocus}
-              suppressInitialGeolocate={!!routeFocus}
+              suppressInitialGeolocate={!!routeFocus || !!pendingTopperRoute}
               onClearRoute={() => setActiveRouteGeojson(null)}
               previewWaypoints={previewWaypoints}
               onWaypointClick={(index) => setWaypointClickEvent({ index, timestamp: Date.now() })}

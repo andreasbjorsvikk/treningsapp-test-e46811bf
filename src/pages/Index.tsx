@@ -581,9 +581,13 @@ const IndexContent = () => {
               <div className="relative flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
                   {user && <ProfileButton />}
-                  <div className="leading-tight">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t('home.thisWeek')}</p>
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t('home.thisMonth')}</p>
+                  <div className="leading-tight space-y-0.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {t('home.thisWeek')} <span className="normal-case text-foreground">{appData.weekStats.totalSessions} {t('metric.sessions')}</span>
+                    </p>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {t('home.thisMonth')} <span className="normal-case text-foreground">{appData.monthStats.totalSessions} {t('metric.sessions')}</span>
+                    </p>
                   </div>
                 </div>
 
