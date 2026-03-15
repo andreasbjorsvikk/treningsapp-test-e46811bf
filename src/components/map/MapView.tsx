@@ -344,14 +344,15 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     const layerId = 'peak-route-layer';
 
     whenStyleReady(m, () => {
-      if (routeGeojson) {
-        // Normalize to a proper GeoJSON FeatureCollection for the source
-        let geojsonData: any = routeGeojson;
-        if (routeGeojson.type === 'LineString') {
-          geojsonData = { type: 'Feature', geometry: routeGeojson, properties: {} };
-        } else if (routeGeojson.type === 'Feature') {
-          geojsonData = routeGeojson;
-        }
+      if (routeCoordinates.length > 0) {
+        const geojsonData = {
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: routeCoordinates,
+          },
+          properties: {},
+        };
 
         // Always clean up old source/layer first to avoid stale state
         try {
@@ -359,7 +360,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           if (m.getSource(sourceId)) m.removeSource(sourceId);
         } catch {}
 
-        m.addSource(sourceId, { type: 'geojson', data: geojsonData });
+        m.addSource(sourceId, { type: 'geojson', data: geojsonData as any });
         m.addLayer({
           id: layerId,
           type: 'line',
@@ -368,14 +369,17 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           paint: { 'line-color': '#10b981', 'line-width': 6, 'line-opacity': 0.8 },
         });
 
-        // Fit bounds to route
+        // Fit bounds to route (run twice to avoid camera race with map load/geolocate)
         const bounds = new mapboxgl.LngLatBounds();
-        const coords = routeGeojson.coordinates
-          || routeGeojson?.geometry?.coordinates
-          || (routeGeojson?.features?.[0]?.geometry?.coordinates);
-        if (coords && Array.isArray(coords)) {
-          coords.forEach((coord: [number, number]) => bounds.extend(coord));
+        routeCoordinates.forEach((coord) => bounds.extend(coord));
+
+        if (routeCoordinates.length === 1) {
+          m.easeTo({ center: routeCoordinates[0], zoom: 14, duration: 900 });
+        } else {
           m.fitBounds(bounds, { padding: 50, duration: 1000 });
+          window.setTimeout(() => {
+            m.fitBounds(bounds, { padding: 50, duration: 600 });
+          }, 450);
         }
       } else {
         try {
@@ -384,7 +388,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         } catch {}
       }
     });
-  }, [routeGeojson, mapLoaded, whenStyleReady]);
+  }, [routeCoordinates, mapLoaded, whenStyleReady]);
 
   // Handle preview waypoints
   useEffect(() => {
