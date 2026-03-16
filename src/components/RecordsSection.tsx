@@ -105,11 +105,16 @@ const RecordsSection = () => {
   const [showAddHike, setShowAddHike] = useState(false);
   const [showEditHike, setShowEditHike] = useState(false);
   const [showAddEntry, setShowAddEntry] = useState(false);
+  const [showDurationPicker, setShowDurationPicker] = useState(false);
   const [newHikeName, setNewHikeName] = useState('');
   const [newHikeElevation, setNewHikeElevation] = useState('');
   const [newHikeDistance, setNewHikeDistance] = useState('');
   const [newHikeElevationGain, setNewHikeElevationGain] = useState('');
-  const [newEntryTime, setNewEntryTime] = useState('');
+  const [newEntryHours, setNewEntryHours] = useState(0);
+  const [newEntryMinutes, setNewEntryMinutes] = useState(0);
+  const [newEntrySeconds, setNewEntrySeconds] = useState(0);
+  const [newEntryAvgHr, setNewEntryAvgHr] = useState('');
+  const [newEntryMaxHr, setNewEntryMaxHr] = useState('');
   const [newEntryDate, setNewEntryDate] = useState(new Date().toISOString().slice(0, 10));
 
   // Mock hiking records (stored in localStorage for now)
