@@ -15,16 +15,6 @@ import tierMedium from '@/assets/icons/peak-tier-medium.svg';
 import tierHigh from '@/assets/icons/peak-tier-high.svg';
 import tierVeryHigh from '@/assets/icons/peak-tier-veryhigh.svg';
 
-// ── Icon Bank 3 (new colored PNG icons with baked-in circle) ──
-import lvl1Unchecked from '@/assets/icons/peak-lvl1-unchecked.png';
-import lvl1Checked from '@/assets/icons/peak-lvl1-checked.png';
-import lvl2Unchecked from '@/assets/icons/peak-lvl2-unchecked.png';
-import lvl2Checked from '@/assets/icons/peak-lvl2-checked.png';
-import lvl3Unchecked from '@/assets/icons/peak-lvl3-unchecked.png';
-import lvl3Checked from '@/assets/icons/peak-lvl3-checked.png';
-import lvl4Unchecked from '@/assets/icons/peak-lvl4-unchecked.png';
-import lvl4Checked from '@/assets/icons/peak-lvl4-checked.png';
-
 // Seeded random based on peak id/name for consistent icon per peak
 function hashStr(s: string): number {
   let h = 0;
@@ -47,20 +37,12 @@ export function getPeakIconBank1(elevationMoh: number, seed: string = ''): strin
   return peak0199;
 }
 
-// ── Icon Bank 2 (SVG tiers – kept for backward compat) ──
+// ── Icon Bank 2 (current – SVG tiers) ──
 export function getPeakIcon(elevationMoh: number, _seed: string = ''): string {
   if (elevationMoh >= 1000) return tierVeryHigh;
   if (elevationMoh >= 650) return tierHigh;
   if (elevationMoh >= 300) return tierMedium;
   return tierLow;
-}
-
-// ── Icon Bank 3 (colored PNG with circle – checked/unchecked) ──
-export function getPeakIconColored(elevationMoh: number, checked: boolean): string {
-  if (elevationMoh >= 1000) return checked ? lvl4Checked : lvl4Unchecked;
-  if (elevationMoh >= 650) return checked ? lvl3Checked : lvl3Unchecked;
-  if (elevationMoh >= 300) return checked ? lvl2Checked : lvl2Unchecked;
-  return checked ? lvl1Checked : lvl1Unchecked;
 }
 
 // Representative icons for each tier (for tutorials, legends, etc.)
@@ -69,12 +51,4 @@ export const peakIconTiers = {
   medium: tierMedium,
   high: tierHigh,
   veryHigh: tierVeryHigh,
-};
-
-// Colored icon tiers for legends
-export const peakIconColoredTiers = {
-  low: { unchecked: lvl1Unchecked, checked: lvl1Checked },
-  medium: { unchecked: lvl2Unchecked, checked: lvl2Checked },
-  high: { unchecked: lvl3Unchecked, checked: lvl3Checked },
-  veryHigh: { unchecked: lvl4Unchecked, checked: lvl4Checked },
 };

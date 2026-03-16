@@ -12,7 +12,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { getMonthTarget, getYearTarget, getActiveGoalForDate, getYearExpectedProgress, getEarliestStart, convertGoalValue } from '@/services/primaryGoalService';
 import ChallengeDetail from '@/components/community/ChallengeDetail';
 import { ChallengeWithParticipants } from '@/pages/CommunityPage';
-import { getPeakIconColored } from '@/utils/peakIcons';
+import { getPeakIcon } from '@/utils/peakIcons';
 
 interface UserProfileDrawerProps {
   user: Friend | null;
@@ -455,14 +455,17 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                           {peakVisits.length} {peakVisits.length === 1 ? 'topp' : 'topper'} besøkt
                         </p>
                         {peakVisits.map(p => {
-                          const iconSrc = getPeakIconColored(p.peak_elevation, true);
+                          const iconSrc = getPeakIcon(p.peak_elevation, p.peak_id);
                           return (
                             <div key={p.peak_id} className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border/40">
-                              <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden">
+                              <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center shrink-0">
                                 <img
                                   src={iconSrc}
                                   alt=""
-                                  className="w-10 h-10 object-contain"
+                                  className="w-6 h-6"
+                                  style={{
+                                    filter: 'brightness(0) saturate(100%) invert(58%) sepia(52%) saturate(501%) hue-rotate(93deg) brightness(95%) contrast(92%)',
+                                  }}
                                 />
                               </div>
                               <div className="flex-1 min-w-0">
