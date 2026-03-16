@@ -7,7 +7,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { getPeakIcon } from '@/utils/peakIcons';
+import { getPeakIconColored } from '@/utils/peakIcons';
 
 type Filter = 'all' | 'not_taken' | 'taken';
 
