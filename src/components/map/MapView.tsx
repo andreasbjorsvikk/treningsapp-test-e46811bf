@@ -577,8 +577,8 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
             ? 'hsl(var(--warning) / 0.45)'
             : 'hsl(0 0% 88% / 0.72)'; // Light border in both modes
       const markerShadow = isTaken && !isYearFiltered
-        ? '0 10px 24px hsl(var(--success) / 0.24), inset 0 1px 0 hsl(var(--background) / 0.18)'
-        : '0 10px 24px hsl(var(--foreground) / 0.14), inset 0 1px 0 hsl(var(--background) / 0.35)';
+        ? '0 10px 24px hsl(var(--success) / 0.24), inset 0 1px 0 hsl(0 0% 100% / 0.18)'
+        : '0 10px 24px hsl(0 0% 0% / 0.14)';
       const markerBackdrop = isTaken && !isYearFiltered
         ? 'blur(6px) saturate(1.04)'
         : 'blur(10px) saturate(1.12)';
