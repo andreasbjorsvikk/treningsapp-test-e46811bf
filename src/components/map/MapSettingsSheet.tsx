@@ -71,7 +71,7 @@ const MapSettingsSheet = ({
           <div className="flex items-center justify-between">
             <div>
               <Label className="text-sm font-semibold">Vis kun topper nådd i år</Label>
-              <p className="text-xs text-muted-foreground mt-0.5">Andre topper vises som svake markører</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Vis fjellkartet basert kun på inneværende år</p>
             </div>
             <Switch checked={onlyReachedThisYear} onCheckedChange={onOnlyReachedThisYearChange} />
           </div>

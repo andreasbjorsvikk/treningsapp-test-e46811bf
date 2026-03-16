@@ -578,17 +578,7 @@ const CalendarPage = () => {
 
   return (
     <div className="space-y-1 relative">
-      {/* "I dag" button */}
-      {showTodayButton && (
-        <button
-          onClick={scrollToToday}
-          className="absolute top-0 left-1/2 -translate-x-1/2 z-30 px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold shadow-lg hover:bg-primary/90 transition-colors animate-in fade-in slide-in-from-top-2 duration-200"
-        >
-          I dag
-        </button>
-      )}
-
-      {/* Sticky weekday headers */}
+      {/* Sticky weekday headers + "I dag" button */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm pb-1">
         <div className="grid grid-cols-7">
           {weekdays.map(d => (
@@ -597,6 +587,16 @@ const CalendarPage = () => {
             </div>
           ))}
         </div>
+        {showTodayButton && (
+          <div className="flex justify-center">
+            <button
+              onClick={scrollToToday}
+              className="px-4 py-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold shadow-lg hover:bg-primary/90 transition-colors animate-in fade-in slide-in-from-top-2 duration-200"
+            >
+              I dag
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Scrollable months container */}

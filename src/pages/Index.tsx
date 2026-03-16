@@ -579,15 +579,19 @@ const IndexContent = () => {
             {/* ===== HERO HEADER ===== */}
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-energy/10 via-background to-accent/5 border border-border/30 px-4 py-3">
               <div className="relative flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5 min-w-0">
+                <div className="flex items-center gap-3 min-w-0">
                   {user && <ProfileButton />}
-                  <div className="leading-tight space-y-0.5">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      {t('home.thisWeek')} <span className="normal-case text-foreground">{appData.weekStats.totalSessions} {t('metric.sessions')}</span>
-                    </p>
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      {t('home.thisMonth')} <span className="normal-case text-foreground">{appData.monthStats.totalSessions} {t('metric.sessions')}</span>
-                    </p>
+                  <div className="flex gap-3">
+                    <div className="flex flex-col items-center px-2.5 py-1 rounded-lg bg-muted/50">
+                      <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">{t('home.thisWeek')}</span>
+                      <span className="text-base font-bold text-foreground leading-tight">{appData.weekStats.totalSessions}</span>
+                      <span className="text-[9px] text-muted-foreground">{t('metric.sessions')}</span>
+                    </div>
+                    <div className="flex flex-col items-center px-2.5 py-1 rounded-lg bg-muted/50">
+                      <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">{t('home.thisMonth')}</span>
+                      <span className="text-base font-bold text-foreground leading-tight">{appData.monthStats.totalSessions}</span>
+                      <span className="text-[9px] text-muted-foreground">{t('metric.sessions')}</span>
+                    </div>
                   </div>
                 </div>
 
