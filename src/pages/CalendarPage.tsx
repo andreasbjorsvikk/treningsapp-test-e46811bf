@@ -119,6 +119,7 @@ const CalendarPage = () => {
   const weekdays = weekdayKeys.map(k => t(`calendar.weekdays.${k}`));
   const now = new Date();
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [showTodayButton, setShowTodayButton] = useState(false);
   const [, setRefresh] = useState(0);
   const [editHealthEvent, setEditHealthEvent] = useState<HealthEvent | undefined>();
   const [healthDialogOpen, setHealthDialogOpen] = useState(false);
