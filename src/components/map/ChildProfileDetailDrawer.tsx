@@ -4,7 +4,7 @@ import { ChildProfile } from '@/services/childProfileService';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Mountain, Loader2 } from 'lucide-react';
-import { getPeakIcon } from '@/utils/peakIcons';
+import { getPeakIconColored } from '@/utils/peakIcons';
 
 interface PeakVisit {
   peak_id: string;
