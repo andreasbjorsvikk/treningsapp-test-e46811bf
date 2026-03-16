@@ -91,6 +91,8 @@ export interface HikingEntry {
   id: string;
   time: string;
   date: string;
+  avgHeartrate?: number;
+  maxHeartrate?: number;
 }
 
 type RecordTab = 'running' | 'cycling' | 'hiking';
