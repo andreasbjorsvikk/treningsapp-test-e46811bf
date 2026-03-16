@@ -218,7 +218,7 @@ const OverviewContent = () => (
 );
 
 const PeakIcon = ({ src }: { src: string }) => (
-  <img src={src} alt="" className="w-10 h-10 object-contain" />
+  <img src={src} alt="" className="w-12 h-12 object-contain" />
 );
 
 const steps: TutorialStep[] = [
