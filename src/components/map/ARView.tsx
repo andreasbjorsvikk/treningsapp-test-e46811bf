@@ -3,7 +3,7 @@ import { Peak } from '@/data/peaks';
 import { PeakCheckin } from '@/services/peakCheckinService';
 import { Camera, Compass, Mountain, Navigation, Map as MapIcon, Eye, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getPeakIcon } from '@/utils/peakIcons';
+import { getPeakIconColored } from '@/utils/peakIcons';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
