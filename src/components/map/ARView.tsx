@@ -552,7 +552,7 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
 
       {/* Peak labels overlay (camera mode only) */}
       {mode === 'camera' && visiblePeaks.map(({ peak, distance, screenX, screenY, isTaken }) => {
-        const icon = getPeakIcon(peak.heightMoh, peak.id);
+        const icon = getPeakIconColored(peak.heightMoh, isTaken);
         const opacity = Math.max(0.5, 1 - distance / maxDist);
         const scale = Math.max(0.6, 1 - (distance / maxDist) * 0.4);
 
@@ -580,12 +580,8 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
             <span className="text-[9px] text-white/90 font-medium drop-shadow-lg">
               {distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}
             </span>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 shadow-lg ${
-              isTaken
-                ? 'bg-[hsl(152,60%,42%)] border-[hsl(152,60%,35%)]'
-                : 'bg-white/90 border-white/60'
-            }`}>
-              <img src={icon} alt="" className="w-5 h-5 object-contain" />
+            <div className="w-9 h-9 rounded-full flex items-center justify-center overflow-hidden shadow-lg">
+              <img src={icon} alt="" className="w-9 h-9 object-contain rounded-full" />
             </div>
             <div className={`w-px h-4 ${isTaken ? 'bg-[hsl(152,60%,42%)]/50' : 'bg-white/30'}`} />
           </button>
