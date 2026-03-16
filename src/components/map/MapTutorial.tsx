@@ -217,6 +217,29 @@ const OverviewContent = () => (
   </div>
 );
 
+// ── Step 5 content: AR view explanation ──
+const ARContent = () => (
+  <div className="space-y-2 py-1">
+    <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
+      <Camera className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+      <div>
+        <p className="text-sm font-semibold text-foreground">AR-kamera</p>
+        <p className="text-[11px] text-muted-foreground">Pek mobilen mot fjellene for å se toppnavnene rett i kamera-bildet.</p>
+      </div>
+    </div>
+    <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
+      <Map className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+      <div>
+        <p className="text-sm font-semibold text-foreground">3D-kart</p>
+        <p className="text-[11px] text-muted-foreground">Bytt over til et interaktivt 3D-kart som følger retningen din.</p>
+      </div>
+    </div>
+    <div className="px-3 py-2 rounded-xl bg-muted/40 border border-border/30">
+      <p className="text-[10px] text-muted-foreground italic">Nøyaktigheten avhenger av mobilkompassets presisjon. Kalibrer kompasset ved å bevege mobilen i en 8-bevegelse.</p>
+    </div>
+  </div>
+);
+
 const PeakIcon = ({ src }: { src: string }) => (
   <img src={src} alt="" className="w-12 h-12 object-contain" />
 );
@@ -245,6 +268,12 @@ const steps: TutorialStep[] = [
     text: '',
     icon: <PeakIcon src={peakIconTiers.low} />,
     customContent: <OverviewContent />,
+  },
+  {
+    title: 'AR-visning 📷',
+    text: 'Bruk AR-funksjonen for å finne fjelltopper rundt deg ved hjelp av kameraet.',
+    icon: <Camera className="w-12 h-12 text-primary" />,
+    customContent: <ARContent />,
   },
 ];
 
