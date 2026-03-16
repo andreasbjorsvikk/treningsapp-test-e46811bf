@@ -566,7 +566,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       el.style.cssText = `
         width: 36px; height: 36px; cursor: pointer;
         border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        overflow: hidden;
+        overflow: hidden; background: white;
         ${isUnpublished ? 'opacity: 0.7;' : ''}
         ${isYearFiltered ? 'opacity: 0.55;' : ''}
       `;
