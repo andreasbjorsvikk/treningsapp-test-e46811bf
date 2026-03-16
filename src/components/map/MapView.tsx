@@ -597,8 +597,9 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       `;
         const nudgeUp = '';
         
+        const imgOpacity = (!isTaken || isYearFiltered) ? 'opacity: 0.8;' : '';
         el.innerHTML = `
-          <img src="${peakIcon}" alt="" width="24" height="24" style="object-fit: contain; ${nudgeUp}" draggable="false" />
+          <img src="${peakIcon}" alt="" width="24" height="24" style="object-fit: contain; ${imgOpacity} ${nudgeUp}" draggable="false" />
         `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;
