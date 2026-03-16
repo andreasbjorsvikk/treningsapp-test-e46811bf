@@ -63,9 +63,6 @@ const MapPage = () => {
   // Suggested peaks (pending, visible to all)
   const [suggestedPeaks, setSuggestedPeaks] = useState<PeakSuggestion[]>([]);
 
-  // Track if route was shown from topper tab for back navigation
-  const [routeFromTopperPeak, setRouteFromTopperPeak] = useState<Peak | null>(null);
-
   const checkedPeakIds = useMemo(() => new Set(checkins.map(c => c.peak_id)), [checkins]);
 
   // Filter peaks for map display
@@ -203,15 +200,12 @@ const MapPage = () => {
 
     const openedFromTopper = subTab === 'topper' || fromTopper === true;
 
-    if (openedFromTopper) {
-      setRouteFromTopperPeak(peak);
-      applyRouteForPeak(peak);
-      setSubTab('kart');
-      return;
-    }
-
-    setRouteFromTopperPeak(null);
+    setSelectedPeak(peak);
     applyRouteForPeak(peak);
+
+    if (openedFromTopper) {
+      setSubTab('kart');
+    }
   };
 
   useEffect(() => {
@@ -288,28 +282,16 @@ const MapPage = () => {
               onlyReachedThisYear={onlyReachedThisYear}
               suggestedPeaks={suggestedPeaks}
             />
-            {activeRouteGeojson && (
+            {activeRouteGeojson && !selectedPeak && (
               <button
-                onClick={() => {
-                  if (routeFromTopperPeak) {
-                    handleHideRoute();
-                    setSubTab('topper');
-                    setSelectedPeak(routeFromTopperPeak);
-                    setRouteFromTopperPeak(null);
-                  } else {
-                    handleHideRoute();
-                  }
-                }}
+                onClick={handleHideRoute}
                 className="absolute top-3 left-1/2 -translate-x-1/2 z-20 px-4 py-2 rounded-full text-xs font-semibold shadow-lg border border-border bg-background/95 backdrop-blur-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  {routeFromTopperPeak ? (
-                    <><polyline points="15 18 9 12 15 6"/></>
-                  ) : (
-                    <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>
-                  )}
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
-                {routeFromTopperPeak ? 'Tilbake' : 'Skjul rute'}
+                Skjul rute
               </button>
             )}
             {/* Settings button bottom-left */}
