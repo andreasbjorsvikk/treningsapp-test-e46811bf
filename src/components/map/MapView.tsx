@@ -565,7 +565,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       const markerBackground = isYearFiltered
         ? 'hsl(var(--background) / 0.42)'
         : isTaken
-          ? 'hsl(var(--success) / 0.5)'
+          ? 'hsl(var(--success) / 0.75)'
           : isUnpublished
             ? 'hsl(var(--warning) / 0.26)'
             : 'hsl(var(--background) / 0.58)';
