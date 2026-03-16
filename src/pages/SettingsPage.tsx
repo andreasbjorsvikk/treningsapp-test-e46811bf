@@ -76,6 +76,7 @@ const SettingsPage = () => {
   const [realFriends, setRealFriends] = useState<Friend[]>([]);
   const [gdprSubView, setGdprSubView] = useState<'main' | 'deleteData' | 'deleteAccount' | 'downloadData'>('main');
   const [helpOpenSections, setHelpOpenSections] = useState<Set<string>>(new Set());
+  const [showSettingsTutorial, setShowSettingsTutorial] = useState(false);
 
   // Child privacy options
   const [hasChildren, setHasChildren] = useState(false);
