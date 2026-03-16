@@ -498,7 +498,7 @@ const PeakFeed = () => {
       {/* Feed content */}
       {groupedPosts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Mountain className="w-10 h-10 text-muted-foreground/50 mb-3" />
+          <img src={getPeakIcon(500)} alt="" className="w-10 h-10 object-contain opacity-50 mb-3" />
           <p className="text-sm text-muted-foreground">Ingen innsjekkinger å vise.</p>
         </div>
       ) : (
