@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, ChevronRight, Mountain, Map, MapPin, List } from 'lucide-react';
+import { X, ChevronRight, Mountain, Map, MapPin, List, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { peakIconTiers } from '@/utils/peakIcons';
 
