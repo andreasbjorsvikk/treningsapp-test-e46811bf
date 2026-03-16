@@ -122,7 +122,14 @@ const SettingsPage = () => {
 
   // Listen for navigate-to-profile event
   useEffect(() => {
-    const handler = () => setView('profile');
+    const handler = () => {
+      setView('profile');
+      // Show tutorial on first visit
+      const done = localStorage.getItem(SETTINGS_TUTORIAL_KEY);
+      if (!done) {
+        setTimeout(() => setShowSettingsTutorial(true), 400);
+      }
+    };
     window.addEventListener('navigate-to-profile', handler);
     return () => window.removeEventListener('navigate-to-profile', handler);
   }, []);
