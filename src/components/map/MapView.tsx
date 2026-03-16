@@ -1087,8 +1087,8 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       const updateScale = () => {
         if (!map.current) return;
         const zoom = map.current.getZoom();
-        // Scale from 1.0 at zoom 12+ down to 0.5 at zoom 8
-        const scale = Math.max(0.4, Math.min(1, (zoom - 7) / 5));
+        // Scale from 1.0 at zoom 12+ down to 0.55 at zoom 7
+        const scale = Math.max(0.55, Math.min(1, (zoom - 7) / 5));
         areaMarkersRef.current.forEach(mk => {
           const el = mk.getElement();
           const inner = el.querySelector('div > div') as HTMLElement;
