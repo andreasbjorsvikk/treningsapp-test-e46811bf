@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import SettingsTutorialDialog, { SETTINGS_TUTORIAL_KEY } from '@/components/SettingsTutorialDialog';
 import { useSettings, AppColorTheme, AccentColor, PrivacyLevel } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
