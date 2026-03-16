@@ -50,9 +50,7 @@ const MapPage = () => {
   const [activeRouteGeojson, setActiveRouteGeojson] = useState<any>(null);
   const [activeRoutePeakId, setActiveRoutePeakId] = useState<string | null>(null);
   const [routeFocus, setRouteFocus] = useState<{ latitude: number; longitude: number; requestId: number } | null>(null);
-  const [pendingTopperRoute, setPendingTopperRoute] = useState<Peak | null>(null);
   const [previewWaypoints, setPreviewWaypoints] = useState<{lat: number, lng: number}[]>([]);
-  const [isMapReady, setIsMapReady] = useState(false);
 
   // Map settings
   const [showSettings, setShowSettings] = useState(false);
@@ -117,11 +115,6 @@ const MapPage = () => {
     return () => window.removeEventListener('open-admin-peak-suggestions', handleOpenAdminSuggestions);
   }, [adminMode]);
 
-  useEffect(() => {
-    if (subTab !== 'kart') {
-      setIsMapReady(false);
-    }
-  }, [subTab]);
 
   const handleSelectPeak = (peak: Peak) => {
     setSelectedPeak(peak);
@@ -212,7 +205,7 @@ const MapPage = () => {
 
     if (openedFromTopper) {
       setRouteFromTopperPeak(peak);
-      setPendingTopperRoute(peak);
+      applyRouteForPeak(peak);
       setSubTab('kart');
       return;
     }
@@ -220,19 +213,6 @@ const MapPage = () => {
     setRouteFromTopperPeak(null);
     applyRouteForPeak(peak);
   };
-
-  useEffect(() => {
-    if (subTab !== 'kart' || !pendingTopperRoute || !isMapReady) return;
-
-    const peakToShow = pendingTopperRoute;
-    setPendingTopperRoute(null);
-
-    const frame = window.requestAnimationFrame(() => {
-      applyRouteForPeak(peakToShow);
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [subTab, pendingTopperRoute, isMapReady, applyRouteForPeak]);
 
   useEffect(() => {
     if (showSuggestions && adminMode) {
@@ -297,9 +277,8 @@ const MapPage = () => {
               onLongPress={handleLongPress}
               routeGeojson={activeRouteGeojson}
               routeFocus={routeFocus}
-              suppressInitialGeolocate={!!routeFocus || !!pendingTopperRoute}
+              suppressInitialGeolocate={!!routeFocus}
               onClearRoute={handleHideRoute}
-              onMapReady={() => setIsMapReady(true)}
               previewWaypoints={previewWaypoints}
               onWaypointClick={(index) => setWaypointClickEvent({ index, timestamp: Date.now() })}
               onWaypointDrag={(index, lat, lng) => setWaypointDragEvent({ index, lat, lng, timestamp: Date.now() })}
