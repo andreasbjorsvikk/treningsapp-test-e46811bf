@@ -567,6 +567,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         width: 36px; height: 36px; cursor: pointer;
         border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         overflow: hidden; background: white;
+        background-clip: content-box; padding: 1px;
         ${isUnpublished ? 'opacity: 0.7;' : ''}
         ${isYearFiltered ? 'opacity: 0.55;' : ''}
       `;
