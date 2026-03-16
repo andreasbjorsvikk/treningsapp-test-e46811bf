@@ -200,15 +200,12 @@ const MapPage = () => {
 
     const openedFromTopper = subTab === 'topper' || fromTopper === true;
 
-    if (openedFromTopper) {
-      setRouteFromTopperPeak(peak);
-      applyRouteForPeak(peak);
-      setSubTab('kart');
-      return;
-    }
-
-    setRouteFromTopperPeak(null);
+    setSelectedPeak(peak);
     applyRouteForPeak(peak);
+
+    if (openedFromTopper) {
+      setSubTab('kart');
+    }
   };
 
   useEffect(() => {
