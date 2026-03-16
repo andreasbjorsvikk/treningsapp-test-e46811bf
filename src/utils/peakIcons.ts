@@ -9,11 +9,17 @@ import peak700999b from '@/assets/icons/peak-700-999-b.png';
 import peak1000a from '@/assets/icons/peak-1000.png';
 import peak1000b from '@/assets/icons/peak-1000-b.png';
 
-// ── Icon Bank 2 (current PNGs – single icon per tier) ──
+// ── Icon Bank 2 (current PNGs – single icon per tier, unchecked) ──
 import tierLow from '@/assets/icons/peak-tier-low.png';
 import tierMedium from '@/assets/icons/peak-tier-medium.png';
 import tierHigh from '@/assets/icons/peak-tier-high.png';
 import tierVeryHigh from '@/assets/icons/peak-tier-veryhigh.png';
+
+// ── Checked-in SVG icons (white, no fill) ──
+import checkedLow from '@/assets/icons/peak-checked-low.svg';
+import checkedMedium from '@/assets/icons/peak-checked-medium.svg';
+import checkedHigh from '@/assets/icons/peak-checked-high.svg';
+import checkedVeryHigh from '@/assets/icons/peak-checked-veryhigh.svg';
 
 // Seeded random based on peak id/name for consistent icon per peak
 function hashStr(s: string): number {
@@ -37,12 +43,20 @@ export function getPeakIconBank1(elevationMoh: number, seed: string = ''): strin
   return peak0199;
 }
 
-// ── Icon Bank 2 (current – SVG tiers) ──
+// ── Icon Bank 2 (unchecked – colored PNGs) ──
 export function getPeakIcon(elevationMoh: number, _seed: string = ''): string {
   if (elevationMoh >= 1000) return tierVeryHigh;
   if (elevationMoh >= 650) return tierHigh;
   if (elevationMoh >= 300) return tierMedium;
   return tierLow;
+}
+
+// ── Checked-in icons (white SVGs) ──
+export function getCheckedPeakIcon(elevationMoh: number): string {
+  if (elevationMoh >= 1000) return checkedVeryHigh;
+  if (elevationMoh >= 650) return checkedHigh;
+  if (elevationMoh >= 300) return checkedMedium;
+  return checkedLow;
 }
 
 // Representative icons for each tier (for tutorials, legends, etc.)
