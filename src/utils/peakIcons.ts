@@ -54,4 +54,8 @@ export const peakIconTiers = {
   medium: peak2Unchecked,
   high: peak3Unchecked,
   veryHigh: peak4Unchecked,
+  lowChecked: peak1Checked,
+  mediumChecked: peak2Checked,
+  highChecked: peak3Checked,
+  veryHighChecked: peak4Checked,
 };
