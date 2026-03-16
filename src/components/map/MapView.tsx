@@ -561,7 +561,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       const isYearFiltered = onlyReachedThisYear && !thisYearCheckedIds.has(peak.id);
 
       const el = document.createElement('div');
-      const peakIcon = (isTaken && !isYearFiltered) ? getCheckedPeakIcon(peak.heightMoh) : getPeakIcon(peak.heightMoh, peak.id);
+      const peakIcon = getPeakIcon(peak.heightMoh, peak.id);
       const markerBackground = isYearFiltered
         ? 'hsl(var(--background) / 0.42)'
         : isTaken
