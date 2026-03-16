@@ -561,7 +561,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       const isYearFiltered = onlyReachedThisYear && !thisYearCheckedIds.has(peak.id);
 
       const el = document.createElement('div');
-      const peakIcon = getPeakIcon(peak.heightMoh, peak.id);
+      const peakIcon = (isTaken && !isYearFiltered) ? getCheckedPeakIcon(peak.heightMoh) : getPeakIcon(peak.heightMoh, peak.id);
       const markerBackground = isYearFiltered
         ? 'hsl(var(--background) / 0.42)'
         : isTaken
@@ -595,13 +595,10 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         ${isUnpublished ? 'opacity: 0.8;' : ''}
         ${isYearFiltered ? 'opacity: 0.6;' : ''}
       `;
-        const imgStyle = isTaken && !isYearFiltered
-          ? 'object-fit: contain; filter: brightness(0) invert(1);'
-          : 'object-fit: contain;';
         const nudgeUp = '';
         
         el.innerHTML = `
-          <img src="${peakIcon}" alt="" width="24" height="24" style="${imgStyle} ${nudgeUp}" draggable="false" />
+          <img src="${peakIcon}" alt="" width="24" height="24" style="object-fit: contain; ${nudgeUp}" draggable="false" />
         `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;

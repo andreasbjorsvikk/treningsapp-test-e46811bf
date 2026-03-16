@@ -214,7 +214,7 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
           {filtered.map(peak => {
             const isTaken = checkedPeakIds.has(peak.id);
             const isUnpublished = peak.isPublished === false;
-            const iconSrc = getPeakIcon(peak.heightMoh, peak.id);
+            const iconSrc = isTaken ? getCheckedPeakIcon(peak.heightMoh) : getPeakIcon(peak.heightMoh, peak.id);
             return (
               <div
                 key={peak.id}
@@ -231,11 +231,6 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
                       src={iconSrc}
                       alt=""
                       className="w-6 h-6"
-                      style={{
-                        filter: isTaken
-                          ? 'brightness(0) saturate(100%) invert(58%) sepia(52%) saturate(501%) hue-rotate(93deg) brightness(95%) contrast(92%)'
-                          : 'none',
-                      }}
                     />
                   </div>
                   <div className="flex-1 min-w-0">
