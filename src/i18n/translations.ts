@@ -1036,6 +1036,7 @@ const en: Record<string, string> = {
   'records.newTime': 'New time',
   'records.timeFormat': 'Time (h:mm or hh:mm)',
   'records.timeExample': 'E.g. 3:45',
+  'records.tapToSetTime': 'Tap to set time',
   'records.deleteHikeConfirm': 'Are you sure you want to delete this hike?',
 
   // Privacy
