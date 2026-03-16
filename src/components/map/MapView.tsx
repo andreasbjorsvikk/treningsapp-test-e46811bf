@@ -574,25 +574,25 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       const el = document.createElement('div');
       const peakIcon = getPeakIcon(peak.heightMoh, peak.id);
       const markerBackground = isYearFiltered
-        ? 'hsl(var(--background) / 0.42)'
+        ? 'hsl(var(--background) / 0.46)'
         : isTaken
-          ? 'hsl(var(--success) / 0.5)'
+          ? 'hsl(var(--success) / 0.58)'
           : isUnpublished
-            ? 'hsl(var(--warning) / 0.26)'
-            : 'hsl(var(--background) / 0.58)';
+            ? 'hsl(var(--warning) / 0.28)'
+            : 'hsl(var(--muted-foreground) / 0.32)';
       const markerBorder = isYearFiltered
-        ? 'hsl(var(--border) / 0.55)'
+        ? 'hsl(var(--border) / 0.58)'
         : isTaken
-          ? 'hsl(var(--success) / 0.72)'
+          ? 'hsl(var(--success) / 0.84)'
           : isUnpublished
-            ? 'hsl(var(--warning) / 0.45)'
-            : 'hsl(var(--border) / 0.72)';
+            ? 'hsl(var(--warning) / 0.48)'
+            : 'hsl(var(--muted-foreground) / 0.46)';
       const markerShadow = isTaken && !isYearFiltered
-        ? '0 10px 24px hsl(var(--success) / 0.24), inset 0 1px 0 hsl(var(--background) / 0.18)'
-        : '0 10px 24px hsl(var(--foreground) / 0.14), inset 0 1px 0 hsl(var(--background) / 0.35)';
+        ? '0 10px 24px hsl(var(--success) / 0.28), inset 0 1px 0 hsl(var(--background) / 0.22)'
+        : '0 10px 24px hsl(var(--foreground) / 0.16), inset 0 1px 0 hsl(var(--background) / 0.22)';
       const markerBackdrop = isTaken && !isYearFiltered
-        ? 'blur(6px) saturate(1.04)'
-        : 'blur(10px) saturate(1.12)';
+        ? 'blur(5px) saturate(1.08)'
+        : 'blur(8px) saturate(1.06)';
       
       el.style.cssText = `
         width: 36px; height: 36px; cursor: pointer;
@@ -603,12 +603,12 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         box-shadow: ${markerShadow};
         backdrop-filter: ${markerBackdrop};
         -webkit-backdrop-filter: ${markerBackdrop};
-        ${isUnpublished ? 'opacity: 0.8;' : ''}
-        ${isYearFiltered ? 'opacity: 0.6;' : ''}
+        ${isUnpublished ? 'opacity: 0.84;' : ''}
+        ${isYearFiltered ? 'opacity: 0.64;' : ''}
       `;
-        const imgStyle = isTaken && !isYearFiltered
-          ? 'object-fit: contain; filter: brightness(0) invert(1);'
-          : 'object-fit: contain; filter: brightness(0) opacity(0.5);';
+        const imgStyle = isYearFiltered
+          ? 'object-fit: contain; filter: brightness(0) invert(1); opacity: 0.72;'
+          : 'object-fit: contain; filter: brightness(0) invert(1); opacity: 0.96;';
         const nudgeUp = peak.heightMoh >= 650 ? 'margin-top: -3.5px;' : '';
         
         el.innerHTML = `
