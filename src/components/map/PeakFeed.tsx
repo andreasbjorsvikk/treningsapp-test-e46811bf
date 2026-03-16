@@ -5,7 +5,7 @@ import { updateCheckinImage, deleteCheckin, checkinPeak } from '@/services/peakC
 import { getChildProfiles, getSharedChildProfiles, ChildProfile } from '@/services/childProfileService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Mountain, Loader2, RefreshCw, Pencil, Trash2, ImageIcon, Users } from 'lucide-react';
+import { Loader2, RefreshCw, Pencil, Trash2, ImageIcon, Users } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import CheckinImageUpload from '@/components/map/CheckinImageUpload';
@@ -14,6 +14,7 @@ import UserProfileDrawer from '@/components/community/UserProfileDrawer';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import { getPeakIcon } from '@/utils/peakIcons';
 
 type FeedFilter = 'alle' | 'friends' | 'mine' | 'global';
 
