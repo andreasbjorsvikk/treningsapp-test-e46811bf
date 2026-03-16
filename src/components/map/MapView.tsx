@@ -431,20 +431,44 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     });
   }, [mapStyle, mapLoaded, whenStyleReady]);
 
-  // Route focus (especially important when opening route from Topper tab)
+  const focusRouteFallback = useCallback((m: mapboxgl.Map, focus: NonNullable<MapViewProps['routeFocus']>) => {
+    m.resize();
+    m.easeTo({
+      center: [focus.longitude, focus.latitude],
+      zoom: Math.max(m.getZoom(), 12.5),
+      duration: 700,
+    });
+  }, []);
+
+  const fitRouteBounds = useCallback((m: mapboxgl.Map, focus?: MapViewProps['routeFocus']) => {
+    if (routeCoordinates.length < 2) return;
+
+    const bounds = new mapboxgl.LngLatBounds();
+    routeCoordinates.forEach((coord) => bounds.extend(coord));
+
+    if (focus) {
+      bounds.extend([focus.longitude, focus.latitude]);
+    }
+
+    const runFitBounds = (duration: number) => {
+      m.resize();
+      m.fitBounds(bounds, { padding: 60, duration, maxZoom: 15 });
+    };
+
+    window.requestAnimationFrame(() => runFitBounds(900));
+    window.setTimeout(() => runFitBounds(500), 280);
+    m.once('idle', () => runFitBounds(0));
+  }, [routeCoordinates]);
+
+  // Fallback focus if route geometry is temporarily unavailable
   useEffect(() => {
-    if (!map.current || !mapLoaded || !routeFocus) return;
+    if (!map.current || !mapLoaded || !routeFocus || routeCoordinates.length >= 2) return;
     const m = map.current;
 
     whenStyleReady(m, () => {
-      m.resize();
-      m.easeTo({
-        center: [routeFocus.longitude, routeFocus.latitude],
-        zoom: Math.max(m.getZoom(), 12.5),
-        duration: 700,
-      });
+      focusRouteFallback(m, routeFocus);
     });
-  }, [routeFocus, mapLoaded, whenStyleReady]);
+  }, [routeFocus?.requestId, routeCoordinates.length, mapLoaded, whenStyleReady, focusRouteFallback]);
 
   // Draw route if provided
   useEffect(() => {
@@ -466,25 +490,12 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           properties: {},
         } as any);
 
-        const bounds = new mapboxgl.LngLatBounds();
-        routeCoordinates.forEach((coord) => bounds.extend(coord));
-
-        if (routeFocus) {
-          bounds.extend([routeFocus.longitude, routeFocus.latitude]);
-        }
-
-        m.resize();
-        window.requestAnimationFrame(() => {
-          m.fitBounds(bounds, { padding: 60, duration: 900, maxZoom: 15 });
-          window.setTimeout(() => {
-            m.fitBounds(bounds, { padding: 60, duration: 500, maxZoom: 15 });
-          }, 350);
-        });
+        fitRouteBounds(m, routeFocus);
       } else {
         source.setData({ type: 'FeatureCollection', features: [] } as any);
       }
     });
-  }, [routeCoordinates, routeFocus, mapLoaded, whenStyleReady, ensureRouteLayer]);
+  }, [routeCoordinates, routeFocus?.requestId, mapLoaded, whenStyleReady, ensureRouteLayer, fitRouteBounds]);
 
   // Handle preview waypoints
   useEffect(() => {
