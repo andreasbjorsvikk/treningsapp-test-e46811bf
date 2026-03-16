@@ -235,12 +235,20 @@ const CalendarPage = () => {
   // IMPORTANT: disabled until initial scroll-to-today is complete
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleScroll = useCallback(() => {
-    if (!hasScrolledToToday.current) return; // Don't run until initial scroll is done
-    if (scrollTimeoutRef.current) return; // throttle
+    if (!hasScrolledToToday.current) return;
+    if (scrollTimeoutRef.current) return;
     scrollTimeoutRef.current = setTimeout(() => {
       scrollTimeoutRef.current = null;
       const el = scrollRef.current;
       if (!el) return;
+
+      // Check if current month is visible
+      if (currentMonthRef.current) {
+        const containerRect = el.getBoundingClientRect();
+        const monthRect = currentMonthRef.current.getBoundingClientRect();
+        const isVisible = monthRect.bottom > containerRect.top && monthRect.top < containerRect.bottom;
+        setShowTodayButton(!isVisible);
+      }
 
       if (el.scrollTop < 300) {
         const prevHeight = el.scrollHeight;
