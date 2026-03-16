@@ -205,7 +205,7 @@ const MapPage = () => {
 
     if (openedFromTopper) {
       setRouteFromTopperPeak(peak);
-      setPendingTopperRoute(peak);
+      applyRouteForPeak(peak);
       setSubTab('kart');
       return;
     }
@@ -213,19 +213,6 @@ const MapPage = () => {
     setRouteFromTopperPeak(null);
     applyRouteForPeak(peak);
   };
-
-  useEffect(() => {
-    if (subTab !== 'kart' || !pendingTopperRoute || !isMapReady) return;
-
-    const peakToShow = pendingTopperRoute;
-    setPendingTopperRoute(null);
-
-    const frame = window.requestAnimationFrame(() => {
-      applyRouteForPeak(peakToShow);
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [subTab, pendingTopperRoute, isMapReady, applyRouteForPeak]);
 
   useEffect(() => {
     if (showSuggestions && adminMode) {
