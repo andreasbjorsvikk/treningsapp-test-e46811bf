@@ -936,6 +936,7 @@ const SettingsPage = () => {
     return (
       <div className="space-y-4">
         {backButton(t('profile.title'))}
+        <SettingsTutorialDialog open={showSettingsTutorial} onClose={() => setShowSettingsTutorial(false)} />
 
         <div className="glass-card rounded-xl p-4 space-y-5">
           {/* Avatar & name */}
