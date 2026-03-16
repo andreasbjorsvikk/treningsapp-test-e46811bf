@@ -9,11 +9,11 @@ import peak700999b from '@/assets/icons/peak-700-999-b.png';
 import peak1000a from '@/assets/icons/peak-1000.png';
 import peak1000b from '@/assets/icons/peak-1000-b.png';
 
-// ── Icon Bank 2 (current SVGs – single icon per tier) ──
-import tierLow from '@/assets/icons/peak-tier-low.svg';
-import tierMedium from '@/assets/icons/peak-tier-medium.svg';
-import tierHigh from '@/assets/icons/peak-tier-high.svg';
-import tierVeryHigh from '@/assets/icons/peak-tier-veryhigh.svg';
+// ── Icon Bank 2 (current PNGs – single icon per tier) ──
+import tierLow from '@/assets/icons/peak-tier-low.png';
+import tierMedium from '@/assets/icons/peak-tier-medium.png';
+import tierHigh from '@/assets/icons/peak-tier-high.png';
+import tierVeryHigh from '@/assets/icons/peak-tier-veryhigh.png';
 
 // Seeded random based on peak id/name for consistent icon per peak
 function hashStr(s: string): number {
