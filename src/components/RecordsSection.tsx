@@ -12,6 +12,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
+import DurationPicker from '@/components/DurationPicker';
 
 // Running distance benchmarks
 const RUNNING_BENCHMARKS = [
