@@ -5,7 +5,7 @@ import { updateCheckinImage, deleteCheckin, checkinPeak } from '@/services/peakC
 import { getChildProfiles, getSharedChildProfiles, ChildProfile } from '@/services/childProfileService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Mountain, Loader2, RefreshCw, Pencil, Trash2, ImageIcon, Users } from 'lucide-react';
+import { Loader2, RefreshCw, Pencil, Trash2, ImageIcon, Users } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import CheckinImageUpload from '@/components/map/CheckinImageUpload';
@@ -14,6 +14,7 @@ import UserProfileDrawer from '@/components/community/UserProfileDrawer';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import { getPeakIcon } from '@/utils/peakIcons';
 
 type FeedFilter = 'alle' | 'friends' | 'mine' | 'global';
 
@@ -497,7 +498,7 @@ const PeakFeed = () => {
       {/* Feed content */}
       {groupedPosts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Mountain className="w-10 h-10 text-muted-foreground/50 mb-3" />
+          <img src={getPeakIcon(500)} alt="" className="w-10 h-10 object-contain opacity-50 mb-3" />
           <p className="text-sm text-muted-foreground">Ingen innsjekkinger å vise.</p>
         </div>
       ) : (
@@ -603,7 +604,7 @@ const PeakFeed = () => {
 
                       {/* Peak info */}
                       <div className="flex items-center gap-2 px-1">
-                        <Mountain className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <img src={getPeakIcon(parentItem.peak_elevation)} alt="" className="w-5 h-5 object-contain shrink-0" />
                         <span className="text-sm font-medium">{parentItem.peak_name}</span>
                         <span className="text-xs text-muted-foreground">{parentItem.peak_elevation} moh · {parentItem.peak_area}</span>
                       </div>

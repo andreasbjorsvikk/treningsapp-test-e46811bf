@@ -12,6 +12,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
+import DurationPicker from '@/components/DurationPicker';
 
 // Running distance benchmarks
 const RUNNING_BENCHMARKS = [
@@ -90,6 +91,8 @@ export interface HikingEntry {
   id: string;
   time: string;
   date: string;
+  avgHeartrate?: number;
+  maxHeartrate?: number;
 }
 
 type RecordTab = 'running' | 'cycling' | 'hiking';
@@ -102,11 +105,16 @@ const RecordsSection = () => {
   const [showAddHike, setShowAddHike] = useState(false);
   const [showEditHike, setShowEditHike] = useState(false);
   const [showAddEntry, setShowAddEntry] = useState(false);
+  const [showDurationPicker, setShowDurationPicker] = useState(false);
   const [newHikeName, setNewHikeName] = useState('');
   const [newHikeElevation, setNewHikeElevation] = useState('');
   const [newHikeDistance, setNewHikeDistance] = useState('');
   const [newHikeElevationGain, setNewHikeElevationGain] = useState('');
-  const [newEntryTime, setNewEntryTime] = useState('');
+  const [newEntryHours, setNewEntryHours] = useState(0);
+  const [newEntryMinutes, setNewEntryMinutes] = useState(0);
+  const [newEntrySeconds, setNewEntrySeconds] = useState(0);
+  const [newEntryAvgHr, setNewEntryAvgHr] = useState('');
+  const [newEntryMaxHr, setNewEntryMaxHr] = useState('');
   const [newEntryDate, setNewEntryDate] = useState(new Date().toISOString().slice(0, 10));
 
   // Mock hiking records (stored in localStorage for now)
@@ -157,11 +165,16 @@ const RecordsSection = () => {
   };
 
   const handleAddEntry = () => {
-    if (!selectedHike || !newEntryTime.trim()) return;
+    if (!selectedHike || (newEntryHours === 0 && newEntryMinutes === 0 && newEntrySeconds === 0)) return;
+    const timeStr = newEntryHours > 0
+      ? `${newEntryHours}:${String(newEntryMinutes).padStart(2, '0')}:${String(newEntrySeconds).padStart(2, '0')}`
+      : `${newEntryMinutes}:${String(newEntrySeconds).padStart(2, '0')}`;
     const entry: HikingEntry = {
       id: `e${Date.now()}`,
-      time: newEntryTime.trim(),
+      time: timeStr,
       date: newEntryDate,
+      avgHeartrate: newEntryAvgHr ? Number(newEntryAvgHr) : undefined,
+      maxHeartrate: newEntryMaxHr ? Number(newEntryMaxHr) : undefined,
     };
     const updated = hikingRecords.map(h =>
       h.id === selectedHike.id
@@ -170,7 +183,11 @@ const RecordsSection = () => {
     );
     saveHikingRecords(updated);
     setSelectedHike(updated.find(h => h.id === selectedHike.id) || null);
-    setNewEntryTime('');
+    setNewEntryHours(0);
+    setNewEntryMinutes(0);
+    setNewEntrySeconds(0);
+    setNewEntryAvgHr('');
+    setNewEntryMaxHr('');
     setShowAddEntry(false);
   };
 
@@ -434,6 +451,13 @@ const RecordsSection = () => {
                             </span>
                             <div className="flex-1">
                               <span className="font-display font-bold text-sm">{e.time}</span>
+                              {(e.avgHeartrate || e.maxHeartrate) && (
+                                <div className="text-[10px] text-muted-foreground mt-0.5">
+                                  {e.avgHeartrate && <span>♥ {e.avgHeartrate}</span>}
+                                  {e.avgHeartrate && e.maxHeartrate && <span> / </span>}
+                                  {e.maxHeartrate && <span>maks {e.maxHeartrate}</span>}
+                                </div>
+                              )}
                             </div>
                             <span className="text-xs text-muted-foreground">
                               {new Date(e.date).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -479,12 +503,18 @@ const RecordsSection = () => {
               </DialogHeader>
               <div className="space-y-3">
                 <div>
-                   <label className="text-sm font-medium mb-1 block">{t('records.timeFormat')}</label>
-                   <Input
-                     value={newEntryTime}
-                     onChange={e => setNewEntryTime(e.target.value)}
-                     placeholder={t('records.timeExample')}
-                   />
+                   <label className="text-sm font-medium mb-1 block">{t('workout.duration')}</label>
+                   <button
+                     type="button"
+                     onClick={() => setShowDurationPicker(true)}
+                     className="w-full h-10 px-3 rounded-md border border-input bg-background text-left text-sm font-medium hover:bg-accent/50 transition-colors"
+                   >
+                     {newEntryHours > 0
+                       ? `${newEntryHours}:${String(newEntryMinutes).padStart(2, '0')}:${String(newEntrySeconds).padStart(2, '0')}`
+                       : newEntryMinutes > 0 || newEntrySeconds > 0
+                       ? `${newEntryMinutes}:${String(newEntrySeconds).padStart(2, '0')}`
+                       : t('records.tapToSetTime')}
+                   </button>
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-1 block">{t('workout.date')}</label>
@@ -494,14 +524,49 @@ const RecordsSection = () => {
                     onChange={e => setNewEntryDate(e.target.value)}
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Snitt-puls</label>
+                    <Input
+                      type="number"
+                      value={newEntryAvgHr}
+                      onChange={e => setNewEntryAvgHr(e.target.value)}
+                      placeholder="Valgfri"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Maks-puls</label>
+                    <Input
+                      type="number"
+                      value={newEntryMaxHr}
+                      onChange={e => setNewEntryMaxHr(e.target.value)}
+                      placeholder="Valgfri"
+                    />
+                  </div>
+                </div>
               </div>
               <DialogFooter>
-                 <Button onClick={handleAddEntry} disabled={!newEntryTime.trim()}>
+                 <Button onClick={handleAddEntry} disabled={newEntryHours === 0 && newEntryMinutes === 0 && newEntrySeconds === 0}>
                    {t('common.add')}
                 </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          {/* Duration picker */}
+          <DurationPicker
+            open={showDurationPicker}
+            onClose={() => setShowDurationPicker(false)}
+            hours={newEntryHours}
+            minutes={newEntryMinutes}
+            seconds={newEntrySeconds}
+            showSeconds
+            onConfirm={(h, m, s) => {
+              setNewEntryHours(h);
+              setNewEntryMinutes(m);
+              setNewEntrySeconds(s ?? 0);
+            }}
+          />
 
           {/* Edit hike dialog */}
           <Dialog open={showEditHike} onOpenChange={setShowEditHike}>

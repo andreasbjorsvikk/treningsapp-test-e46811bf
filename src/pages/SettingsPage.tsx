@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import SettingsTutorialDialog, { SETTINGS_TUTORIAL_KEY } from '@/components/SettingsTutorialDialog';
 import { useSettings, AppColorTheme, AccentColor, PrivacyLevel } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
@@ -75,6 +76,7 @@ const SettingsPage = () => {
   const [realFriends, setRealFriends] = useState<Friend[]>([]);
   const [gdprSubView, setGdprSubView] = useState<'main' | 'deleteData' | 'deleteAccount' | 'downloadData'>('main');
   const [helpOpenSections, setHelpOpenSections] = useState<Set<string>>(new Set());
+  const [showSettingsTutorial, setShowSettingsTutorial] = useState(false);
 
   // Child privacy options
   const [hasChildren, setHasChildren] = useState(false);
@@ -120,7 +122,14 @@ const SettingsPage = () => {
 
   // Listen for navigate-to-profile event
   useEffect(() => {
-    const handler = () => setView('profile');
+    const handler = () => {
+      setView('profile');
+      // Show tutorial on first visit
+      const done = localStorage.getItem(SETTINGS_TUTORIAL_KEY);
+      if (!done) {
+        setTimeout(() => setShowSettingsTutorial(true), 400);
+      }
+    };
     window.addEventListener('navigate-to-profile', handler);
     return () => window.removeEventListener('navigate-to-profile', handler);
   }, []);
@@ -927,6 +936,7 @@ const SettingsPage = () => {
     return (
       <div className="space-y-4">
         {backButton(t('profile.title'))}
+        <SettingsTutorialDialog open={showSettingsTutorial} onClose={() => setShowSettingsTutorial(false)} />
 
         <div className="glass-card rounded-xl p-4 space-y-5">
           {/* Avatar & name */}

@@ -397,6 +397,7 @@ const no: Record<string, string> = {
   'records.newTime': 'Ny tid',
   'records.timeFormat': 'Tid (t:mm eller tt:mm)',
   'records.timeExample': 'F.eks. 3:45',
+  'records.tapToSetTime': 'Trykk for å velge tid',
   'records.deleteHikeConfirm': 'Er du sikker på at du vil slette denne fjellturen?',
 
   // Privacy
@@ -1035,6 +1036,7 @@ const en: Record<string, string> = {
   'records.newTime': 'New time',
   'records.timeFormat': 'Time (h:mm or hh:mm)',
   'records.timeExample': 'E.g. 3:45',
+  'records.tapToSetTime': 'Tap to set time',
   'records.deleteHikeConfirm': 'Are you sure you want to delete this hike?',
 
   // Privacy
