@@ -610,7 +610,7 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
         </button>
       )}
 
-      <div className="absolute top-4 right-4 z-30 flex gap-2">
+      <div className="absolute top-4 left-4 z-30 flex gap-2">
         {/* Mode toggle */}
         <button
           onClick={toggleMode}
@@ -632,6 +632,9 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
             Kart
           </button>
         )}
+      </div>
+
+      <div className="absolute top-4 right-4 z-30">
         {/* Peak count */}
         <div className="px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white text-xs font-medium">
           <Mountain className="w-3.5 h-3.5 inline mr-1" />

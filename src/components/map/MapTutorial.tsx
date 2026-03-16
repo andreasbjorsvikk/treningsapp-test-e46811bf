@@ -45,7 +45,7 @@ const CheckinAnimation = () => {
                 : 'bg-card border-border'
             }`}
           >
-            <img src={peakIconTiers.high} alt="" className="w-8 h-8 object-contain" style={phase === 'checked' ? { filter: 'brightness(0) invert(1)' } : undefined} />
+            <img src={peakIconTiers.high} alt="" className="w-9 h-9 object-contain" style={phase === 'checked' ? { filter: 'brightness(0) invert(1)' } : undefined} />
           </div>
           {/* Ripple effect */}
           {phase === 'checked' && (

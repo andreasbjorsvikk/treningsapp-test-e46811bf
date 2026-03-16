@@ -604,7 +604,7 @@ const PeakFeed = () => {
 
                       {/* Peak info */}
                       <div className="flex items-center gap-2 px-1">
-                        <Mountain className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <img src={getPeakIcon(parentItem.peak_elevation)} alt="" className="w-5 h-5 object-contain shrink-0" />
                         <span className="text-sm font-medium">{parentItem.peak_name}</span>
                         <span className="text-xs text-muted-foreground">{parentItem.peak_elevation} moh · {parentItem.peak_area}</span>
                       </div>

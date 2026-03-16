@@ -600,7 +600,7 @@ const IndexContent = () => {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button size="icon" variant="ghost" className="rounded-full h-10 w-10">
-                        <Plus className="w-6 h-6" />
+                        <Plus className="w-7 h-7" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
