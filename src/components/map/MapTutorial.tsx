@@ -176,8 +176,8 @@ const LongPressAnimation = () => {
         {/* Spawned peak icon */}
         {phase === 'spawned' && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-scale-in">
-            <div className="w-10 h-10 rounded-full bg-card border-2 border-border flex items-center justify-center shadow-lg">
-              <img src={peakIconTiers.medium} alt="" className="w-6 h-6 object-contain" />
+            <div className="w-10 h-10 rounded-full overflow-hidden shadow-lg">
+              <img src={peakIconTiers.medium} alt="" className="w-10 h-10 object-cover" />
             </div>
           </div>
         )}
