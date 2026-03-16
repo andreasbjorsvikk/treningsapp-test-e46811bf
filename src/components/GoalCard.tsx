@@ -146,13 +146,13 @@ const GoalCard = ({ goal, sessions, onEdit, onDelete, onToggleHome, onArchive }:
         ) : null}
       </div>
 
-      <p className="text-sm font-bold">
+      <p className="text-base font-bold leading-none">
         {formatValue(current, goal.metric)} / {formatValue(goal.target, goal.metric)}
-        <span className="text-xs font-normal text-muted-foreground ml-1">{t(`metric.${goal.metric}`)}</span>
+        <span className="text-sm font-normal text-muted-foreground ml-1">{t(`metric.${goal.metric}`)}</span>
       </p>
 
       {!done && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground leading-none">
           {formatValue(remaining, goal.metric)} {t(`metric.${goal.metric}`)} {t('goalCard.remaining')}
         </p>
       )}

@@ -449,7 +449,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                     <X className="w-4 h-4 mr-2" />Skjul rute
                   </Button>
                 ) : (
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => { onClose(); onShowRoute(peak, fromTopperTab); }}>
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => onShowRoute(peak, fromTopperTab)}>
                     Vis rute ({((peak.route_distance_m || 0) / 1000).toFixed(1)} km, {Math.round((peak.route_duration_s || 0) / 60)} min)
                   </Button>
                 )

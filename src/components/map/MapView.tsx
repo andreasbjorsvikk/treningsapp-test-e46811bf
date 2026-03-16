@@ -562,16 +562,36 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
 
       const el = document.createElement('div');
       const peakIcon = getPeakIcon(peak.heightMoh, peak.id);
+      const markerBackground = isYearFiltered
+        ? 'hsl(var(--background) / 0.42)'
+        : isTaken
+          ? 'hsl(var(--success) / 0.5)'
+          : isUnpublished
+            ? 'hsl(var(--warning) / 0.26)'
+            : 'hsl(var(--background) / 0.58)';
+      const markerBorder = isYearFiltered
+        ? 'hsl(var(--border) / 0.55)'
+        : isTaken
+          ? 'hsl(var(--success) / 0.72)'
+          : isUnpublished
+            ? 'hsl(var(--warning) / 0.45)'
+            : 'hsl(var(--border) / 0.72)';
+      const markerShadow = isTaken && !isYearFiltered
+        ? '0 10px 24px hsl(var(--success) / 0.24), inset 0 1px 0 hsl(var(--background) / 0.18)'
+        : '0 10px 24px hsl(var(--foreground) / 0.14), inset 0 1px 0 hsl(var(--background) / 0.35)';
+      const markerBackdrop = isTaken && !isYearFiltered
+        ? 'blur(6px) saturate(1.04)'
+        : 'blur(10px) saturate(1.12)';
       
       el.style.cssText = `
         width: 36px; height: 36px; cursor: pointer;
         display: flex; align-items: center; justify-content: center;
-        background: ${isYearFiltered ? 'hsl(var(--background) / 0.42)' : isTaken ? 'hsl(var(--success) / 0.32)' : isUnpublished ? 'hsl(var(--warning) / 0.26)' : 'hsl(var(--background) / 0.58)'};
-        border: 1.5px solid ${isYearFiltered ? 'hsl(var(--border) / 0.55)' : isTaken ? 'hsl(var(--success) / 0.5)' : isUnpublished ? 'hsl(var(--warning) / 0.45)' : 'hsl(var(--border) / 0.72)'};
+        background: ${markerBackground};
+        border: 1.5px solid ${markerBorder};
         border-radius: 50%;
-        box-shadow: 0 10px 24px hsl(var(--foreground) / 0.14), inset 0 1px 0 hsl(var(--background) / 0.35);
-        backdrop-filter: blur(10px) saturate(1.12);
-        -webkit-backdrop-filter: blur(10px) saturate(1.12);
+        box-shadow: ${markerShadow};
+        backdrop-filter: ${markerBackdrop};
+        -webkit-backdrop-filter: ${markerBackdrop};
         ${isUnpublished ? 'opacity: 0.8;' : ''}
         ${isYearFiltered ? 'opacity: 0.6;' : ''}
       `;
