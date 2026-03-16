@@ -12,7 +12,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { getMonthTarget, getYearTarget, getActiveGoalForDate, getYearExpectedProgress, getEarliestStart, convertGoalValue } from '@/services/primaryGoalService';
 import ChallengeDetail from '@/components/community/ChallengeDetail';
 import { ChallengeWithParticipants } from '@/pages/CommunityPage';
-import { getPeakIcon } from '@/utils/peakIcons';
+import { getPeakIconColored } from '@/utils/peakIcons';
 
 interface UserProfileDrawerProps {
   user: Friend | null;
