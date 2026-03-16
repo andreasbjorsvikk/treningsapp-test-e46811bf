@@ -354,7 +354,7 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
       if (dist > maxDist) return;
 
       const isTaken = checkedPeakIds.has(peak.id);
-      const icon = getPeakIcon(peak.heightMoh, peak.id);
+      const icon = getPeakIconColored(peak.heightMoh, isTaken);
 
       const el = document.createElement('div');
       el.style.cssText = `
@@ -372,12 +372,11 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
           ${peak.name} <span style="opacity:0.7;font-size:9px">${peak.heightMoh}m</span>
         </div>
         <div style="
-          width: 28px; height: 28px; border-radius: 50%;
+          width: 32px; height: 32px; border-radius: 50%;
           display: flex; align-items: center; justify-content: center;
-          border: 2px solid ${isTaken ? 'hsl(152,60%,35%)' : 'rgba(255,255,255,0.7)'};
-          background: ${isTaken ? 'hsl(152,60%,42%)' : 'rgba(255,255,255,0.9)'};
+          overflow: hidden;
         ">
-          <img src="${icon}" style="width:18px;height:18px;object-fit:contain" />
+          <img src="${icon}" style="width:32px;height:32px;object-fit:contain;border-radius:50%" />
         </div>
       `;
 
