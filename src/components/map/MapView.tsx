@@ -566,11 +566,14 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       el.style.cssText = `
         width: 36px; height: 36px; cursor: pointer;
         display: flex; align-items: center; justify-content: center;
-        background: ${isYearFiltered ? 'hsl(0, 0%, 100%)' : isTaken ? 'hsl(152, 60%, 42%)' : isUnpublished ? 'hsl(38, 85%, 50%)' : 'hsl(0, 0%, 100%)'};
-        border: 2px solid ${isYearFiltered ? 'hsl(220, 13%, 80%)' : isTaken ? 'hsl(152, 60%, 35%)' : isUnpublished ? 'hsl(38, 85%, 40%)' : 'hsl(220, 13%, 80%)'};
-        border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        ${isUnpublished ? 'opacity: 0.7;' : ''}
-        ${isYearFiltered ? 'opacity: 0.55;' : ''}
+        background: ${isYearFiltered ? 'hsl(var(--background) / 0.42)' : isTaken ? 'hsl(var(--success) / 0.32)' : isUnpublished ? 'hsl(var(--warning) / 0.26)' : 'hsl(var(--background) / 0.58)'};
+        border: 1.5px solid ${isYearFiltered ? 'hsl(var(--border) / 0.55)' : isTaken ? 'hsl(var(--success) / 0.5)' : isUnpublished ? 'hsl(var(--warning) / 0.45)' : 'hsl(var(--border) / 0.72)'};
+        border-radius: 50%;
+        box-shadow: 0 10px 24px hsl(var(--foreground) / 0.14), inset 0 1px 0 hsl(var(--background) / 0.35);
+        backdrop-filter: blur(10px) saturate(1.12);
+        -webkit-backdrop-filter: blur(10px) saturate(1.12);
+        ${isUnpublished ? 'opacity: 0.8;' : ''}
+        ${isYearFiltered ? 'opacity: 0.6;' : ''}
       `;
         const imgStyle = isTaken && !isYearFiltered
           ? 'object-fit: contain; filter: brightness(0) invert(1);'
