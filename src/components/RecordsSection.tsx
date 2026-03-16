@@ -451,6 +451,13 @@ const RecordsSection = () => {
                             </span>
                             <div className="flex-1">
                               <span className="font-display font-bold text-sm">{e.time}</span>
+                              {(e.avgHeartrate || e.maxHeartrate) && (
+                                <div className="text-[10px] text-muted-foreground mt-0.5">
+                                  {e.avgHeartrate && <span>♥ {e.avgHeartrate}</span>}
+                                  {e.avgHeartrate && e.maxHeartrate && <span> / </span>}
+                                  {e.maxHeartrate && <span>maks {e.maxHeartrate}</span>}
+                                </div>
+                              )}
                             </div>
                             <span className="text-xs text-muted-foreground">
                               {new Date(e.date).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
