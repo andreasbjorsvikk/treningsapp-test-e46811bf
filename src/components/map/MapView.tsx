@@ -431,20 +431,44 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     });
   }, [mapStyle, mapLoaded, whenStyleReady]);
 
-  // Route focus (especially important when opening route from Topper tab)
+  const focusRouteFallback = useCallback((m: mapboxgl.Map, focus: NonNullable<MapViewProps['routeFocus']>) => {
+    m.resize();
+    m.easeTo({
+      center: [focus.longitude, focus.latitude],
+      zoom: Math.max(m.getZoom(), 12.5),
+      duration: 700,
+    });
+  }, []);
+
+  const fitRouteBounds = useCallback((m: mapboxgl.Map, focus?: MapViewProps['routeFocus']) => {
+    if (routeCoordinates.length < 2) return;
+
+    const bounds = new mapboxgl.LngLatBounds();
+    routeCoordinates.forEach((coord) => bounds.extend(coord));
+
+    if (focus) {
+      bounds.extend([focus.longitude, focus.latitude]);
+    }
+
+    const runFitBounds = (duration: number) => {
+      m.resize();
+      m.fitBounds(bounds, { padding: 60, duration, maxZoom: 15 });
+    };
+
+    window.requestAnimationFrame(() => runFitBounds(900));
+    window.setTimeout(() => runFitBounds(500), 280);
+    m.once('idle', () => runFitBounds(0));
+  }, [routeCoordinates]);
+
+  // Fallback focus if route geometry is temporarily unavailable
   useEffect(() => {
-    if (!map.current || !mapLoaded || !routeFocus) return;
+    if (!map.current || !mapLoaded || !routeFocus || routeCoordinates.length >= 2) return;
     const m = map.current;
 
     whenStyleReady(m, () => {
-      m.resize();
-      m.easeTo({
-        center: [routeFocus.longitude, routeFocus.latitude],
-        zoom: Math.max(m.getZoom(), 12.5),
-        duration: 700,
-      });
+      focusRouteFallback(m, routeFocus);
     });
-  }, [routeFocus, mapLoaded, whenStyleReady]);
+  }, [routeFocus?.requestId, routeCoordinates.length, mapLoaded, whenStyleReady, focusRouteFallback]);
 
   // Draw route if provided
   useEffect(() => {
@@ -466,25 +490,12 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           properties: {},
         } as any);
 
-        const bounds = new mapboxgl.LngLatBounds();
-        routeCoordinates.forEach((coord) => bounds.extend(coord));
-
-        if (routeFocus) {
-          bounds.extend([routeFocus.longitude, routeFocus.latitude]);
-        }
-
-        m.resize();
-        window.requestAnimationFrame(() => {
-          m.fitBounds(bounds, { padding: 60, duration: 900, maxZoom: 15 });
-          window.setTimeout(() => {
-            m.fitBounds(bounds, { padding: 60, duration: 500, maxZoom: 15 });
-          }, 350);
-        });
+        fitRouteBounds(m, routeFocus);
       } else {
         source.setData({ type: 'FeatureCollection', features: [] } as any);
       }
     });
-  }, [routeCoordinates, routeFocus, mapLoaded, whenStyleReady, ensureRouteLayer]);
+  }, [routeCoordinates, routeFocus?.requestId, mapLoaded, whenStyleReady, ensureRouteLayer, fitRouteBounds]);
 
   // Handle preview waypoints
   useEffect(() => {
@@ -563,25 +574,25 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       const el = document.createElement('div');
       const peakIcon = getPeakIcon(peak.heightMoh, peak.id);
       const markerBackground = isYearFiltered
-        ? 'hsl(var(--background) / 0.42)'
+        ? 'hsl(var(--background) / 0.46)'
         : isTaken
-          ? 'hsl(var(--success) / 0.5)'
+          ? 'hsl(var(--success) / 0.58)'
           : isUnpublished
-            ? 'hsl(var(--warning) / 0.26)'
-            : 'hsl(var(--background) / 0.58)';
+            ? 'hsl(var(--warning) / 0.28)'
+            : 'hsl(var(--muted-foreground) / 0.32)';
       const markerBorder = isYearFiltered
-        ? 'hsl(var(--border) / 0.55)'
+        ? 'hsl(var(--border) / 0.58)'
         : isTaken
-          ? 'hsl(var(--success) / 0.72)'
+          ? 'hsl(var(--success) / 0.84)'
           : isUnpublished
-            ? 'hsl(var(--warning) / 0.45)'
-            : 'hsl(var(--border) / 0.72)';
+            ? 'hsl(var(--warning) / 0.48)'
+            : 'hsl(var(--muted-foreground) / 0.46)';
       const markerShadow = isTaken && !isYearFiltered
-        ? '0 10px 24px hsl(var(--success) / 0.24), inset 0 1px 0 hsl(var(--background) / 0.18)'
-        : '0 10px 24px hsl(var(--foreground) / 0.14), inset 0 1px 0 hsl(var(--background) / 0.35)';
+        ? '0 10px 24px hsl(var(--success) / 0.28), inset 0 1px 0 hsl(var(--background) / 0.22)'
+        : '0 10px 24px hsl(var(--foreground) / 0.16), inset 0 1px 0 hsl(var(--background) / 0.22)';
       const markerBackdrop = isTaken && !isYearFiltered
-        ? 'blur(6px) saturate(1.04)'
-        : 'blur(10px) saturate(1.12)';
+        ? 'blur(5px) saturate(1.08)'
+        : 'blur(8px) saturate(1.06)';
       
       el.style.cssText = `
         width: 36px; height: 36px; cursor: pointer;
@@ -592,12 +603,12 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         box-shadow: ${markerShadow};
         backdrop-filter: ${markerBackdrop};
         -webkit-backdrop-filter: ${markerBackdrop};
-        ${isUnpublished ? 'opacity: 0.8;' : ''}
-        ${isYearFiltered ? 'opacity: 0.6;' : ''}
+        ${isUnpublished ? 'opacity: 0.84;' : ''}
+        ${isYearFiltered ? 'opacity: 0.64;' : ''}
       `;
-        const imgStyle = isTaken && !isYearFiltered
-          ? 'object-fit: contain; filter: brightness(0) invert(1);'
-          : 'object-fit: contain; filter: brightness(0) opacity(0.5);';
+        const imgStyle = isYearFiltered
+          ? 'object-fit: contain; filter: brightness(0) invert(1); opacity: 0.72;'
+          : 'object-fit: contain; filter: brightness(0) invert(1); opacity: 0.96;';
         const nudgeUp = peak.heightMoh >= 650 ? 'margin-top: -3.5px;' : '';
         
         el.innerHTML = `
