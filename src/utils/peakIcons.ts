@@ -1,4 +1,14 @@
-// ── Icon Bank 1 (legacy PNG variants) ──
+// ── New peak icons (PNG, checked/unchecked per tier) ──
+import peak1Unchecked from '@/assets/icons/peak-1-unchecked.png';
+import peak1Checked from '@/assets/icons/peak-1-checked.png';
+import peak2Unchecked from '@/assets/icons/peak-2-unchecked.png';
+import peak2Checked from '@/assets/icons/peak-2-checked.png';
+import peak3Unchecked from '@/assets/icons/peak-3-unchecked.png';
+import peak3Checked from '@/assets/icons/peak-3-checked.png';
+import peak4Unchecked from '@/assets/icons/peak-4-unchecked.png';
+import peak4Checked from '@/assets/icons/peak-4-checked.png';
+
+// ── Legacy imports (kept for Bank 1 compatibility) ──
 import peak0199 from '@/assets/icons/peak-0-199.png';
 import peak200399a from '@/assets/icons/peak-200-399.png';
 import peak200399b from '@/assets/icons/peak-200-399-b.png';
@@ -9,13 +19,6 @@ import peak700999b from '@/assets/icons/peak-700-999-b.png';
 import peak1000a from '@/assets/icons/peak-1000.png';
 import peak1000b from '@/assets/icons/peak-1000-b.png';
 
-// ── Icon Bank 2 (current SVGs – single icon per tier) ──
-import tierLow from '@/assets/icons/peak-tier-low.svg';
-import tierMedium from '@/assets/icons/peak-tier-medium.svg';
-import tierHigh from '@/assets/icons/peak-tier-high.svg';
-import tierVeryHigh from '@/assets/icons/peak-tier-veryhigh.svg';
-
-// Seeded random based on peak id/name for consistent icon per peak
 function hashStr(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) {
@@ -37,18 +40,18 @@ export function getPeakIconBank1(elevationMoh: number, seed: string = ''): strin
   return peak0199;
 }
 
-// ── Icon Bank 2 (current – SVG tiers) ──
-export function getPeakIcon(elevationMoh: number, _seed: string = ''): string {
-  if (elevationMoh >= 1000) return tierVeryHigh;
-  if (elevationMoh >= 650) return tierHigh;
-  if (elevationMoh >= 300) return tierMedium;
-  return tierLow;
+// ── Main icon function (with checked/unchecked state) ──
+export function getPeakIcon(elevationMoh: number, _seed: string = '', checkedIn: boolean = false): string {
+  if (elevationMoh >= 1000) return checkedIn ? peak4Checked : peak4Unchecked;
+  if (elevationMoh >= 650) return checkedIn ? peak3Checked : peak3Unchecked;
+  if (elevationMoh >= 300) return checkedIn ? peak2Checked : peak2Unchecked;
+  return checkedIn ? peak1Checked : peak1Unchecked;
 }
 
 // Representative icons for each tier (for tutorials, legends, etc.)
 export const peakIconTiers = {
-  low: tierLow,
-  medium: tierMedium,
-  high: tierHigh,
-  veryHigh: tierVeryHigh,
+  low: peak1Unchecked,
+  medium: peak2Unchecked,
+  high: peak3Unchecked,
+  veryHigh: peak4Unchecked,
 };

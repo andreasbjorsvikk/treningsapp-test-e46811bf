@@ -122,17 +122,14 @@ const ChildProfileDetailDrawer = ({ child, open, onClose }: ChildProfileDetailDr
                 {peaks.length} {peaks.length === 1 ? 'topp' : 'topper'} besøkt
               </p>
               {peaks.map(p => {
-                const iconSrc = getPeakIcon(p.peak_elevation, p.peak_id);
+                const iconSrc = getPeakIcon(p.peak_elevation, p.peak_id, true);
                 return (
                   <div key={p.peak_id} className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border/40">
-                    <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
                       <img
                         src={iconSrc}
                         alt=""
-                        className="w-6 h-6"
-                        style={{
-                          filter: 'brightness(0) saturate(100%) invert(58%) sepia(52%) saturate(501%) hue-rotate(93deg) brightness(95%) contrast(92%)',
-                        }}
+                        className="w-10 h-10 object-cover"
                       />
                     </div>
                     <div className="flex-1 min-w-0">
