@@ -214,7 +214,7 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
           {filtered.map(peak => {
             const isTaken = checkedPeakIds.has(peak.id);
             const isUnpublished = peak.isPublished === false;
-            const iconSrc = getPeakIcon(peak.heightMoh, peak.id);
+            const iconSrc = getPeakIcon(peak.heightMoh, peak.id, isTaken);
             return (
               <div
                 key={peak.id}
@@ -224,18 +224,11 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
                   onClick={() => onSelectPeak(peak)}
                   className="flex items-center gap-3 flex-1 min-w-0 text-left"
                 >
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                    isTaken ? 'bg-success/15' : isUnpublished ? 'bg-warning/15' : 'bg-muted'
-                  }`}>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden">
                     <img
                       src={iconSrc}
                       alt=""
-                      className="w-6 h-6"
-                      style={{
-                        filter: isTaken
-                          ? 'brightness(0) saturate(100%) invert(58%) sepia(52%) saturate(501%) hue-rotate(93deg) brightness(95%) contrast(92%)'
-                          : 'brightness(0) opacity(0.5)',
-                      }}
+                      className="w-10 h-10 object-cover"
                     />
                   </div>
                   <div className="flex-1 min-w-0">

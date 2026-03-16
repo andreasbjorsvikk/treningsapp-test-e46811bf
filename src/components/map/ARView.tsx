@@ -354,7 +354,7 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
       if (dist > maxDist) return;
 
       const isTaken = checkedPeakIds.has(peak.id);
-      const icon = getPeakIcon(peak.heightMoh, peak.id);
+      const icon = getPeakIcon(peak.heightMoh, peak.id, isTaken);
 
       const el = document.createElement('div');
       el.style.cssText = `
@@ -372,12 +372,10 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
           ${peak.name} <span style="opacity:0.7;font-size:9px">${peak.heightMoh}m</span>
         </div>
         <div style="
-          width: 28px; height: 28px; border-radius: 50%;
-          display: flex; align-items: center; justify-content: center;
-          border: 2px solid ${isTaken ? 'hsl(152,60%,35%)' : 'rgba(255,255,255,0.7)'};
-          background: ${isTaken ? 'hsl(152,60%,42%)' : 'rgba(255,255,255,0.9)'};
+          width: 32px; height: 32px; border-radius: 50%; overflow: hidden;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.3);
         ">
-          <img src="${icon}" style="width:18px;height:18px;object-fit:contain" />
+          <img src="${icon}" style="width:32px;height:32px;object-fit:cover;display:block" />
         </div>
       `;
 
@@ -553,7 +551,7 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
 
       {/* Peak labels overlay (camera mode only) */}
       {mode === 'camera' && visiblePeaks.map(({ peak, distance, screenX, screenY, isTaken }) => {
-        const icon = getPeakIcon(peak.heightMoh, peak.id);
+        const icon = getPeakIcon(peak.heightMoh, peak.id, isTaken);
         const opacity = Math.max(0.5, 1 - distance / maxDist);
         const scale = Math.max(0.6, 1 - (distance / maxDist) * 0.4);
 
@@ -581,12 +579,8 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
             <span className="text-[9px] text-white/90 font-medium drop-shadow-lg">
               {distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}
             </span>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 shadow-lg ${
-              isTaken
-                ? 'bg-[hsl(152,60%,42%)] border-[hsl(152,60%,35%)]'
-                : 'bg-white/90 border-white/60'
-            }`}>
-              <img src={icon} alt="" className="w-5 h-5 object-contain" />
+            <div className="w-8 h-8 rounded-full overflow-hidden shadow-lg">
+              <img src={icon} alt="" className="w-8 h-8 object-cover" />
             </div>
             <div className={`w-px h-4 ${isTaken ? 'bg-[hsl(152,60%,42%)]/50' : 'bg-white/30'}`} />
           </button>
