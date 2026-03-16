@@ -165,11 +165,16 @@ const RecordsSection = () => {
   };
 
   const handleAddEntry = () => {
-    if (!selectedHike || !newEntryTime.trim()) return;
+    if (!selectedHike || (newEntryHours === 0 && newEntryMinutes === 0 && newEntrySeconds === 0)) return;
+    const timeStr = newEntryHours > 0
+      ? `${newEntryHours}:${String(newEntryMinutes).padStart(2, '0')}:${String(newEntrySeconds).padStart(2, '0')}`
+      : `${newEntryMinutes}:${String(newEntrySeconds).padStart(2, '0')}`;
     const entry: HikingEntry = {
       id: `e${Date.now()}`,
-      time: newEntryTime.trim(),
+      time: timeStr,
       date: newEntryDate,
+      avgHeartrate: newEntryAvgHr ? Number(newEntryAvgHr) : undefined,
+      maxHeartrate: newEntryMaxHr ? Number(newEntryMaxHr) : undefined,
     };
     const updated = hikingRecords.map(h =>
       h.id === selectedHike.id
@@ -178,7 +183,11 @@ const RecordsSection = () => {
     );
     saveHikingRecords(updated);
     setSelectedHike(updated.find(h => h.id === selectedHike.id) || null);
-    setNewEntryTime('');
+    setNewEntryHours(0);
+    setNewEntryMinutes(0);
+    setNewEntrySeconds(0);
+    setNewEntryAvgHr('');
+    setNewEntryMaxHr('');
     setShowAddEntry(false);
   };
 
