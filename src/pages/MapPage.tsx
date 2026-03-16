@@ -115,11 +115,6 @@ const MapPage = () => {
     return () => window.removeEventListener('open-admin-peak-suggestions', handleOpenAdminSuggestions);
   }, [adminMode]);
 
-  useEffect(() => {
-    if (subTab !== 'kart') {
-      setIsMapReady(false);
-    }
-  }, [subTab]);
 
   const handleSelectPeak = (peak: Peak) => {
     setSelectedPeak(peak);
