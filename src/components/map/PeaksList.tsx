@@ -214,7 +214,7 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
           {filtered.map(peak => {
             const isTaken = checkedPeakIds.has(peak.id);
             const isUnpublished = peak.isPublished === false;
-            const iconSrc = isTaken ? getCheckedPeakIcon(peak.heightMoh) : getPeakIcon(peak.heightMoh, peak.id);
+            const iconSrc = getPeakIcon(peak.heightMoh, peak.id);
             return (
               <div
                 key={peak.id}
