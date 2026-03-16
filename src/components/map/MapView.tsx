@@ -595,11 +595,14 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         ${isUnpublished ? 'opacity: 0.8;' : ''}
         ${isYearFiltered ? 'opacity: 0.6;' : ''}
       `;
-        const nudgeUp = '';
+        const isHighTier = peak.heightMoh >= 650;
+        const isTier3 = peak.heightMoh >= 650 && peak.heightMoh < 1000;
+        const imgSize = isHighTier ? 28 : 24;
+        const nudgeUp = isTier3 ? 'position: relative; top: -1.5px;' : '';
         
         const imgOpacity = (!isTaken || isYearFiltered) ? 'opacity: 0.8;' : '';
         el.innerHTML = `
-          <img src="${peakIcon}" alt="" width="24" height="24" style="object-fit: contain; ${imgOpacity} ${nudgeUp}" draggable="false" />
+          <img src="${peakIcon}" alt="" width="${imgSize}" height="${imgSize}" style="object-fit: contain; ${imgOpacity} ${nudgeUp}" draggable="false" />
         `;
 
       let buttonsHtml = `<button class="peak-popup-btn primary" id="peak-btn-${peak.id}">${t('map.viewPeak')}</button>`;
