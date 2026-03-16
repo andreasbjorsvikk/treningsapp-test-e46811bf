@@ -568,7 +568,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           ? 'hsl(var(--success) / 0.75)'
           : isUnpublished
             ? 'hsl(var(--warning) / 0.26)'
-            : 'hsl(var(--background) / 0.58)';
+            : 'hsl(0 0% 98% / 0.58)'; // Light color in both modes
       const markerBorder = isYearFiltered
         ? 'hsl(var(--border) / 0.55)'
         : isTaken
