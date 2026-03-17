@@ -138,13 +138,19 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
               <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.1" />
               <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
             </linearGradient>
-            {/* Gold glow - very strong + pulse animation */}
+            {/* Gold glow - subtle outer + shimmer */}
             <filter id="glowGold" x="-150%" y="-150%" width="400%" height="400%">
-              <feGaussianBlur stdDeviation="1.4" result="blur" />
-              <feFlood floodColor="#FFD700" floodOpacity="0.9" result="color" />
+              <feGaussianBlur stdDeviation="1.2" result="blur" />
+              <feFlood floodColor="#FFD700" floodOpacity="0.5" result="color" />
               <feComposite in="color" in2="blur" operator="in" result="glow" />
               <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
+            {/* Gold shimmer gradient */}
+            <radialGradient id="goldShimmer" cx="35%" cy="35%" r="65%">
+              <stop offset="0%" stopColor="#FFFDE0" stopOpacity="1" />
+              <stop offset="40%" stopColor="#FFD700" stopOpacity="1" />
+              <stop offset="100%" stopColor="#B8860B" stopOpacity="1" />
+            </radialGradient>
             {/* Other glows - slightly stronger */}
             <filter id="glowGreen" x="-100%" y="-100%" width="300%" height="300%">
               <feGaussianBlur stdDeviation="0.6" result="blur" />
