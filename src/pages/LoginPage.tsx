@@ -173,7 +173,7 @@ const LoginPage = () => {
                   </button>
                 </div>
                 {mode === 'signup' && (
-                  <p className="text-[11px] text-muted-foreground">Minst 6 tegn</p>
+                  <p className="text-[11px] text-muted-foreground">At least 6 characters</p>
                 )}
               </div>
             )}
