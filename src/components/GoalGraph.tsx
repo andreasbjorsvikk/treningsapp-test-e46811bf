@@ -94,10 +94,19 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
   const getDotColor = (d: { count: number; target: number }) => {
     if (d.target === 0) return 'hsl(var(--muted-foreground))';
     const diff = d.count - d.target;
-    if (diff > 0) return '#FFD700'; // gold - over target
+    if (diff > 0) return '#D4A017'; // rich gold - over target
     if (diff === 0) return '#22c55e'; // green - hit target
     if (diff >= -2) return '#f97316'; // orange - 1-2 under
     return '#ef4444'; // red - 3+ under
+  };
+
+  const getGlowId = (d: { count: number; target: number }) => {
+    if (d.target === 0) return null;
+    const diff = d.count - d.target;
+    if (diff > 0) return 'glowGold';
+    if (diff === 0) return 'glowGreen';
+    if (diff >= -2) return 'glowOrange';
+    return 'glowRed';
   };
 
   const hasGoal = periods.length > 0;
@@ -129,6 +138,32 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
               <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.1" />
               <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
             </linearGradient>
+            {/* Gold glow - strong */}
+            <filter id="glowGold" x="-100%" y="-100%" width="300%" height="300%">
+              <feGaussianBlur stdDeviation="0.8" result="blur" />
+              <feFlood floodColor="#D4A017" floodOpacity="0.7" result="color" />
+              <feComposite in="color" in2="blur" operator="in" result="glow" />
+              <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+            {/* Subtle glows for other colors */}
+            <filter id="glowGreen" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="0.4" result="blur" />
+              <feFlood floodColor="#22c55e" floodOpacity="0.3" result="color" />
+              <feComposite in="color" in2="blur" operator="in" result="glow" />
+              <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+            <filter id="glowOrange" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="0.4" result="blur" />
+              <feFlood floodColor="#f97316" floodOpacity="0.25" result="color" />
+              <feComposite in="color" in2="blur" operator="in" result="glow" />
+              <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+            <filter id="glowRed" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="0.4" result="blur" />
+              <feFlood floodColor="#ef4444" floodOpacity="0.25" result="color" />
+              <feComposite in="color" in2="blur" operator="in" result="glow" />
+              <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
           </defs>
           {sessionPoints.length > 1 && (
             <path
@@ -147,18 +182,22 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
             opacity="0.6"
           />
 
-          {/* Dots */}
-          {data.map((d, i) => (
-            <circle
-              key={i}
-              cx={getX(i)}
-              cy={getY(d.count)}
-              r={compact ? "1.5" : "1.6"}
-              fill={getDotColor(d)}
-              stroke="hsl(var(--background))"
-              strokeWidth="0.25"
-            />
-          ))}
+          {/* Dots with glow */}
+          {data.map((d, i) => {
+            const filterId = getGlowId(d);
+            return (
+              <circle
+                key={i}
+                cx={getX(i)}
+                cy={getY(d.count)}
+                r={compact ? "1.5" : "1.6"}
+                fill={getDotColor(d)}
+                stroke="hsl(var(--background))"
+                strokeWidth="0.25"
+                filter={filterId ? `url(#${filterId})` : undefined}
+              />
+            );
+          })}
 
           {/* Month labels - show all */}
           {data.map((d, i) => (
