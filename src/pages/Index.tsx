@@ -25,6 +25,7 @@ import TrainingPage from '@/pages/TrainingPage';
 import CommunityPage from '@/pages/CommunityPage';
 import SettingsPage from '@/pages/SettingsPage';
 import ProgressWheel from '@/components/ProgressWheel';
+import GoalGraph from '@/components/GoalGraph';
 import Last7Days from '@/components/Last7Days';
 import DraggableGoalGrid from '@/components/DraggableGoalGrid';
 import ChallengeCard from '@/components/community/ChallengeCard';
