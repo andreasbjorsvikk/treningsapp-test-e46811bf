@@ -7,9 +7,10 @@ interface GoalGraphProps {
   sessions: WorkoutSession[];
   periods: PrimaryGoalPeriod[];
   onClick?: () => void;
+  compact?: boolean;
 }
 
-const GoalGraph = ({ sessions, periods, onClick }: GoalGraphProps) => {
+const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
   const { t } = useTranslation();
 
   const data = useMemo(() => {
@@ -17,9 +18,23 @@ const GoalGraph = ({ sessions, periods, onClick }: GoalGraphProps) => {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
-    // Show last 12 months including current
+    // Find earliest goal start
+    const sorted = [...periods].sort((a, b) => a.validFrom.localeCompare(b.validFrom));
+    const earliest = sorted.length > 0 ? new Date(sorted[0].validFrom) : null;
+
+    // Show months from when goal was set until now
     const months: { month: number; year: number; label: string; count: number; target: number }[] = [];
-    for (let i = 11; i >= 0; i--) {
+    
+    if (!earliest) return months;
+
+    const startMonth = earliest.getMonth();
+    const startYear = earliest.getFullYear();
+    
+    // Calculate total months from earliest to now
+    const totalMonths = (currentYear - startYear) * 12 + (currentMonth - startMonth) + 1;
+    const monthsToShow = Math.max(2, Math.min(totalMonths, 24));
+
+    for (let i = monthsToShow - 1; i >= 0; i--) {
       let m = currentMonth - i;
       let y = currentYear;
       while (m < 0) { m += 12; y--; }
@@ -38,10 +53,10 @@ const GoalGraph = ({ sessions, periods, onClick }: GoalGraphProps) => {
   const maxVal = Math.max(...data.map(d => Math.max(d.count, d.target)), 1);
 
   const width = 100;
-  const height = 50;
+  const height = compact ? 24 : 50;
   const padX = 4;
-  const padTop = 6;
-  const padBottom = 8;
+  const padTop = 3;
+  const padBottom = compact ? 4 : 8;
   const graphH = height - padTop - padBottom;
   const step = (width - padX * 2) / (data.length - 1);
 
@@ -86,11 +101,11 @@ const GoalGraph = ({ sessions, periods, onClick }: GoalGraphProps) => {
 
   return (
     <div
-      className="w-full cursor-pointer rounded-lg px-1 py-0.5"
+      className="w-full cursor-pointer rounded-lg px-1 py-0"
       onClick={onClick}
     >
       {!hasGoal ? (
-        <div className="flex items-center justify-center h-full min-h-[48px]">
+        <div className="flex items-center justify-center h-full min-h-[24px]">
           <span className="text-[10px] text-muted-foreground">{t('home.noGoalSet') || 'Sett et mål for å se grafen'}</span>
         </div>
       ) : (
@@ -100,15 +115,15 @@ const GoalGraph = ({ sessions, periods, onClick }: GoalGraphProps) => {
             d={targetPath}
             fill="none"
             stroke="hsl(var(--muted-foreground))"
-            strokeWidth="0.4"
+            strokeWidth="0.25"
             strokeDasharray="1.5 1"
-            opacity="0.5"
+            opacity="0.4"
           />
 
           {/* Gradient fill under session line */}
           <defs>
             <linearGradient id="goalGraphGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.15" />
+              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.1" />
               <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
             </linearGradient>
           </defs>
@@ -119,13 +134,14 @@ const GoalGraph = ({ sessions, periods, onClick }: GoalGraphProps) => {
             />
           )}
 
-          {/* Session line - smooth */}
+          {/* Session line - smooth, subtle */}
           <path
             d={sessionPath}
             fill="none"
             stroke="hsl(var(--primary))"
-            strokeWidth="0.7"
+            strokeWidth="0.4"
             strokeLinecap="round"
+            opacity="0.6"
           />
 
           {/* Dots */}
@@ -134,29 +150,30 @@ const GoalGraph = ({ sessions, periods, onClick }: GoalGraphProps) => {
               key={i}
               cx={getX(i)}
               cy={getY(d.count)}
-              r="1.3"
+              r={compact ? "1" : "1.3"}
               fill={getDotColor(d)}
               stroke="hsl(var(--background))"
-              strokeWidth="0.3"
+              strokeWidth="0.2"
             />
           ))}
 
-          {/* Month labels - show every 2nd or 3rd */}
-          {data.map((d, i) => (
-            i % 2 === 0 ? (
+          {/* Month labels - show every 3rd in compact */}
+          {data.map((d, i) => {
+            const interval = compact ? 3 : 2;
+            return i % interval === 0 ? (
               <text
                 key={`label-${i}`}
                 x={getX(i)}
-                y={height - 1}
+                y={height - 0.5}
                 textAnchor="middle"
-                fontSize="2.5"
+                fontSize={compact ? "2" : "2.5"}
                 fill="hsl(var(--muted-foreground))"
-                opacity="0.7"
+                opacity="0.6"
               >
                 {d.label}
               </text>
-            ) : null
-          ))}
+            ) : null;
+          })}
         </svg>
       )}
     </div>

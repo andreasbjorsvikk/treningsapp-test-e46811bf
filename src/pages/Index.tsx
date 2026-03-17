@@ -615,28 +615,31 @@ const IndexContent = () => {
                         sessions={allSessions}
                         periods={allPeriods}
                         onClick={navigateToGoals}
+                        compact
                       />
                     )}
 
-                    {/* Dropdown overlay */}
+                    {/* Dropdown overlay - positioned at bottom of hero */}
                     {heroDropdownOpen && (
                       <>
                         <div className="fixed inset-0 z-40" onClick={() => setHeroDropdownOpen(false)} />
-                        <div className="absolute top-full left-0 mt-1 z-50 bg-popover border border-border rounded-lg shadow-lg p-1 min-w-[140px]">
-                          <button
-                            className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${heroView === 'målgraf' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'}`}
-                            onClick={() => { setHeroView('målgraf'); setHeroDropdownOpen(false); }}
-                          >
-                            <TrendingUp className="w-4 h-4" />
-                            Målgraf
-                          </button>
-                          <button
-                            className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${heroView === 'statistikk' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'}`}
-                            onClick={() => { setHeroView('statistikk'); setHeroDropdownOpen(false); }}
-                          >
-                            <BarChart3 className="w-4 h-4" />
-                            Statistikk
-                          </button>
+                        <div className="absolute left-0 right-0 -bottom-1 translate-y-full z-50 flex justify-center">
+                          <div className="bg-popover border border-border rounded-lg shadow-lg p-1 min-w-[140px]">
+                            <button
+                              className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs rounded-md transition-colors ${heroView === 'målgraf' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'}`}
+                              onClick={() => { setHeroView('målgraf'); setHeroDropdownOpen(false); }}
+                            >
+                              <TrendingUp className="w-3.5 h-3.5" />
+                              Målgraf
+                            </button>
+                            <button
+                              className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs rounded-md transition-colors ${heroView === 'statistikk' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'}`}
+                              onClick={() => { setHeroView('statistikk'); setHeroDropdownOpen(false); }}
+                            >
+                              <BarChart3 className="w-3.5 h-3.5" />
+                              Statistikk
+                            </button>
+                          </div>
                         </div>
                       </>
                     )}
