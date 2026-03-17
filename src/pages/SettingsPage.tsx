@@ -767,6 +767,7 @@ const SettingsPage = () => {
       <div className="space-y-4">
         {backButton(t('settings.gdpr'))}
         <div className="glass-card rounded-xl overflow-hidden divide-y divide-border">
+          {menuItem('Personvernerklæring', <Shield className="w-4 h-4" />, () => setView('privacyPolicy'))}
           {menuItem(t('gdpr.deleteData'), <Trash2 className="w-4 h-4" />, () => setGdprSubView('deleteData'))}
           {menuItem(t('gdpr.deleteAccount'), <Trash2 className="w-4 h-4" />, () => setGdprSubView('deleteAccount'))}
           {menuItem(t('gdpr.requestData'), <Download className="w-4 h-4" />, () => setGdprSubView('downloadData'))}
