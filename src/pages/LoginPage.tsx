@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { lovable } from '@/integrations/lovable/index';
 import compatibleWithStravaImg from '@/assets/strava/compatible-with-strava.png';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, UserPlus, LogIn, Flame, Activity, Mountain, Timer, User } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, UserPlus, LogIn, Activity, Mountain, Timer, Flame, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,13 +30,13 @@ const LoginPage = () => {
       const { error } = await resetPassword(email);
       setSubmitting(false);
       if (error) { setError(error); return; }
-      setMessage('Sjekk e-posten din for en lenke til å tilbakestille passordet.');
+      setMessage('Check your email for a link to reset your password.');
       return;
     }
 
     if (mode === 'signup' && !displayName.trim()) {
       setSubmitting(false);
-      setError('Du må oppgi et navn.');
+      setError('Please enter your name.');
       return;
     }
 
@@ -45,8 +45,8 @@ const LoginPage = () => {
     setSubmitting(false);
 
     if (error) {
-      if (error.includes('Invalid login')) setError('Feil e-post eller passord.');
-      else if (error.includes('already registered')) setError('E-posten er allerede registrert.');
+      if (error.includes('Invalid login')) setError('Incorrect email or password.');
+      else if (error.includes('already registered')) setError('This email is already registered.');
       else setError(error);
       return;
     }
@@ -54,7 +54,7 @@ const LoginPage = () => {
     if (mode === 'signup') {
       // Save display name to localStorage to be applied after email confirmation
       localStorage.setItem('treningslogg_pending_username', displayName.trim());
-      setMessage('Sjekk e-posten din for å bekrefte kontoen. Etter bekreftelse kan du logge inn.');
+      setMessage('Check your email to confirm your account. You can log in after confirmation.');
     } else {
       navigate('/');
     }
@@ -94,6 +94,11 @@ const LoginPage = () => {
             <h1 className="font-display font-bold text-3xl tracking-tight">
               Trenings<span className="text-gradient-energy">appen</span>
             </h1>
+            <p className="text-sm text-muted-foreground mt-1.5 max-w-[240px] mx-auto leading-relaxed">
+              {mode === 'login' && 'Log in and keep going'}
+              {mode === 'signup' && 'Start your training journey today'}
+              {mode === 'forgot' && "We'll help you get back on track"}
+            </p>
           </div>
         </div>
 
@@ -103,7 +108,7 @@ const LoginPage = () => {
           <form onSubmit={handleSubmit} className="relative glass-card rounded-2xl p-5 space-y-4 border border-border/50">
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
-                E-post
+                Email
               </Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -112,7 +117,7 @@ const LoginPage = () => {
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="din@epost.no"
+                  placeholder="you@email.com"
                   className="pl-10 bg-background/50"
                   required
                   autoComplete="email"
@@ -123,7 +128,7 @@ const LoginPage = () => {
             {mode === 'signup' && (
               <div className="space-y-1.5">
                 <Label htmlFor="displayName" className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
-                  Navn
+                  Name
                 </Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -132,7 +137,7 @@ const LoginPage = () => {
                     type="text"
                     value={displayName}
                     onChange={e => setDisplayName(e.target.value)}
-                    placeholder="Ditt navn"
+                    placeholder="Your name"
                     className="pl-10 bg-background/50"
                     required
                     autoComplete="name"
@@ -144,7 +149,7 @@ const LoginPage = () => {
             {mode !== 'forgot' && (
               <div className="space-y-1.5">
                 <Label htmlFor="password" className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
-                  Passord
+                  Password
                 </Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -168,7 +173,7 @@ const LoginPage = () => {
                   </button>
                 </div>
                 {mode === 'signup' && (
-                  <p className="text-[11px] text-muted-foreground">Minst 6 tegn</p>
+                  <p className="text-[11px] text-muted-foreground">At least 6 characters</p>
                 )}
               </div>
             )}
@@ -187,12 +192,12 @@ const LoginPage = () => {
 
             <Button type="submit" className="w-full gradient-energy text-primary-foreground h-11 text-sm font-semibold shadow-lg shadow-energy/20" disabled={submitting}>
               {submitting ? (
-                <span className="animate-pulse">Vennligst vent…</span>
+                <span className="animate-pulse">Please wait…</span>
               ) : (
                 <>
-                  {mode === 'login' && <><LogIn className="w-4 h-4 mr-1.5" /> Logg inn</>}
-                  {mode === 'signup' && <><UserPlus className="w-4 h-4 mr-1.5" /> Opprett konto</>}
-                  {mode === 'forgot' && <><ArrowRight className="w-4 h-4 mr-1.5" /> Send tilbakestillingslenke</>}
+                  {mode === 'login' && <><LogIn className="w-4 h-4 mr-1.5" /> Log in</>}
+                  {mode === 'signup' && <><UserPlus className="w-4 h-4 mr-1.5" /> Create account</>}
+                  {mode === 'forgot' && <><ArrowRight className="w-4 h-4 mr-1.5" /> Send reset link</>}
                 </>
               )}
             </Button>
@@ -203,7 +208,7 @@ const LoginPage = () => {
                 onClick={() => { setMode('forgot'); setError(''); setMessage(''); }}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors w-full text-center"
               >
-                Glemt passord?
+                Forgot password?
               </button>
             )}
           </form>
@@ -214,7 +219,7 @@ const LoginPage = () => {
           <div className="space-y-3">
             <div className="relative">
               <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border/50" /></div>
-              <div className="relative flex justify-center text-xs"><span className="bg-background px-3 text-muted-foreground">eller</span></div>
+              <div className="relative flex justify-center text-xs"><span className="bg-background px-3 text-muted-foreground">or</span></div>
             </div>
             <div className="grid grid-cols-2 gap-2.5">
               <Button
@@ -247,16 +252,16 @@ const LoginPage = () => {
         <div className="text-center text-sm text-muted-foreground pb-4">
           {mode === 'login' ? (
             <>
-              Har du ikke konto?{' '}
+              Don't have an account?{' '}
               <button onClick={() => { setMode('signup'); setError(''); setMessage(''); }} className="text-[hsl(var(--energy))] font-semibold hover:underline">
-                Opprett konto
+                Create account
               </button>
             </>
           ) : (
             <>
-              Har du allerede konto?{' '}
+              Already have an account?{' '}
               <button onClick={() => { setMode('login'); setError(''); setMessage(''); }} className="text-[hsl(var(--energy))] font-semibold hover:underline">
-                Logg inn
+                Log in
               </button>
             </>
           )}
