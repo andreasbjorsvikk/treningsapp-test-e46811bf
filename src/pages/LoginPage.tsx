@@ -208,7 +208,7 @@ const LoginPage = () => {
                 onClick={() => { setMode('forgot'); setError(''); setMessage(''); }}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors w-full text-center"
               >
-                Glemt passord?
+                Forgot password?
               </button>
             )}
           </form>
