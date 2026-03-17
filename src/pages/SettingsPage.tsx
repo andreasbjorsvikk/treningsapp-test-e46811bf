@@ -881,9 +881,23 @@ const SettingsPage = () => {
               )}
             </div>
             {!stravaConnected ? (
-              <Button variant="outline" size="sm" onClick={handleStravaConnect} disabled={stravaLoading || !user} className="shrink-0">
-                {stravaLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('settings.stravaConnect')}
-              </Button>
+              <button
+                onClick={handleStravaConnect}
+                disabled={stravaLoading || !user}
+                className="shrink-0 disabled:opacity-50 disabled:pointer-events-none"
+                aria-label="Connect with Strava"
+              >
+                {stravaLoading ? (
+                  <div className="h-[48px] px-4 flex items-center justify-center rounded-md bg-[#FC4C02]">
+                    <Loader2 className="w-5 h-5 animate-spin text-white" />
+                  </div>
+                ) : (
+                  <svg width="193" height="48" viewBox="0 0 193 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-[48px] w-auto">
+                    <rect width="193" height="48" rx="4" fill="#FC4C02"/>
+                    <text x="96.5" y="29" textAnchor="middle" fill="white" fontFamily="system-ui, -apple-system, sans-serif" fontSize="14" fontWeight="600">Connect with Strava</text>
+                  </svg>
+                )}
+              </button>
             ) : (
               <div className="flex gap-2 shrink-0">
                 <Button variant="outline" size="sm" onClick={handleStravaSync} disabled={stravaSyncing || syncAllLoading}>
