@@ -117,7 +117,7 @@ const LoginPage = () => {
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="din@epost.no"
+                  placeholder="you@email.com"
                   className="pl-10 bg-background/50"
                   required
                   autoComplete="email"
