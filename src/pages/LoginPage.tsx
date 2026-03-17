@@ -252,16 +252,16 @@ const LoginPage = () => {
         <div className="text-center text-sm text-muted-foreground pb-4">
           {mode === 'login' ? (
             <>
-              Har du ikke konto?{' '}
+              Don't have an account?{' '}
               <button onClick={() => { setMode('signup'); setError(''); setMessage(''); }} className="text-[hsl(var(--energy))] font-semibold hover:underline">
-                Opprett konto
+                Create account
               </button>
             </>
           ) : (
             <>
-              Har du allerede konto?{' '}
+              Already have an account?{' '}
               <button onClick={() => { setMode('login'); setError(''); setMessage(''); }} className="text-[hsl(var(--energy))] font-semibold hover:underline">
-                Logg inn
+                Log in
               </button>
             </>
           )}
