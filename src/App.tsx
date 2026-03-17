@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import NotFound from "./pages/NotFound";
+import SupportPage from "./pages/SupportPage";
 
 const queryClient = new QueryClient();
 
