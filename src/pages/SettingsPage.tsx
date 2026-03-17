@@ -22,6 +22,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
 import ChildProfilesSection from '@/components/ChildProfilesSection';
 import { stravaService } from '@/services/stravaService';
+import connectWithStravaImg from '@/assets/strava/connect-with-strava.png';
 import { toast } from 'sonner';
 import { getFriends, Friend } from '@/services/communityService';
 import { useAdmin } from '@/hooks/useAdmin';
