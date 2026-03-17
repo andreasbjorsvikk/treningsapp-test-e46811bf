@@ -97,7 +97,7 @@ const LoginPage = () => {
             <p className="text-sm text-muted-foreground mt-1.5 max-w-[240px] mx-auto leading-relaxed">
               {mode === 'login' && 'Log in and keep going'}
               {mode === 'signup' && 'Start your training journey today'}
-              {mode === 'forgot' && 'We'll help you get back on track'}
+              {mode === 'forgot' && "We'll help you get back on track"}
             </p>
           </div>
         </div>
