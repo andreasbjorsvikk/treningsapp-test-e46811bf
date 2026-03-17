@@ -138,6 +138,32 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
               <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.1" />
               <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
             </linearGradient>
+            {/* Gold glow - strong */}
+            <filter id="glowGold" x="-100%" y="-100%" width="300%" height="300%">
+              <feGaussianBlur stdDeviation="0.8" result="blur" />
+              <feFlood floodColor="#D4A017" floodOpacity="0.7" result="color" />
+              <feComposite in="color" in2="blur" operator="in" result="glow" />
+              <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+            {/* Subtle glows for other colors */}
+            <filter id="glowGreen" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="0.4" result="blur" />
+              <feFlood floodColor="#22c55e" floodOpacity="0.3" result="color" />
+              <feComposite in="color" in2="blur" operator="in" result="glow" />
+              <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+            <filter id="glowOrange" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="0.4" result="blur" />
+              <feFlood floodColor="#f97316" floodOpacity="0.25" result="color" />
+              <feComposite in="color" in2="blur" operator="in" result="glow" />
+              <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+            <filter id="glowRed" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="0.4" result="blur" />
+              <feFlood floodColor="#ef4444" floodOpacity="0.25" result="color" />
+              <feComposite in="color" in2="blur" operator="in" result="glow" />
+              <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
           </defs>
           {sessionPoints.length > 1 && (
             <path
