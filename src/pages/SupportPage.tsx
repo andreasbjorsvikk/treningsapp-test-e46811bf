@@ -30,7 +30,7 @@ const SupportPage = () => {
             href="mailto:support@treningsappen.no"
             className="text-sm font-medium text-accent hover:underline"
           >
-            support@treningsappen.app
+            support@treningsappen.no
           </a>
         </section>
 
