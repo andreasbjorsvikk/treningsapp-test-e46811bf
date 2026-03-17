@@ -121,7 +121,7 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
           <span className="text-[10px] text-muted-foreground">{t('home.noGoalSet') || 'Sett et mål for å se grafen'}</span>
         </div>
       ) : (
-        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet">
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible" preserveAspectRatio="xMidYMid meet">
           {/* Target line - dashed, subtle */}
           <path
             d={targetPath}
@@ -167,11 +167,11 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
           </defs>
 
           <style>{`
-            @keyframes goldPulse {
-              0%, 100% { opacity: 1; r: ${compact ? 1.5 : 1.6}; }
-              50% { opacity: 0.85; r: ${compact ? 2 : 2.2}; }
+            @keyframes goldGlow {
+              0%, 100% { opacity: 0.85; }
+              50% { opacity: 1; }
             }
-            .gold-dot { animation: goldPulse 2s ease-in-out infinite; }
+            .gold-dot-glow { animation: goldGlow 2s ease-in-out infinite; }
           `}</style>
 
           {sessionPoints.length > 1 && (
@@ -196,17 +196,28 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
             const filterId = getGlowId(d);
             const isGold = d.target > 0 && d.count > d.target;
             return (
-              <circle
-                key={i}
-                cx={getX(i)}
-                cy={getY(d.count)}
-                r={compact ? "1.5" : "1.6"}
-                fill={getDotColor(d)}
-                stroke="hsl(var(--background))"
-                strokeWidth="0.25"
-                filter={filterId ? `url(#${filterId})` : undefined}
-                className={isGold ? 'gold-dot' : undefined}
-              />
+              <g key={i}>
+                {/* Pulsing glow ring for gold */}
+                {isGold && (
+                  <circle
+                    cx={getX(i)}
+                    cy={getY(d.count)}
+                    r={compact ? "2.8" : "3"}
+                    fill="#FFD700"
+                    opacity="0.25"
+                    className="gold-dot-glow"
+                  />
+                )}
+                <circle
+                  cx={getX(i)}
+                  cy={getY(d.count)}
+                  r={compact ? "1.5" : "1.6"}
+                  fill={isGold ? '#FFDF40' : getDotColor(d)}
+                  stroke={isGold ? '#FFD700' : 'hsl(var(--background))'}
+                  strokeWidth={isGold ? "0.3" : "0.25"}
+                  filter={filterId ? `url(#${filterId})` : undefined}
+                />
+              </g>
             );
           })}
 
