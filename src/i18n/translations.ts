@@ -695,6 +695,7 @@ const en: Record<string, string> = {
   'home.last7days': 'Last 7 days',
   'home.goals': 'Goals',
   'home.recentSessions': 'Recent workouts',
+  'home.noGoalSet': 'Set a goal to see the graph',
   'home.newSession': 'New workout',
   'home.editGoal': 'Edit goal',
 
