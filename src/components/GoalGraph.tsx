@@ -202,7 +202,7 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
                   <circle
                     cx={getX(i)}
                     cy={getY(d.count)}
-                    r={compact ? "2.8" : "3"}
+                    r={compact ? "2.2" : "2.4"}
                     fill="#FFD700"
                     opacity="0.25"
                     className="gold-dot-glow"
