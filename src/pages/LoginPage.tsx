@@ -128,7 +128,7 @@ const LoginPage = () => {
             {mode === 'signup' && (
               <div className="space-y-1.5">
                 <Label htmlFor="displayName" className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
-                  Navn
+                  Name
                 </Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
