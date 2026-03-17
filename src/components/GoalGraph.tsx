@@ -210,7 +210,7 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
                     cy={getY(d.count)}
                     r={compact ? "2.2" : "2.4"}
                     fill="#FFD700"
-                    opacity="0.25"
+                    opacity="0.1"
                     className="gold-dot-glow"
                   />
                 )}
@@ -218,9 +218,9 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
                   cx={getX(i)}
                   cy={getY(d.count)}
                   r={compact ? "1.5" : "1.6"}
-                  fill={isGold ? '#FFDF40' : getDotColor(d)}
-                  stroke={isGold ? '#FFD700' : 'hsl(var(--background))'}
-                  strokeWidth={isGold ? "0.3" : "0.25"}
+                  fill={isGold ? 'url(#goldShimmer)' : getDotColor(d)}
+                  stroke={isGold ? '#DAA520' : 'hsl(var(--background))'}
+                  strokeWidth="0.25"
                   filter={filterId ? `url(#${filterId})` : undefined}
                 />
               </g>
