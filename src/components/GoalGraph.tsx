@@ -85,7 +85,10 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
   const targetPoints = data.map((d, i) => ({ x: getX(i), y: getY(d.target) }));
 
   const sessionPath = buildSmoothPath(sessionPoints);
-  const targetPath = buildSmoothPath(targetPoints);
+  // Target line uses straight segments so goal changes are clearly visible
+  const targetPath = targetPoints.length >= 2
+    ? targetPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
+    : '';
 
   // Color logic for dots
   const getDotColor = (d: { count: number; target: number }) => {
