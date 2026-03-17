@@ -137,7 +137,7 @@ const LoginPage = () => {
                     type="text"
                     value={displayName}
                     onChange={e => setDisplayName(e.target.value)}
-                    placeholder="Ditt navn"
+                    placeholder="Your name"
                     className="pl-10 bg-background/50"
                     required
                     autoComplete="name"
