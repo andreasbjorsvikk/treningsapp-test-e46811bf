@@ -101,11 +101,11 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
 
   return (
     <div
-      className="w-full cursor-pointer rounded-lg px-1 py-0.5"
+      className="w-full cursor-pointer rounded-lg px-1 py-0"
       onClick={onClick}
     >
       {!hasGoal ? (
-        <div className="flex items-center justify-center h-full min-h-[48px]">
+        <div className="flex items-center justify-center h-full min-h-[24px]">
           <span className="text-[10px] text-muted-foreground">{t('home.noGoalSet') || 'Sett et mål for å se grafen'}</span>
         </div>
       ) : (
@@ -115,15 +115,15 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
             d={targetPath}
             fill="none"
             stroke="hsl(var(--muted-foreground))"
-            strokeWidth="0.4"
+            strokeWidth="0.25"
             strokeDasharray="1.5 1"
-            opacity="0.5"
+            opacity="0.4"
           />
 
           {/* Gradient fill under session line */}
           <defs>
             <linearGradient id="goalGraphGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.15" />
+              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.1" />
               <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
             </linearGradient>
           </defs>
@@ -134,13 +134,14 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
             />
           )}
 
-          {/* Session line - smooth */}
+          {/* Session line - smooth, subtle */}
           <path
             d={sessionPath}
             fill="none"
             stroke="hsl(var(--primary))"
-            strokeWidth="0.7"
+            strokeWidth="0.4"
             strokeLinecap="round"
+            opacity="0.6"
           />
 
           {/* Dots */}
@@ -149,29 +150,30 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
               key={i}
               cx={getX(i)}
               cy={getY(d.count)}
-              r="1.3"
+              r={compact ? "1" : "1.3"}
               fill={getDotColor(d)}
               stroke="hsl(var(--background))"
-              strokeWidth="0.3"
+              strokeWidth="0.2"
             />
           ))}
 
-          {/* Month labels - show every 2nd or 3rd */}
-          {data.map((d, i) => (
-            i % 2 === 0 ? (
+          {/* Month labels - show every 3rd in compact */}
+          {data.map((d, i) => {
+            const interval = compact ? 3 : 2;
+            return i % interval === 0 ? (
               <text
                 key={`label-${i}`}
                 x={getX(i)}
-                y={height - 1}
+                y={height - 0.5}
                 textAnchor="middle"
-                fontSize="2.5"
+                fontSize={compact ? "2" : "2.5"}
                 fill="hsl(var(--muted-foreground))"
-                opacity="0.7"
+                opacity="0.6"
               >
                 {d.label}
               </text>
-            ) : null
-          ))}
+            ) : null;
+          })}
         </svg>
       )}
     </div>
