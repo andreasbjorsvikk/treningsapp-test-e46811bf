@@ -22,6 +22,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
 import ChildProfilesSection from '@/components/ChildProfilesSection';
 import { stravaService } from '@/services/stravaService';
+import connectWithStravaImg from '@/assets/strava/connect-with-strava.png';
 import { toast } from 'sonner';
 import { getFriends, Friend } from '@/services/communityService';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -46,7 +47,7 @@ const COLOR_PRESETS = [
   { labelKey: 'color.lavender', light: { bg: 'rgb(220,215,250)', text: 'rgb(75,55,145)', badge: 'rgb(232,228,255)' }, dark: { bg: 'rgb(110,95,175)', text: '#ffffff', badge: '#2a1f55' } },
 ];
 
-type SettingsView = 'main' | 'appearance' | 'preferences' | 'training' | 'data' | 'account' | 'sync' | 'privacy' | 'profile' | 'help';
+type SettingsView = 'main' | 'appearance' | 'preferences' | 'training' | 'data' | 'account' | 'sync' | 'privacy' | 'profile' | 'help' | 'privacyPolicy';
 
 const SettingsPage = () => {
   const { settings, updateSettings, appThemes, accentPresets, getTypeColor } = useSettings();
@@ -767,9 +768,106 @@ const SettingsPage = () => {
       <div className="space-y-4">
         {backButton(t('settings.gdpr'))}
         <div className="glass-card rounded-xl overflow-hidden divide-y divide-border">
+          {menuItem('Personvernerklæring', <Shield className="w-4 h-4" />, () => setView('privacyPolicy'))}
           {menuItem(t('gdpr.deleteData'), <Trash2 className="w-4 h-4" />, () => setGdprSubView('deleteData'))}
           {menuItem(t('gdpr.deleteAccount'), <Trash2 className="w-4 h-4" />, () => setGdprSubView('deleteAccount'))}
           {menuItem(t('gdpr.requestData'), <Download className="w-4 h-4" />, () => setGdprSubView('downloadData'))}
+        </div>
+      </div>
+    );
+  }
+
+  // ========== PRIVACY POLICY VIEW ==========
+  if (view === 'privacyPolicy') {
+    return (
+      <div className="space-y-4">
+        <button
+          onClick={() => setView('data')}
+          className="flex items-center gap-2 mb-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span className="font-medium">Personvernerklæring</span>
+        </button>
+
+        <div className="glass-card rounded-xl p-5 space-y-5 text-sm text-muted-foreground leading-relaxed">
+          <div>
+            <h2 className="font-display font-bold text-lg text-foreground mb-1">Personvernerklæring for Treningsappen</h2>
+            <p className="text-xs">Sist oppdatert: {new Date().toLocaleDateString('nb-NO', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">1. Hvem er vi?</h3>
+            <p>Treningsappen er en trenings- og aktivitetslogg som lar deg registrere, synkronisere og analysere treningsøkter. Appen er utviklet og driftet av Treningsappen.</p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">2. Hvilke data samler vi inn?</h3>
+            <ul className="list-disc pl-5 space-y-1">
+              <li><strong>Kontoinformasjon:</strong> E-postadresse og visningsnavn ved registrering.</li>
+              <li><strong>Treningsdata:</strong> Treningsøkter du registrerer manuelt (type, varighet, distanse, høydemeter, notater).</li>
+              <li><strong>Strava-data:</strong> Hvis du kobler Strava-kontoen din, synkroniserer vi treningsøkter, GPS-ruter, pulsdata og høydedata fra Strava. Denne dataen brukes kun for å vise deg din egen treningshistorikk.</li>
+              <li><strong>Profildata:</strong> Profilbilde, brukernavn og personverninnstillinger.</li>
+              <li><strong>Fjelltopp-innsjekkinger:</strong> Posisjonsdata og bilder ved innsjekking på fjelltopper.</li>
+              <li><strong>Mål og statistikk:</strong> Treningsmål du oppretter og beregnet statistikk.</li>
+            </ul>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">3. Hvordan bruker vi dataen?</h3>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Vise deg din treningshistorikk, statistikk og fremgang mot mål.</li>
+              <li>Synkronisere treningsøkter fra Strava (kun din egen data).</li>
+              <li>Vise fjelltopp-innsjekkinger og rangeringer.</li>
+              <li>Gjøre det mulig å delta i utfordringer med venner.</li>
+            </ul>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">4. Strava-integrasjon</h3>
+            <p>Vi bruker Strava sin API for å synkronisere treningsdata. I henhold til Stravas retningslinjer:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Din Strava-data vises kun til deg selv.</li>
+              <li>Vi deler aldri din Strava-data med andre brukere.</li>
+              <li>Du kan når som helst koble fra Strava og slette all importert data under Innstillinger → Synkronisering.</li>
+              <li>Alle synkroniserte økter lenker tilbake til den originale aktiviteten på Strava.</li>
+            </ul>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">5. Deling av data</h3>
+            <p>Vi selger aldri dataen din. Du kontrollerer selv hvem som kan se din informasjon gjennom personverninnstillingene:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li><strong>Bare meg:</strong> Kun du kan se dataen.</li>
+              <li><strong>Venner:</strong> Kun godkjente venner kan se dataen.</li>
+              <li><strong>Alle:</strong> Alle brukere av appen kan se dataen.</li>
+            </ul>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">6. Lagring og sikkerhet</h3>
+            <p>All data lagres sikkert i skyen med kryptering. Tilgang til data er beskyttet med autentisering og radnivå-sikkerhet (RLS) i databasen. Kun du har tilgang til din egen data med mindre du eksplisitt deler den.</p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">7. Dine rettigheter</h3>
+            <p>I henhold til GDPR og norsk personvernlovgivning har du rett til å:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li><strong>Se dataen din:</strong> Last ned all data som JSON under Innstillinger → Personvern og data.</li>
+              <li><strong>Slette dataen din:</strong> Slett alle treningsøkter, mål og innsjekkinger.</li>
+              <li><strong>Slette kontoen din:</strong> Fjern alt inkludert profil og konto permanent.</li>
+              <li><strong>Koble fra tjenester:</strong> Koble fra Strava og slett importert data når som helst.</li>
+            </ul>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">8. Informasjonskapsler og lokal lagring</h3>
+            <p>Vi bruker lokal lagring (localStorage) for å huske dine innstillinger som mørk modus, språk og rekkefølge på seksjoner. Ingen tredjeparts sporingskapsler benyttes.</p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">9. Kontakt</h3>
+            <p>Har du spørsmål om personvern, ta kontakt via e-post: <span className="text-foreground font-medium">kontakt@treningsappen.no</span></p>
+          </div>
         </div>
       </div>
     );
@@ -892,10 +990,7 @@ const SettingsPage = () => {
                     <Loader2 className="w-5 h-5 animate-spin text-white" />
                   </div>
                 ) : (
-                  <svg width="193" height="48" viewBox="0 0 193 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-[48px] w-auto">
-                    <rect width="193" height="48" rx="4" fill="#FC4C02"/>
-                    <text x="96.5" y="29" textAnchor="middle" fill="white" fontFamily="system-ui, -apple-system, sans-serif" fontSize="14" fontWeight="600">Connect with Strava</text>
-                  </svg>
+                  <img src={connectWithStravaImg} alt="Connect with Strava" className="h-[48px] w-auto" />
                 )}
               </button>
             ) : (
