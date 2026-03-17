@@ -88,6 +88,9 @@ const IndexContent = () => {
   const [editGoal, setEditGoal] = useState<ExtraGoal | undefined>();
   const [showGoalEditDialog, setShowGoalEditDialog] = useState(false);
   const [homeStatMode, setHomeStatMode] = useState<'week' | 'month'>('week');
+  const [heroView, setHeroView] = useState<'målgraf' | 'statistikk'>('målgraf');
+  const [heroDropdownOpen, setHeroDropdownOpen] = useState(false);
+  const heroLongPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [stravaSyncing, setStravaSyncing] = useState(false);
   const [detailSession, setDetailSession] = useState<WorkoutSession | null>(null);
   const [challengeDetail, setChallengeDetail] = useState<ChallengeWithParticipants | null>(null);
