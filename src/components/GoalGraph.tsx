@@ -94,10 +94,19 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
   const getDotColor = (d: { count: number; target: number }) => {
     if (d.target === 0) return 'hsl(var(--muted-foreground))';
     const diff = d.count - d.target;
-    if (diff > 0) return '#FFD700'; // gold - over target
+    if (diff > 0) return '#D4A017'; // rich gold - over target
     if (diff === 0) return '#22c55e'; // green - hit target
     if (diff >= -2) return '#f97316'; // orange - 1-2 under
     return '#ef4444'; // red - 3+ under
+  };
+
+  const getGlowId = (d: { count: number; target: number }) => {
+    if (d.target === 0) return null;
+    const diff = d.count - d.target;
+    if (diff > 0) return 'glowGold';
+    if (diff === 0) return 'glowGreen';
+    if (diff >= -2) return 'glowOrange';
+    return 'glowRed';
   };
 
   const hasGoal = periods.length > 0;
