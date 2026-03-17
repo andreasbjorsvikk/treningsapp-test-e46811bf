@@ -218,8 +218,6 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
                   filter={filterId ? `url(#${filterId})` : undefined}
                 />
               </g>
-            );
-            );
           })}
 
           {/* Month labels - show all */}
