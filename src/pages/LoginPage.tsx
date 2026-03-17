@@ -45,8 +45,8 @@ const LoginPage = () => {
     setSubmitting(false);
 
     if (error) {
-      if (error.includes('Invalid login')) setError('Feil e-post eller passord.');
-      else if (error.includes('already registered')) setError('E-posten er allerede registrert.');
+      if (error.includes('Invalid login')) setError('Incorrect email or password.');
+      else if (error.includes('already registered')) setError('This email is already registered.');
       else setError(error);
       return;
     }
