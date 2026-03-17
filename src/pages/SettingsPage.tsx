@@ -990,7 +990,7 @@ const SettingsPage = () => {
                     <Loader2 className="w-5 h-5 animate-spin text-white" />
                   </div>
                 ) : (
-                  <img src={connectWithStravaImg} alt="Connect with Strava" className="h-[48px] w-auto" />
+                  <img src={connectWithStravaImg} alt="Connect with Strava" className="h-[36px] w-auto" />
                 )}
               </button>
             ) : (
