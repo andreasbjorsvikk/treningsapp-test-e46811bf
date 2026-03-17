@@ -36,7 +36,7 @@ const LoginPage = () => {
 
     if (mode === 'signup' && !displayName.trim()) {
       setSubmitting(false);
-      setError('Du må oppgi et navn.');
+      setError('Please enter your name.');
       return;
     }
 
