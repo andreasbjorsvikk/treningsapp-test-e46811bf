@@ -121,7 +121,7 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
           <span className="text-[10px] text-muted-foreground">{t('home.noGoalSet') || 'Sett et mål for å se grafen'}</span>
         </div>
       ) : (
-        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible" preserveAspectRatio="xMidYMid meet">
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet">
           {/* Target line - dashed, subtle */}
           <path
             d={targetPath}
@@ -138,48 +138,33 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
               <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.1" />
               <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
             </linearGradient>
-            {/* Gold glow - subtle outer + shimmer */}
-            <filter id="glowGold" x="-150%" y="-150%" width="400%" height="400%">
-              <feGaussianBlur stdDeviation="1.2" result="blur" />
-              <feFlood floodColor="#FFD700" floodOpacity="0.5" result="color" />
+            {/* Gold glow - strong */}
+            <filter id="glowGold" x="-100%" y="-100%" width="300%" height="300%">
+              <feGaussianBlur stdDeviation="0.8" result="blur" />
+              <feFlood floodColor="#D4A017" floodOpacity="0.7" result="color" />
               <feComposite in="color" in2="blur" operator="in" result="glow" />
               <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
-            {/* Gold shimmer gradient */}
-            <radialGradient id="goldShimmer" cx="35%" cy="35%" r="65%">
-              <stop offset="0%" stopColor="#FFFDE0" stopOpacity="1" />
-              <stop offset="40%" stopColor="#FFD700" stopOpacity="1" />
-              <stop offset="100%" stopColor="#B8860B" stopOpacity="1" />
-            </radialGradient>
-            {/* Other glows - slightly stronger */}
-            <filter id="glowGreen" x="-100%" y="-100%" width="300%" height="300%">
-              <feGaussianBlur stdDeviation="0.6" result="blur" />
-              <feFlood floodColor="#22c55e" floodOpacity="0.45" result="color" />
+            {/* Subtle glows for other colors */}
+            <filter id="glowGreen" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="0.4" result="blur" />
+              <feFlood floodColor="#22c55e" floodOpacity="0.3" result="color" />
               <feComposite in="color" in2="blur" operator="in" result="glow" />
               <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
-            <filter id="glowOrange" x="-100%" y="-100%" width="300%" height="300%">
-              <feGaussianBlur stdDeviation="0.6" result="blur" />
-              <feFlood floodColor="#f97316" floodOpacity="0.4" result="color" />
+            <filter id="glowOrange" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="0.4" result="blur" />
+              <feFlood floodColor="#f97316" floodOpacity="0.25" result="color" />
               <feComposite in="color" in2="blur" operator="in" result="glow" />
               <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
-            <filter id="glowRed" x="-100%" y="-100%" width="300%" height="300%">
-              <feGaussianBlur stdDeviation="0.6" result="blur" />
-              <feFlood floodColor="#ef4444" floodOpacity="0.4" result="color" />
+            <filter id="glowRed" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="0.4" result="blur" />
+              <feFlood floodColor="#ef4444" floodOpacity="0.25" result="color" />
               <feComposite in="color" in2="blur" operator="in" result="glow" />
               <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
           </defs>
-
-          <style>{`
-            @keyframes goldGlow {
-              0%, 100% { opacity: 0.85; }
-              50% { opacity: 1; }
-            }
-            .gold-dot-glow { animation: goldGlow 2s ease-in-out infinite; }
-          `}</style>
-
           {sessionPoints.length > 1 && (
             <path
               d={`${sessionPath} L ${sessionPoints[sessionPoints.length - 1].x} ${padTop + graphH} L ${sessionPoints[0].x} ${padTop + graphH} Z`}
@@ -200,30 +185,17 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
           {/* Dots with glow */}
           {data.map((d, i) => {
             const filterId = getGlowId(d);
-            const isGold = d.target > 0 && d.count > d.target;
             return (
-              <g key={i}>
-                {/* Pulsing glow ring for gold */}
-                {isGold && (
-                  <circle
-                    cx={getX(i)}
-                    cy={getY(d.count)}
-                    r={compact ? "2.2" : "2.4"}
-                    fill="#FFD700"
-                    opacity="0.1"
-                    className="gold-dot-glow"
-                  />
-                )}
-                <circle
-                  cx={getX(i)}
-                  cy={getY(d.count)}
-                  r={compact ? "1.5" : "1.6"}
-                  fill={isGold ? 'url(#goldShimmer)' : getDotColor(d)}
-                  stroke={isGold ? '#DAA520' : 'hsl(var(--background))'}
-                  strokeWidth="0.25"
-                  filter={filterId ? `url(#${filterId})` : undefined}
-                />
-              </g>
+              <circle
+                key={i}
+                cx={getX(i)}
+                cy={getY(d.count)}
+                r={compact ? "1.5" : "1.6"}
+                fill={getDotColor(d)}
+                stroke="hsl(var(--background))"
+                strokeWidth="0.25"
+                filter={filterId ? `url(#${filterId})` : undefined}
+              />
             );
           })}
 
