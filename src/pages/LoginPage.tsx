@@ -265,6 +265,17 @@ const LoginPage = () => {
             </>
           )}
         </div>
+
+        {/* Compatible with Strava */}
+        <div className="flex justify-center pb-6 opacity-50">
+          <svg width="162" height="24" viewBox="0 0 162 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <text x="0" y="17" fill="currentColor" fontFamily="system-ui, -apple-system, sans-serif" fontSize="11" fontWeight="500" className="text-muted-foreground">Compatible with</text>
+            <g transform="translate(100, 2)">
+              <path d="M10.387 15.944l-1.589-3.116h-2.365L10.387 20l3.95-7.172h-2.366m-5.508-4.599l2.136 4.198h3.172L7.463 2l-5.3 10.828h3.169" fill="#FC4C02"/>
+              <text x="18" y="14" fill="#FC4C02" fontFamily="system-ui, -apple-system, sans-serif" fontSize="13" fontWeight="700">Strava</text>
+            </g>
+          </svg>
+        </div>
       </div>
     </div>
   );
