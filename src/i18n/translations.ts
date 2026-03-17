@@ -55,6 +55,7 @@ const no: Record<string, string> = {
   'home.last7days': 'Siste 7 dager',
   'home.goals': 'Mål',
   'home.recentSessions': 'Siste økter',
+  'home.noGoalSet': 'Sett et mål for å se grafen',
   'home.newSession': 'Ny økt',
   'home.editGoal': 'Rediger mål',
 
@@ -694,6 +695,7 @@ const en: Record<string, string> = {
   'home.last7days': 'Last 7 days',
   'home.goals': 'Goals',
   'home.recentSessions': 'Recent workouts',
+  'home.noGoalSet': 'Set a goal to see the graph',
   'home.newSession': 'New workout',
   'home.editGoal': 'Edit goal',
 
