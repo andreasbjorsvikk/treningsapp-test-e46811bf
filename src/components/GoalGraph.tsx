@@ -10,7 +10,7 @@ interface GoalGraphProps {
   compact?: boolean;
 }
 
-const GoalGraph = ({ sessions, periods, onClick }: GoalGraphProps) => {
+const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
   const { t } = useTranslation();
 
   const data = useMemo(() => {
@@ -18,9 +18,23 @@ const GoalGraph = ({ sessions, periods, onClick }: GoalGraphProps) => {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
-    // Show last 12 months including current
+    // Find earliest goal start
+    const sorted = [...periods].sort((a, b) => a.validFrom.localeCompare(b.validFrom));
+    const earliest = sorted.length > 0 ? new Date(sorted[0].validFrom) : null;
+
+    // Show months from when goal was set until now
     const months: { month: number; year: number; label: string; count: number; target: number }[] = [];
-    for (let i = 11; i >= 0; i--) {
+    
+    if (!earliest) return months;
+
+    const startMonth = earliest.getMonth();
+    const startYear = earliest.getFullYear();
+    
+    // Calculate total months from earliest to now
+    const totalMonths = (currentYear - startYear) * 12 + (currentMonth - startMonth) + 1;
+    const monthsToShow = Math.max(2, Math.min(totalMonths, 24));
+
+    for (let i = monthsToShow - 1; i >= 0; i--) {
       let m = currentMonth - i;
       let y = currentYear;
       while (m < 0) { m += 12; y--; }
@@ -39,10 +53,10 @@ const GoalGraph = ({ sessions, periods, onClick }: GoalGraphProps) => {
   const maxVal = Math.max(...data.map(d => Math.max(d.count, d.target)), 1);
 
   const width = 100;
-  const height = 50;
+  const height = compact ? 24 : 50;
   const padX = 4;
-  const padTop = 6;
-  const padBottom = 8;
+  const padTop = 3;
+  const padBottom = compact ? 4 : 8;
   const graphH = height - padTop - padBottom;
   const step = (width - padX * 2) / (data.length - 1);
 
