@@ -777,6 +777,102 @@ const SettingsPage = () => {
     );
   }
 
+  // ========== PRIVACY POLICY VIEW ==========
+  if (view === 'privacyPolicy') {
+    return (
+      <div className="space-y-4">
+        <button
+          onClick={() => setView('data')}
+          className="flex items-center gap-2 mb-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span className="font-medium">Personvernerklæring</span>
+        </button>
+
+        <div className="glass-card rounded-xl p-5 space-y-5 text-sm text-muted-foreground leading-relaxed">
+          <div>
+            <h2 className="font-display font-bold text-lg text-foreground mb-1">Personvernerklæring for Treningsappen</h2>
+            <p className="text-xs">Sist oppdatert: {new Date().toLocaleDateString('nb-NO', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">1. Hvem er vi?</h3>
+            <p>Treningsappen er en trenings- og aktivitetslogg som lar deg registrere, synkronisere og analysere treningsøkter. Appen er utviklet og driftet av Treningsappen.</p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">2. Hvilke data samler vi inn?</h3>
+            <ul className="list-disc pl-5 space-y-1">
+              <li><strong>Kontoinformasjon:</strong> E-postadresse og visningsnavn ved registrering.</li>
+              <li><strong>Treningsdata:</strong> Treningsøkter du registrerer manuelt (type, varighet, distanse, høydemeter, notater).</li>
+              <li><strong>Strava-data:</strong> Hvis du kobler Strava-kontoen din, synkroniserer vi treningsøkter, GPS-ruter, pulsdata og høydedata fra Strava. Denne dataen brukes kun for å vise deg din egen treningshistorikk.</li>
+              <li><strong>Profildata:</strong> Profilbilde, brukernavn og personverninnstillinger.</li>
+              <li><strong>Fjelltopp-innsjekkinger:</strong> Posisjonsdata og bilder ved innsjekking på fjelltopper.</li>
+              <li><strong>Mål og statistikk:</strong> Treningsmål du oppretter og beregnet statistikk.</li>
+            </ul>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">3. Hvordan bruker vi dataen?</h3>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Vise deg din treningshistorikk, statistikk og fremgang mot mål.</li>
+              <li>Synkronisere treningsøkter fra Strava (kun din egen data).</li>
+              <li>Vise fjelltopp-innsjekkinger og rangeringer.</li>
+              <li>Gjøre det mulig å delta i utfordringer med venner.</li>
+            </ul>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">4. Strava-integrasjon</h3>
+            <p>Vi bruker Strava sin API for å synkronisere treningsdata. I henhold til Stravas retningslinjer:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Din Strava-data vises kun til deg selv.</li>
+              <li>Vi deler aldri din Strava-data med andre brukere.</li>
+              <li>Du kan når som helst koble fra Strava og slette all importert data under Innstillinger → Synkronisering.</li>
+              <li>Alle synkroniserte økter lenker tilbake til den originale aktiviteten på Strava.</li>
+            </ul>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">5. Deling av data</h3>
+            <p>Vi selger aldri dataen din. Du kontrollerer selv hvem som kan se din informasjon gjennom personverninnstillingene:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li><strong>Bare meg:</strong> Kun du kan se dataen.</li>
+              <li><strong>Venner:</strong> Kun godkjente venner kan se dataen.</li>
+              <li><strong>Alle:</strong> Alle brukere av appen kan se dataen.</li>
+            </ul>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">6. Lagring og sikkerhet</h3>
+            <p>All data lagres sikkert i skyen med kryptering. Tilgang til data er beskyttet med autentisering og radnivå-sikkerhet (RLS) i databasen. Kun du har tilgang til din egen data med mindre du eksplisitt deler den.</p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">7. Dine rettigheter</h3>
+            <p>I henhold til GDPR og norsk personvernlovgivning har du rett til å:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li><strong>Se dataen din:</strong> Last ned all data som JSON under Innstillinger → Personvern og data.</li>
+              <li><strong>Slette dataen din:</strong> Slett alle treningsøkter, mål og innsjekkinger.</li>
+              <li><strong>Slette kontoen din:</strong> Fjern alt inkludert profil og konto permanent.</li>
+              <li><strong>Koble fra tjenester:</strong> Koble fra Strava og slett importert data når som helst.</li>
+            </ul>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">8. Informasjonskapsler og lokal lagring</h3>
+            <p>Vi bruker lokal lagring (localStorage) for å huske dine innstillinger som mørk modus, språk og rekkefølge på seksjoner. Ingen tredjeparts sporingskapsler benyttes.</p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">9. Kontakt</h3>
+            <p>Har du spørsmål om personvern, ta kontakt via e-post: <span className="text-foreground font-medium">kontakt@treningsappen.no</span></p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ========== SYNC VIEW ==========
   if (view === 'sync') {
     const handleStravaConnect = async () => {
