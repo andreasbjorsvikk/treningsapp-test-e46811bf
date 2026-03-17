@@ -30,7 +30,7 @@ const LoginPage = () => {
       const { error } = await resetPassword(email);
       setSubmitting(false);
       if (error) { setError(error); return; }
-      setMessage('Sjekk e-posten din for en lenke til å tilbakestille passordet.');
+      setMessage('Check your email for a link to reset your password.');
       return;
     }
 
