@@ -53,12 +53,12 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
   const maxVal = Math.max(...data.map(d => Math.max(d.count, d.target)), 1);
 
   const width = 100;
-  const height = compact ? 24 : 50;
+  const height = compact ? 18 : 50;
   const padX = 4;
-  const padTop = 3;
-  const padBottom = compact ? 4 : 8;
+  const padTop = 2;
+  const padBottom = compact ? 5 : 8;
   const graphH = height - padTop - padBottom;
-  const step = (width - padX * 2) / (data.length - 1);
+  const step = data.length > 1 ? (width - padX * 2) / (data.length - 1) : 0;
 
   const getY = (val: number) => padTop + graphH - (val / maxVal) * graphH;
   const getX = (i: number) => padX + i * step;
@@ -85,7 +85,10 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
   const targetPoints = data.map((d, i) => ({ x: getX(i), y: getY(d.target) }));
 
   const sessionPath = buildSmoothPath(sessionPoints);
-  const targetPath = buildSmoothPath(targetPoints);
+  // Target line uses straight segments so goal changes are clearly visible
+  const targetPath = targetPoints.length >= 2
+    ? targetPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
+    : '';
 
   // Color logic for dots
   const getDotColor = (d: { count: number; target: number }) => {
@@ -150,30 +153,27 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
               key={i}
               cx={getX(i)}
               cy={getY(d.count)}
-              r={compact ? "1" : "1.3"}
+              r={compact ? "1.5" : "1.6"}
               fill={getDotColor(d)}
               stroke="hsl(var(--background))"
-              strokeWidth="0.2"
+              strokeWidth="0.25"
             />
           ))}
 
-          {/* Month labels - show every 3rd in compact */}
-          {data.map((d, i) => {
-            const interval = compact ? 3 : 2;
-            return i % interval === 0 ? (
-              <text
-                key={`label-${i}`}
-                x={getX(i)}
-                y={height - 0.5}
-                textAnchor="middle"
-                fontSize={compact ? "2" : "2.5"}
-                fill="hsl(var(--muted-foreground))"
-                opacity="0.6"
-              >
-                {d.label}
-              </text>
-            ) : null;
-          })}
+          {/* Month labels - show all */}
+          {data.map((d, i) => (
+            <text
+              key={`label-${i}`}
+              x={getX(i)}
+              y={height - 0.3}
+              textAnchor="middle"
+              fontSize={compact ? "2.8" : "2.8"}
+              fill="hsl(var(--muted-foreground))"
+              opacity="0.7"
+            >
+              {d.label}
+            </text>
+          ))}
         </svg>
       )}
     </div>
