@@ -615,6 +615,7 @@ const IndexContent = () => {
                         sessions={allSessions}
                         periods={allPeriods}
                         onClick={navigateToGoals}
+                        compact
                       />
                     )}
 
