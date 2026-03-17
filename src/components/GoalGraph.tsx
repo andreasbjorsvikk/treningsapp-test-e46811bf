@@ -7,6 +7,7 @@ interface GoalGraphProps {
   sessions: WorkoutSession[];
   periods: PrimaryGoalPeriod[];
   onClick?: () => void;
+  compact?: boolean;
 }
 
 const GoalGraph = ({ sessions, periods, onClick }: GoalGraphProps) => {
