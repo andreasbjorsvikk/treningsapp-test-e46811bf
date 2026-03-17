@@ -53,12 +53,12 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
   const maxVal = Math.max(...data.map(d => Math.max(d.count, d.target)), 1);
 
   const width = 100;
-  const height = compact ? 24 : 50;
+  const height = compact ? 18 : 50;
   const padX = 4;
-  const padTop = 3;
-  const padBottom = compact ? 4 : 8;
+  const padTop = 2;
+  const padBottom = compact ? 5 : 8;
   const graphH = height - padTop - padBottom;
-  const step = (width - padX * 2) / (data.length - 1);
+  const step = data.length > 1 ? (width - padX * 2) / (data.length - 1) : 0;
 
   const getY = (val: number) => padTop + graphH - (val / maxVal) * graphH;
   const getX = (i: number) => padX + i * step;
