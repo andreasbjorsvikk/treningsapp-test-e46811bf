@@ -121,7 +121,7 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
           <span className="text-[10px] text-muted-foreground">{t('home.noGoalSet') || 'Sett et mål for å se grafen'}</span>
         </div>
       ) : (
-        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet">
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible" preserveAspectRatio="xMidYMid meet">
           {/* Target line - dashed, subtle */}
           <path
             d={targetPath}
