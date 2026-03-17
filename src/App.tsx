@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import NotFound from "./pages/NotFound";
+import SupportPage from "./pages/SupportPage";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
               <Route path="/" element={<RequireAuth><Index /></RequireAuth>} />
               <Route path="/login" element={<RedirectIfAuth><LoginPage /></RedirectIfAuth>} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/support" element={<SupportPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
