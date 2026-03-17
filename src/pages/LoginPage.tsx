@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { lovable } from '@/integrations/lovable/index';
+import compatibleWithStravaImg from '@/assets/strava/compatible-with-strava.png';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, UserPlus, LogIn, Flame, Activity, Mountain, Timer, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
