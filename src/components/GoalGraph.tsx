@@ -182,18 +182,22 @@ const GoalGraph = ({ sessions, periods, onClick, compact }: GoalGraphProps) => {
             opacity="0.6"
           />
 
-          {/* Dots */}
-          {data.map((d, i) => (
-            <circle
-              key={i}
-              cx={getX(i)}
-              cy={getY(d.count)}
-              r={compact ? "1.5" : "1.6"}
-              fill={getDotColor(d)}
-              stroke="hsl(var(--background))"
-              strokeWidth="0.25"
-            />
-          ))}
+          {/* Dots with glow */}
+          {data.map((d, i) => {
+            const filterId = getGlowId(d);
+            return (
+              <circle
+                key={i}
+                cx={getX(i)}
+                cy={getY(d.count)}
+                r={compact ? "1.5" : "1.6"}
+                fill={getDotColor(d)}
+                stroke="hsl(var(--background))"
+                strokeWidth="0.25"
+                filter={filterId ? `url(#${filterId})` : undefined}
+              />
+            );
+          })}
 
           {/* Month labels - show all */}
           {data.map((d, i) => (
