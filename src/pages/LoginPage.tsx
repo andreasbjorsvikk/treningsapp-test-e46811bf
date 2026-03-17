@@ -94,11 +94,6 @@ const LoginPage = () => {
             <h1 className="font-display font-bold text-3xl tracking-tight">
               Trenings<span className="text-gradient-energy">appen</span>
             </h1>
-            <p className="text-sm text-muted-foreground mt-1.5 max-w-[240px] mx-auto leading-relaxed">
-              {mode === 'login' && 'Logg inn og fortsett reisen'}
-              {mode === 'signup' && 'Start din treningsreise i dag'}
-              {mode === 'forgot' && 'Vi hjelper deg med å komme tilbake'}
-            </p>
           </div>
         </div>
 

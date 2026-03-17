@@ -1,7 +1,7 @@
 {
   "name": "Treningsappen",
   "short_name": "Treningsappen",
-  "start_url": "/",
+  "start_url": "https://treningsappen.no/",
   "display": "standalone",
   "background_color": "#1a1a1a",
   "theme_color": "#262626",
