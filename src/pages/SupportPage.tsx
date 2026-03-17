@@ -27,10 +27,10 @@ const SupportPage = () => {
             Har du spørsmål, feil å rapportere, eller tilbakemeldinger? Send oss en e-post.
           </p>
           <a
-            href="mailto:support@treningsappen.app"
+            href="mailto:support@treningsappen.no"
             className="text-sm font-medium text-accent hover:underline"
           >
-            support@treningsappen.app
+            support@treningsappen.no
           </a>
         </section>
 
