@@ -192,12 +192,12 @@ const LoginPage = () => {
 
             <Button type="submit" className="w-full gradient-energy text-primary-foreground h-11 text-sm font-semibold shadow-lg shadow-energy/20" disabled={submitting}>
               {submitting ? (
-                <span className="animate-pulse">Vennligst vent…</span>
+                <span className="animate-pulse">Please wait…</span>
               ) : (
                 <>
-                  {mode === 'login' && <><LogIn className="w-4 h-4 mr-1.5" /> Logg inn</>}
-                  {mode === 'signup' && <><UserPlus className="w-4 h-4 mr-1.5" /> Opprett konto</>}
-                  {mode === 'forgot' && <><ArrowRight className="w-4 h-4 mr-1.5" /> Send tilbakestillingslenke</>}
+                  {mode === 'login' && <><LogIn className="w-4 h-4 mr-1.5" /> Log in</>}
+                  {mode === 'signup' && <><UserPlus className="w-4 h-4 mr-1.5" /> Create account</>}
+                  {mode === 'forgot' && <><ArrowRight className="w-4 h-4 mr-1.5" /> Send reset link</>}
                 </>
               )}
             </Button>
