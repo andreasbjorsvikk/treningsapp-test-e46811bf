@@ -11,7 +11,7 @@ const SupportPage = () => {
         </Link>
 
         <div className="mb-10">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">TopTur Support</h1>
+          <h1 className="text-3xl font-bold tracking-tight mb-2">Treningsappen Support</h1>
           <p className="text-muted-foreground">
             Treningslogg, målsetting og fjelltoppinnsjekking for deg og dine.
           </p>
@@ -27,10 +27,10 @@ const SupportPage = () => {
             Har du spørsmål, feil å rapportere, eller tilbakemeldinger? Send oss en e-post.
           </p>
           <a
-            href="mailto:support@toptur.app"
+            href="mailto:support@treningsappen.app"
             className="text-sm font-medium text-accent hover:underline"
           >
-            support@toptur.app
+            support@treningsappen.app
           </a>
         </section>
 
@@ -64,10 +64,10 @@ const SupportPage = () => {
         <section className="mb-8 rounded-xl border border-border bg-card p-6">
           <div className="flex items-center gap-3 mb-3">
             <Mountain className="w-5 h-5 text-accent" />
-            <h2 className="text-lg font-semibold">Om TopTur</h2>
+            <h2 className="text-lg font-semibold">Om Treningsappen</h2>
           </div>
           <p className="text-sm text-muted-foreground">
-            TopTur er en treningsapp laget for det norske markedet. Registrer treningsøkter manuelt eller via Strava, sett deg treningsmål,
+            Treningsappen er en treningsapp laget for det norske markedet. Registrer treningsøkter manuelt eller via Strava, sett deg treningsmål,
             og sjekk inn på fjelltopper med GPS-verifisering. Del utfordringer med venner og familie — basert på manuelt registrerte økter.
           </p>
         </section>
@@ -86,16 +86,11 @@ const SupportPage = () => {
               <li>Fjelltoppinnsjekking bruker GPS kun for verifisering — posisjonen lagres ikke.</li>
               <li>Du kan slette kontoen din og alle tilhørende data når som helst.</li>
             </ul>
-            {/* <p className="mt-3">
-              <a href="/privacy" className="text-accent hover:underline font-medium">
-                Les full personvernerklæring →
-              </a>
-            </p> */}
           </div>
         </section>
 
         <footer className="text-center text-xs text-muted-foreground pt-4 pb-8 border-t border-border">
-          © {new Date().getFullYear()} TopTur. Alle rettigheter reservert.
+          © {new Date().getFullYear()} Treningsappen. Alle rettigheter reservert.
         </footer>
       </div>
     </div>
