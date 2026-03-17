@@ -54,7 +54,7 @@ const LoginPage = () => {
     if (mode === 'signup') {
       // Save display name to localStorage to be applied after email confirmation
       localStorage.setItem('treningslogg_pending_username', displayName.trim());
-      setMessage('Sjekk e-posten din for å bekrefte kontoen. Etter bekreftelse kan du logge inn.');
+      setMessage('Check your email to confirm your account. You can log in after confirmation.');
     } else {
       navigate('/');
     }
