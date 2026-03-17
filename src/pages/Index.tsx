@@ -585,17 +585,61 @@ const IndexContent = () => {
               <div className="relative flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   {user && <ProfileButton />}
-                  <div className="flex gap-3">
-                    <div className="flex flex-col items-center px-2.5 py-1 rounded-lg bg-muted/50">
-                      <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">{t('home.thisWeek')}</span>
-                      <span className="text-base font-bold text-foreground leading-tight">{appData.weekStats.totalSessions}</span>
-                      <span className="text-[9px] text-muted-foreground">{t('metric.sessions')}</span>
-                    </div>
-                    <div className="flex flex-col items-center px-2.5 py-1 rounded-lg bg-muted/50">
-                      <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">{t('home.thisMonth')}</span>
-                      <span className="text-base font-bold text-foreground leading-tight">{appData.monthStats.totalSessions}</span>
-                      <span className="text-[9px] text-muted-foreground">{t('metric.sessions')}</span>
-                    </div>
+                  <div
+                    className="flex-1 min-w-0 relative"
+                    onTouchStart={() => {
+                      heroLongPressTimer.current = setTimeout(() => {
+                        setHeroDropdownOpen(true);
+                        if (navigator.vibrate) navigator.vibrate(20);
+                      }, 500);
+                    }}
+                    onTouchEnd={() => { if (heroLongPressTimer.current) { clearTimeout(heroLongPressTimer.current); heroLongPressTimer.current = null; } }}
+                    onTouchMove={() => { if (heroLongPressTimer.current) { clearTimeout(heroLongPressTimer.current); heroLongPressTimer.current = null; } }}
+                    onContextMenu={(e) => { e.preventDefault(); setHeroDropdownOpen(true); }}
+                  >
+                    {heroView === 'statistikk' ? (
+                      <div className="flex gap-3">
+                        <div className="flex flex-col items-center px-2.5 py-1 rounded-lg bg-muted/50">
+                          <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">{t('home.thisWeek')}</span>
+                          <span className="text-base font-bold text-foreground leading-tight">{appData.weekStats.totalSessions}</span>
+                          <span className="text-[9px] text-muted-foreground">{t('metric.sessions')}</span>
+                        </div>
+                        <div className="flex flex-col items-center px-2.5 py-1 rounded-lg bg-muted/50">
+                          <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">{t('home.thisMonth')}</span>
+                          <span className="text-base font-bold text-foreground leading-tight">{appData.monthStats.totalSessions}</span>
+                          <span className="text-[9px] text-muted-foreground">{t('metric.sessions')}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <GoalGraph
+                        sessions={allSessions}
+                        periods={allPeriods}
+                        onClick={navigateToGoals}
+                      />
+                    )}
+
+                    {/* Dropdown overlay */}
+                    {heroDropdownOpen && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setHeroDropdownOpen(false)} />
+                        <div className="absolute top-full left-0 mt-1 z-50 bg-popover border border-border rounded-lg shadow-lg p-1 min-w-[140px]">
+                          <button
+                            className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${heroView === 'målgraf' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'}`}
+                            onClick={() => { setHeroView('målgraf'); setHeroDropdownOpen(false); }}
+                          >
+                            <TrendingUp className="w-4 h-4" />
+                            Målgraf
+                          </button>
+                          <button
+                            className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${heroView === 'statistikk' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'}`}
+                            onClick={() => { setHeroView('statistikk'); setHeroDropdownOpen(false); }}
+                          >
+                            <BarChart3 className="w-4 h-4" />
+                            Statistikk
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
