@@ -14,7 +14,8 @@ interface MonthGoalCompletionOverlayProps {
 const ANIM_DURATION = 1800;
 const RADIUS = 54;
 const STROKE = 10;
-const SIZE = (RADIUS + STROKE) * 2 + 24;
+const PADDING = 14;
+const SIZE = (RADIUS + STROKE) * 2 + PADDING * 2;
 const CENTER = SIZE / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
@@ -32,6 +33,10 @@ const MonthGoalCompletionOverlay = ({ open, current, target, monthLabel, onDismi
   const [particlesVisible, setParticlesVisible] = useState(false);
   const animRef = useRef<number>();
 
+  const safeId = 'month-overlay-' + Math.random().toString(36).slice(2, 6);
+  const completeColor = 'hsl(142, 50%, 48%)';
+  const completeLight = 'hsl(142, 55%, 65%)';
+
   useEffect(() => {
     if (open) {
       setAnimatedPercent(0);
@@ -40,7 +45,6 @@ const MonthGoalCompletionOverlay = ({ open, current, target, monthLabel, onDismi
       setParticlesVisible(false);
       requestAnimationFrame(() => setVisible(true));
 
-      // Animate fill and count
       const start = performance.now();
       const animate = (now: number) => {
         const elapsed = now - start;
@@ -51,13 +55,11 @@ const MonthGoalCompletionOverlay = ({ open, current, target, monthLabel, onDismi
         if (progress < 1) {
           animRef.current = requestAnimationFrame(animate);
         } else {
-          // Achievement burst
           setShowAchievement(true);
           setParticlesVisible(true);
           setTimeout(() => setShowAchievement(false), 1500);
         }
       };
-      // Small delay before starting animation
       setTimeout(() => {
         animRef.current = requestAnimationFrame(animate);
       }, 400);
@@ -76,9 +78,7 @@ const MonthGoalCompletionOverlay = ({ open, current, target, monthLabel, onDismi
 
   const fillFraction = Math.min(animatedPercent, 100) / 100;
   const fillOffset = CIRCUMFERENCE * (1 - fillFraction);
-  const isComplete = animatedPercent >= 100;
 
-  // Sparkle particles
   const particles = Array.from({ length: 20 }, (_, i) => {
     const angle = (i / 20) * 360;
     const distance = 40 + Math.random() * 80;
@@ -111,7 +111,7 @@ const MonthGoalCompletionOverlay = ({ open, current, target, monthLabel, onDismi
               width: p.size,
               height: p.size,
               borderRadius: '50%',
-              background: `hsl(${40 + Math.random() * 30}, 90%, ${55 + Math.random() * 20}%)`,
+              background: `hsl(${130 + Math.random() * 30}, 55%, ${45 + Math.random() * 20}%)`,
               animation: `month-sparkle-burst 1.4s ${p.delay}s ease-out forwards`,
               transform: 'translate(-50%, -50%)',
               ['--angle' as string]: `${p.angle}deg`,
@@ -122,13 +122,13 @@ const MonthGoalCompletionOverlay = ({ open, current, target, monthLabel, onDismi
 
         {/* Trophy icon */}
         <div className="relative">
-          <div className={`w-14 h-14 rounded-full bg-warning/20 flex items-center justify-center ${showAchievement ? 'animate-bounce' : ''}`}>
-            <Trophy className="w-7 h-7 text-warning" />
+          <div className={`w-14 h-14 rounded-full bg-success/20 flex items-center justify-center ${showAchievement ? 'animate-bounce' : ''}`}>
+            <Trophy className="w-7 h-7 text-success" />
           </div>
           {showAchievement && (
             <>
-              <Sparkles className="absolute -top-1 -right-1 w-5 h-5 text-warning animate-pulse" />
-              <Sparkles className="absolute -bottom-1 -left-2 w-4 h-4 text-warning/70 animate-pulse" style={{ animationDelay: '0.3s' }} />
+              <Sparkles className="absolute -top-1 -right-1 w-5 h-5 text-success animate-pulse" />
+              <Sparkles className="absolute -bottom-1 -left-2 w-4 h-4 text-success/70 animate-pulse" style={{ animationDelay: '0.3s' }} />
             </>
           )}
         </div>
@@ -139,16 +139,35 @@ const MonthGoalCompletionOverlay = ({ open, current, target, monthLabel, onDismi
           <p className="text-sm text-muted-foreground mt-0.5">{monthLabel}</p>
         </div>
 
-        {/* Animated progress wheel */}
+        {/* Animated progress wheel — matching ProgressWheel styling */}
         <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} className="overflow-visible">
           <defs>
-            <linearGradient id="month-goal-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor={isComplete ? '#D4A843' : 'hsl(142, 55%, 55%)'} />
-              <stop offset="100%" stopColor={isComplete ? '#B8902A' : 'hsl(142, 50%, 42%)'} />
+            {/* Ring gradient — same as ProgressWheel */}
+            <linearGradient id={`ring-grad-${safeId}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor={completeLight} />
+              <stop offset="100%" stopColor={completeColor} />
             </linearGradient>
+
+            {/* Track inner shadow */}
+            <filter id={`track-shadow-${safeId}`} x="-10%" y="-10%" width="120%" height="120%">
+              <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="shadow" />
+              <feOffset dx="0" dy="1" result="offset" />
+              <feComposite in="SourceGraphic" in2="offset" operator="over" />
+            </filter>
+
+            {/* Subtle ring glow */}
+            <filter id={`ring-glow-${safeId}`} x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="2" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+
+            {/* Achievement glow burst */}
             {showAchievement && (
-              <filter id="month-achieve-glow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="6" result="blur" />
+              <filter id={`achieve-glow-${safeId}`} x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="8" result="blur" />
                 <feMerge>
                   <feMergeNode in="blur" />
                   <feMergeNode in="SourceGraphic" />
@@ -157,36 +176,42 @@ const MonthGoalCompletionOverlay = ({ open, current, target, monthLabel, onDismi
             )}
           </defs>
 
-          {/* Track */}
+          {/* Track ring */}
           <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
             stroke="hsl(var(--muted))" strokeWidth={STROKE} opacity={0.2}
+            filter={`url(#track-shadow-${safeId})`}
+          />
+          {/* Subtle track outline */}
+          <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
+            stroke="hsl(var(--muted-foreground))" strokeWidth={1} opacity={0.06}
           />
 
-          {/* Achievement glow */}
+          {/* Achievement glow pulse */}
           {showAchievement && (
             <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
-              stroke="#D4A843" strokeWidth={STROKE + 6} opacity={0}
-              filter="url(#month-achieve-glow)"
+              stroke="hsl(142, 55%, 45%)" strokeWidth={STROKE + 4} opacity={0}
+              filter={`url(#achieve-glow-${safeId})`}
               className="animate-[achievement-pulse_1.5s_ease-out_forwards]"
             />
           )}
 
-          {/* Fill */}
+          {/* Progress fill ring */}
           <circle
             cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
-            stroke="url(#month-goal-grad)"
+            stroke={`url(#ring-grad-${safeId})`}
             strokeWidth={STROKE}
             strokeLinecap="round"
             strokeDasharray={CIRCUMFERENCE}
             strokeDashoffset={fillOffset}
             transform={`rotate(-90 ${CENTER} ${CENTER})`}
+            filter={`url(#ring-glow-${safeId})`}
           />
 
-          {/* Center text: count */}
+          {/* Center text */}
           <text x={CENTER} y={CENTER - 6} textAnchor="middle" dominantBaseline="central"
-            className="font-display font-bold" fontSize={24}
-            fill={isComplete ? '#D4A843' : 'hsl(var(--foreground))'}>
-            {animatedCount}
+            className="font-display font-bold" fontSize={22}
+            fill={completeColor}>
+            {animatedCount} / {target}
           </text>
           <text x={CENTER} y={CENTER + 14} textAnchor="middle" dominantBaseline="central"
             className="font-display font-medium" fontSize={11}
