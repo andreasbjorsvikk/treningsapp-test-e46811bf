@@ -65,9 +65,21 @@ export function useAppData() {
   }, []);
 
   // Load data
-  const reload = useCallback(async () => {
+  const reload = useCallback(async (opts?: { checkGoals?: boolean }) => {
     // Don't load anything until auth state is resolved
     if (authLoading) return;
+
+    // Snapshot goal states before reload if requested
+    if (opts?.checkGoals && goals.length > 0) {
+      const prevStates = new Map<string, boolean>();
+      for (const g of goals.filter(g => !g.archived)) {
+        const periodSessions = getSessionsInPeriod(sessions, g.period, g.activityType, g.customStart, g.customEnd);
+        const current = computeProgress(periodSessions, g.metric);
+        prevStates.set(g.id, current >= g.target);
+      }
+      prevGoalStatesRef.current = prevStates;
+    }
+
     setLoading(true);
     try {
       if (isOnline && user) {
@@ -100,7 +112,7 @@ export function useAppData() {
       }
     }
     setLoading(false);
-  }, [isOnline, user, authLoading, migrateLocalData]);
+  }, [isOnline, user, authLoading, migrateLocalData, goals, sessions]);
 
   useEffect(() => { reload(); }, [reload]);
 
