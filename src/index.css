@@ -133,7 +133,7 @@
   }
 
   .dark .card-gradient {
-    background: linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--background)), hsl(var(--accent) / 0.03));
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.03), hsl(var(--background)), hsl(var(--accent) / 0.01));
   }
 
   .gradient-energy {
