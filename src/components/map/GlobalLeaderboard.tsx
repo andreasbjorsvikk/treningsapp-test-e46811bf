@@ -78,12 +78,19 @@ const GlobalLeaderboard = () => {
         query = query.in('user_id', scopeIds);
       }
 
-      const { data: checkins } = await query;
+      const [{ data: checkins }, { data: validPeaks }] = await Promise.all([
+        query,
+        supabase.from('peaks_db').select('id').eq('is_published', true),
+      ]);
       if (!checkins) { setEntries([]); setLoading(false); return; }
+
+      // Only count checkins for peaks that still exist in peaks_db
+      const validPeakIds = new Set((validPeaks || []).map(p => p.id));
+      const validCheckins = (checkins as any[]).filter((c: any) => validPeakIds.has(c.peak_id));
 
       const userPeaks = new Map<string, Set<string>>();
       const userTotalAscents = new Map<string, number>();
-      (checkins as any[]).forEach((c: any) => {
+      validCheckins.forEach((c: any) => {
         if (!userPeaks.has(c.user_id)) userPeaks.set(c.user_id, new Set());
         userPeaks.get(c.user_id)!.add(c.peak_id);
         userTotalAscents.set(c.user_id, (userTotalAscents.get(c.user_id) || 0) + 1);

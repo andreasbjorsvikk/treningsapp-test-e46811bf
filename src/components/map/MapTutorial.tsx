@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, ChevronRight, Mountain, Map, MapPin, List, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { peakIconTiers } from '@/utils/peakIcons';
+import { peakIconTiers, getCheckedPeakIcon } from '@/utils/peakIcons';
 
 const TUTORIAL_KEY = 'treningslogg_map_tutorial_done';
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
@@ -45,7 +45,7 @@ const CheckinAnimation = () => {
                 : 'bg-card border-border'
             }`}
           >
-            <img src={peakIconTiers.high} alt="" className="w-9 h-9 object-contain" style={phase === 'checked' ? { filter: 'brightness(0) invert(1)' } : undefined} />
+            <img src={phase === 'checked' ? getCheckedPeakIcon(726) : peakIconTiers.high} alt="" className="w-9 h-9 object-contain" />
           </div>
           {/* Ripple effect */}
           {phase === 'checked' && (

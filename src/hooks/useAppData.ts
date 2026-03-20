@@ -65,9 +65,21 @@ export function useAppData() {
   }, []);
 
   // Load data
-  const reload = useCallback(async () => {
+  const reload = useCallback(async (opts?: { checkGoals?: boolean }) => {
     // Don't load anything until auth state is resolved
     if (authLoading) return;
+
+    // Snapshot goal states before reload if requested
+    if (opts?.checkGoals && goals.length > 0) {
+      const prevStates = new Map<string, boolean>();
+      for (const g of goals.filter(g => !g.archived)) {
+        const periodSessions = getSessionsInPeriod(sessions, g.period, g.activityType, g.customStart, g.customEnd);
+        const current = computeProgress(periodSessions, g.metric);
+        prevStates.set(g.id, current >= g.target);
+      }
+      prevGoalStatesRef.current = prevStates;
+    }
+
     setLoading(true);
     try {
       if (isOnline && user) {
@@ -100,11 +112,33 @@ export function useAppData() {
       }
     }
     setLoading(false);
-  }, [isOnline, user, authLoading, migrateLocalData]);
+  }, [isOnline, user, authLoading, migrateLocalData, goals, sessions]);
 
   useEffect(() => { reload(); }, [reload]);
 
-  // Detect goal completions after sessions change
+  // Check for uncelebrated goal completions on login/load
+  const initialCheckDone = useRef(false);
+  useEffect(() => {
+    if (loading || initialCheckDone.current || goals.length === 0 || sessions.length === 0) return;
+    initialCheckDone.current = true;
+    
+    const celebratedKey = 'treningslogg_celebrated_goals';
+    const celebrated = new Set<string>(JSON.parse(localStorage.getItem(celebratedKey) || '[]'));
+    
+    for (const g of goals.filter(g => !g.archived)) {
+      if (celebrated.has(g.id)) continue;
+      const periodSessions = getSessionsInPeriod(sessions, g.period, g.activityType, g.customStart, g.customEnd);
+      const current = computeProgress(periodSessions, g.metric);
+      if (current >= g.target) {
+        setCompletedGoal(g);
+        celebrated.add(g.id);
+        localStorage.setItem(celebratedKey, JSON.stringify([...celebrated]));
+        return; // Show one at a time
+      }
+    }
+  }, [loading, goals, sessions]);
+
+  // Detect goal completions after sessions change (from addSession or reload with checkGoals)
   useEffect(() => {
     if (prevGoalStatesRef.current.size === 0) return;
     const prevStates = prevGoalStatesRef.current;
@@ -114,6 +148,12 @@ export function useAppData() {
         const periodSessions = getSessionsInPeriod(sessions, g.period, g.activityType, g.customStart, g.customEnd);
         const current = computeProgress(periodSessions, g.metric);
         if (current >= g.target) {
+          // Mark as celebrated
+          const celebratedKey = 'treningslogg_celebrated_goals';
+          const celebrated = new Set<string>(JSON.parse(localStorage.getItem(celebratedKey) || '[]'));
+          celebrated.add(g.id);
+          localStorage.setItem(celebratedKey, JSON.stringify([...celebrated]));
+          
           setCompletedGoal(g);
           prevGoalStatesRef.current = new Map();
           return;
