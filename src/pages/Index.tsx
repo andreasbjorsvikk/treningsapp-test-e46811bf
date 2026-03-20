@@ -267,6 +267,37 @@ const IndexContent = () => {
     return computeYearWheelData(allPeriods, allSessions, now.getFullYear(), now, t('metric.sessions'));
   }, [allSessions, allPeriods, t]);
 
+  // Monthly goal completion detection
+  const [monthGoalCompleted, setMonthGoalCompleted] = useState(false);
+  const monthGoalCheckedRef = useRef(false);
+
+  useEffect(() => {
+    if (!primaryGoal || monthData.target === 0 || monthGoalCheckedRef.current) return;
+    monthGoalCheckedRef.current = true;
+    const now = new Date();
+    const monthKey = `treningslogg_month_goal_celebrated_${now.getFullYear()}_${now.getMonth()}`;
+    const alreadyCelebrated = localStorage.getItem(monthKey);
+    if (alreadyCelebrated) return;
+    if (monthData.current >= monthData.target) {
+      setMonthGoalCompleted(true);
+      localStorage.setItem(monthKey, 'true');
+    }
+  }, [primaryGoal, monthData]);
+
+  // Also detect after session add / strava sync
+  const prevMonthCurrentRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!primaryGoal || monthData.target === 0) return;
+    const now = new Date();
+    const monthKey = `treningslogg_month_goal_celebrated_${now.getFullYear()}_${now.getMonth()}`;
+    if (localStorage.getItem(monthKey)) return;
+    if (prevMonthCurrentRef.current !== null && prevMonthCurrentRef.current < monthData.target && monthData.current >= monthData.target) {
+      setMonthGoalCompleted(true);
+      localStorage.setItem(monthKey, 'true');
+    }
+    prevMonthCurrentRef.current = monthData.current;
+  }, [monthData.current, monthData.target, primaryGoal]);
+
   const homeGoals = appData.goals.filter(g => g.showOnHome);
   const [pinnedChallenges, setPinnedChallenges] = useState<ChallengeWithParticipants[]>([]);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
