@@ -233,15 +233,23 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       center = [peaks[0].longitude, peaks[0].latitude];
     }
 
-    const m = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/outdoors-v12',
-      center,
-      zoom,
-      pitch: 60,
-      bearing: -20,
-      antialias: true,
-    });
+    let m: mapboxgl.Map;
+    try {
+      m = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/outdoors-v12',
+        center,
+        zoom,
+        pitch: 60,
+        bearing: -20,
+        antialias: true,
+        failIfMajorPerformanceCaveat: false,
+        maxTileCacheSize: 50,
+      });
+    } catch (err) {
+      console.error('Failed to initialize map:', err);
+      return;
+    }
 
     m.addControl(new mapboxgl.NavigationControl(), 'top-right');
     const geolocate = new mapboxgl.GeolocateControl({
@@ -263,6 +271,9 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       }
     });
 
+    m.on('error', (e) => {
+      console.warn('Map error:', e.error?.message || e);
+    });
 
     m.on('style.load', () => {
       addEnhancedTerrain(m, { exaggeration: 1.4 });
