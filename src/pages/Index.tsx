@@ -939,6 +939,14 @@ const IndexContent = () => {
         onDismiss={() => appData.dismissCompletedGoal()}
       />
 
+      <MonthGoalCompletionOverlay
+        open={monthGoalCompleted}
+        current={monthData.current}
+        target={monthData.target}
+        monthLabel={t(`month.${new Date().getMonth()}`)}
+        onDismiss={() => setMonthGoalCompleted(false)}
+      />
+
       {/* Goal tip popup - multi-step */}
       <GoalTutorialDialog open={showGoalTip} onClose={() => setShowGoalTip(false)} />
       <TrainingTutorialDialog open={showTrainingTutorial} onClose={() => setShowTrainingTutorial(false)} />
