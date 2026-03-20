@@ -211,7 +211,7 @@ const IndexContent = () => {
       const result = await stravaService.sync();
       if (result.synced > 0) {
         toast.success(t('sync.newSessions', { n: result.synced }));
-        appData.reload();
+        appData.reload({ checkGoals: true });
       }
     } catch { }
   }, [user, appData]);
