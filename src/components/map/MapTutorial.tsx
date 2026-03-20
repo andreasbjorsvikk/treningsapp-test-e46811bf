@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, ChevronRight, Mountain, Map, MapPin, List, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { peakIconTiers } from '@/utils/peakIcons';
+import { peakIconTiers, getCheckedPeakIcon } from '@/utils/peakIcons';
 
 const TUTORIAL_KEY = 'treningslogg_map_tutorial_done';
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
