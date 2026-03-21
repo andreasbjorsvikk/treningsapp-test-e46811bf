@@ -211,13 +211,13 @@ const MonthGoalCompletionOverlay = ({ open, current, target, monthLabel, onDismi
           />
 
           {/* Center text */}
-          <text x={CENTER} y={CENTER - 6} textAnchor="middle" dominantBaseline="central"
-            className="font-display font-bold" fontSize={22}
+          <text x={CENTER} y={CENTER - 8} textAnchor="middle" dominantBaseline="central"
+            className="font-display font-bold" fontSize={26}
             fill={completeColor}>
             {animatedCount} / {target}
           </text>
-          <text x={CENTER} y={CENTER + 14} textAnchor="middle" dominantBaseline="central"
-            className="font-display font-medium" fontSize={11}
+          <text x={CENTER} y={CENTER + 16} textAnchor="middle" dominantBaseline="central"
+            className="font-display font-medium" fontSize={12}
             fill="hsl(var(--muted-foreground))">
             {t('metric.sessions')}
           </text>
