@@ -32,6 +32,8 @@ import ChallengeCard from '@/components/community/ChallengeCard';
 import ChallengeDetail from '@/components/community/ChallengeDetail';
 import GoalCompletionOverlay from '@/components/GoalCompletionOverlay';
 import MonthGoalCompletionOverlay from '@/components/MonthGoalCompletionOverlay';
+import BadgeUnlockOverlay from '@/components/badges/BadgeUnlockOverlay';
+import { computeUserBadges, findNewlyUnlocked, UserBadge } from '@/services/badgeService';
 import { Plus, Sun, Moon, Dumbbell, Ambulance, LogIn, RefreshCw, Loader2, GripVertical, Check, User, BarChart3, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
