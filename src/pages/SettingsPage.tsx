@@ -1041,6 +1041,22 @@ const SettingsPage = () => {
     return null;
   }
 
+  // ========== BADGES VIEW ==========
+  if (view === 'badges' && user) {
+    return (
+      <div className="space-y-4">
+        <button
+          onClick={() => setView('profile')}
+          className="flex items-center gap-2 mb-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span className="font-medium">{t('badge.tab')}</span>
+        </button>
+        <BadgesPage />
+      </div>
+    );
+  }
+
   // ========== PROFILE VIEW ==========
   // ========== PROFILE SETTINGS SUB-VIEW ==========
   if (view === 'profileSettings' && user) {
