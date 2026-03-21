@@ -622,6 +622,13 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
               )}
             </div>
           )}
+
+          {/* MERKER TAB */}
+          {profileTab === 'merker' && user && (
+            <div className="px-4 space-y-3">
+              <BadgesGrid userId={user.id} onlyUnlocked />
+            </div>
+          )}
         </div>
       </DrawerContent>
     </Drawer>
