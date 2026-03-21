@@ -20,6 +20,11 @@ export function useAppData() {
   const [loading, setLoading] = useState(true);
   const [completedGoal, setCompletedGoal] = useState<ExtraGoal | null>(null);
   const prevGoalStatesRef = useRef<Map<string, boolean>>(new Map());
+  // Refs to access current state inside reload without adding to deps
+  const goalsRef = useRef<ExtraGoal[]>([]);
+  const sessionsRef = useRef<WorkoutSession[]>([]);
+  goalsRef.current = goals;
+  sessionsRef.current = sessions;
 
   // Migrate localStorage data to database on first login
   const migrateLocalData = useCallback(async (userId: string) => {
@@ -69,11 +74,11 @@ export function useAppData() {
     // Don't load anything until auth state is resolved
     if (authLoading) return;
 
-    // Snapshot goal states before reload if requested
-    if (opts?.checkGoals && goals.length > 0) {
+    // Snapshot goal states before reload if requested (use refs to avoid dep cycle)
+    if (opts?.checkGoals && goalsRef.current.length > 0) {
       const prevStates = new Map<string, boolean>();
-      for (const g of goals.filter(g => !g.archived)) {
-        const periodSessions = getSessionsInPeriod(sessions, g.period, g.activityType, g.customStart, g.customEnd);
+      for (const g of goalsRef.current.filter(g => !g.archived)) {
+        const periodSessions = getSessionsInPeriod(sessionsRef.current, g.period, g.activityType, g.customStart, g.customEnd);
         const current = computeProgress(periodSessions, g.metric);
         prevStates.set(g.id, current >= g.target);
       }
@@ -112,7 +117,7 @@ export function useAppData() {
       }
     }
     setLoading(false);
-  }, [isOnline, user, authLoading, migrateLocalData, goals, sessions]);
+  }, [isOnline, user, authLoading, migrateLocalData]);
 
   useEffect(() => { reload(); }, [reload]);
 
@@ -164,10 +169,10 @@ export function useAppData() {
   }, [sessions, goals]);
 
   const addSession = useCallback(async (data: Omit<WorkoutSession, 'id'>) => {
-    // Snapshot goal completion states before adding session
+    // Snapshot goal completion states before adding session (use refs)
     const prevStates = new Map<string, boolean>();
-    for (const g of goals.filter(g => !g.archived)) {
-      const periodSessions = getSessionsInPeriod(sessions, g.period, g.activityType, g.customStart, g.customEnd);
+    for (const g of goalsRef.current.filter(g => !g.archived)) {
+      const periodSessions = getSessionsInPeriod(sessionsRef.current, g.period, g.activityType, g.customStart, g.customEnd);
       const current = computeProgress(periodSessions, g.metric);
       prevStates.set(g.id, current >= g.target);
     }
@@ -183,7 +188,7 @@ export function useAppData() {
 
     // PR detection after reload so sessions list is fresh
     if (newSession) {
-      const otherSessions = sessions.filter(s => s.id !== newSession!.id);
+      const otherSessions = sessionsRef.current.filter(s => s.id !== newSession!.id);
       const prAlerts = checkAllPRs(newSession, otherSessions);
       for (const pr of prAlerts) {
         toast.success(`🏆 Ny personlig rekord! ${pr.benchmark}: ${pr.newTime}${pr.improvement ? ` (${pr.improvement})` : ''}`, {
@@ -191,7 +196,7 @@ export function useAppData() {
         });
       }
     }
-  }, [isOnline, user, reload, sessions, goals]);
+  }, [isOnline, user, reload]);
 
   const updateSession = useCallback(async (id: string, data: Partial<Omit<WorkoutSession, 'id'>>) => {
     if (isOnline && user) {
