@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Friend, getChallenges, getChallengeParticipants, getChallengeProgress, ChallengeRow } from '@/services/communityService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
+import BadgesGrid from '@/components/badges/BadgesGrid';
 import { Swords, Activity, Clock, Mountain, Loader2, TrendingUp, ChevronLeft, Trophy, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import ActivityIcon from '@/components/ActivityIcon';
