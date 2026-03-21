@@ -234,7 +234,7 @@ const RecordsSection = () => {
     setShowAddHike(false);
   };
 
-  const handleAddEntry = () => {
+  const handleAddEntry = async () => {
     if (!selectedHike || (newEntryHours === 0 && newEntryMinutes === 0 && newEntrySeconds === 0)) return;
     const timeStr = newEntryHours > 0
       ? `${newEntryHours}:${String(newEntryMinutes).padStart(2, '0')}:${String(newEntrySeconds).padStart(2, '0')}`
@@ -246,13 +246,22 @@ const RecordsSection = () => {
       avgHeartrate: newEntryAvgHr ? Number(newEntryAvgHr) : undefined,
       maxHeartrate: newEntryMaxHr ? Number(newEntryMaxHr) : undefined,
     };
-    const updated = hikingRecords.map(h =>
-      h.id === selectedHike.id
-        ? { ...h, entries: [...h.entries, entry] }
-        : h
-    );
-    saveHikingRecords(updated);
-    setSelectedHike(updated.find(h => h.id === selectedHike.id) || null);
+    const newEntries = [...selectedHike.entries, entry];
+    if (user) {
+      await supabase.from('hiking_records').update({ entries: newEntries } as any).eq('id', selectedHike.id);
+      await loadHikingRecords();
+      // Re-select the hike after reload
+      setSelectedHike(prev => {
+        const found = hikingRecords.find(h => h.id === selectedHike.id);
+        return found ? { ...found, entries: newEntries } : prev;
+      });
+    } else {
+      const updated = hikingRecords.map(h =>
+        h.id === selectedHike.id ? { ...h, entries: newEntries } : h
+      );
+      saveHikingRecords(updated);
+      setSelectedHike(updated.find(h => h.id === selectedHike.id) || null);
+    }
     setNewEntryHours(0);
     setNewEntryMinutes(0);
     setNewEntrySeconds(0);
