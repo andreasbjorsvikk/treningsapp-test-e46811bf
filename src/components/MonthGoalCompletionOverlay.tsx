@@ -122,13 +122,16 @@ const MonthGoalCompletionOverlay = ({ open, current, target, monthLabel, onDismi
 
         {/* Trophy icon */}
         <div className="relative">
-          <div className={`w-14 h-14 rounded-full bg-amber-500/20 flex items-center justify-center ${showAchievement ? 'animate-bounce' : ''}`}>
-            <span className="text-3xl" style={{ filter: 'drop-shadow(0 0 6px rgba(218,165,32,0.6))' }}>🏆</span>
+          <div className={`w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center ${showAchievement ? 'animate-bounce' : ''}`}
+            style={{ boxShadow: showAchievement ? '0 0 30px rgba(218,165,32,0.4), 0 0 60px rgba(218,165,32,0.15)' : 'none' }}
+          >
+            <span className="text-4xl" style={{ filter: 'drop-shadow(0 0 8px rgba(218,165,32,0.6))' }}>🏆</span>
           </div>
           {showAchievement && (
             <>
-              <Sparkles className="absolute -top-1 -right-1 w-5 h-5 text-success animate-pulse" />
-              <Sparkles className="absolute -bottom-1 -left-2 w-4 h-4 text-success/70 animate-pulse" style={{ animationDelay: '0.3s' }} />
+              <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-success animate-pulse" />
+              <Sparkles className="absolute -bottom-1 -left-3 w-5 h-5 text-success/70 animate-pulse" style={{ animationDelay: '0.3s' }} />
+              <Sparkles className="absolute top-0 -left-1 w-4 h-4 text-amber-400/60 animate-pulse" style={{ animationDelay: '0.6s' }} />
             </>
           )}
         </div>
