@@ -964,6 +964,14 @@ const IndexContent = () => {
         onDismiss={() => setMonthGoalCompleted(false)}
       />
 
+      {badgeUnlocks.length > 0 && (
+        <BadgeUnlockOverlay
+          badges={badgeUnlocks}
+          onDismiss={() => setBadgeUnlocks([])}
+          onViewBadge={() => { setBadgeUnlocks([]); setActiveTab('settings'); }}
+        />
+      )}
+
       {/* Goal tip popup - multi-step */}
       <GoalTutorialDialog open={showGoalTip} onClose={() => setShowGoalTip(false)} />
       <TrainingTutorialDialog open={showTrainingTutorial} onClose={() => setShowTrainingTutorial(false)} />
