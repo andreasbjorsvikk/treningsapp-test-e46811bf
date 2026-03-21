@@ -95,7 +95,7 @@ const MonthGoalCompletionOverlay = ({ open, current, target, monthLabel, onDismi
       onClick={handleDismiss}
     >
       <div
-        className={`relative flex flex-col items-center gap-4 p-8 rounded-2xl bg-background border border-border shadow-2xl transition-all duration-500 max-w-[300px] w-[85vw] ${
+        className={`relative flex flex-col items-center gap-5 p-8 rounded-2xl bg-background border border-border shadow-2xl transition-all duration-500 max-w-[340px] w-[90vw] ${
           visible ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
         }`}
         onClick={e => e.stopPropagation()}
