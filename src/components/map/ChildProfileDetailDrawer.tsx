@@ -116,15 +116,15 @@ const ChildProfileDetailDrawer = ({ child, open, onClose }: ChildProfileDetailDr
         {/* Tabs */}
         <div className="px-4 mb-3">
           <div className="flex gap-1 p-0.5 rounded-lg bg-secondary/50">
-            {(['topper', 'merker'] as ChildTab[]).map(t => (
+            {(['topper', 'merker'] as ChildTab[]).map(tabKey => (
               <button
-                key={t}
-                onClick={() => setTab(t)}
+                key={tabKey}
+                onClick={() => setTab(tabKey)}
                 className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  tab === t ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  tab === tabKey ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                {t === 'topper' ? 'Topper' : t('badge.tab')}
+                {tabKey === 'topper' ? 'Topper' : t('badge.tab')}
               </button>
             ))}
           </div>
