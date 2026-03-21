@@ -122,8 +122,8 @@ const MonthGoalCompletionOverlay = ({ open, current, target, monthLabel, onDismi
 
         {/* Trophy icon */}
         <div className="relative">
-          <div className={`w-14 h-14 rounded-full bg-success/20 flex items-center justify-center ${showAchievement ? 'animate-bounce' : ''}`}>
-            <Trophy className="w-7 h-7 text-success" />
+          <div className={`w-14 h-14 rounded-full bg-amber-500/20 flex items-center justify-center ${showAchievement ? 'animate-bounce' : ''}`}>
+            <span className="text-3xl" style={{ filter: 'drop-shadow(0 0 6px rgba(218,165,32,0.6))' }}>🏆</span>
           </div>
           {showAchievement && (
             <>
