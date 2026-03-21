@@ -32,6 +32,8 @@ import ChallengeCard from '@/components/community/ChallengeCard';
 import ChallengeDetail from '@/components/community/ChallengeDetail';
 import GoalCompletionOverlay from '@/components/GoalCompletionOverlay';
 import MonthGoalCompletionOverlay from '@/components/MonthGoalCompletionOverlay';
+import BadgeUnlockOverlay from '@/components/badges/BadgeUnlockOverlay';
+import { computeUserBadges, findNewlyUnlocked, UserBadge } from '@/services/badgeService';
 import { Plus, Sun, Moon, Dumbbell, Ambulance, LogIn, RefreshCw, Loader2, GripVertical, Check, User, BarChart3, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -100,6 +102,8 @@ const IndexContent = () => {
   const [showCalendarTutorial, setShowCalendarTutorial] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [adminSuggestionsDot, setAdminSuggestionsDot] = useState(false);
+  const [badgeUnlocks, setBadgeUnlocks] = useState<UserBadge[]>([]);
+  const badgeSnapshotRef = useRef<UserBadge[] | null>(null);
 
   // Profile info
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -128,6 +132,11 @@ const IndexContent = () => {
       });
   }, [user]);
 
+  // Initialize badge snapshot on load
+  useEffect(() => {
+    if (!user) return;
+    computeUserBadges(user.id).then(b => { badgeSnapshotRef.current = b; });
+  }, [user]);
   // Check admin pending suggestions for red dot
   useEffect(() => {
     if (!user || !isAdmin) { setAdminSuggestionsDot(false); return; }
@@ -362,6 +371,14 @@ const IndexContent = () => {
     if (editSession) await appData.updateSession(editSession.id, data);
     else await appData.addSession(data);
     setEditSession(undefined);
+    // Check for badge unlocks
+    if (user && badgeSnapshotRef.current) {
+      const prev = badgeSnapshotRef.current;
+      const newBadges = await computeUserBadges(user.id);
+      const unlocked = findNewlyUnlocked(prev, newBadges);
+      badgeSnapshotRef.current = newBadges;
+      if (unlocked.length > 0) setTimeout(() => setBadgeUnlocks(unlocked), 1500);
+    }
   };
   const handleHealthSave = async (data: Omit<HealthEvent, 'id'>) => { await appData.addHealthEvent(data); };
 
@@ -946,6 +963,14 @@ const IndexContent = () => {
         monthLabel={t(`month.${new Date().getMonth()}`)}
         onDismiss={() => setMonthGoalCompleted(false)}
       />
+
+      {badgeUnlocks.length > 0 && (
+        <BadgeUnlockOverlay
+          badges={badgeUnlocks}
+          onDismiss={() => setBadgeUnlocks([])}
+          onViewBadge={() => { setBadgeUnlocks([]); setActiveTab('settings'); }}
+        />
+      )}
 
       {/* Goal tip popup - multi-step */}
       <GoalTutorialDialog open={showGoalTip} onClose={() => setShowGoalTip(false)} />

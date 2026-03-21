@@ -12,9 +12,9 @@ interface MonthGoalCompletionOverlayProps {
 }
 
 const ANIM_DURATION = 1800;
-const RADIUS = 54;
-const STROKE = 10;
-const PADDING = 14;
+const RADIUS = 66;
+const STROKE = 12;
+const PADDING = 16;
 const SIZE = (RADIUS + STROKE) * 2 + PADDING * 2;
 const CENTER = SIZE / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
@@ -95,7 +95,7 @@ const MonthGoalCompletionOverlay = ({ open, current, target, monthLabel, onDismi
       onClick={handleDismiss}
     >
       <div
-        className={`relative flex flex-col items-center gap-4 p-8 rounded-2xl bg-background border border-border shadow-2xl transition-all duration-500 max-w-[300px] w-[85vw] ${
+        className={`relative flex flex-col items-center gap-5 p-8 rounded-2xl bg-background border border-border shadow-2xl transition-all duration-500 max-w-[340px] w-[90vw] ${
           visible ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
         }`}
         onClick={e => e.stopPropagation()}
@@ -122,21 +122,24 @@ const MonthGoalCompletionOverlay = ({ open, current, target, monthLabel, onDismi
 
         {/* Trophy icon */}
         <div className="relative">
-          <div className={`w-14 h-14 rounded-full bg-amber-500/20 flex items-center justify-center ${showAchievement ? 'animate-bounce' : ''}`}>
-            <span className="text-3xl" style={{ filter: 'drop-shadow(0 0 6px rgba(218,165,32,0.6))' }}>🏆</span>
+          <div className={`w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center ${showAchievement ? 'animate-bounce' : ''}`}
+            style={{ boxShadow: showAchievement ? '0 0 30px rgba(218,165,32,0.4), 0 0 60px rgba(218,165,32,0.15)' : 'none' }}
+          >
+            <span className="text-4xl" style={{ filter: 'drop-shadow(0 0 8px rgba(218,165,32,0.6))' }}>🏆</span>
           </div>
           {showAchievement && (
             <>
-              <Sparkles className="absolute -top-1 -right-1 w-5 h-5 text-success animate-pulse" />
-              <Sparkles className="absolute -bottom-1 -left-2 w-4 h-4 text-success/70 animate-pulse" style={{ animationDelay: '0.3s' }} />
+              <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-success animate-pulse" />
+              <Sparkles className="absolute -bottom-1 -left-3 w-5 h-5 text-success/70 animate-pulse" style={{ animationDelay: '0.3s' }} />
+              <Sparkles className="absolute top-0 -left-1 w-4 h-4 text-amber-400/60 animate-pulse" style={{ animationDelay: '0.6s' }} />
             </>
           )}
         </div>
 
         {/* Title */}
         <div className="text-center">
-          <h3 className="font-display font-bold text-lg text-foreground">{t('goalCompletion.title')}</h3>
-          <p className="text-sm text-muted-foreground mt-0.5">{monthLabel}</p>
+          <h3 className="font-display font-bold text-xl text-foreground">{t('goalCompletion.title')}</h3>
+          <p className="text-sm text-muted-foreground mt-1">{monthLabel}</p>
         </div>
 
         {/* Animated progress wheel — matching ProgressWheel styling */}
@@ -208,13 +211,13 @@ const MonthGoalCompletionOverlay = ({ open, current, target, monthLabel, onDismi
           />
 
           {/* Center text */}
-          <text x={CENTER} y={CENTER - 6} textAnchor="middle" dominantBaseline="central"
-            className="font-display font-bold" fontSize={22}
+          <text x={CENTER} y={CENTER - 8} textAnchor="middle" dominantBaseline="central"
+            className="font-display font-bold" fontSize={26}
             fill={completeColor}>
             {animatedCount} / {target}
           </text>
-          <text x={CENTER} y={CENTER + 14} textAnchor="middle" dominantBaseline="central"
-            className="font-display font-medium" fontSize={11}
+          <text x={CENTER} y={CENTER + 16} textAnchor="middle" dominantBaseline="central"
+            className="font-display font-medium" fontSize={12}
             fill="hsl(var(--muted-foreground))">
             {t('metric.sessions')}
           </text>

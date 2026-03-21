@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Friend, getChallenges, getChallengeParticipants, getChallengeProgress, ChallengeRow } from '@/services/communityService';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
+import BadgesGrid from '@/components/badges/BadgesGrid';
 import { Swords, Activity, Clock, Mountain, Loader2, TrendingUp, ChevronLeft, Trophy, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import ActivityIcon from '@/components/ActivityIcon';
@@ -22,7 +23,7 @@ interface UserProfileDrawerProps {
 }
 
 type StatPeriod = 'week' | 'month' | 'year';
-type ProfileTab = 'fjelltopper' | 'trening';
+type ProfileTab = 'fjelltopper' | 'trening' | 'merker';
 
 interface PeriodStats {
   sessions: number;
@@ -411,10 +412,10 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
             )}
           </div>
 
-          {/* Profile tabs: Fjelltopper / Trening */}
+          {/* Profile tabs: Fjelltopper / Trening / Merker */}
           <div className="px-4 mb-4">
             <div className="flex gap-1 p-0.5 rounded-lg bg-secondary/50">
-              {(['fjelltopper', 'trening'] as ProfileTab[]).map(tab => (
+              {(['fjelltopper', 'trening', 'merker'] as ProfileTab[]).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setProfileTab(tab)}
@@ -424,7 +425,7 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  {tab === 'fjelltopper' ? 'Fjelltopper' : 'Trening'}
+                  {tab === 'fjelltopper' ? 'Fjelltopper' : tab === 'trening' ? 'Trening' : 'Merker'}
                 </button>
               ))}
             </div>
@@ -619,6 +620,13 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                   )}
                 </>
               )}
+            </div>
+          )}
+
+          {/* MERKER TAB */}
+          {profileTab === 'merker' && user && (
+            <div className="px-4 space-y-3">
+              <BadgesGrid userId={user.id} onlyUnlocked />
             </div>
           )}
         </div>

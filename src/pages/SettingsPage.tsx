@@ -21,6 +21,7 @@ import { getActivityColors, activityColorMap, saveActivityColors } from '@/utils
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
 import ChildProfilesSection from '@/components/ChildProfilesSection';
+import BadgesPage from '@/components/badges/BadgesPage';
 import { stravaService } from '@/services/stravaService';
 import connectWithStravaImg from '@/assets/strava/connect-with-strava.png';
 import { toast } from 'sonner';
@@ -47,7 +48,7 @@ const COLOR_PRESETS = [
   { labelKey: 'color.lavender', light: { bg: 'rgb(220,215,250)', text: 'rgb(75,55,145)', badge: 'rgb(232,228,255)' }, dark: { bg: 'rgb(110,95,175)', text: '#ffffff', badge: '#2a1f55' } },
 ];
 
-type SettingsView = 'main' | 'appearance' | 'preferences' | 'training' | 'data' | 'account' | 'sync' | 'privacy' | 'profile' | 'profileSettings' | 'help' | 'privacyPolicy';
+type SettingsView = 'main' | 'appearance' | 'preferences' | 'training' | 'data' | 'account' | 'sync' | 'privacy' | 'profile' | 'profileSettings' | 'help' | 'privacyPolicy' | 'badges';
 
 const SettingsPage = () => {
   const { settings, updateSettings, appThemes, accentPresets, getTypeColor } = useSettings();
@@ -1040,6 +1041,22 @@ const SettingsPage = () => {
     return null;
   }
 
+  // ========== BADGES VIEW ==========
+  if (view === 'badges' && user) {
+    return (
+      <div className="space-y-4">
+        <button
+          onClick={() => setView('profile')}
+          className="flex items-center gap-2 mb-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span className="font-medium">{t('badge.tab')}</span>
+        </button>
+        <BadgesPage />
+      </div>
+    );
+  }
+
   // ========== PROFILE VIEW ==========
   // ========== PROFILE SETTINGS SUB-VIEW ==========
   if (view === 'profileSettings' && user) {
@@ -1162,6 +1179,20 @@ const SettingsPage = () => {
 
         {/* Child profiles */}
         <ChildProfilesSection />
+
+        {/* Badges section */}
+        <div className="glass-card rounded-xl overflow-hidden">
+          <button
+            onClick={() => setView('badges' as SettingsView)}
+            className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/30 transition-colors"
+          >
+            <div className="rounded-lg p-2 bg-amber-500/10">
+              <Mountain className="w-4 h-4 text-amber-600" />
+            </div>
+            <span className="flex-1 text-left font-display font-semibold text-sm">{t('badge.tab')}</span>
+            <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
+          </button>
+        </div>
       </div>
     );
   }
