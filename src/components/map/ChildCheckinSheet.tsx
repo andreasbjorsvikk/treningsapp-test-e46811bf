@@ -84,7 +84,7 @@ const ChildCheckinSheet = ({ open, onClose, peakId, peakName, onCheckinSuccess, 
 
       // Check in selected children
       for (const childId of selectedIds) {
-        await checkinPeak(childId, peakId, now);
+        await checkinPeak(childId, peakId, now, null, user?.id);
       }
 
       // Upload image to parent's checkin if provided
