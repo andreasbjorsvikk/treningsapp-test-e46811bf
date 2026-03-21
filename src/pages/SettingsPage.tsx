@@ -21,6 +21,7 @@ import { getActivityColors, activityColorMap, saveActivityColors } from '@/utils
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
 import ChildProfilesSection from '@/components/ChildProfilesSection';
+import BadgesPage from '@/components/badges/BadgesPage';
 import { stravaService } from '@/services/stravaService';
 import connectWithStravaImg from '@/assets/strava/connect-with-strava.png';
 import { toast } from 'sonner';
