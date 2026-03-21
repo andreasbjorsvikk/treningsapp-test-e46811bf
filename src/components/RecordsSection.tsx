@@ -280,21 +280,31 @@ const RecordsSection = () => {
     }
   };
 
-  const handleEditHike = () => {
+  const handleEditHike = async () => {
     if (!selectedHike || !newHikeName.trim()) return;
-    const updated = hikingRecords.map(h =>
-      h.id === selectedHike.id
-        ? {
-            ...h,
-            name: newHikeName.trim(),
-            elevation: newHikeElevation ? Number(newHikeElevation) : undefined,
-            distance: newHikeDistance ? Number(newHikeDistance) : undefined,
-            elevationGain: newHikeElevationGain ? Number(newHikeElevationGain) : undefined,
-          }
-        : h
-    );
-    saveHikingRecords(updated);
-    setSelectedHike(updated.find(h => h.id === selectedHike.id) || null);
+    if (user) {
+      await supabase.from('hiking_records').update({
+        name: newHikeName.trim(),
+        elevation: newHikeElevation ? Number(newHikeElevation) : null,
+        distance: newHikeDistance ? Number(newHikeDistance) : null,
+        elevation_gain: newHikeElevationGain ? Number(newHikeElevationGain) : null,
+      } as any).eq('id', selectedHike.id);
+      await loadHikingRecords();
+    } else {
+      const updated = hikingRecords.map(h =>
+        h.id === selectedHike.id
+          ? {
+              ...h,
+              name: newHikeName.trim(),
+              elevation: newHikeElevation ? Number(newHikeElevation) : undefined,
+              distance: newHikeDistance ? Number(newHikeDistance) : undefined,
+              elevationGain: newHikeElevationGain ? Number(newHikeElevationGain) : undefined,
+            }
+          : h
+      );
+      saveHikingRecords(updated);
+      setSelectedHike(updated.find(h => h.id === selectedHike.id) || null);
+    }
     setShowEditHike(false);
   };
 
