@@ -1163,6 +1163,20 @@ const SettingsPage = () => {
 
         {/* Child profiles */}
         <ChildProfilesSection />
+
+        {/* Badges section */}
+        <div className="glass-card rounded-xl overflow-hidden">
+          <button
+            onClick={() => setView('badges' as SettingsView)}
+            className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/30 transition-colors"
+          >
+            <div className="rounded-lg p-2 bg-amber-500/10">
+              <Mountain className="w-4 h-4 text-amber-600" />
+            </div>
+            <span className="flex-1 text-left font-display font-semibold text-sm">{t('badge.tab')}</span>
+            <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
+          </button>
+        </div>
       </div>
     );
   }
