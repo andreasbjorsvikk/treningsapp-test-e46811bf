@@ -32,6 +32,7 @@ interface FeedItem {
   is_child: boolean;
   child_parent_id: string | null;
   child_emoji: string | null;
+  checked_in_by: string | null;
 }
 
 // Group key: parent_user_id + peak_id + date (within 1hr window)
