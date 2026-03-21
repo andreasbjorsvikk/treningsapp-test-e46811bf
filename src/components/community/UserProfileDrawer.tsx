@@ -412,10 +412,10 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
             )}
           </div>
 
-          {/* Profile tabs: Fjelltopper / Trening */}
+          {/* Profile tabs: Fjelltopper / Trening / Merker */}
           <div className="px-4 mb-4">
             <div className="flex gap-1 p-0.5 rounded-lg bg-secondary/50">
-              {(['fjelltopper', 'trening'] as ProfileTab[]).map(tab => (
+              {(['fjelltopper', 'trening', 'merker'] as ProfileTab[]).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setProfileTab(tab)}
@@ -425,7 +425,7 @@ const UserProfileDrawer = ({ user, open, onClose, onInviteToChallenge }: UserPro
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  {tab === 'fjelltopper' ? 'Fjelltopper' : 'Trening'}
+                  {tab === 'fjelltopper' ? 'Fjelltopper' : tab === 'trening' ? 'Trening' : 'Merker'}
                 </button>
               ))}
             </div>
