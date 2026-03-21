@@ -169,10 +169,10 @@ export function useAppData() {
   }, [sessions, goals]);
 
   const addSession = useCallback(async (data: Omit<WorkoutSession, 'id'>) => {
-    // Snapshot goal completion states before adding session
+    // Snapshot goal completion states before adding session (use refs)
     const prevStates = new Map<string, boolean>();
-    for (const g of goals.filter(g => !g.archived)) {
-      const periodSessions = getSessionsInPeriod(sessions, g.period, g.activityType, g.customStart, g.customEnd);
+    for (const g of goalsRef.current.filter(g => !g.archived)) {
+      const periodSessions = getSessionsInPeriod(sessionsRef.current, g.period, g.activityType, g.customStart, g.customEnd);
       const current = computeProgress(periodSessions, g.metric);
       prevStates.set(g.id, current >= g.target);
     }
@@ -188,7 +188,7 @@ export function useAppData() {
 
     // PR detection after reload so sessions list is fresh
     if (newSession) {
-      const otherSessions = sessions.filter(s => s.id !== newSession!.id);
+      const otherSessions = sessionsRef.current.filter(s => s.id !== newSession!.id);
       const prAlerts = checkAllPRs(newSession, otherSessions);
       for (const pr of prAlerts) {
         toast.success(`🏆 Ny personlig rekord! ${pr.benchmark}: ${pr.newTime}${pr.improvement ? ` (${pr.improvement})` : ''}`, {
@@ -196,7 +196,7 @@ export function useAppData() {
         });
       }
     }
-  }, [isOnline, user, reload, sessions, goals]);
+  }, [isOnline, user, reload]);
 
   const updateSession = useCallback(async (id: string, data: Partial<Omit<WorkoutSession, 'id'>>) => {
     if (isOnline && user) {
