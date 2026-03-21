@@ -270,9 +270,14 @@ const RecordsSection = () => {
     setShowAddEntry(false);
   };
 
-  const handleDeleteHike = (id: string) => {
+  const handleDeleteHike = async (id: string) => {
     if (!confirm(t('records.deleteHikeConfirm'))) return;
-    saveHikingRecords(hikingRecords.filter(h => h.id !== id));
+    if (user) {
+      await supabase.from('hiking_records').delete().eq('id', id);
+      loadHikingRecords();
+    } else {
+      saveHikingRecords(hikingRecords.filter(h => h.id !== id));
+    }
   };
 
   const handleEditHike = () => {
