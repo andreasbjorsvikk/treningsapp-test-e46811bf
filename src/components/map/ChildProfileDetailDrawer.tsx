@@ -5,6 +5,8 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/u
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Mountain, Loader2 } from 'lucide-react';
 import { getPeakIcon } from '@/utils/peakIcons';
+import { useTranslation } from '@/i18n/useTranslation';
+import BadgesGrid from '@/components/badges/BadgesGrid';
 
 interface PeakVisit {
   peak_id: string;
@@ -21,9 +23,13 @@ interface ChildProfileDetailDrawerProps {
   onClose: () => void;
 }
 
+type ChildTab = 'topper' | 'merker';
+
 const ChildProfileDetailDrawer = ({ child, open, onClose }: ChildProfileDetailDrawerProps) => {
+  const { t } = useTranslation();
   const [peaks, setPeaks] = useState<PeakVisit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<ChildTab>('topper');
 
   useEffect(() => {
     if (!open || !child) return;
@@ -106,48 +112,72 @@ const ChildProfileDetailDrawer = ({ child, open, onClose }: ChildProfileDetailDr
             </DrawerTitle>
           </div>
         </DrawerHeader>
+
+        {/* Tabs */}
+        <div className="px-4 mb-3">
+          <div className="flex gap-1 p-0.5 rounded-lg bg-secondary/50">
+            {(['topper', 'merker'] as ChildTab[]).map(t => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  tab === t ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {t === 'topper' ? 'Topper' : t('badge.tab')}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="px-4 pb-6 overflow-y-auto">
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-            </div>
-          ) : peaks.length === 0 ? (
-            <div className="flex flex-col items-center py-8 text-center">
-              <Mountain className="w-8 h-8 text-muted-foreground/40 mb-2" />
-              <p className="text-sm text-muted-foreground">Ingen fjelltopper besøkt ennå</p>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground mb-3 text-center">
-                {peaks.length} {peaks.length === 1 ? 'topp' : 'topper'} besøkt
-              </p>
-              {peaks.map(p => {
-                const iconSrc = getPeakIcon(p.peak_elevation, p.peak_id);
-                return (
-                  <div key={p.peak_id} className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border/40">
-                    <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center shrink-0">
-                      <img
-                        src={iconSrc}
-                        alt=""
-                        className="w-6 h-6"
-                        style={{
-                          filter: 'brightness(0) saturate(100%) invert(58%) sepia(52%) saturate(501%) hue-rotate(93deg) brightness(95%) contrast(92%)',
-                        }}
-                      />
+          {tab === 'topper' && (
+            loading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : peaks.length === 0 ? (
+              <div className="flex flex-col items-center py-8 text-center">
+                <Mountain className="w-8 h-8 text-muted-foreground/40 mb-2" />
+                <p className="text-sm text-muted-foreground">Ingen fjelltopper besøkt ennå</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground mb-3 text-center">
+                  {peaks.length} {peaks.length === 1 ? 'topp' : 'topper'} besøkt
+                </p>
+                {peaks.map(p => {
+                  const iconSrc = getPeakIcon(p.peak_elevation, p.peak_id);
+                  return (
+                    <div key={p.peak_id} className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border/40">
+                      <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center shrink-0">
+                        <img
+                          src={iconSrc}
+                          alt=""
+                          className="w-6 h-6"
+                          style={{
+                            filter: 'brightness(0) saturate(100%) invert(58%) sepia(52%) saturate(501%) hue-rotate(93deg) brightness(95%) contrast(92%)',
+                          }}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold truncate">{p.peak_name}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {p.peak_elevation} moh · {p.peak_area}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-sm font-bold text-success">{p.count}×</span>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate">{p.peak_name}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {p.peak_elevation} moh · {p.peak_area}
-                      </p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <span className="text-sm font-bold text-success">{p.count}×</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )
+          )}
+
+          {tab === 'merker' && (
+            <BadgesGrid userId={child.id} isChild onlyUnlocked />
           )}
         </div>
       </DrawerContent>
