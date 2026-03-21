@@ -138,8 +138,8 @@ const MonthGoalCompletionOverlay = ({ open, current, target, monthLabel, onDismi
 
         {/* Title */}
         <div className="text-center">
-          <h3 className="font-display font-bold text-lg text-foreground">{t('goalCompletion.title')}</h3>
-          <p className="text-sm text-muted-foreground mt-0.5">{monthLabel}</p>
+          <h3 className="font-display font-bold text-xl text-foreground">{t('goalCompletion.title')}</h3>
+          <p className="text-sm text-muted-foreground mt-1">{monthLabel}</p>
         </div>
 
         {/* Animated progress wheel — matching ProgressWheel styling */}
