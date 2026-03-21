@@ -20,6 +20,11 @@ export function useAppData() {
   const [loading, setLoading] = useState(true);
   const [completedGoal, setCompletedGoal] = useState<ExtraGoal | null>(null);
   const prevGoalStatesRef = useRef<Map<string, boolean>>(new Map());
+  // Refs to access current state inside reload without adding to deps
+  const goalsRef = useRef<ExtraGoal[]>([]);
+  const sessionsRef = useRef<WorkoutSession[]>([]);
+  goalsRef.current = goals;
+  sessionsRef.current = sessions;
 
   // Migrate localStorage data to database on first login
   const migrateLocalData = useCallback(async (userId: string) => {
