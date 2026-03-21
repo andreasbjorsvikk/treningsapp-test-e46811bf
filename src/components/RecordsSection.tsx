@@ -204,17 +204,29 @@ const RecordsSection = () => {
     { id: 'hiking', label: t('records.hiking') },
   ];
 
-  const handleAddHike = () => {
+  const handleAddHike = async () => {
     if (!newHikeName.trim()) return;
-    const record: HikingRecord = {
-      id: `h${Date.now()}`,
-      name: newHikeName.trim(),
-      elevation: newHikeElevation ? Number(newHikeElevation) : undefined,
-      distance: newHikeDistance ? Number(newHikeDistance) : undefined,
-      elevationGain: newHikeElevationGain ? Number(newHikeElevationGain) : undefined,
-      entries: [],
-    };
-    saveHikingRecords([...hikingRecords, record]);
+    if (user) {
+      await supabase.from('hiking_records').insert({
+        user_id: user.id,
+        name: newHikeName.trim(),
+        elevation: newHikeElevation ? Number(newHikeElevation) : null,
+        distance: newHikeDistance ? Number(newHikeDistance) : null,
+        elevation_gain: newHikeElevationGain ? Number(newHikeElevationGain) : null,
+        entries: [],
+      } as any);
+      loadHikingRecords();
+    } else {
+      const record: HikingRecord = {
+        id: `h${Date.now()}`,
+        name: newHikeName.trim(),
+        elevation: newHikeElevation ? Number(newHikeElevation) : undefined,
+        distance: newHikeDistance ? Number(newHikeDistance) : undefined,
+        elevationGain: newHikeElevationGain ? Number(newHikeElevationGain) : undefined,
+        entries: [],
+      };
+      saveHikingRecords([...hikingRecords, record]);
+    }
     setNewHikeName('');
     setNewHikeElevation('');
     setNewHikeDistance('');
