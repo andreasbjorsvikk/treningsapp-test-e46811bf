@@ -371,6 +371,14 @@ const IndexContent = () => {
     if (editSession) await appData.updateSession(editSession.id, data);
     else await appData.addSession(data);
     setEditSession(undefined);
+    // Check for badge unlocks
+    if (user && badgeSnapshotRef.current) {
+      const prev = badgeSnapshotRef.current;
+      const newBadges = await computeUserBadges(user.id);
+      const unlocked = findNewlyUnlocked(prev, newBadges);
+      badgeSnapshotRef.current = newBadges;
+      if (unlocked.length > 0) setTimeout(() => setBadgeUnlocks(unlocked), 1500);
+    }
   };
   const handleHealthSave = async (data: Omit<HealthEvent, 'id'>) => { await appData.addHealthEvent(data); };
 
