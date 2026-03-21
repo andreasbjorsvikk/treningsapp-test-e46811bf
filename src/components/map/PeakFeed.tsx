@@ -339,7 +339,9 @@ const PeakFeed = () => {
         if (usedIds.has(ci.id)) return false;
         if (!ci.is_child) return false;
         if (ci.peak_id !== item.peak_id) return false;
-        if (ci.child_parent_id !== item.user_id) return false;
+        // Use checked_in_by if available, otherwise fall back to child_parent_id
+        const checkedInByUser = ci.checked_in_by || ci.child_parent_id;
+        if (checkedInByUser !== item.user_id) return false;
         const timeDiff = Math.abs(new Date(ci.checked_in_at).getTime() - new Date(item.checked_in_at).getTime());
         return timeDiff <= 60 * 60 * 1000;
       });
