@@ -317,15 +317,20 @@ const RecordsSection = () => {
     setShowEditHike(true);
   };
 
-  const handleDeleteEntry = (entryId: string) => {
+  const handleDeleteEntry = async (entryId: string) => {
     if (!selectedHike) return;
-    const updated = hikingRecords.map(h =>
-      h.id === selectedHike.id
-        ? { ...h, entries: h.entries.filter(e => e.id !== entryId) }
-        : h
-    );
-    saveHikingRecords(updated);
-    setSelectedHike(updated.find(h => h.id === selectedHike.id) || null);
+    const newEntries = selectedHike.entries.filter(e => e.id !== entryId);
+    if (user) {
+      await supabase.from('hiking_records').update({ entries: newEntries } as any).eq('id', selectedHike.id);
+      await loadHikingRecords();
+      setSelectedHike(prev => prev ? { ...prev, entries: newEntries } : null);
+    } else {
+      const updated = hikingRecords.map(h =>
+        h.id === selectedHike.id ? { ...h, entries: newEntries } : h
+      );
+      saveHikingRecords(updated);
+      setSelectedHike(updated.find(h => h.id === selectedHike.id) || null);
+    }
   };
 
   // Parse time string like "3:45" or "1:23:45" to minutes for sorting
