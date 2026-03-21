@@ -12,9 +12,9 @@ interface MonthGoalCompletionOverlayProps {
 }
 
 const ANIM_DURATION = 1800;
-const RADIUS = 54;
-const STROKE = 10;
-const PADDING = 14;
+const RADIUS = 66;
+const STROKE = 12;
+const PADDING = 16;
 const SIZE = (RADIUS + STROKE) * 2 + PADDING * 2;
 const CENTER = SIZE / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
