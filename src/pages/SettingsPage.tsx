@@ -47,7 +47,7 @@ const COLOR_PRESETS = [
   { labelKey: 'color.lavender', light: { bg: 'rgb(220,215,250)', text: 'rgb(75,55,145)', badge: 'rgb(232,228,255)' }, dark: { bg: 'rgb(110,95,175)', text: '#ffffff', badge: '#2a1f55' } },
 ];
 
-type SettingsView = 'main' | 'appearance' | 'preferences' | 'training' | 'data' | 'account' | 'sync' | 'privacy' | 'profile' | 'help' | 'privacyPolicy';
+type SettingsView = 'main' | 'appearance' | 'preferences' | 'training' | 'data' | 'account' | 'sync' | 'privacy' | 'profile' | 'profileSettings' | 'help' | 'privacyPolicy';
 
 const SettingsPage = () => {
   const { settings, updateSettings, appThemes, accentPresets, getTypeColor } = useSettings();
@@ -1041,14 +1041,20 @@ const SettingsPage = () => {
   }
 
   // ========== PROFILE VIEW ==========
-  if (view === 'profile' && user) {
+  // ========== PROFILE SETTINGS SUB-VIEW ==========
+  if (view === 'profileSettings' && user) {
     return (
       <div className="space-y-4">
-        {backButton(t('profile.title'))}
-        <SettingsTutorialDialog open={showSettingsTutorial} onClose={() => setShowSettingsTutorial(false)} />
+        <button
+          onClick={() => setView('profile')}
+          className="flex items-center gap-2 mb-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span className="font-medium">{t('profile.profileSettings')}</span>
+        </button>
 
         <div className="glass-card rounded-xl p-4 space-y-5">
-          {/* Avatar & name */}
+          {/* Avatar upload */}
           <div className="flex items-center gap-4">
             <div className="relative">
               <Avatar className="w-16 h-16">
@@ -1074,8 +1080,7 @@ const SettingsPage = () => {
               />
             </div>
             <div className="min-w-0">
-              <p className="font-semibold truncate">{username || user.email?.split('@')[0]}</p>
-              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+              <p className="text-xs text-muted-foreground">{t('profile.changeAvatar')}</p>
             </div>
           </div>
 
@@ -1096,9 +1101,6 @@ const SettingsPage = () => {
           </div>
         </div>
 
-        {/* Child profiles */}
-        <ChildProfilesSection />
-
         {/* Change password */}
         <div className="glass-card rounded-xl p-4 space-y-3">
            <Label className="text-sm font-semibold">{t('profile.changePassword')}</Label>
@@ -1118,6 +1120,48 @@ const SettingsPage = () => {
             <Lock className="w-4 h-4 mr-2" /> {t('profile.sendPasswordLink')}
           </Button>
         </div>
+      </div>
+    );
+  }
+
+  if (view === 'profile' && user) {
+    return (
+      <div className="space-y-4">
+        {backButton(t('profile.title'))}
+        <SettingsTutorialDialog open={showSettingsTutorial} onClose={() => setShowSettingsTutorial(false)} />
+
+        <div className="glass-card rounded-xl p-4">
+          {/* Avatar & name display */}
+          <div className="flex items-center gap-4">
+            <Avatar className="w-16 h-16">
+              {avatarUrl ? <AvatarImage src={avatarUrl} alt="Avatar" /> : null}
+              <AvatarFallback className="text-lg font-bold">
+                {(username || user.email?.charAt(0) || 'U').charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="font-semibold truncate">{username || user.email?.split('@')[0]}</p>
+              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Profile settings button */}
+        <div className="glass-card rounded-xl overflow-hidden">
+          <button
+            onClick={() => setView('profileSettings')}
+            className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/30 transition-colors"
+          >
+            <div className="rounded-lg p-2 bg-muted">
+              <Settings2 className="w-4 h-4 text-muted-foreground" />
+            </div>
+            <span className="flex-1 text-left font-display font-semibold text-sm">{t('profile.profileSettings')}</span>
+            <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
+          </button>
+        </div>
+
+        {/* Child profiles */}
+        <ChildProfilesSection />
       </div>
     );
   }

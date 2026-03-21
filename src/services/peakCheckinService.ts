@@ -18,10 +18,14 @@ export async function getUserCheckins(userId: string): Promise<PeakCheckin[]> {
   return (data || []) as unknown as PeakCheckin[];
 }
 
-export async function checkinPeak(userId: string, peakId: string, checkedInAt?: string, imageFile?: File | null): Promise<PeakCheckin> {
+export async function checkinPeak(userId: string, peakId: string, checkedInAt?: string, imageFile?: File | null, checkedInBy?: string): Promise<PeakCheckin> {
   const payload: any = { user_id: userId, peak_id: peakId };
   if (checkedInAt) {
     payload.checked_in_at = checkedInAt;
+  }
+  // Track who performed the checkin (for child checkins)
+  if (checkedInBy) {
+    payload.checked_in_by = checkedInBy;
   }
 
   // Upload image if provided

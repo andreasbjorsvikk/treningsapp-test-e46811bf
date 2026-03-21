@@ -1,8 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { WorkoutSession } from '@/types/workout';
 import { useAppDataContext } from '@/contexts/AppDataContext';
 import { formatDuration } from '@/utils/workoutUtils';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Trophy, ChevronRight, Plus, Trash2, Mountain, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -99,6 +101,7 @@ type RecordTab = 'running' | 'cycling' | 'hiking';
 
 const RecordsSection = () => {
   const appData = useAppDataContext();
+  const { user } = useAuth();
   const { t, locale } = useTranslation();
   const [tab, setTab] = useState<RecordTab>('running');
   const [selectedHike, setSelectedHike] = useState<HikingRecord | null>(null);
@@ -117,18 +120,81 @@ const RecordsSection = () => {
   const [newEntryMaxHr, setNewEntryMaxHr] = useState('');
   const [newEntryDate, setNewEntryDate] = useState(new Date().toISOString().slice(0, 10));
 
-  // Mock hiking records (stored in localStorage for now)
-  const [hikingRecords, setHikingRecords] = useState<HikingRecord[]>(() => {
+  const [hikingRecords, setHikingRecords] = useState<HikingRecord[]>([]);
+
+  // Load hiking records from DB (or localStorage fallback)
+  const loadHikingRecords = useCallback(async () => {
+    if (user) {
+      try {
+        const { data, error } = await supabase
+          .from('hiking_records')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: true });
+        if (!error && data) {
+          const records: HikingRecord[] = data.map((r: any) => ({
+            id: r.id,
+            name: r.name,
+            elevation: r.elevation || undefined,
+            distance: r.distance || undefined,
+            elevationGain: r.elevation_gain || undefined,
+            entries: (r.entries as HikingEntry[]) || [],
+          }));
+          setHikingRecords(records);
+          return;
+        }
+      } catch {}
+    }
+    // Fallback to localStorage
     try {
       const stored = localStorage.getItem('treningslogg_hiking_records');
-      return stored ? JSON.parse(stored) : [];
-    } catch { return []; }
-  });
+      setHikingRecords(stored ? JSON.parse(stored) : []);
+    } catch { setHikingRecords([]); }
+  }, [user]);
 
-  const saveHikingRecords = (records: HikingRecord[]) => {
+  useEffect(() => { loadHikingRecords(); }, [loadHikingRecords]);
+
+  // Migrate localStorage hiking records to DB on first load
+  useEffect(() => {
+    if (!user) return;
+    const migratedKey = 'treningslogg_hiking_records_migrated';
+    if (localStorage.getItem(migratedKey)) return;
+    const stored = localStorage.getItem('treningslogg_hiking_records');
+    if (!stored) { localStorage.setItem(migratedKey, 'true'); return; }
+    try {
+      const local: HikingRecord[] = JSON.parse(stored);
+      if (local.length === 0) { localStorage.setItem(migratedKey, 'true'); return; }
+      (async () => {
+        for (const r of local) {
+          await supabase.from('hiking_records').insert({
+            user_id: user.id,
+            name: r.name,
+            elevation: r.elevation || null,
+            distance: r.distance || null,
+            elevation_gain: r.elevationGain || null,
+            entries: r.entries || [],
+          } as any);
+        }
+        localStorage.setItem(migratedKey, 'true');
+        loadHikingRecords();
+      })();
+    } catch { localStorage.setItem(migratedKey, 'true'); }
+  }, [user, loadHikingRecords]);
+
+  const saveHikingRecords = async (records: HikingRecord[]) => {
     setHikingRecords(records);
-    localStorage.setItem('treningslogg_hiking_records', JSON.stringify(records));
+    if (!user) {
+      localStorage.setItem('treningslogg_hiking_records', JSON.stringify(records));
+    }
   };
+
+  // Keep selectedHike in sync with hikingRecords after DB reload
+  useEffect(() => {
+    if (selectedHike) {
+      const updated = hikingRecords.find(h => h.id === selectedHike.id);
+      if (updated) setSelectedHike(updated);
+    }
+  }, [hikingRecords]);
 
   const runningSessions = useMemo(() =>
     appData.sessions.filter(s => s.type === 'løping'),
@@ -146,17 +212,29 @@ const RecordsSection = () => {
     { id: 'hiking', label: t('records.hiking') },
   ];
 
-  const handleAddHike = () => {
+  const handleAddHike = async () => {
     if (!newHikeName.trim()) return;
-    const record: HikingRecord = {
-      id: `h${Date.now()}`,
-      name: newHikeName.trim(),
-      elevation: newHikeElevation ? Number(newHikeElevation) : undefined,
-      distance: newHikeDistance ? Number(newHikeDistance) : undefined,
-      elevationGain: newHikeElevationGain ? Number(newHikeElevationGain) : undefined,
-      entries: [],
-    };
-    saveHikingRecords([...hikingRecords, record]);
+    if (user) {
+      await supabase.from('hiking_records').insert({
+        user_id: user.id,
+        name: newHikeName.trim(),
+        elevation: newHikeElevation ? Number(newHikeElevation) : null,
+        distance: newHikeDistance ? Number(newHikeDistance) : null,
+        elevation_gain: newHikeElevationGain ? Number(newHikeElevationGain) : null,
+        entries: [],
+      } as any);
+      loadHikingRecords();
+    } else {
+      const record: HikingRecord = {
+        id: `h${Date.now()}`,
+        name: newHikeName.trim(),
+        elevation: newHikeElevation ? Number(newHikeElevation) : undefined,
+        distance: newHikeDistance ? Number(newHikeDistance) : undefined,
+        elevationGain: newHikeElevationGain ? Number(newHikeElevationGain) : undefined,
+        entries: [],
+      };
+      saveHikingRecords([...hikingRecords, record]);
+    }
     setNewHikeName('');
     setNewHikeElevation('');
     setNewHikeDistance('');
@@ -164,7 +242,7 @@ const RecordsSection = () => {
     setShowAddHike(false);
   };
 
-  const handleAddEntry = () => {
+  const handleAddEntry = async () => {
     if (!selectedHike || (newEntryHours === 0 && newEntryMinutes === 0 && newEntrySeconds === 0)) return;
     const timeStr = newEntryHours > 0
       ? `${newEntryHours}:${String(newEntryMinutes).padStart(2, '0')}:${String(newEntrySeconds).padStart(2, '0')}`
@@ -176,13 +254,22 @@ const RecordsSection = () => {
       avgHeartrate: newEntryAvgHr ? Number(newEntryAvgHr) : undefined,
       maxHeartrate: newEntryMaxHr ? Number(newEntryMaxHr) : undefined,
     };
-    const updated = hikingRecords.map(h =>
-      h.id === selectedHike.id
-        ? { ...h, entries: [...h.entries, entry] }
-        : h
-    );
-    saveHikingRecords(updated);
-    setSelectedHike(updated.find(h => h.id === selectedHike.id) || null);
+    const newEntries = [...selectedHike.entries, entry];
+    if (user) {
+      await supabase.from('hiking_records').update({ entries: newEntries } as any).eq('id', selectedHike.id);
+      await loadHikingRecords();
+      // Re-select the hike after reload
+      setSelectedHike(prev => {
+        const found = hikingRecords.find(h => h.id === selectedHike.id);
+        return found ? { ...found, entries: newEntries } : prev;
+      });
+    } else {
+      const updated = hikingRecords.map(h =>
+        h.id === selectedHike.id ? { ...h, entries: newEntries } : h
+      );
+      saveHikingRecords(updated);
+      setSelectedHike(updated.find(h => h.id === selectedHike.id) || null);
+    }
     setNewEntryHours(0);
     setNewEntryMinutes(0);
     setNewEntrySeconds(0);
@@ -191,26 +278,41 @@ const RecordsSection = () => {
     setShowAddEntry(false);
   };
 
-  const handleDeleteHike = (id: string) => {
+  const handleDeleteHike = async (id: string) => {
     if (!confirm(t('records.deleteHikeConfirm'))) return;
-    saveHikingRecords(hikingRecords.filter(h => h.id !== id));
+    if (user) {
+      await supabase.from('hiking_records').delete().eq('id', id);
+      loadHikingRecords();
+    } else {
+      saveHikingRecords(hikingRecords.filter(h => h.id !== id));
+    }
   };
 
-  const handleEditHike = () => {
+  const handleEditHike = async () => {
     if (!selectedHike || !newHikeName.trim()) return;
-    const updated = hikingRecords.map(h =>
-      h.id === selectedHike.id
-        ? {
-            ...h,
-            name: newHikeName.trim(),
-            elevation: newHikeElevation ? Number(newHikeElevation) : undefined,
-            distance: newHikeDistance ? Number(newHikeDistance) : undefined,
-            elevationGain: newHikeElevationGain ? Number(newHikeElevationGain) : undefined,
-          }
-        : h
-    );
-    saveHikingRecords(updated);
-    setSelectedHike(updated.find(h => h.id === selectedHike.id) || null);
+    if (user) {
+      await supabase.from('hiking_records').update({
+        name: newHikeName.trim(),
+        elevation: newHikeElevation ? Number(newHikeElevation) : null,
+        distance: newHikeDistance ? Number(newHikeDistance) : null,
+        elevation_gain: newHikeElevationGain ? Number(newHikeElevationGain) : null,
+      } as any).eq('id', selectedHike.id);
+      await loadHikingRecords();
+    } else {
+      const updated = hikingRecords.map(h =>
+        h.id === selectedHike.id
+          ? {
+              ...h,
+              name: newHikeName.trim(),
+              elevation: newHikeElevation ? Number(newHikeElevation) : undefined,
+              distance: newHikeDistance ? Number(newHikeDistance) : undefined,
+              elevationGain: newHikeElevationGain ? Number(newHikeElevationGain) : undefined,
+            }
+          : h
+      );
+      saveHikingRecords(updated);
+      setSelectedHike(updated.find(h => h.id === selectedHike.id) || null);
+    }
     setShowEditHike(false);
   };
 
@@ -223,15 +325,20 @@ const RecordsSection = () => {
     setShowEditHike(true);
   };
 
-  const handleDeleteEntry = (entryId: string) => {
+  const handleDeleteEntry = async (entryId: string) => {
     if (!selectedHike) return;
-    const updated = hikingRecords.map(h =>
-      h.id === selectedHike.id
-        ? { ...h, entries: h.entries.filter(e => e.id !== entryId) }
-        : h
-    );
-    saveHikingRecords(updated);
-    setSelectedHike(updated.find(h => h.id === selectedHike.id) || null);
+    const newEntries = selectedHike.entries.filter(e => e.id !== entryId);
+    if (user) {
+      await supabase.from('hiking_records').update({ entries: newEntries } as any).eq('id', selectedHike.id);
+      await loadHikingRecords();
+      setSelectedHike(prev => prev ? { ...prev, entries: newEntries } : null);
+    } else {
+      const updated = hikingRecords.map(h =>
+        h.id === selectedHike.id ? { ...h, entries: newEntries } : h
+      );
+      saveHikingRecords(updated);
+      setSelectedHike(updated.find(h => h.id === selectedHike.id) || null);
+    }
   };
 
   // Parse time string like "3:45" or "1:23:45" to minutes for sorting

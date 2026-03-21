@@ -275,10 +275,20 @@ const IndexContent = () => {
     if (!primaryGoal || monthData.target === 0) return;
     const now = new Date();
     const monthKey = `treningslogg_month_goal_celebrated_${now.getFullYear()}_${now.getMonth()}`;
+
+    // If current dropped below target (e.g. deleted session), remove celebrated flag so it can retrigger
+    if (monthData.current < monthData.target) {
+      localStorage.removeItem(monthKey);
+      prevMonthCurrentRef.current = monthData.current;
+      return;
+    }
+
+    // Already celebrated this exact completion
     if (localStorage.getItem(monthKey)) {
       prevMonthCurrentRef.current = monthData.current;
       return;
     }
+
     // Detect completion: either on first load or when crossing threshold
     const wasBelow = prevMonthCurrentRef.current === null || prevMonthCurrentRef.current < monthData.target;
     if (wasBelow && monthData.current >= monthData.target) {

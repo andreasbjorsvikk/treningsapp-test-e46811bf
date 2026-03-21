@@ -294,10 +294,44 @@ export type Database = {
         }
         Relationships: []
       }
+      hiking_records: {
+        Row: {
+          created_at: string
+          distance: number | null
+          elevation: number | null
+          elevation_gain: number | null
+          entries: Json
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          distance?: number | null
+          elevation?: number | null
+          elevation_gain?: number | null
+          entries?: Json
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          distance?: number | null
+          elevation?: number | null
+          elevation_gain?: number | null
+          entries?: Json
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       peak_checkins: {
         Row: {
           activity_id: string | null
           checked_in_at: string
+          checked_in_by: string | null
           id: string
           image_url: string | null
           peak_id: string
@@ -307,6 +341,7 @@ export type Database = {
         Insert: {
           activity_id?: string | null
           checked_in_at?: string
+          checked_in_by?: string | null
           id?: string
           image_url?: string | null
           peak_id: string
@@ -316,6 +351,7 @@ export type Database = {
         Update: {
           activity_id?: string | null
           checked_in_at?: string
+          checked_in_by?: string | null
           id?: string
           image_url?: string | null
           peak_id?: string

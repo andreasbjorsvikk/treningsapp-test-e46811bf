@@ -32,6 +32,7 @@ interface FeedItem {
   is_child: boolean;
   child_parent_id: string | null;
   child_emoji: string | null;
+  checked_in_by: string | null;
 }
 
 // Group key: parent_user_id + peak_id + date (within 1hr window)
@@ -271,6 +272,7 @@ const PeakFeed = () => {
           is_child: !!child,
           child_parent_id: child?.parent_user_id || null,
           child_emoji: child?.emoji || null,
+          checked_in_by: c.checked_in_by || null,
         };
       }).filter(item => item.peak_name !== 'Ukjent topp');
 
@@ -309,7 +311,7 @@ const PeakFeed = () => {
     setAddingChildren(true);
     try {
       for (const childId of addChildSelectedIds) {
-        await checkinPeak(childId, parentItem.peak_id, parentItem.checked_in_at);
+        await checkinPeak(childId, parentItem.peak_id, parentItem.checked_in_at, null, user?.id);
       }
       toast.success(`${addChildSelectedIds.size} barn lagt til i innsjekkingen!`);
       setAddChildSelectedIds(new Set());
@@ -337,7 +339,9 @@ const PeakFeed = () => {
         if (usedIds.has(ci.id)) return false;
         if (!ci.is_child) return false;
         if (ci.peak_id !== item.peak_id) return false;
-        if (ci.child_parent_id !== item.user_id) return false;
+        // Use checked_in_by if available, otherwise fall back to child_parent_id
+        const checkedInByUser = ci.checked_in_by || ci.child_parent_id;
+        if (checkedInByUser !== item.user_id) return false;
         const timeDiff = Math.abs(new Date(ci.checked_in_at).getTime() - new Date(item.checked_in_at).getTime());
         return timeDiff <= 60 * 60 * 1000;
       });
