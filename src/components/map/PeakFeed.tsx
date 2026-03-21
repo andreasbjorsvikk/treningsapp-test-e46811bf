@@ -311,7 +311,7 @@ const PeakFeed = () => {
     setAddingChildren(true);
     try {
       for (const childId of addChildSelectedIds) {
-        await checkinPeak(childId, parentItem.peak_id, parentItem.checked_in_at);
+        await checkinPeak(childId, parentItem.peak_id, parentItem.checked_in_at, null, user?.id);
       }
       toast.success(`${addChildSelectedIds.size} barn lagt til i innsjekkingen!`);
       setAddChildSelectedIds(new Set());
