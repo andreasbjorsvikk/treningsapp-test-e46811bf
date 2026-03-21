@@ -102,6 +102,8 @@ const IndexContent = () => {
   const [showCalendarTutorial, setShowCalendarTutorial] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [adminSuggestionsDot, setAdminSuggestionsDot] = useState(false);
+  const [badgeUnlocks, setBadgeUnlocks] = useState<UserBadge[]>([]);
+  const badgeSnapshotRef = useRef<UserBadge[] | null>(null);
 
   // Profile info
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
