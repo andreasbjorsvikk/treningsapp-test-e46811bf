@@ -419,6 +419,8 @@ const no: Record<string, string> = {
 
   // Profile
   'profile.title': 'Profil',
+  'profile.profileSettings': 'Profilinnstillinger',
+  'profile.changeAvatar': 'Trykk på kameraet for å endre bilde',
   'profile.changePassword': 'Endre passord',
   'profile.changePasswordDesc': 'Vi sender en lenke til e-posten din for å tilbakestille passordet.',
   'profile.sendPasswordLink': 'Send passordlenke',
