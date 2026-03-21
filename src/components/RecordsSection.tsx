@@ -101,6 +101,7 @@ type RecordTab = 'running' | 'cycling' | 'hiking';
 
 const RecordsSection = () => {
   const appData = useAppDataContext();
+  const { user } = useAuth();
   const { t, locale } = useTranslation();
   const [tab, setTab] = useState<RecordTab>('running');
   const [selectedHike, setSelectedHike] = useState<HikingRecord | null>(null);
@@ -119,17 +120,72 @@ const RecordsSection = () => {
   const [newEntryMaxHr, setNewEntryMaxHr] = useState('');
   const [newEntryDate, setNewEntryDate] = useState(new Date().toISOString().slice(0, 10));
 
-  // Mock hiking records (stored in localStorage for now)
-  const [hikingRecords, setHikingRecords] = useState<HikingRecord[]>(() => {
+  const [hikingRecords, setHikingRecords] = useState<HikingRecord[]>([]);
+
+  // Load hiking records from DB (or localStorage fallback)
+  const loadHikingRecords = useCallback(async () => {
+    if (user) {
+      try {
+        const { data, error } = await supabase
+          .from('hiking_records')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: true });
+        if (!error && data) {
+          const records: HikingRecord[] = data.map((r: any) => ({
+            id: r.id,
+            name: r.name,
+            elevation: r.elevation || undefined,
+            distance: r.distance || undefined,
+            elevationGain: r.elevation_gain || undefined,
+            entries: (r.entries as HikingEntry[]) || [],
+          }));
+          setHikingRecords(records);
+          return;
+        }
+      } catch {}
+    }
+    // Fallback to localStorage
     try {
       const stored = localStorage.getItem('treningslogg_hiking_records');
-      return stored ? JSON.parse(stored) : [];
-    } catch { return []; }
-  });
+      setHikingRecords(stored ? JSON.parse(stored) : []);
+    } catch { setHikingRecords([]); }
+  }, [user]);
 
-  const saveHikingRecords = (records: HikingRecord[]) => {
+  useEffect(() => { loadHikingRecords(); }, [loadHikingRecords]);
+
+  // Migrate localStorage hiking records to DB on first load
+  useEffect(() => {
+    if (!user) return;
+    const migratedKey = 'treningslogg_hiking_records_migrated';
+    if (localStorage.getItem(migratedKey)) return;
+    const stored = localStorage.getItem('treningslogg_hiking_records');
+    if (!stored) { localStorage.setItem(migratedKey, 'true'); return; }
+    try {
+      const local: HikingRecord[] = JSON.parse(stored);
+      if (local.length === 0) { localStorage.setItem(migratedKey, 'true'); return; }
+      (async () => {
+        for (const r of local) {
+          await supabase.from('hiking_records').insert({
+            user_id: user.id,
+            name: r.name,
+            elevation: r.elevation || null,
+            distance: r.distance || null,
+            elevation_gain: r.elevationGain || null,
+            entries: r.entries || [],
+          } as any);
+        }
+        localStorage.setItem(migratedKey, 'true');
+        loadHikingRecords();
+      })();
+    } catch { localStorage.setItem(migratedKey, 'true'); }
+  }, [user, loadHikingRecords]);
+
+  const saveHikingRecords = async (records: HikingRecord[]) => {
     setHikingRecords(records);
-    localStorage.setItem('treningslogg_hiking_records', JSON.stringify(records));
+    if (!user) {
+      localStorage.setItem('treningslogg_hiking_records', JSON.stringify(records));
+    }
   };
 
   const runningSessions = useMemo(() =>
