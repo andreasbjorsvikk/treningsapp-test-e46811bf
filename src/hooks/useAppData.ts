@@ -69,11 +69,11 @@ export function useAppData() {
     // Don't load anything until auth state is resolved
     if (authLoading) return;
 
-    // Snapshot goal states before reload if requested
-    if (opts?.checkGoals && goals.length > 0) {
+    // Snapshot goal states before reload if requested (use refs to avoid dep cycle)
+    if (opts?.checkGoals && goalsRef.current.length > 0) {
       const prevStates = new Map<string, boolean>();
-      for (const g of goals.filter(g => !g.archived)) {
-        const periodSessions = getSessionsInPeriod(sessions, g.period, g.activityType, g.customStart, g.customEnd);
+      for (const g of goalsRef.current.filter(g => !g.archived)) {
+        const periodSessions = getSessionsInPeriod(sessionsRef.current, g.period, g.activityType, g.customStart, g.customEnd);
         const current = computeProgress(periodSessions, g.metric);
         prevStates.set(g.id, current >= g.target);
       }
@@ -112,7 +112,7 @@ export function useAppData() {
       }
     }
     setLoading(false);
-  }, [isOnline, user, authLoading, migrateLocalData, goals, sessions]);
+  }, [isOnline, user, authLoading, migrateLocalData]);
 
   useEffect(() => { reload(); }, [reload]);
 
