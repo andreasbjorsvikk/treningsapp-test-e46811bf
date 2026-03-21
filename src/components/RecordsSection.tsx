@@ -188,6 +188,14 @@ const RecordsSection = () => {
     }
   };
 
+  // Keep selectedHike in sync with hikingRecords after DB reload
+  useEffect(() => {
+    if (selectedHike) {
+      const updated = hikingRecords.find(h => h.id === selectedHike.id);
+      if (updated) setSelectedHike(updated);
+    }
+  }, [hikingRecords]);
+
   const runningSessions = useMemo(() =>
     appData.sessions.filter(s => s.type === 'løping'),
     [appData.sessions]
