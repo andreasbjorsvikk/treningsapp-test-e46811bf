@@ -23,7 +23,7 @@ interface UserProfileDrawerProps {
 }
 
 type StatPeriod = 'week' | 'month' | 'year';
-type ProfileTab = 'fjelltopper' | 'trening';
+type ProfileTab = 'fjelltopper' | 'trening' | 'merker';
 
 interface PeriodStats {
   sessions: number;
