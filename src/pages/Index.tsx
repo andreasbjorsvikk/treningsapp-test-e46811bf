@@ -132,6 +132,11 @@ const IndexContent = () => {
       });
   }, [user]);
 
+  // Initialize badge snapshot on load
+  useEffect(() => {
+    if (!user) return;
+    computeUserBadges(user.id).then(b => { badgeSnapshotRef.current = b; });
+  }, [user]);
   // Check admin pending suggestions for red dot
   useEffect(() => {
     if (!user || !isAdmin) { setAdminSuggestionsDot(false); return; }
