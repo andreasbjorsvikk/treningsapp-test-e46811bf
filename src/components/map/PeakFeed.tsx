@@ -272,6 +272,7 @@ const PeakFeed = () => {
           is_child: !!child,
           child_parent_id: child?.parent_user_id || null,
           child_emoji: child?.emoji || null,
+          checked_in_by: c.checked_in_by || null,
         };
       }).filter(item => item.peak_name !== 'Ukjent topp');
 
