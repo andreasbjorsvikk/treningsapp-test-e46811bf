@@ -144,10 +144,15 @@ export function getRarityColor(rarity: BadgeRarity): string {
   }
 }
 
-// ── Helper functions ──
-
-function isUuid(value: string): boolean {
-  return UUID_PATTERN.test(value);
+// Special glow colors for high_peaks badges
+export function getHighPeakGlow(badgeId: string): { color: string; glow: string } | null {
+  switch (badgeId) {
+    case 'high_peak_1': return { color: 'hsl(142, 50%, 48%)', glow: 'rgba(76, 175, 80, 0.35)' }; // green
+    case 'high_peak_3': return { color: 'hsl(25, 70%, 50%)', glow: 'rgba(205, 127, 50, 0.35)' }; // bronze
+    case 'high_peak_5': return { color: 'hsl(210, 10%, 65%)', glow: 'rgba(192, 192, 192, 0.35)' }; // silver
+    case 'high_peak_10': return { color: 'hsl(45, 95%, 55%)', glow: 'rgba(255, 215, 0, 0.35)' }; // gold
+    default: return null;
+  }
 }
 
 function toLocalDateKey(value: string): string {
