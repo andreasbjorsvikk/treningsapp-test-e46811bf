@@ -11,7 +11,7 @@ type FilterTab = 'unlocked' | BadgeCategory;
 const BadgesPage = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
-  const { language } = useSettings();
+  const { language } = useTranslation();
   const [badges, setBadges] = useState<UserBadge[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterTab>('unlocked');

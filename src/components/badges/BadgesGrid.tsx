@@ -13,7 +13,7 @@ interface BadgesGridProps {
 
 const BadgesGrid = ({ userId, isChild = false, onlyUnlocked = false }: BadgesGridProps) => {
   const { t } = useTranslation();
-  const { language } = useSettings();
+  const { language } = useTranslation();
   const [badges, setBadges] = useState<UserBadge[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBadge, setSelectedBadge] = useState<UserBadge | null>(null);
