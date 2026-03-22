@@ -26,12 +26,9 @@ const BadgeCard = ({ userBadge, onClick, showProgress = true }: BadgeCardProps) 
       onClick={onClick}
       className={`relative flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition-all duration-200 ${
         unlocked
-          ? 'border-border/60 hover:border-border shadow-sm hover:shadow-md active:scale-[0.98]'
+          ? 'bg-primary/10 border-primary/20 hover:border-primary/30 shadow-sm hover:shadow-md active:scale-[0.98]'
           : 'bg-card/50 border-border/20 hover:opacity-75'
       }`}
-      style={unlocked ? {
-        backgroundColor: 'hsla(142, 40%, 50%, 0.06)',
-      } : undefined}
     >
       {/* Badge visual */}
       <div className={isImageBadge ? 'w-20 h-20' : 'w-16 h-16'} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
