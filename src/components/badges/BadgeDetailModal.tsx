@@ -24,25 +24,26 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
       <DialogContent className="max-w-[340px] rounded-2xl p-6 text-center">
         {/* Badge visual */}
         <div className="flex justify-center mb-4">
-          <div
-            className="w-28 h-28 rounded-full flex items-center justify-center"
-            style={{
-              background: unlocked ? `radial-gradient(circle, ${glowColor} 0%, transparent 70%)` : 'hsl(var(--muted))',
-              boxShadow: unlocked ? `0 0 40px ${glowColor}` : 'none',
-            }}
-          >
-            {def.image ? (
-              <img
-                src={def.image}
-                alt={t(def.nameKey)}
-                className={`w-24 h-24 object-contain ${unlocked ? '' : 'grayscale brightness-50 opacity-60'}`}
-              />
-            ) : (
+          {def.image ? (
+            <img
+              src={def.image}
+              alt={t(def.nameKey)}
+              className={`w-28 h-28 object-contain ${unlocked ? '' : 'grayscale brightness-[0.25] opacity-50'}`}
+              style={unlocked ? { filter: `drop-shadow(0 0 20px ${glowColor})` } : undefined}
+            />
+          ) : (
+            <div
+              className="w-28 h-28 rounded-full flex items-center justify-center"
+              style={{
+                background: unlocked ? `radial-gradient(circle, ${glowColor} 0%, transparent 70%)` : 'hsl(var(--muted))',
+                boxShadow: unlocked ? `0 0 40px ${glowColor}` : 'none',
+              }}
+            >
               <span className={`text-6xl ${unlocked ? '' : 'grayscale opacity-40'}`}>
                 {def.emoji}
               </span>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Rarity tag */}
@@ -55,14 +56,11 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
           </span>
         </div>
 
-        {/* Title & description */}
         <h3 className="font-display font-bold text-lg text-foreground mb-1">{t(def.nameKey)}</h3>
         <p className="text-sm text-muted-foreground mb-4">{t(def.descriptionKey)}</p>
-
-        {/* Requirement */}
         <p className="text-xs text-muted-foreground mb-3">{t(def.requirementKey)}</p>
 
-        {/* Repeat count */}
+        {/* Repeat count - small inline text */}
         {repeatCount && repeatCount > 0 && (
           <div className="mb-3">
             <span className="text-sm font-semibold" style={{ color: rarityColor }}>
@@ -86,7 +84,6 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
           </div>
         )}
 
-        {/* Unlock date */}
         {unlocked && unlockedAt && (
           <div className="mb-4">
             <p className="text-xs text-muted-foreground">

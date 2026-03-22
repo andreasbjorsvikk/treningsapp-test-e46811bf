@@ -1,19 +1,21 @@
 import { useState, useEffect } from 'react';
-import { UserBadge, BadgeCategory, computeUserBadges, getRarityColor } from '@/services/badgeService';
+import { UserBadge, BadgeCategory, computeUserBadges, SUBCATEGORY_NAMES } from '@/services/badgeService';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useSettings } from '@/contexts/SettingsContext';
 import BadgeCard from './BadgeCard';
 import BadgeDetailModal from './BadgeDetailModal';
 import { Loader2 } from 'lucide-react';
 
-type FilterTab = 'all' | BadgeCategory;
+type FilterTab = 'unlocked' | BadgeCategory;
 
 const BadgesPage = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { language } = useSettings();
   const [badges, setBadges] = useState<UserBadge[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<FilterTab>('all');
+  const [filter, setFilter] = useState<FilterTab>('unlocked');
   const [selectedBadge, setSelectedBadge] = useState<UserBadge | null>(null);
 
   useEffect(() => {
@@ -25,18 +27,26 @@ const BadgesPage = () => {
     });
   }, [user]);
 
-  const filtered = filter === 'all' ? badges : badges.filter(b => b.badge.category === filter);
-  const unlocked = filtered.filter(b => b.unlocked).sort((a, b) => a.badge.sortOrder - b.badge.sortOrder);
-  const locked = filtered.filter(b => !b.unlocked).sort((a, b) => a.badge.sortOrder - b.badge.sortOrder);
+  const filtered = filter === 'unlocked'
+    ? badges.filter(b => b.unlocked)
+    : badges.filter(b => b.badge.category === filter);
 
-  // Next badge to unlock
-  const nextBadge = badges.find(b => !b.unlocked);
+  // Group by subcategory
+  const grouped = new Map<string, UserBadge[]>();
+  for (const b of filtered) {
+    const key = b.badge.subcategory;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key)!.push(b);
+  }
+  // Sort within each group
+  for (const [, arr] of grouped) {
+    arr.sort((a, b) => a.badge.sortOrder - b.badge.sortOrder);
+  }
 
-  const tabs: { key: FilterTab; labelKey: string }[] = [
-    { key: 'all', labelKey: 'badge.filterAll' },
-    { key: 'topper', labelKey: 'badge.filterTopper' },
-    { key: 'fjellmerker', labelKey: 'badge.filterFjellmerker' },
-    { key: 'trening', labelKey: 'badge.filterTrening' },
+  const tabs: { key: FilterTab; label: string }[] = [
+    { key: 'unlocked', label: language === 'no' ? 'Låst opp' : 'Unlocked' },
+    { key: 'fjell', label: language === 'no' ? 'Fjell' : 'Mountain' },
+    { key: 'trening', label: language === 'no' ? 'Trening' : 'Training' },
   ];
 
   if (loading) {
@@ -47,45 +57,15 @@ const BadgesPage = () => {
     );
   }
 
+  const unlockedCount = badges.filter(b => b.unlocked).length;
+  const totalCount = badges.length;
+
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="text-center px-4">
         <h2 className="font-display font-bold text-lg text-foreground">{t('badge.title')}</h2>
-        <p className="text-xs text-muted-foreground mt-1">{t('badge.subtitle')}</p>
+        <p className="text-xs text-muted-foreground mt-1">{unlockedCount}/{totalCount} {t('badge.subtitle')}</p>
       </div>
-
-      {/* Next badge card */}
-      {nextBadge && (
-        <div
-          className="mx-0 p-4 rounded-2xl border border-border/60 bg-card shadow-sm cursor-pointer"
-          onClick={() => setSelectedBadge(nextBadge)}
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center shrink-0">
-              <span className="text-3xl opacity-40 grayscale">{nextBadge.badge.emoji}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('badge.nextBadge')}</p>
-              <p className="text-sm font-bold text-foreground truncate">{t(nextBadge.badge.nameKey)}</p>
-              <div className="flex items-center gap-2 mt-1.5">
-                <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all"
-                    style={{
-                      width: `${Math.min((nextBadge.progress / nextBadge.badge.threshold) * 100, 100)}%`,
-                      backgroundColor: getRarityColor(nextBadge.badge.rarity),
-                    }}
-                  />
-                </div>
-                <span className="text-[11px] font-semibold text-muted-foreground shrink-0">
-                  {nextBadge.progress}/{nextBadge.badge.threshold}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Filter tabs */}
       <div className="flex gap-1 p-0.5 rounded-lg bg-secondary/50">
@@ -99,41 +79,29 @@ const BadgesPage = () => {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            {t(tab.labelKey)}
+            {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Unlocked */}
-      {unlocked.length > 0 && (
-        <div>
+      {/* Grouped badges */}
+      {Array.from(grouped.entries()).map(([subcategory, badgeList]) => (
+        <div key={subcategory}>
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-            {t('badge.unlocked')} ({unlocked.length})
+            {SUBCATEGORY_NAMES[subcategory]?.[language] || subcategory}
           </p>
           <div className="grid grid-cols-3 gap-2">
-            {unlocked.map(b => (
+            {badgeList.map(b => (
               <BadgeCard key={b.badge.id} userBadge={b} onClick={() => setSelectedBadge(b)} />
             ))}
           </div>
         </div>
-      )}
-
-      {/* Locked */}
-      {locked.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-            {t('badge.locked')} ({locked.length})
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            {locked.map(b => (
-              <BadgeCard key={b.badge.id} userBadge={b} onClick={() => setSelectedBadge(b)} />
-            ))}
-          </div>
-        </div>
-      )}
+      ))}
 
       {filtered.length === 0 && (
-        <p className="text-sm text-center text-muted-foreground py-8">{t('badge.noBadges')}</p>
+        <p className="text-sm text-center text-muted-foreground py-8">
+          {filter === 'unlocked' ? t('badge.noBadgesUnlocked') : t('badge.noBadges')}
+        </p>
       )}
 
       <BadgeDetailModal

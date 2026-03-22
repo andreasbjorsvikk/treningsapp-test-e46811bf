@@ -18,37 +18,42 @@ const BadgeCard = ({ userBadge, onClick, showProgress = true }: BadgeCardProps) 
   return (
     <button
       onClick={onClick}
-      className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all duration-200 ${
+      className={`relative flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition-all duration-200 ${
         unlocked
           ? 'bg-card border-border/60 hover:border-border shadow-sm hover:shadow-md active:scale-[0.98]'
-          : 'bg-card/50 border-border/20 opacity-50 hover:opacity-65'
+          : 'bg-card/50 border-border/20 hover:opacity-75'
       }`}
     >
-      {/* Badge visual */}
-      <div
-        className="w-14 h-14 rounded-full flex items-center justify-center"
-        style={{
-          background: unlocked ? `radial-gradient(circle, ${glowColor} 0%, transparent 70%)` : 'hsl(var(--muted))',
-          boxShadow: unlocked ? `0 0 20px ${glowColor}` : 'none',
-        }}
-      >
+      {/* Badge visual - no circle for image badges, larger */}
+      <div className="w-16 h-16 flex items-center justify-center">
         {badge.image ? (
           <img
             src={badge.image}
             alt={t(badge.nameKey)}
-            className={`w-12 h-12 object-contain ${unlocked ? '' : 'grayscale brightness-50 opacity-60'}`}
+            className={`w-16 h-16 object-contain ${unlocked ? '' : 'grayscale brightness-[0.25] opacity-50'}`}
+            style={unlocked ? {
+              filter: `drop-shadow(0 0 8px ${glowColor})`,
+            } : undefined}
           />
         ) : (
-          <span className={`text-3xl ${unlocked ? '' : 'grayscale opacity-40'}`}>
-            {badge.emoji}
-          </span>
+          <div
+            className="w-14 h-14 rounded-full flex items-center justify-center"
+            style={{
+              background: unlocked ? `radial-gradient(circle, ${glowColor} 0%, transparent 70%)` : 'hsl(var(--muted))',
+              boxShadow: unlocked ? `0 0 16px ${glowColor}` : 'none',
+            }}
+          >
+            <span className={`text-3xl ${unlocked ? '' : 'grayscale opacity-30'}`}>
+              {badge.emoji}
+            </span>
+          </div>
         )}
       </div>
 
-      {/* Repeat count badge */}
+      {/* Repeat count badge - small corner indicator */}
       {repeatCount && repeatCount > 1 && (
         <div
-          className="absolute bottom-2 right-2 min-w-[20px] h-[18px] rounded-full flex items-center justify-center px-1"
+          className="absolute top-2 right-2 min-w-[22px] h-[18px] rounded-full flex items-center justify-center px-1"
           style={{ backgroundColor: rarityColor }}
         >
           <span className="text-[9px] font-bold text-white">{repeatCount}x</span>
@@ -56,7 +61,7 @@ const BadgeCard = ({ userBadge, onClick, showProgress = true }: BadgeCardProps) 
       )}
 
       {/* Name */}
-      <p className={`text-xs font-semibold text-center leading-tight ${unlocked ? 'text-foreground' : 'text-muted-foreground'}`}>
+      <p className={`text-xs font-semibold text-center leading-tight ${unlocked ? 'text-foreground' : 'text-muted-foreground/60'}`}>
         {t(badge.nameKey)}
       </p>
 
@@ -68,7 +73,7 @@ const BadgeCard = ({ userBadge, onClick, showProgress = true }: BadgeCardProps) 
       ) : unlocked && !unlockedAt ? (
         <p className="text-[10px] text-muted-foreground">✓</p>
       ) : showProgress ? (
-        <div className="w-full space-y-1">
+        <div className="w-full space-y-0.5">
           <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-500"
