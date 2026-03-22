@@ -200,7 +200,8 @@ const MapPage = () => {
 
     const openedFromTopper = subTab === 'topper' || fromTopper === true;
 
-    setSelectedPeak(peak);
+    // Close the peak detail drawer so the map/route is visible
+    setSelectedPeak(null);
     applyRouteForPeak(peak);
 
     if (openedFromTopper) {
