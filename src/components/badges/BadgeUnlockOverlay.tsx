@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { UserBadge, getRarityColor, getRarityGlow } from '@/services/badgeService';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -16,7 +16,7 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
   const [showContent, setShowContent] = useState(false);
   const [pulseGlow, setPulseGlow] = useState(false);
 
-  const mainBadge = badges.length > 0 ? badges[badges.length - 1] : null; // biggest first
+  const mainBadge = badges.length > 0 ? badges[badges.length - 1] : null;
   const extraCount = badges.length - 1;
 
   useEffect(() => {
@@ -51,7 +51,7 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
         }`}
         onClick={e => e.stopPropagation()}
       >
-        {/* Badge emoji with glow */}
+        {/* Badge visual with glow */}
         <div className="relative">
           <div
             className={`w-24 h-24 rounded-full flex items-center justify-center transition-all duration-700 ${
@@ -62,13 +62,21 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
               boxShadow: pulseGlow ? `0 0 40px ${glowColor}, 0 0 80px ${glowColor}` : 'none',
             }}
           >
-            <span className={`text-5xl transition-transform duration-500 ${showContent ? 'scale-100' : 'scale-0'}`}
-              style={{ filter: `drop-shadow(0 0 12px ${glowColor})` }}
-            >
-              {mainBadge.badge.emoji}
-            </span>
+            {mainBadge.badge.image ? (
+              <img
+                src={mainBadge.badge.image}
+                alt={t(mainBadge.badge.nameKey)}
+                className={`w-20 h-20 object-contain transition-transform duration-500 ${showContent ? 'scale-100' : 'scale-0'}`}
+                style={{ filter: `drop-shadow(0 0 12px ${glowColor})` }}
+              />
+            ) : (
+              <span className={`text-5xl transition-transform duration-500 ${showContent ? 'scale-100' : 'scale-0'}`}
+                style={{ filter: `drop-shadow(0 0 12px ${glowColor})` }}
+              >
+                {mainBadge.badge.emoji}
+              </span>
+            )}
           </div>
-          {/* Subtle ring */}
           <div
             className="absolute inset-0 rounded-full border-2 opacity-30"
             style={{ borderColor: rarityColor }}
@@ -88,14 +96,12 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
           </p>
         </div>
 
-        {/* Extra badges indicator */}
         {extraCount > 0 && (
           <p className="text-xs text-muted-foreground">
             +{extraCount} {t('badge.moreBadges')}
           </p>
         )}
 
-        {/* Buttons */}
         <div className="w-full space-y-2">
           {onViewBadge && (
             <button

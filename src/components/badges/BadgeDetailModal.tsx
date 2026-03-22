@@ -13,11 +13,10 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
   const { t } = useTranslation();
   if (!badge) return null;
 
-  const { badge: def, unlocked, unlockedAt, progress } = badge;
+  const { badge: def, unlocked, unlockedAt, progress, repeatCount } = badge;
   const rarityColor = getRarityColor(def.rarity);
   const glowColor = getRarityGlow(def.rarity);
   const progressPercent = Math.min((progress / def.threshold) * 100, 100);
-
   const rarityLabel = t(`badge.rarity.${def.rarity}`);
 
   return (
@@ -32,9 +31,17 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
               boxShadow: unlocked ? `0 0 40px ${glowColor}` : 'none',
             }}
           >
-            <span className={`text-6xl ${unlocked ? '' : 'grayscale opacity-40'}`}>
-              {def.emoji}
-            </span>
+            {def.image ? (
+              <img
+                src={def.image}
+                alt={t(def.nameKey)}
+                className={`w-24 h-24 object-contain ${unlocked ? '' : 'grayscale brightness-50 opacity-60'}`}
+              />
+            ) : (
+              <span className={`text-6xl ${unlocked ? '' : 'grayscale opacity-40'}`}>
+                {def.emoji}
+              </span>
+            )}
           </div>
         </div>
 
@@ -42,7 +49,7 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
         <div className="flex justify-center mb-2">
           <span
             className="text-[10px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full"
-            style={{ color: rarityColor, backgroundColor: `${glowColor}` }}
+            style={{ color: rarityColor, backgroundColor: glowColor }}
           >
             {rarityLabel}
           </span>
@@ -55,6 +62,15 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
         {/* Requirement */}
         <p className="text-xs text-muted-foreground mb-3">{t(def.requirementKey)}</p>
 
+        {/* Repeat count */}
+        {repeatCount && repeatCount > 0 && (
+          <div className="mb-3">
+            <span className="text-sm font-semibold" style={{ color: rarityColor }}>
+              {t('badge.achievedTimes', { count: String(repeatCount) })}
+            </span>
+          </div>
+        )}
+
         {/* Progress */}
         {!unlocked && (
           <div className="space-y-2 mb-4">
@@ -65,7 +81,7 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
               />
             </div>
             <p className="text-sm font-semibold" style={{ color: rarityColor }}>
-              {progress} / {def.threshold}
+              {Math.round(progress)} / {def.threshold}
             </p>
           </div>
         )}
@@ -79,7 +95,6 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
           </div>
         )}
 
-        {/* Close button */}
         <button
           onClick={onClose}
           className="w-full px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors"

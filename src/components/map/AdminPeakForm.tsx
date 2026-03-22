@@ -9,6 +9,7 @@ import { Loader2, Upload, X } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { uploadPeakImage } from '@/services/peakDbService';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AdminPeakFormProps {
   open: boolean;
@@ -139,27 +140,38 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
     }
 
     try {
-      const coords = [
-        `${routeStartLng},${routeStartLat}`,
-        ...waypoints.map(wp => `${wp.lng},${wp.lat}`),
-        `${lng},${lat}`
-      ].join(';');
-      
-      const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${coords}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.routes && data.routes.length > 0) {
-        const route = data.routes[0];
-        setRouteGeojson(route.geometry);
-        setRouteDistance(route.distance);
-        setRouteDuration(route.duration);
+      // Use ORS foot-hiking profile via edge function
+      const coordinates = [
+        [Number(routeStartLng), Number(routeStartLat)],
+        ...waypoints.map(wp => [wp.lng, wp.lat]),
+        [Number(lng), Number(lat)]
+      ];
+
+      const { data, error } = await supabase.functions.invoke('ors-route', {
+        body: { coordinates },
+      });
+
+      if (error) throw new Error(error.message);
+
+      if (data?.features && data.features.length > 0) {
+        const feature = data.features[0];
+        const geometry = feature.geometry;
+        // ORS returns 3D coordinates [lng, lat, elev], strip elevation for mapbox
+        if (geometry.coordinates) {
+          geometry.coordinates = geometry.coordinates.map((c: number[]) => [c[0], c[1]]);
+        }
+        const summary = feature.properties?.summary;
+        setRouteGeojson(geometry);
+        setRouteDistance(summary?.distance || 0);
+        setRouteDuration(summary?.duration || 0);
         setRouteStatus('preview');
-        if (onPreviewRoute) onPreviewRoute(route.geometry);
+        if (onPreviewRoute) onPreviewRoute(geometry);
       } else {
         toast.error('Fant ingen rute');
       }
     } catch (e) {
-      toast.error('Kunne ikke generere rute');
+      console.error('ORS route error:', e);
+      toast.error('Kunne ikke generere rute via ORS');
     }
   };
 
