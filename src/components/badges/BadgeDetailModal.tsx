@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { UserBadge, getRarityColor, getRarityGlow, getHighPeakGlow } from '@/services/badgeService';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -11,6 +12,17 @@ interface BadgeDetailModalProps {
 
 const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
   const { t } = useTranslation();
+  const [spinning, setSpinning] = useState(false);
+
+  useEffect(() => {
+    if (open && badge?.unlocked && badge.badge.subcategory === 'unique_peaks') {
+      setSpinning(true);
+      const timer = setTimeout(() => setSpinning(false), 2000);
+      return () => clearTimeout(timer);
+    }
+    setSpinning(false);
+  }, [open, badge]);
+
   if (!badge) return null;
 
   const { badge: def, unlocked, unlockedAt, progress, repeatCount } = badge;
@@ -19,6 +31,10 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
   const glowColor = highPeakGlow?.glow || getRarityGlow(def.rarity);
   const progressPercent = Math.min((progress / def.threshold) * 100, 100);
   const rarityLabel = t(`badge.rarity.${def.rarity}`);
+  const isUniquePeaks = def.subcategory === 'unique_peaks';
+  const thresholdKey = `${def.nameKey}Threshold` as any;
+  const thresholdText = t(thresholdKey);
+  const hasThresholdText = thresholdText !== thresholdKey;
 
   return (
     <Dialog open={open} onOpenChange={o => !o && onClose()}>
@@ -26,12 +42,22 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
         {/* Badge visual */}
         <div className="flex justify-center mb-4">
           {def.image ? (
-            <img
-              src={def.image}
-              alt={t(def.nameKey)}
-              className={`w-40 h-40 object-contain ${unlocked ? '' : 'grayscale brightness-[0.08] opacity-30'}`}
-              style={unlocked ? { filter: `drop-shadow(0 0 24px ${glowColor})` } : undefined}
-            />
+            <div
+              className={isUniquePeaks && unlocked ? 'perspective-[600px]' : ''}
+              onClick={() => isUniquePeaks && unlocked && setSpinning(true)}
+            >
+              <img
+                src={def.image}
+                alt={t(def.nameKey)}
+                className={`w-48 h-48 object-contain ${unlocked ? '' : 'grayscale brightness-[0.08] opacity-30'} ${
+                  spinning ? 'animate-coin-spin' : ''
+                }`}
+                style={unlocked ? {
+                  filter: `drop-shadow(0 0 24px ${glowColor})`,
+                  transformStyle: 'preserve-3d',
+                } : undefined}
+              />
+            </div>
           ) : (
             <div
               className="w-36 h-36 rounded-full flex items-center justify-center"
@@ -57,11 +83,14 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
           </span>
         </div>
 
-        <h3 className="font-display font-bold text-lg text-foreground mb-1">{t(def.nameKey)}</h3>
+        <h3 className="font-display font-bold text-lg text-foreground mb-0.5">{t(def.nameKey)}</h3>
+        {hasThresholdText && (
+          <p className="text-sm font-semibold mb-2" style={{ color: rarityColor }}>{thresholdText}</p>
+        )}
         <p className="text-sm text-muted-foreground mb-4">{t(def.descriptionKey)}</p>
         <p className="text-xs text-muted-foreground mb-3">{t(def.requirementKey)}</p>
 
-        {/* Repeat count - small inline text */}
+        {/* Repeat count */}
         {repeatCount && repeatCount > 0 && (
           <div className="mb-3">
             <span className="text-sm font-semibold" style={{ color: rarityColor }}>
