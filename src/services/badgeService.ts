@@ -229,9 +229,7 @@ export async function computeUserBadges(userId: string, isChild = false): Promis
 
   const checkins = allCheckins || [];
 
-  // For daily checkins and streaks, use ALL checkins (not just unique, not validated against peaks_db)
-  const allCheckinDates = checkins.map(c => c.checked_in_at.slice(0, 10));
-  const allDateMap = groupByDate(checkins);
+  // We'll compute valid checkin dates after validating against peaks_db
 
   // For unique peaks, validate against peaks_db to exclude deleted peaks
   let uniquePeakCount = 0;
