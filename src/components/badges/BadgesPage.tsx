@@ -6,15 +6,12 @@ import BadgeCard from './BadgeCard';
 import BadgeDetailModal from './BadgeDetailModal';
 import { Loader2 } from 'lucide-react';
 
-type FilterTab = 'unlocked' | BadgeCategory;
-
 const BadgesPage = () => {
   const { user } = useAuth();
-  const { t } = useTranslation();
-  const { language } = useTranslation();
+  const { t, language } = useTranslation();
   const [badges, setBadges] = useState<UserBadge[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<FilterTab>('unlocked');
+  const [filter, setFilter] = useState<BadgeCategory>('fjell');
   const [selectedBadge, setSelectedBadge] = useState<UserBadge | null>(null);
 
   useEffect(() => {
@@ -26,24 +23,19 @@ const BadgesPage = () => {
     });
   }, [user]);
 
-  const filtered = filter === 'unlocked'
-    ? badges.filter(b => b.unlocked)
-    : badges.filter(b => b.badge.category === filter);
+  const filtered = badges.filter(b => b.badge.category === filter);
 
-  // Group by subcategory
   const grouped = new Map<string, UserBadge[]>();
   for (const b of filtered) {
     const key = b.badge.subcategory;
     if (!grouped.has(key)) grouped.set(key, []);
     grouped.get(key)!.push(b);
   }
-  // Sort within each group
   for (const [, arr] of grouped) {
     arr.sort((a, b) => a.badge.sortOrder - b.badge.sortOrder);
   }
 
-  const tabs: { key: FilterTab; label: string }[] = [
-    { key: 'unlocked', label: language === 'no' ? 'Låst opp' : 'Unlocked' },
+  const tabs: { key: BadgeCategory; label: string }[] = [
     { key: 'fjell', label: language === 'no' ? 'Fjell' : 'Mountain' },
     { key: 'trening', label: language === 'no' ? 'Trening' : 'Training' },
   ];
@@ -66,7 +58,6 @@ const BadgesPage = () => {
         <p className="text-xs text-muted-foreground mt-1">{unlockedCount}/{totalCount} {t('badge.subtitle')}</p>
       </div>
 
-      {/* Filter tabs */}
       <div className="flex gap-1 p-0.5 rounded-lg bg-secondary/50">
         {tabs.map(tab => (
           <button
@@ -83,7 +74,6 @@ const BadgesPage = () => {
         ))}
       </div>
 
-      {/* Grouped badges */}
       {Array.from(grouped.entries()).map(([subcategory, badgeList]) => (
         <div key={subcategory}>
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
@@ -99,7 +89,7 @@ const BadgesPage = () => {
 
       {filtered.length === 0 && (
         <p className="text-sm text-center text-muted-foreground py-8">
-          {filter === 'unlocked' ? t('badge.noBadgesUnlocked') : t('badge.noBadges')}
+          {t('badge.noBadges')}
         </p>
       )}
 

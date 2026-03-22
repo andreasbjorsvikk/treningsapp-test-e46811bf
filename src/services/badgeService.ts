@@ -1,11 +1,18 @@
 import { supabase } from '@/integrations/supabase/client';
 
-// Badge images
+// Badge images - peaks
 import badge10 from '@/assets/badges/10_topper.png';
 import badge20 from '@/assets/badges/20_topper.png';
 import badge50 from '@/assets/badges/50_topper.png';
 import badge100 from '@/assets/badges/100_topper.png';
 import badge200 from '@/assets/badges/200_topper.png';
+
+// Badge images - sessions
+import badgeSessions10 from '@/assets/badges/10_okter.png';
+import badgeSessions50 from '@/assets/badges/50_okter.png';
+import badgeSessions100 from '@/assets/badges/100_okter.png';
+import badgeSessions250 from '@/assets/badges/250_okter.png';
+import badgeSessions500 from '@/assets/badges/500_okter.png';
 
 export type BadgeCategory = 'fjell' | 'trening';
 export type BadgeRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
@@ -13,7 +20,7 @@ export type BadgeRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 export interface BadgeDefinition {
   id: string;
   category: BadgeCategory;
-  subcategory: string; // for grouping within a tab
+  subcategory: string;
   nameKey: string;
   descriptionKey: string;
   requirementKey: string;
@@ -33,7 +40,6 @@ export interface UserBadge {
   repeatCount?: number;
 }
 
-// All badge definitions
 export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   // ── Fjell: Unike topper ──
   { id: 'peaks_10', category: 'fjell', subcategory: 'unique_peaks', nameKey: 'badge.peaks10', descriptionKey: 'badge.peaks10Desc', requirementKey: 'badge.peaks10Req', threshold: 10, rarity: 'common', emoji: '⛰️', image: badge10, sortOrder: 1 },
@@ -57,11 +63,11 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: 'streak_10', category: 'fjell', subcategory: 'streaks', nameKey: 'badge.streak10', descriptionKey: 'badge.streak10Desc', requirementKey: 'badge.streak10Req', threshold: 10, rarity: 'epic', emoji: '🏅', sortOrder: 32, repeatable: true },
 
   // ── Trening: Totalt antall økter ──
-  { id: 'sessions_10', category: 'trening', subcategory: 'total_sessions', nameKey: 'badge.sessions10', descriptionKey: 'badge.sessions10Desc', requirementKey: 'badge.sessions10Req', threshold: 10, rarity: 'common', emoji: '💪', sortOrder: 1 },
-  { id: 'sessions_50', category: 'trening', subcategory: 'total_sessions', nameKey: 'badge.sessions50', descriptionKey: 'badge.sessions50Desc', requirementKey: 'badge.sessions50Req', threshold: 50, rarity: 'uncommon', emoji: '🔥', sortOrder: 2 },
-  { id: 'sessions_100', category: 'trening', subcategory: 'total_sessions', nameKey: 'badge.sessions100', descriptionKey: 'badge.sessions100Desc', requirementKey: 'badge.sessions100Req', threshold: 100, rarity: 'rare', emoji: '⚡', sortOrder: 3 },
-  { id: 'sessions_250', category: 'trening', subcategory: 'total_sessions', nameKey: 'badge.sessions250', descriptionKey: 'badge.sessions250Desc', requirementKey: 'badge.sessions250Req', threshold: 250, rarity: 'epic', emoji: '🏅', sortOrder: 4 },
-  { id: 'sessions_500', category: 'trening', subcategory: 'total_sessions', nameKey: 'badge.sessions500', descriptionKey: 'badge.sessions500Desc', requirementKey: 'badge.sessions500Req', threshold: 500, rarity: 'legendary', emoji: '🎖️', sortOrder: 5 },
+  { id: 'sessions_10', category: 'trening', subcategory: 'total_sessions', nameKey: 'badge.sessions10', descriptionKey: 'badge.sessions10Desc', requirementKey: 'badge.sessions10Req', threshold: 10, rarity: 'common', emoji: '💪', image: badgeSessions10, sortOrder: 1 },
+  { id: 'sessions_50', category: 'trening', subcategory: 'total_sessions', nameKey: 'badge.sessions50', descriptionKey: 'badge.sessions50Desc', requirementKey: 'badge.sessions50Req', threshold: 50, rarity: 'uncommon', emoji: '🔥', image: badgeSessions50, sortOrder: 2 },
+  { id: 'sessions_100', category: 'trening', subcategory: 'total_sessions', nameKey: 'badge.sessions100', descriptionKey: 'badge.sessions100Desc', requirementKey: 'badge.sessions100Req', threshold: 100, rarity: 'rare', emoji: '⚡', image: badgeSessions100, sortOrder: 3 },
+  { id: 'sessions_250', category: 'trening', subcategory: 'total_sessions', nameKey: 'badge.sessions250', descriptionKey: 'badge.sessions250Desc', requirementKey: 'badge.sessions250Req', threshold: 250, rarity: 'epic', emoji: '🏅', image: badgeSessions250, sortOrder: 4 },
+  { id: 'sessions_500', category: 'trening', subcategory: 'total_sessions', nameKey: 'badge.sessions500', descriptionKey: 'badge.sessions500Desc', requirementKey: 'badge.sessions500Req', threshold: 500, rarity: 'legendary', emoji: '🎖️', image: badgeSessions500, sortOrder: 5 },
 
   // ── Trening: Månedlige økter ──
   { id: 'month_sessions_10', category: 'trening', subcategory: 'monthly_sessions', nameKey: 'badge.monthSessions10', descriptionKey: 'badge.monthSessions10Desc', requirementKey: 'badge.monthSessions10Req', threshold: 10, rarity: 'common', emoji: '📊', sortOrder: 10, repeatable: true },
@@ -85,7 +91,6 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: 'month_dist_150', category: 'trening', subcategory: 'monthly_distance', nameKey: 'badge.monthDist150', descriptionKey: 'badge.monthDist150Desc', requirementKey: 'badge.monthDist150Req', threshold: 150, rarity: 'rare', emoji: '🏃', sortOrder: 22, repeatable: true },
 ];
 
-// Subcategory display names
 export const SUBCATEGORY_NAMES: Record<string, { no: string; en: string }> = {
   unique_peaks: { no: 'Unike topper', en: 'Unique peaks' },
   high_peaks: { no: 'Topper over 1000 moh', en: 'Peaks over 1000m' },
@@ -118,6 +123,8 @@ export function getRarityColor(rarity: BadgeRarity): string {
   }
 }
 
+// ── Helper functions ──
+
 function groupByDate(checkins: { checked_in_at: string }[]): Map<string, number> {
   const map = new Map<string, number>();
   for (const c of checkins) {
@@ -127,7 +134,6 @@ function groupByDate(checkins: { checked_in_at: string }[]): Map<string, number>
   return map;
 }
 
-// Max consecutive days with at least one checkin
 function maxStreak(dates: string[]): number {
   if (dates.length === 0) return 0;
   const unique = [...new Set(dates)].sort();
@@ -140,31 +146,6 @@ function maxStreak(dates: string[]): number {
     else { cur = 1; }
   }
   return max;
-}
-
-function countMonthsAchieved(sessions: { date: string; type: string; distance: number | null; elevation_gain: number | null }[], metric: 'sessions' | 'elevation' | 'sameType' | 'distance', threshold: number): number {
-  const monthMap = new Map<string, any>();
-  for (const s of sessions) {
-    const m = s.date.slice(0, 7);
-    if (!monthMap.has(m)) monthMap.set(m, { count: 0, elev: 0, dist: 0, types: new Map<string, number>() });
-    const d = monthMap.get(m)!;
-    d.count++;
-    d.elev += s.elevation_gain || 0;
-    d.dist += (s.distance || 0) / 1000;
-    d.types.set(s.type, (d.types.get(s.type) || 0) + 1);
-  }
-  let count = 0;
-  for (const [, d] of monthMap) {
-    if (metric === 'sessions' && d.count >= threshold) count++;
-    else if (metric === 'elevation' && d.elev >= threshold) count++;
-    else if (metric === 'distance' && d.dist >= threshold) count++;
-    else if (metric === 'sameType') {
-      let maxType = 0;
-      for (const [, v] of d.types) maxType = Math.max(maxType, v);
-      if (maxType >= threshold) count++;
-    }
-  }
-  return count;
 }
 
 function countDaysWithCheckins(dateMap: Map<string, number>, threshold: number): number {
@@ -194,6 +175,31 @@ function countStreakRuns(dates: string[], threshold: number): number {
   return runs;
 }
 
+function countMonthsAchieved(sessions: { date: string; type: string; distance: number | null; elevation_gain: number | null }[], metric: 'sessions' | 'elevation' | 'sameType' | 'distance', threshold: number): number {
+  const monthMap = new Map<string, { count: number; elev: number; dist: number; types: Map<string, number> }>();
+  for (const s of sessions) {
+    const m = s.date.slice(0, 7);
+    if (!monthMap.has(m)) monthMap.set(m, { count: 0, elev: 0, dist: 0, types: new Map() });
+    const d = monthMap.get(m)!;
+    d.count++;
+    d.elev += s.elevation_gain || 0;
+    d.dist += (s.distance || 0) / 1000;
+    d.types.set(s.type, (d.types.get(s.type) || 0) + 1);
+  }
+  let count = 0;
+  for (const [, d] of monthMap) {
+    if (metric === 'sessions' && d.count >= threshold) count++;
+    else if (metric === 'elevation' && d.elev >= threshold) count++;
+    else if (metric === 'distance' && d.dist >= threshold) count++;
+    else if (metric === 'sameType') {
+      let maxType = 0;
+      for (const [, v] of d.types) maxType = Math.max(maxType, v);
+      if (maxType >= threshold) count++;
+    }
+  }
+  return count;
+}
+
 function getCurrentMonthData(sessions: { date: string; type: string; distance: number | null; elevation_gain: number | null }[]): { count: number; elev: number; dist: number; maxSameType: number } {
   const now = new Date();
   const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -212,45 +218,57 @@ function getCurrentMonthData(sessions: { date: string; type: string; distance: n
   return { count, elev, dist, maxSameType };
 }
 
+// ── Main compute function ──
+
 export async function computeUserBadges(userId: string, isChild = false): Promise<UserBadge[]> {
-  // Get peak checkins - only count existing checkins (not deleted ones)
-  // We query all current checkins; deleted ones won't be in the table
-  const { data: checkins } = await supabase
+  // Get ALL checkins for this user (any checkin, not just unique)
+  const { data: allCheckins } = await supabase
     .from('peak_checkins')
     .select('peak_id, checked_in_at')
     .eq('user_id', userId);
 
-  // Also verify peaks still exist in peaks_db (in case a peak was removed)
-  let validCheckins = checkins || [];
-  if (validCheckins.length > 0) {
-    const uniquePeakIds = [...new Set(validCheckins.map(c => c.peak_id))];
-    const { data: existingPeaks } = await supabase
-      .from('peaks_db')
-      .select('id')
-      .in('id', uniquePeakIds);
-    const existingPeakIds = new Set((existingPeaks || []).map(p => p.id));
-    validCheckins = validCheckins.filter(c => existingPeakIds.has(c.peak_id));
-  }
+  const checkins = allCheckins || [];
 
-  const uniquePeaks = new Set(validCheckins.map(c => c.peak_id)).size;
-  const checkinDates = validCheckins.map(c => c.checked_in_at.slice(0, 10));
-  const dateMap = groupByDate(validCheckins);
+  // For daily checkins and streaks, use ALL checkins (not just unique, not validated against peaks_db)
+  const allCheckinDates = checkins.map(c => c.checked_in_at.slice(0, 10));
+  const allDateMap = groupByDate(checkins);
 
-  // High peaks count
+  // For unique peaks, validate against peaks_db to exclude deleted peaks
+  let uniquePeakCount = 0;
   let highPeakCount = 0;
-  if (validCheckins.length > 0) {
-    const uniquePeakIds = [...new Set(validCheckins.map(c => c.peak_id))];
-    const { data: peaks } = await supabase
+  let validCheckins = checkins;
+
+  if (checkins.length > 0) {
+    const uniquePeakIds = [...new Set(checkins.map(c => c.peak_id))];
+
+    // Query peaks_db to verify which peaks still exist
+    const { data: existingPeaks } = await supabase
       .from('peaks_db')
       .select('id, elevation_moh')
       .in('id', uniquePeakIds);
-    if (peaks) {
-      highPeakCount = peaks.filter(p => p.elevation_moh >= 1000).length;
+
+    const existingPeakMap = new Map((existingPeaks || []).map(p => [p.id, p]));
+    const existingPeakIds = new Set(existingPeakMap.keys());
+
+    // Valid checkins = only those with existing peaks
+    validCheckins = checkins.filter(c => existingPeakIds.has(c.peak_id));
+
+    // Count unique peaks that still exist
+    uniquePeakCount = new Set(validCheckins.map(c => c.peak_id)).size;
+
+    // Count high peaks (>= 1000m)
+    const checkedHighPeaks = new Set<string>();
+    for (const c of validCheckins) {
+      const peak = existingPeakMap.get(c.peak_id);
+      if (peak && peak.elevation_moh >= 1000) {
+        checkedHighPeaks.add(c.peak_id);
+      }
     }
+    highPeakCount = checkedHighPeaks.size;
   }
 
   // Workout sessions
-  let sessions: { date: string; type: string; distance: number | null; elevation_gain: number | null; created_at: string }[] = [];
+  let sessions: { date: string; type: string; distance: number | null; elevation_gain: number | null }[] = [];
   let totalSessionsSinceSignup = 0;
   if (!isChild) {
     const { data: profile } = await supabase
@@ -261,7 +279,7 @@ export async function computeUserBadges(userId: string, isChild = false): Promis
     const signupDate = profile?.created_at?.slice(0, 10) || '2020-01-01';
     const { data: sessionData } = await supabase
       .from('workout_sessions')
-      .select('date, type, distance, elevation_gain, created_at')
+      .select('date, type, distance, elevation_gain')
       .eq('user_id', userId)
       .gte('date', signupDate);
     sessions = sessionData || [];
@@ -275,30 +293,30 @@ export async function computeUserBadges(userId: string, isChild = false): Promis
     let repeatCount = 0;
 
     if (badge.subcategory === 'unique_peaks') {
-      progress = uniquePeaks;
+      progress = uniquePeakCount;
     }
     else if (badge.id.startsWith('high_peak_')) {
       progress = highPeakCount;
     }
     else if (badge.id === 'checkins_3_day') {
-      repeatCount = countDaysWithCheckins(dateMap, 3);
-      progress = repeatCount > 0 ? 3 : Math.max(...Array.from(dateMap.values()), 0);
+      repeatCount = countDaysWithCheckins(allDateMap, 3);
+      progress = repeatCount > 0 ? 3 : Math.max(...Array.from(allDateMap.values()), 0);
     }
     else if (badge.id === 'checkins_5_day') {
-      repeatCount = countDaysWithCheckins(dateMap, 5);
-      progress = repeatCount > 0 ? 5 : Math.max(...Array.from(dateMap.values()), 0);
+      repeatCount = countDaysWithCheckins(allDateMap, 5);
+      progress = repeatCount > 0 ? 5 : Math.max(...Array.from(allDateMap.values()), 0);
     }
     else if (badge.id === 'streak_3') {
-      repeatCount = countStreakRuns(checkinDates, 3);
-      progress = repeatCount > 0 ? 3 : maxStreak(checkinDates);
+      repeatCount = countStreakRuns(allCheckinDates, 3);
+      progress = repeatCount > 0 ? 3 : maxStreak(allCheckinDates);
     }
     else if (badge.id === 'streak_5') {
-      repeatCount = countStreakRuns(checkinDates, 5);
-      progress = repeatCount > 0 ? 5 : maxStreak(checkinDates);
+      repeatCount = countStreakRuns(allCheckinDates, 5);
+      progress = repeatCount > 0 ? 5 : maxStreak(allCheckinDates);
     }
     else if (badge.id === 'streak_10') {
-      repeatCount = countStreakRuns(checkinDates, 10);
-      progress = repeatCount > 0 ? 10 : maxStreak(checkinDates);
+      repeatCount = countStreakRuns(allCheckinDates, 10);
+      progress = repeatCount > 0 ? 10 : maxStreak(allCheckinDates);
     }
     else if (['sessions_10', 'sessions_50', 'sessions_100', 'sessions_250', 'sessions_500'].includes(badge.id)) {
       progress = totalSessionsSinceSignup;
