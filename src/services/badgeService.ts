@@ -154,6 +154,11 @@ export function getHighPeakGlow(badgeId: string): { color: string; glow: string 
     default: return null;
   }
 }
+// ── Helper functions ──
+
+function isUuid(value: string): boolean {
+  return UUID_PATTERN.test(value);
+}
 
 function toLocalDateKey(value: string): string {
   const date = new Date(value);
