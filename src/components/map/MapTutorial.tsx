@@ -235,7 +235,7 @@ const ARContent = () => (
       </div>
     </div>
     <div className="px-3 py-2 rounded-xl bg-muted/40 border border-border/30">
-      <p className="text-[10px] text-muted-foreground italic">Nøyaktigheten avhenger av mobilkompassets presisjon. Kalibrer kompasset ved å bevege mobilen i en 8-bevegelse.</p>
+      <p className="text-[10px] text-muted-foreground italic">Nøyaktigheten avhenger av mobilkompassets presisjon.</p>
     </div>
   </div>
 );
