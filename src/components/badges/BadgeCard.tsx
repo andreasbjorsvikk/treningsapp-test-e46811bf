@@ -39,7 +39,7 @@ const BadgeCard = ({ userBadge, onClick, showProgress = true }: BadgeCardProps) 
           <img
             src={badge.image}
             alt={t(badge.nameKey)}
-            className={`w-20 h-20 object-contain ${unlocked ? '' : 'grayscale brightness-[0.15] opacity-40'}`}
+            className={`w-20 h-20 object-contain ${unlocked ? '' : 'grayscale brightness-[0.08] opacity-30'}`}
             style={unlocked ? {
               filter: `drop-shadow(0 0 8px ${glowColor})`,
             } : undefined}

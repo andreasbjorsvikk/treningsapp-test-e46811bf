@@ -33,7 +33,7 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
             />
           ) : (
             <div
-              className="w-28 h-28 rounded-full flex items-center justify-center"
+              className="w-36 h-36 rounded-full flex items-center justify-center"
               style={{
                 background: unlocked ? `radial-gradient(circle, ${glowColor} 0%, transparent 70%)` : 'hsl(var(--muted))',
                 boxShadow: unlocked ? `0 0 40px ${glowColor}` : 'none',
