@@ -40,6 +40,20 @@ export interface UserBadge {
   repeatCount?: number;
 }
 
+type CheckinRow = {
+  peak_id: string;
+  checked_in_at: string;
+};
+
+type SessionRow = {
+  date: string;
+  type: string;
+  distance: number | null;
+  elevation_gain: number | null;
+};
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   // ── Fjell: Unike topper ──
   { id: 'peaks_10', category: 'fjell', subcategory: 'unique_peaks', nameKey: 'badge.peaks10', descriptionKey: 'badge.peaks10Desc', requirementKey: 'badge.peaks10Req', threshold: 10, rarity: 'common', emoji: '⛰️', image: badge10, sortOrder: 1 },
@@ -125,10 +139,34 @@ export function getRarityColor(rarity: BadgeRarity): string {
 
 // ── Helper functions ──
 
-function groupByDate(checkins: { checked_in_at: string }[]): Map<string, number> {
+function isUuid(value: string): boolean {
+  return UUID_PATTERN.test(value);
+}
+
+function toLocalDateKey(value: string): string {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value.slice(0, 10);
+  }
+
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function toLocalMonthKey(value: string): string {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value.slice(0, 7);
+  }
+
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function groupByDate(checkins: CheckinRow[]): Map<string, number> {
   const map = new Map<string, number>();
   for (const c of checkins) {
-    const d = c.checked_in_at.slice(0, 10);
+    const d = toLocalDateKey(c.checked_in_at);
     map.set(d, (map.get(d) || 0) + 1);
   }
   return map;
@@ -175,10 +213,10 @@ function countStreakRuns(dates: string[], threshold: number): number {
   return runs;
 }
 
-function countMonthsAchieved(sessions: { date: string; type: string; distance: number | null; elevation_gain: number | null }[], metric: 'sessions' | 'elevation' | 'sameType' | 'distance', threshold: number): number {
+function countMonthsAchieved(sessions: SessionRow[], metric: 'sessions' | 'elevation' | 'sameType' | 'distance', threshold: number): number {
   const monthMap = new Map<string, { count: number; elev: number; dist: number; types: Map<string, number> }>();
   for (const s of sessions) {
-    const m = s.date.slice(0, 7);
+    const m = toLocalMonthKey(s.date);
     if (!monthMap.has(m)) monthMap.set(m, { count: 0, elev: 0, dist: 0, types: new Map() });
     const d = monthMap.get(m)!;
     d.count++;
@@ -200,13 +238,13 @@ function countMonthsAchieved(sessions: { date: string; type: string; distance: n
   return count;
 }
 
-function getCurrentMonthData(sessions: { date: string; type: string; distance: number | null; elevation_gain: number | null }[]): { count: number; elev: number; dist: number; maxSameType: number } {
+function getCurrentMonthData(sessions: SessionRow[]): { count: number; elev: number; dist: number; maxSameType: number } {
   const now = new Date();
   const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   let count = 0, elev = 0, dist = 0;
   const types = new Map<string, number>();
   for (const s of sessions) {
-    if (s.date.startsWith(ym)) {
+    if (toLocalMonthKey(s.date) === ym) {
       count++;
       elev += s.elevation_gain || 0;
       dist += (s.distance || 0) / 1000;
@@ -227,50 +265,44 @@ export async function computeUserBadges(userId: string, isChild = false): Promis
     .select('peak_id, checked_in_at')
     .eq('user_id', userId);
 
-  const checkins = allCheckins || [];
+  const checkins: CheckinRow[] = allCheckins || [];
 
-  // We'll compute valid checkin dates after validating against peaks_db
-
-  // For unique peaks, validate against peaks_db to exclude deleted peaks
   let uniquePeakCount = 0;
   let highPeakCount = 0;
-  let validCheckins = checkins;
+  let validCheckins: CheckinRow[] = [];
 
   if (checkins.length > 0) {
-    const uniquePeakIds = [...new Set(checkins.map(c => c.peak_id))];
+    const uniquePeakIds = [...new Set(checkins.map(c => c.peak_id).filter(isUuid))];
 
-    // Query peaks_db to verify which peaks still exist
-    const { data: existingPeaks } = await supabase
-      .from('peaks_db')
-      .select('id, elevation_moh')
-      .in('id', uniquePeakIds);
+    if (uniquePeakIds.length > 0) {
+      const { data: existingPeaks } = await supabase
+        .from('peaks_db')
+        .select('id, elevation_moh')
+        .eq('is_published', true)
+        .in('id', uniquePeakIds);
 
-    const existingPeakMap = new Map((existingPeaks || []).map(p => [p.id, p]));
-    const existingPeakIds = new Set(existingPeakMap.keys());
+      const existingPeakMap = new Map((existingPeaks || []).map(p => [p.id, p]));
 
-    // Valid checkins = only those with existing peaks
-    validCheckins = checkins.filter(c => existingPeakIds.has(c.peak_id));
+      validCheckins = checkins.filter(c => isUuid(c.peak_id) && existingPeakMap.has(c.peak_id));
 
-    // Count unique peaks that still exist
-    uniquePeakCount = new Set(validCheckins.map(c => c.peak_id)).size;
+      uniquePeakCount = new Set(validCheckins.map(c => c.peak_id)).size;
 
-    // Count high peaks (>= 1000m)
-    const checkedHighPeaks = new Set<string>();
-    for (const c of validCheckins) {
-      const peak = existingPeakMap.get(c.peak_id);
-      if (peak && peak.elevation_moh >= 1000) {
-        checkedHighPeaks.add(c.peak_id);
+      const checkedHighPeaks = new Set<string>();
+      for (const c of validCheckins) {
+        const peak = existingPeakMap.get(c.peak_id);
+        if (peak && peak.elevation_moh >= 1000) {
+          checkedHighPeaks.add(c.peak_id);
+        }
       }
+      highPeakCount = checkedHighPeaks.size;
     }
-    highPeakCount = checkedHighPeaks.size;
   }
 
-  // Use only valid checkins (existing peaks) for daily checkins and streaks
-  const validCheckinDates = validCheckins.map(c => c.checked_in_at.slice(0, 10));
+  const validCheckinDates = validCheckins.map(c => toLocalDateKey(c.checked_in_at));
   const validDateMap = groupByDate(validCheckins);
 
   // Workout sessions
-  let sessions: { date: string; type: string; distance: number | null; elevation_gain: number | null }[] = [];
+  let sessions: SessionRow[] = [];
   let totalSessionsSinceSignup = 0;
   if (!isChild) {
     const { data: profile } = await supabase
