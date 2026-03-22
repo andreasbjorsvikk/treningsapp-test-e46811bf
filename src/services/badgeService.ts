@@ -2,10 +2,9 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Badge images - peaks
 import badge10 from '@/assets/badges/10_topper.png';
-import badge20 from '@/assets/badges/20_topper.png';
+import badge25 from '@/assets/badges/25_topper.png';
 import badge50 from '@/assets/badges/50_topper.png';
 import badge100 from '@/assets/badges/100_topper.png';
-import badge200 from '@/assets/badges/200_topper.png';
 
 // Badge images - sessions
 import badgeSessions10 from '@/assets/badges/10_okter.png';
