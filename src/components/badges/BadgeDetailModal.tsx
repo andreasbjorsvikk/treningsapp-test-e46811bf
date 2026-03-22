@@ -1,4 +1,4 @@
-import { UserBadge, getRarityColor, getRarityGlow } from '@/services/badgeService';
+import { UserBadge, getRarityColor, getRarityGlow, getHighPeakGlow } from '@/services/badgeService';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { format } from 'date-fns';
