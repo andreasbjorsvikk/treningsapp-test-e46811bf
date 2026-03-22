@@ -28,12 +28,12 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
             <img
               src={def.image}
               alt={t(def.nameKey)}
-              className={`w-28 h-28 object-contain ${unlocked ? '' : 'grayscale brightness-[0.25] opacity-50'}`}
-              style={unlocked ? { filter: `drop-shadow(0 0 20px ${glowColor})` } : undefined}
+              className={`w-40 h-40 object-contain ${unlocked ? '' : 'grayscale brightness-[0.08] opacity-30'}`}
+              style={unlocked ? { filter: `drop-shadow(0 0 24px ${glowColor})` } : undefined}
             />
           ) : (
             <div
-              className="w-28 h-28 rounded-full flex items-center justify-center"
+              className="w-36 h-36 rounded-full flex items-center justify-center"
               style={{
                 background: unlocked ? `radial-gradient(circle, ${glowColor} 0%, transparent 70%)` : 'hsl(var(--muted))',
                 boxShadow: unlocked ? `0 0 40px ${glowColor}` : 'none',

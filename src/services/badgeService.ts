@@ -229,9 +229,7 @@ export async function computeUserBadges(userId: string, isChild = false): Promis
 
   const checkins = allCheckins || [];
 
-  // For daily checkins and streaks, use ALL checkins (not just unique, not validated against peaks_db)
-  const allCheckinDates = checkins.map(c => c.checked_in_at.slice(0, 10));
-  const allDateMap = groupByDate(checkins);
+  // We'll compute valid checkin dates after validating against peaks_db
 
   // For unique peaks, validate against peaks_db to exclude deleted peaks
   let uniquePeakCount = 0;
@@ -267,6 +265,10 @@ export async function computeUserBadges(userId: string, isChild = false): Promis
     highPeakCount = checkedHighPeaks.size;
   }
 
+  // Use only valid checkins (existing peaks) for daily checkins and streaks
+  const validCheckinDates = validCheckins.map(c => c.checked_in_at.slice(0, 10));
+  const validDateMap = groupByDate(validCheckins);
+
   // Workout sessions
   let sessions: { date: string; type: string; distance: number | null; elevation_gain: number | null }[] = [];
   let totalSessionsSinceSignup = 0;
@@ -299,24 +301,24 @@ export async function computeUserBadges(userId: string, isChild = false): Promis
       progress = highPeakCount;
     }
     else if (badge.id === 'checkins_3_day') {
-      repeatCount = countDaysWithCheckins(allDateMap, 3);
-      progress = repeatCount > 0 ? 3 : Math.max(...Array.from(allDateMap.values()), 0);
+      repeatCount = countDaysWithCheckins(validDateMap, 3);
+      progress = repeatCount > 0 ? 3 : Math.max(...Array.from(validDateMap.values()), 0);
     }
     else if (badge.id === 'checkins_5_day') {
-      repeatCount = countDaysWithCheckins(allDateMap, 5);
-      progress = repeatCount > 0 ? 5 : Math.max(...Array.from(allDateMap.values()), 0);
+      repeatCount = countDaysWithCheckins(validDateMap, 5);
+      progress = repeatCount > 0 ? 5 : Math.max(...Array.from(validDateMap.values()), 0);
     }
     else if (badge.id === 'streak_3') {
-      repeatCount = countStreakRuns(allCheckinDates, 3);
-      progress = repeatCount > 0 ? 3 : maxStreak(allCheckinDates);
+      repeatCount = countStreakRuns(validCheckinDates, 3);
+      progress = repeatCount > 0 ? 3 : maxStreak(validCheckinDates);
     }
     else if (badge.id === 'streak_5') {
-      repeatCount = countStreakRuns(allCheckinDates, 5);
-      progress = repeatCount > 0 ? 5 : maxStreak(allCheckinDates);
+      repeatCount = countStreakRuns(validCheckinDates, 5);
+      progress = repeatCount > 0 ? 5 : maxStreak(validCheckinDates);
     }
     else if (badge.id === 'streak_10') {
-      repeatCount = countStreakRuns(allCheckinDates, 10);
-      progress = repeatCount > 0 ? 10 : maxStreak(allCheckinDates);
+      repeatCount = countStreakRuns(validCheckinDates, 10);
+      progress = repeatCount > 0 ? 10 : maxStreak(validCheckinDates);
     }
     else if (['sessions_10', 'sessions_50', 'sessions_100', 'sessions_250', 'sessions_500'].includes(badge.id)) {
       progress = totalSessionsSinceSignup;
