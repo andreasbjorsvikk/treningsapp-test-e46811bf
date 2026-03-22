@@ -265,6 +265,10 @@ export async function computeUserBadges(userId: string, isChild = false): Promis
     highPeakCount = checkedHighPeaks.size;
   }
 
+  // Use only valid checkins (existing peaks) for daily checkins and streaks
+  const validCheckinDates = validCheckins.map(c => c.checked_in_at.slice(0, 10));
+  const validDateMap = groupByDate(validCheckins);
+
   // Workout sessions
   let sessions: { date: string; type: string; distance: number | null; elevation_gain: number | null }[] = [];
   let totalSessionsSinceSignup = 0;
