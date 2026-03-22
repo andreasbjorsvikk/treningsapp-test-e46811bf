@@ -69,9 +69,10 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: 'peaks_200', category: 'fjell', subcategory: 'unique_peaks', nameKey: 'badge.peaks200', descriptionKey: 'badge.peaks200Desc', requirementKey: 'badge.peaks200Req', threshold: 200, rarity: 'legendary', emoji: '👑', image: badge200, sortOrder: 5 },
 
   // ── Fjell: Topper over 1000 moh ──
-  { id: 'high_peak_1', category: 'fjell', subcategory: 'high_peaks', nameKey: 'badge.highPeak1', descriptionKey: 'badge.highPeak1Desc', requirementKey: 'badge.highPeak1Req', threshold: 1, rarity: 'uncommon', emoji: '🏔️', sortOrder: 10 },
-  { id: 'high_peak_5', category: 'fjell', subcategory: 'high_peaks', nameKey: 'badge.highPeak5', descriptionKey: 'badge.highPeak5Desc', requirementKey: 'badge.highPeak5Req', threshold: 5, rarity: 'rare', emoji: '🗻', sortOrder: 11 },
-  { id: 'high_peak_10', category: 'fjell', subcategory: 'high_peaks', nameKey: 'badge.highPeak10', descriptionKey: 'badge.highPeak10Desc', requirementKey: 'badge.highPeak10Req', threshold: 10, rarity: 'epic', emoji: '🦅', sortOrder: 12 },
+  { id: 'high_peak_1', category: 'fjell', subcategory: 'high_peaks', nameKey: 'badge.highPeak1', descriptionKey: 'badge.highPeak1Desc', requirementKey: 'badge.highPeak1Req', threshold: 1, rarity: 'common', emoji: '🏔️', image: badgeHighPeak1, sortOrder: 10 },
+  { id: 'high_peak_3', category: 'fjell', subcategory: 'high_peaks', nameKey: 'badge.highPeak3', descriptionKey: 'badge.highPeak3Desc', requirementKey: 'badge.highPeak3Req', threshold: 3, rarity: 'uncommon', emoji: '🏔️', image: badgeHighPeak3, sortOrder: 11 },
+  { id: 'high_peak_5', category: 'fjell', subcategory: 'high_peaks', nameKey: 'badge.highPeak5', descriptionKey: 'badge.highPeak5Desc', requirementKey: 'badge.highPeak5Req', threshold: 5, rarity: 'rare', emoji: '🗻', image: badgeHighPeak5, sortOrder: 12 },
+  { id: 'high_peak_10', category: 'fjell', subcategory: 'high_peaks', nameKey: 'badge.highPeak10', descriptionKey: 'badge.highPeak10Desc', requirementKey: 'badge.highPeak10Req', threshold: 10, rarity: 'epic', emoji: '🦅', image: badgeHighPeak10, sortOrder: 13 },
 
   // ── Fjell: Innsjekkinger på en dag ──
   { id: 'checkins_3_day', category: 'fjell', subcategory: 'daily_checkins', nameKey: 'badge.checkins3Day', descriptionKey: 'badge.checkins3DayDesc', requirementKey: 'badge.checkins3DayReq', threshold: 3, rarity: 'uncommon', emoji: '⚡', sortOrder: 20, repeatable: true },
