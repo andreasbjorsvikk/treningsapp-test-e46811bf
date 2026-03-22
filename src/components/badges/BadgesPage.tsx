@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { UserBadge, BadgeCategory, computeUserBadges, SUBCATEGORY_NAMES } from '@/services/badgeService';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useSettings } from '@/contexts/SettingsContext';
 import BadgeCard from './BadgeCard';
 import BadgeDetailModal from './BadgeDetailModal';
 import { Loader2 } from 'lucide-react';
