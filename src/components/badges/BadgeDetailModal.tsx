@@ -28,8 +28,8 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
             <img
               src={def.image}
               alt={t(def.nameKey)}
-              className={`w-28 h-28 object-contain ${unlocked ? '' : 'grayscale brightness-[0.25] opacity-50'}`}
-              style={unlocked ? { filter: `drop-shadow(0 0 20px ${glowColor})` } : undefined}
+              className={`w-40 h-40 object-contain ${unlocked ? '' : 'grayscale brightness-[0.08] opacity-30'}`}
+              style={unlocked ? { filter: `drop-shadow(0 0 24px ${glowColor})` } : undefined}
             />
           ) : (
             <div
