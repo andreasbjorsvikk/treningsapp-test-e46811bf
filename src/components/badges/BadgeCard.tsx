@@ -10,7 +10,7 @@ interface BadgeCardProps {
 
 const BadgeCard = ({ userBadge, onClick, showProgress = true }: BadgeCardProps) => {
   const { t } = useTranslation();
-  const { badge, unlocked, unlockedAt, progress } = userBadge;
+  const { badge, unlocked, unlockedAt, progress, repeatCount } = userBadge;
   const rarityColor = getRarityColor(badge.rarity);
   const glowColor = getRarityGlow(badge.rarity);
   const progressPercent = Math.min((progress / badge.threshold) * 100, 100);
@@ -24,7 +24,7 @@ const BadgeCard = ({ userBadge, onClick, showProgress = true }: BadgeCardProps) 
           : 'bg-card/50 border-border/20 opacity-50 hover:opacity-65'
       }`}
     >
-      {/* Emoji */}
+      {/* Badge visual */}
       <div
         className="w-14 h-14 rounded-full flex items-center justify-center"
         style={{
@@ -32,10 +32,28 @@ const BadgeCard = ({ userBadge, onClick, showProgress = true }: BadgeCardProps) 
           boxShadow: unlocked ? `0 0 20px ${glowColor}` : 'none',
         }}
       >
-        <span className={`text-3xl ${unlocked ? '' : 'grayscale opacity-40'}`}>
-          {badge.emoji}
-        </span>
+        {badge.image ? (
+          <img
+            src={badge.image}
+            alt={t(badge.nameKey)}
+            className={`w-12 h-12 object-contain ${unlocked ? '' : 'grayscale brightness-50 opacity-60'}`}
+          />
+        ) : (
+          <span className={`text-3xl ${unlocked ? '' : 'grayscale opacity-40'}`}>
+            {badge.emoji}
+          </span>
+        )}
       </div>
+
+      {/* Repeat count badge */}
+      {repeatCount && repeatCount > 1 && (
+        <div
+          className="absolute bottom-2 right-2 min-w-[20px] h-[18px] rounded-full flex items-center justify-center px-1"
+          style={{ backgroundColor: rarityColor }}
+        >
+          <span className="text-[9px] font-bold text-white">{repeatCount}x</span>
+        </div>
+      )}
 
       {/* Name */}
       <p className={`text-xs font-semibold text-center leading-tight ${unlocked ? 'text-foreground' : 'text-muted-foreground'}`}>
@@ -47,6 +65,8 @@ const BadgeCard = ({ userBadge, onClick, showProgress = true }: BadgeCardProps) 
         <p className="text-[10px] text-muted-foreground">
           {format(new Date(unlockedAt), 'dd.MM.yyyy')}
         </p>
+      ) : unlocked && !unlockedAt ? (
+        <p className="text-[10px] text-muted-foreground">✓</p>
       ) : showProgress ? (
         <div className="w-full space-y-1">
           <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
@@ -60,7 +80,7 @@ const BadgeCard = ({ userBadge, onClick, showProgress = true }: BadgeCardProps) 
             />
           </div>
           <p className="text-[10px] text-muted-foreground text-center">
-            {progress}/{badge.threshold}
+            {Math.round(progress)}/{badge.threshold}
           </p>
         </div>
       ) : null}
