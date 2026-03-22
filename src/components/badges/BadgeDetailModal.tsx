@@ -1,4 +1,4 @@
-import { UserBadge, getRarityColor, getRarityGlow } from '@/services/badgeService';
+import { UserBadge, getRarityColor, getRarityGlow, getHighPeakGlow } from '@/services/badgeService';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { format } from 'date-fns';
@@ -14,8 +14,9 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
   if (!badge) return null;
 
   const { badge: def, unlocked, unlockedAt, progress, repeatCount } = badge;
-  const rarityColor = getRarityColor(def.rarity);
-  const glowColor = getRarityGlow(def.rarity);
+  const highPeakGlow = getHighPeakGlow(def.id);
+  const rarityColor = highPeakGlow?.color || getRarityColor(def.rarity);
+  const glowColor = highPeakGlow?.glow || getRarityGlow(def.rarity);
   const progressPercent = Math.min((progress / def.threshold) * 100, 100);
   const rarityLabel = t(`badge.rarity.${def.rarity}`);
 

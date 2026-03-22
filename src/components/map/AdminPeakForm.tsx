@@ -207,6 +207,8 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
   const handleApproveRoute = () => {
     setRouteStatus('approved');
     setAddingWaypointMode(false);
+    setRouteWaypoints([]);
+    if (onWaypointsChange) onWaypointsChange([]);
   };
 
   const handleClearRoute = () => {

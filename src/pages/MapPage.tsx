@@ -200,7 +200,8 @@ const MapPage = () => {
 
     const openedFromTopper = subTab === 'topper' || fromTopper === true;
 
-    setSelectedPeak(peak);
+    // Close the peak detail drawer so the map/route is visible
+    setSelectedPeak(null);
     applyRouteForPeak(peak);
 
     if (openedFromTopper) {
@@ -282,9 +283,14 @@ const MapPage = () => {
               onlyReachedThisYear={onlyReachedThisYear}
               suggestedPeaks={suggestedPeaks}
             />
-            {activeRouteGeojson && !selectedPeak && (
+            {activeRouteGeojson && !selectedPeak && activeRoutePeakId && (
               <button
-                onClick={handleHideRoute}
+                onClick={() => {
+                  // Re-open the peak detail drawer
+                  const peak = peaks.find(p => p.id === activeRoutePeakId);
+                  if (peak) setSelectedPeak(peak);
+                  handleHideRoute();
+                }}
                 className="absolute top-3 left-1/2 -translate-x-1/2 z-20 px-4 py-2 rounded-full text-xs font-semibold shadow-lg border border-border bg-background/95 backdrop-blur-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -14,6 +14,12 @@ import badgeSessions100 from '@/assets/badges/100_okter.png';
 import badgeSessions250 from '@/assets/badges/250_okter.png';
 import badgeSessions500 from '@/assets/badges/500_okter.png';
 
+// Badge images - high peaks
+import badgeHighPeak1 from '@/assets/badges/1_topp_1000moh.png';
+import badgeHighPeak3 from '@/assets/badges/3_topper_1000moh.png';
+import badgeHighPeak5 from '@/assets/badges/5_topper_1000moh.png';
+import badgeHighPeak10 from '@/assets/badges/10_topper_1000moh.png';
+
 export type BadgeCategory = 'fjell' | 'trening';
 export type BadgeRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
@@ -63,9 +69,10 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: 'peaks_200', category: 'fjell', subcategory: 'unique_peaks', nameKey: 'badge.peaks200', descriptionKey: 'badge.peaks200Desc', requirementKey: 'badge.peaks200Req', threshold: 200, rarity: 'legendary', emoji: '👑', image: badge200, sortOrder: 5 },
 
   // ── Fjell: Topper over 1000 moh ──
-  { id: 'high_peak_1', category: 'fjell', subcategory: 'high_peaks', nameKey: 'badge.highPeak1', descriptionKey: 'badge.highPeak1Desc', requirementKey: 'badge.highPeak1Req', threshold: 1, rarity: 'uncommon', emoji: '🏔️', sortOrder: 10 },
-  { id: 'high_peak_5', category: 'fjell', subcategory: 'high_peaks', nameKey: 'badge.highPeak5', descriptionKey: 'badge.highPeak5Desc', requirementKey: 'badge.highPeak5Req', threshold: 5, rarity: 'rare', emoji: '🗻', sortOrder: 11 },
-  { id: 'high_peak_10', category: 'fjell', subcategory: 'high_peaks', nameKey: 'badge.highPeak10', descriptionKey: 'badge.highPeak10Desc', requirementKey: 'badge.highPeak10Req', threshold: 10, rarity: 'epic', emoji: '🦅', sortOrder: 12 },
+  { id: 'high_peak_1', category: 'fjell', subcategory: 'high_peaks', nameKey: 'badge.highPeak1', descriptionKey: 'badge.highPeak1Desc', requirementKey: 'badge.highPeak1Req', threshold: 1, rarity: 'common', emoji: '🏔️', image: badgeHighPeak1, sortOrder: 10 },
+  { id: 'high_peak_3', category: 'fjell', subcategory: 'high_peaks', nameKey: 'badge.highPeak3', descriptionKey: 'badge.highPeak3Desc', requirementKey: 'badge.highPeak3Req', threshold: 3, rarity: 'uncommon', emoji: '🏔️', image: badgeHighPeak3, sortOrder: 11 },
+  { id: 'high_peak_5', category: 'fjell', subcategory: 'high_peaks', nameKey: 'badge.highPeak5', descriptionKey: 'badge.highPeak5Desc', requirementKey: 'badge.highPeak5Req', threshold: 5, rarity: 'rare', emoji: '🗻', image: badgeHighPeak5, sortOrder: 12 },
+  { id: 'high_peak_10', category: 'fjell', subcategory: 'high_peaks', nameKey: 'badge.highPeak10', descriptionKey: 'badge.highPeak10Desc', requirementKey: 'badge.highPeak10Req', threshold: 10, rarity: 'epic', emoji: '🦅', image: badgeHighPeak10, sortOrder: 13 },
 
   // ── Fjell: Innsjekkinger på en dag ──
   { id: 'checkins_3_day', category: 'fjell', subcategory: 'daily_checkins', nameKey: 'badge.checkins3Day', descriptionKey: 'badge.checkins3DayDesc', requirementKey: 'badge.checkins3DayReq', threshold: 3, rarity: 'uncommon', emoji: '⚡', sortOrder: 20, repeatable: true },
@@ -137,6 +144,16 @@ export function getRarityColor(rarity: BadgeRarity): string {
   }
 }
 
+// Special glow colors for high_peaks badges
+export function getHighPeakGlow(badgeId: string): { color: string; glow: string } | null {
+  switch (badgeId) {
+    case 'high_peak_1': return { color: 'hsl(142, 50%, 48%)', glow: 'rgba(76, 175, 80, 0.35)' }; // green
+    case 'high_peak_3': return { color: 'hsl(25, 70%, 50%)', glow: 'rgba(205, 127, 50, 0.35)' }; // bronze
+    case 'high_peak_5': return { color: 'hsl(210, 10%, 65%)', glow: 'rgba(192, 192, 192, 0.35)' }; // silver
+    case 'high_peak_10': return { color: 'hsl(45, 95%, 55%)', glow: 'rgba(255, 215, 0, 0.35)' }; // gold
+    default: return null;
+  }
+}
 // ── Helper functions ──
 
 function isUuid(value: string): boolean {
