@@ -13,8 +13,9 @@ interface BadgeCardProps {
 const BadgeCard = ({ userBadge, onClick, showProgress = true }: BadgeCardProps) => {
   const { t, language } = useTranslation();
   const { badge, unlocked, unlockedAt, progress, repeatCount } = userBadge;
-  const rarityColor = getRarityColor(badge.rarity);
-  const glowColor = getRarityGlow(badge.rarity);
+  const highPeakGlow = getHighPeakGlow(badge.id);
+  const rarityColor = highPeakGlow?.color || getRarityColor(badge.rarity);
+  const glowColor = highPeakGlow?.glow || getRarityGlow(badge.rarity);
   const progressPercent = Math.min((progress / badge.threshold) * 100, 100);
   const [showTooltip, setShowTooltip] = useState(false);
 
