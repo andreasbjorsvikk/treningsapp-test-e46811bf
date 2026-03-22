@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { UserBadge, getRarityColor, getRarityGlow } from '@/services/badgeService';
+import { UserBadge, getRarityColor, getRarityGlow, getHighPeakGlow } from '@/services/badgeService';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface BadgeUnlockOverlayProps {
@@ -29,9 +29,13 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
 
   if (!mainBadge) return null;
 
-  const rarityColor = getRarityColor(mainBadge.badge.rarity);
-  const glowColor = getRarityGlow(mainBadge.badge.rarity);
+  const highPeakGlow = getHighPeakGlow(mainBadge.badge.id);
+  const rarityColor = highPeakGlow?.color || getRarityColor(mainBadge.badge.rarity);
+  const glowColor = highPeakGlow?.glow || getRarityGlow(mainBadge.badge.rarity);
   const isLegendary = mainBadge.badge.rarity === 'legendary' || mainBadge.badge.rarity === 'epic';
+  const thresholdKey = `${mainBadge.badge.nameKey}Threshold` as any;
+  const thresholdText = t(thresholdKey);
+  const hasThresholdText = thresholdText !== thresholdKey;
 
   const handleDismiss = () => {
     setVisible(false);
@@ -46,32 +50,32 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
       onClick={handleDismiss}
     >
       <div
-        className={`relative flex flex-col items-center gap-5 p-8 rounded-2xl bg-background border border-border shadow-2xl transition-all duration-500 max-w-[320px] w-[88vw] ${
+        className={`relative flex flex-col items-center gap-5 p-8 rounded-2xl bg-background border border-border shadow-2xl transition-all duration-500 max-w-[340px] w-[90vw] ${
           showContent ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
         }`}
         onClick={e => e.stopPropagation()}
       >
-        {/* Badge visual with glow */}
+        {/* Badge visual with glow - much bigger */}
         <div className="relative">
           <div
-            className={`w-24 h-24 rounded-full flex items-center justify-center transition-all duration-700 ${
+            className={`w-48 h-48 rounded-full flex items-center justify-center transition-all duration-700 ${
               isLegendary ? 'animate-pulse' : ''
             }`}
             style={{
               background: `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`,
-              boxShadow: pulseGlow ? `0 0 40px ${glowColor}, 0 0 80px ${glowColor}` : 'none',
+              boxShadow: pulseGlow ? `0 0 50px ${glowColor}, 0 0 100px ${glowColor}` : 'none',
             }}
           >
             {mainBadge.badge.image ? (
               <img
                 src={mainBadge.badge.image}
                 alt={t(mainBadge.badge.nameKey)}
-                className={`w-20 h-20 object-contain transition-transform duration-500 ${showContent ? 'scale-100' : 'scale-0'}`}
-                style={{ filter: `drop-shadow(0 0 12px ${glowColor})` }}
+                className={`w-40 h-40 object-contain transition-transform duration-500 ${showContent ? 'scale-100' : 'scale-0'}`}
+                style={{ filter: `drop-shadow(0 0 16px ${glowColor})` }}
               />
             ) : (
-              <span className={`text-5xl transition-transform duration-500 ${showContent ? 'scale-100' : 'scale-0'}`}
-                style={{ filter: `drop-shadow(0 0 12px ${glowColor})` }}
+              <span className={`text-7xl transition-transform duration-500 ${showContent ? 'scale-100' : 'scale-0'}`}
+                style={{ filter: `drop-shadow(0 0 16px ${glowColor})` }}
               >
                 {mainBadge.badge.emoji}
               </span>
@@ -91,6 +95,9 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
           <h3 className="font-display font-bold text-xl text-foreground">
             {t(mainBadge.badge.nameKey)}
           </h3>
+          {hasThresholdText && (
+            <p className="text-sm font-semibold" style={{ color: rarityColor }}>{thresholdText}</p>
+          )}
           <p className="text-sm text-muted-foreground">
             {t(mainBadge.badge.descriptionKey)}
           </p>

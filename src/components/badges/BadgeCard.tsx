@@ -68,26 +68,37 @@ const BadgeCard = ({ userBadge, onClick, showProgress = true }: BadgeCardProps) 
       )}
 
       {/* Name with optional tooltip for total_sessions */}
-      <div className="flex items-center gap-0.5">
-        <p className={`text-xs font-semibold text-center leading-tight ${unlocked ? 'text-foreground' : 'text-muted-foreground/60'}`}>
-          {t(badge.nameKey)}
-        </p>
-        {isTotalSessions && (
-          <div className="relative">
-            <HelpCircle
-              className="w-3 h-3 text-muted-foreground/50"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowTooltip(!showTooltip);
-              }}
-            />
-            {showTooltip && (
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-popover border border-border text-popover-foreground text-[10px] rounded-lg px-2 py-1.5 shadow-lg w-36 z-50 text-center">
-                {language === 'no' ? 'Teller økter fra datoen du registrerte deg' : 'Counts sessions from your signup date'}
-              </div>
-            )}
-          </div>
-        )}
+      <div className="flex flex-col items-center gap-0">
+        <div className="flex items-center gap-0.5">
+          <p className={`text-xs font-semibold text-center leading-tight ${unlocked ? 'text-foreground' : 'text-muted-foreground/60'}`}>
+            {t(badge.nameKey)}
+          </p>
+          {isTotalSessions && (
+            <div className="relative">
+              <HelpCircle
+                className="w-3 h-3 text-muted-foreground/50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowTooltip(!showTooltip);
+                }}
+              />
+              {showTooltip && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-popover border border-border text-popover-foreground text-[10px] rounded-lg px-2 py-1.5 shadow-lg w-36 z-50 text-center">
+                  {language === 'no' ? 'Teller økter fra datoen du registrerte deg' : 'Counts sessions from your signup date'}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        {(() => {
+          const thresholdKey = `${badge.nameKey}Threshold` as any;
+          const thresholdText = t(thresholdKey);
+          return thresholdText !== thresholdKey ? (
+            <p className={`text-[10px] font-medium ${unlocked ? 'text-muted-foreground' : 'text-muted-foreground/40'}`}>
+              {thresholdText}
+            </p>
+          ) : null;
+        })()}
       </div>
 
       {/* Progress or date */}

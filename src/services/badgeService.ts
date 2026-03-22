@@ -2,10 +2,9 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Badge images - peaks
 import badge10 from '@/assets/badges/10_topper.png';
-import badge20 from '@/assets/badges/20_topper.png';
+import badge25 from '@/assets/badges/25_topper.png';
 import badge50 from '@/assets/badges/50_topper.png';
 import badge100 from '@/assets/badges/100_topper.png';
-import badge200 from '@/assets/badges/200_topper.png';
 
 // Badge images - sessions
 import badgeSessions10 from '@/assets/badges/10_okter.png';
@@ -63,10 +62,9 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3
 export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   // ── Fjell: Unike topper ──
   { id: 'peaks_10', category: 'fjell', subcategory: 'unique_peaks', nameKey: 'badge.peaks10', descriptionKey: 'badge.peaks10Desc', requirementKey: 'badge.peaks10Req', threshold: 10, rarity: 'common', emoji: '⛰️', image: badge10, sortOrder: 1 },
-  { id: 'peaks_20', category: 'fjell', subcategory: 'unique_peaks', nameKey: 'badge.peaks20', descriptionKey: 'badge.peaks20Desc', requirementKey: 'badge.peaks20Req', threshold: 20, rarity: 'uncommon', emoji: '🏔️', image: badge20, sortOrder: 2 },
+  { id: 'peaks_25', category: 'fjell', subcategory: 'unique_peaks', nameKey: 'badge.peaks25', descriptionKey: 'badge.peaks25Desc', requirementKey: 'badge.peaks25Req', threshold: 25, rarity: 'uncommon', emoji: '🏔️', image: badge25, sortOrder: 2 },
   { id: 'peaks_50', category: 'fjell', subcategory: 'unique_peaks', nameKey: 'badge.peaks50', descriptionKey: 'badge.peaks50Desc', requirementKey: 'badge.peaks50Req', threshold: 50, rarity: 'rare', emoji: '🗻', image: badge50, sortOrder: 3 },
   { id: 'peaks_100', category: 'fjell', subcategory: 'unique_peaks', nameKey: 'badge.peaks100', descriptionKey: 'badge.peaks100Desc', requirementKey: 'badge.peaks100Req', threshold: 100, rarity: 'epic', emoji: '🏆', image: badge100, sortOrder: 4 },
-  { id: 'peaks_200', category: 'fjell', subcategory: 'unique_peaks', nameKey: 'badge.peaks200', descriptionKey: 'badge.peaks200Desc', requirementKey: 'badge.peaks200Req', threshold: 200, rarity: 'legendary', emoji: '👑', image: badge200, sortOrder: 5 },
 
   // ── Fjell: Topper over 1000 moh ──
   { id: 'high_peak_1', category: 'fjell', subcategory: 'high_peaks', nameKey: 'badge.highPeak1', descriptionKey: 'badge.highPeak1Desc', requirementKey: 'badge.highPeak1Req', threshold: 1, rarity: 'common', emoji: '🏔️', image: badgeHighPeak1, sortOrder: 10 },
@@ -151,6 +149,11 @@ export function getHighPeakGlow(badgeId: string): { color: string; glow: string 
     case 'high_peak_3': return { color: 'hsl(25, 70%, 50%)', glow: 'rgba(205, 127, 50, 0.35)' }; // bronze
     case 'high_peak_5': return { color: 'hsl(210, 10%, 65%)', glow: 'rgba(192, 192, 192, 0.35)' }; // silver
     case 'high_peak_10': return { color: 'hsl(45, 95%, 55%)', glow: 'rgba(255, 215, 0, 0.35)' }; // gold
+    // Unique peaks glow
+    case 'peaks_10': return { color: 'hsl(142, 50%, 48%)', glow: 'rgba(76, 175, 80, 0.35)' }; // green
+    case 'peaks_25': return { color: 'hsl(25, 70%, 50%)', glow: 'rgba(205, 127, 50, 0.35)' }; // bronze
+    case 'peaks_50': return { color: 'hsl(210, 10%, 65%)', glow: 'rgba(192, 192, 192, 0.35)' }; // silver
+    case 'peaks_100': return { color: 'hsl(45, 95%, 55%)', glow: 'rgba(255, 215, 0, 0.35)' }; // gold
     default: return null;
   }
 }

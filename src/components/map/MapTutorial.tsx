@@ -45,7 +45,7 @@ const CheckinAnimation = () => {
                 : 'bg-card border-border'
             }`}
           >
-            <img src={phase === 'checked' ? getCheckedPeakIcon(726) : peakIconTiers.high} alt="" className="w-9 h-9 object-contain" />
+            <img src={phase === 'checked' ? getCheckedPeakIcon(726) : peakIconTiers.high} alt="" className={`w-9 h-9 object-contain ${phase === 'checked' ? 'brightness-0 invert' : ''}`} />
           </div>
           {/* Ripple effect */}
           {phase === 'checked' && (
@@ -235,7 +235,7 @@ const ARContent = () => (
       </div>
     </div>
     <div className="px-3 py-2 rounded-xl bg-muted/40 border border-border/30">
-      <p className="text-[10px] text-muted-foreground italic">Nøyaktigheten avhenger av mobilkompassets presisjon. Kalibrer kompasset ved å bevege mobilen i en 8-bevegelse.</p>
+      <p className="text-[10px] text-muted-foreground italic">Nøyaktigheten avhenger av mobilkompassets presisjon.</p>
     </div>
   </div>
 );
@@ -259,7 +259,7 @@ const steps: TutorialStep[] = [
   },
   {
     title: 'Foreslå ny topp',
-    text: 'For å foreslå en ny fjelltopp som ikke finnes her enda, trykk og hold inne på kartet der toppen er. Om du står på toppen vil du bli sjekket inn når den blir godkjent.',
+    text: 'For å foreslå en ny fjelltopp som ikke finnes her enda, trykk og hold inne på kartet der toppen er. Om du står på toppen vil du bli sjekket inn når den blir godkjent. Andre kan også sjekke inn på toppen du la til før den har blitt godkjent.',
     icon: <PeakIcon src={peakIconTiers.medium} />,
     customContent: <LongPressAnimation />,
   },
