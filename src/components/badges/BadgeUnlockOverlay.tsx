@@ -57,34 +57,49 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
       >
         {/* Badge visual with glow - much bigger */}
         <div className="relative">
-          <div
-            className={`w-56 h-56 rounded-full flex items-center justify-center transition-all duration-700 ${
-              isLegendary ? 'animate-pulse' : ''
-            }`}
-            style={{
-              background: `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`,
-              boxShadow: pulseGlow ? `0 0 50px ${glowColor}, 0 0 100px ${glowColor}` : 'none',
-            }}
-          >
-            {mainBadge.badge.image ? (
-              <img
-                src={mainBadge.badge.image}
-                alt={t(mainBadge.badge.nameKey)}
-                className={`w-52 h-52 object-contain transition-transform duration-500 ${showContent ? 'scale-100' : 'scale-0'}`}
-                style={{ filter: `drop-shadow(0 0 16px ${glowColor})` }}
-              />
-            ) : (
-              <span className={`text-7xl transition-transform duration-500 ${showContent ? 'scale-100' : 'scale-0'}`}
-                style={{ filter: `drop-shadow(0 0 16px ${glowColor})` }}
+          {mainBadge.badge.image ? (
+            <>
+              {/* Image badges: no circle, just the image with glow */}
+              <div
+                className={`flex items-center justify-center transition-all duration-700 ${
+                  isLegendary ? 'animate-pulse' : ''
+                }`}
+                style={{
+                  filter: pulseGlow ? `drop-shadow(0 0 30px ${glowColor}) drop-shadow(0 0 60px ${glowColor})` : 'none',
+                }}
               >
-                {mainBadge.badge.emoji}
-              </span>
-            )}
-          </div>
-          <div
-            className="absolute inset-0 rounded-full border-2 opacity-30"
-            style={{ borderColor: rarityColor }}
-          />
+                <img
+                  src={mainBadge.badge.image}
+                  alt={t(mainBadge.badge.nameKey)}
+                  className={`w-56 h-56 object-contain transition-transform duration-500 ${showContent ? 'scale-100' : 'scale-0'}`}
+                  style={{ filter: `drop-shadow(0 0 16px ${glowColor})` }}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Emoji badges: keep glow circle */}
+              <div
+                className={`w-56 h-56 rounded-full flex items-center justify-center transition-all duration-700 ${
+                  isLegendary ? 'animate-pulse' : ''
+                }`}
+                style={{
+                  background: `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`,
+                  boxShadow: pulseGlow ? `0 0 50px ${glowColor}, 0 0 100px ${glowColor}` : 'none',
+                }}
+              >
+                <span className={`text-7xl transition-transform duration-500 ${showContent ? 'scale-100' : 'scale-0'}`}
+                  style={{ filter: `drop-shadow(0 0 16px ${glowColor})` }}
+                >
+                  {mainBadge.badge.emoji}
+                </span>
+              </div>
+              <div
+                className="absolute inset-0 rounded-full border-2 opacity-30"
+                style={{ borderColor: rarityColor }}
+              />
+            </>
+          )}
         </div>
 
         {/* Title */}
