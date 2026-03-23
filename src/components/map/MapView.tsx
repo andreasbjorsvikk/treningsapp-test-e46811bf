@@ -1183,14 +1183,12 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     <div className={`relative w-full h-full ${is3D ? 'map-is-3d' : ''}`}>
       <div ref={mapContainer} className="w-full h-full" />
       <div className="absolute top-2 left-2 z-10 flex items-center gap-2">
-        {(true) && (
-          <button
-            onClick={() => setIs3D(prev => !prev)}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold shadow-md border border-border bg-background text-foreground hover:bg-muted transition-colors h-[34px]"
-          >
-            {is3D ? '2D' : '3D'}
-          </button>
-        )}
+        <button
+          onClick={() => setIs3D(prev => !prev)}
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold shadow-md border border-border bg-background text-foreground hover:bg-muted transition-colors h-[34px]"
+        >
+          {is3D ? '2D' : '3D'}
+        </button>
         <div className="relative">
           <button
             onClick={() => setShowStyleMenu(prev => !prev)}
