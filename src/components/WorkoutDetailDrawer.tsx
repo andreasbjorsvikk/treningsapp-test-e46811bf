@@ -284,7 +284,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
             {/* Stat tiles */}
             <div className="px-4 py-3">
               <div className="grid grid-cols-3 gap-2">
-                <StatTile icon={<Clock className="w-4 h-4" />} value={formatDuration(session.durationMinutes)} label={t('workoutDetail.duration')} />
+                <StatTile icon={<Clock className="w-4 h-4" />} value={session.type === 'løping' ? formatDurationHMS(session.durationMinutes) : formatDuration(session.durationMinutes)} label={t('workoutDetail.duration')} />
                 {session.distance != null && (
                   <StatTile icon={<MapPin className="w-4 h-4" />} value={`${session.distance} km`} label={t('workoutDetail.distance')} />
                 )}

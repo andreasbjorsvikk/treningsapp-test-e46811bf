@@ -97,6 +97,25 @@ const BadgesPage = () => {
               onPreviewBadge={setPreviewUnlockBadge}
               columns={subcategory === 'high_peaks' ? 2 : 2}
             />
+          ) : subcategory === 'daily_checkins' ? (
+            <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 shadow-sm">
+              <div className="grid grid-cols-3 gap-2">
+                {badgeList.map(b => (
+                  <div key={b.badge.id} className="relative">
+                    <BadgeCard userBadge={b} onClick={() => setSelectedBadge(b)} />
+                    {adminMode && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setPreviewUnlockBadge(b); }}
+                        className="absolute top-1 left-1 p-1 rounded-full bg-background/80 border border-border shadow-sm hover:bg-muted transition-colors z-10"
+                        title="Preview unlock animation"
+                      >
+                        <Play className="w-3 h-3 text-foreground" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : (
             <div className="grid grid-cols-3 gap-2">
               {badgeList.map(b => (

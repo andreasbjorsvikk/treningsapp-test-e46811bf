@@ -603,7 +603,7 @@ const RecordsSection = () => {
                     <Button
                       variant="ghost"
                       className="text-destructive hover:text-destructive"
-                      onClick={() => { handleDeleteHike(selectedHike!.id); setSelectedHike(null); }}
+                      onClick={() => { setHikeToDelete(selectedHike!.id); setShowDeleteHikeConfirm(true); }}
                     >
                       <Trash2 className="w-4 h-4 mr-2" /> {t('common.delete')}
                     </Button>

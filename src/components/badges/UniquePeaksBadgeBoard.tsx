@@ -102,8 +102,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                       maxHeight: 'none',
                       transform: `scale(${imgScale})`,
                       transformOrigin: 'center',
-                      ...(userBadge.unlocked ? { filter: `drop-shadow(0 0 6px ${glowColor})` } : {}),
-                      ...(isHighPeaks && userBadge.unlocked && !isDarkTheme ? { filter: 'none' } : {}),
+                      ...(showGlow ? { filter: `drop-shadow(0 0 6px ${glowColor})` } : {}),
                     }}
                     loading="lazy"
                   />
