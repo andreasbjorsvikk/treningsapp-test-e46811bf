@@ -98,12 +98,12 @@ const BadgesPage = () => {
               columns={subcategory === 'high_peaks' ? 2 : 2}
             />
           ) : subcategory === 'daily_checkins' ? (
-            <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 shadow-sm">
+          <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 shadow-md">
               <div className="grid grid-cols-3 gap-3">
                 {badgeList.map(b => (
                   <div key={b.badge.id} className="relative flex flex-col items-center gap-1.5">
                     <button onClick={() => setSelectedBadge(b)} className="flex flex-col items-center gap-1.5">
-                      <div className="w-20 h-20 flex items-center justify-center">
+                      <div className="w-20 h-20 flex items-center justify-center drop-shadow-md">
                         {b.badge.image ? (
                           <img
                             src={b.badge.image}
@@ -117,9 +117,7 @@ const BadgesPage = () => {
                       <p className={`text-xs font-semibold text-center leading-tight ${b.unlocked ? 'text-foreground' : 'text-muted-foreground/60'}`}>
                         {t(b.badge.nameKey)}
                       </p>
-                      {!b.unlocked && (
-                        <p className="text-[10px] text-muted-foreground">{b.progress}/{b.badge.threshold}</p>
-                      )}
+                      
                     </button>
                     {adminMode && (
                       <button

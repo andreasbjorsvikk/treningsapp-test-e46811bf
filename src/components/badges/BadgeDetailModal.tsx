@@ -30,7 +30,7 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
   const rarityColor = highPeakGlow?.color || getRarityColor(def.rarity);
   const glowColor = highPeakGlow?.glow || getRarityGlow(def.rarity);
   const progressPercent = Math.min((progress / def.threshold) * 100, 100);
-  const rarityLabel = t(`badge.rarity.${def.rarity}`);
+  const _rarityLabel = t(`badge.rarity.${def.rarity}`);
   const isUniquePeaks = def.subcategory === 'unique_peaks';
   const thresholdKey = `${def.nameKey}Threshold` as any;
   const thresholdText = t(thresholdKey);
@@ -76,21 +76,15 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
           )}
         </div>
 
-        {/* Rarity tag */}
-        <div className="flex justify-center mb-2">
-          <span
-            className="text-[10px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full"
-            style={{ color: rarityColor, backgroundColor: glowColor }}
-          >
-            {rarityLabel}
-          </span>
-        </div>
-
         <h3 className="font-display font-bold text-lg text-foreground mb-0.5">{t(def.nameKey)}</h3>
         {showThresholdHeadline && (
           <p className="text-sm font-semibold mb-2" style={{ color: rarityColor }}>{thresholdText}</p>
         )}
-        {showDescription && <p className="text-sm text-muted-foreground mb-4">{t(def.descriptionKey)}</p>}
+        {showDescription && (
+          <p className="text-sm text-muted-foreground mb-4">
+            {unlocked ? t(def.descriptionKey) : t(def.requirementKey)}
+          </p>
+        )}
         {showRequirement && <p className="text-xs text-muted-foreground mb-3">{t(def.requirementKey)}</p>}
 
         {/* Repeat count */}
