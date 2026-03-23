@@ -36,11 +36,11 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
           }
 
           const isHighPeaks = sub === 'high_peaks';
-          const extraScale = userBadge.badge.id === 'peaks_100'
-            ? 'w-[192%] h-[192%]'
+          const imgScale = userBadge.badge.id === 'peaks_100'
+            ? 210
             : sub === 'unique_peaks'
-              ? 'w-[156%] h-[156%]'
-              : 'w-[150%] h-[150%]';
+              ? 164
+              : 158;
           const glowShadow = userBadge.unlocked
             ? isHighPeaks
               ? isDarkTheme
@@ -89,14 +89,19 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                   <img
                     src={userBadge.badge.image}
                     alt={title}
-                    className={`relative z-10 ${extraScale} object-contain transition-all duration-300 ${
+                    className={`relative z-10 object-contain transition-all duration-300 ${
                       userBadge.unlocked
                         ? ''
                         : isHighPeaks
                           ? 'grayscale brightness-[0.42] opacity-60'
                           : 'grayscale saturate-0 brightness-[0.07] contrast-125 opacity-45'
                     }`}
-                    style={userBadge.unlocked ? { filter: `drop-shadow(0 0 6px ${glowColor})` } : undefined}
+                    style={{
+                      width: `${imgScale}%`,
+                      height: `${imgScale}%`,
+                      ...(userBadge.unlocked ? { filter: `drop-shadow(0 0 6px ${glowColor})` } : {}),
+                      ...(isHighPeaks && userBadge.unlocked && !isDarkTheme ? { filter: 'none' } : {}),
+                    }}
                     loading="lazy"
                   />
                 </div>
