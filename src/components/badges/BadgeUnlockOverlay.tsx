@@ -36,6 +36,7 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
   const thresholdKey = `${mainBadge.badge.nameKey}Threshold` as any;
   const thresholdText = t(thresholdKey);
   const hasThresholdText = thresholdText !== thresholdKey;
+  const showThresholdHeadline = hasThresholdText && mainBadge.badge.subcategory === 'unique_peaks';
 
   const handleDismiss = () => {
     setVisible(false);
@@ -110,7 +111,7 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
           <h3 className="font-display font-bold text-xl text-foreground">
             {t(mainBadge.badge.nameKey)}
           </h3>
-          {hasThresholdText && (
+          {showThresholdHeadline && (
             <p className="text-sm font-semibold" style={{ color: rarityColor }}>{thresholdText}</p>
           )}
           <p className="text-sm text-muted-foreground">
