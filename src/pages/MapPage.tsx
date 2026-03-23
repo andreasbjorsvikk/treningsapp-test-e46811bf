@@ -51,8 +51,7 @@ const MapPage = () => {
   const [activeRoutePeakId, setActiveRoutePeakId] = useState<string | null>(null);
   const [routeFocus, setRouteFocus] = useState<{ latitude: number; longitude: number; requestId: number } | null>(null);
   const [previewWaypoints, setPreviewWaypoints] = useState<{lat: number, lng: number}[]>([]);
-  const [queuedTopperRoutePeak, setQueuedTopperRoutePeak] = useState<Peak | null>(null);
-  const [routeRequestId, setRouteRequestId] = useState<number>(0);
+  const [pendingRoutePeak, setPendingRoutePeak] = useState<Peak | null>(null);
 
   // Map settings
   const [showSettings, setShowSettings] = useState(false);
@@ -194,7 +193,6 @@ const MapPage = () => {
 
     setActiveRouteGeojson(routePayload);
     setActiveRoutePeakId(peak.id);
-    setRouteRequestId(Date.now());
     setRouteFocus({ latitude: peak.latitude, longitude: peak.longitude, requestId: Date.now() });
   }, [normalizeRouteGeojson]);
 
@@ -203,34 +201,51 @@ const MapPage = () => {
     localStorage.setItem('map_last_zoom', '13');
   }, []);
 
+  const schedulePendingRoute = useCallback((peak: Peak) => {
+    const delays = [0, 180, 700, 1400];
+    const timers = delays.map((delay) => window.setTimeout(() => {
+      window.requestAnimationFrame(() => applyRouteForPeak(peak));
+    }, delay));
+
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, [applyRouteForPeak]);
+
   const handleShowRoute = (peak: Peak, fromTopper?: boolean) => {
     if (peak.route_status !== 'approved' || !peak.route_geojson) return;
 
     const openedFromTopper = subTab === 'topper' || fromTopper === true;
 
+    // Close the peak detail drawer so the map/route is visible
     setSelectedPeak(null);
+    primeMapForRoute(peak);
 
     if (openedFromTopper) {
-      primeMapForRoute(peak);
-      setQueuedTopperRoutePeak(peak);
+      setActiveRouteGeojson(null);
+      setActiveRoutePeakId(null);
+      setRouteFocus(null);
+      setPendingRoutePeak(peak);
       setSubTab('kart');
       return;
     }
 
-    primeMapForRoute(peak);
     applyRouteForPeak(peak);
   };
 
+  const handleMapReady = useCallback(() => {
+    if (pendingRoutePeak) {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          applyRouteForPeak(pendingRoutePeak);
+        });
+      });
+    }
+  }, [applyRouteForPeak, pendingRoutePeak]);
+
   useEffect(() => {
-    if (subTab !== 'kart' || !queuedTopperRoutePeak) return;
+    if (subTab !== 'kart' || !pendingRoutePeak) return;
 
-    const animationFrame = window.requestAnimationFrame(() => {
-      applyRouteForPeak(queuedTopperRoutePeak);
-      setQueuedTopperRoutePeak(null);
-    });
-
-    return () => window.cancelAnimationFrame(animationFrame);
-  }, [subTab, queuedTopperRoutePeak, applyRouteForPeak]);
+    return schedulePendingRoute(pendingRoutePeak);
+  }, [subTab, pendingRoutePeak, schedulePendingRoute]);
 
   useEffect(() => {
     if (showSuggestions && adminMode) {
@@ -239,7 +254,7 @@ const MapPage = () => {
   }, [showSuggestions, adminMode]);
 
   const handleHideRoute = () => {
-    setQueuedTopperRoutePeak(null);
+    setPendingRoutePeak(null);
     setActiveRouteGeojson(null);
     setActiveRoutePeakId(null);
     setRouteFocus(null);
@@ -296,9 +311,9 @@ const MapPage = () => {
               onLongPress={handleLongPress}
               routeGeojson={activeRouteGeojson}
               routeFocus={routeFocus}
-              routeRequestId={routeRequestId}
-              suppressInitialGeolocate={!!routeFocus || !!queuedTopperRoutePeak}
+              suppressInitialGeolocate={!!routeFocus || !!pendingRoutePeak}
               onClearRoute={handleHideRoute}
+              onMapReady={handleMapReady}
               previewWaypoints={previewWaypoints}
               onWaypointClick={(index) => setWaypointClickEvent({ index, timestamp: Date.now() })}
               onWaypointDrag={(index, lat, lng) => setWaypointDragEvent({ index, lat, lng, timestamp: Date.now() })}
