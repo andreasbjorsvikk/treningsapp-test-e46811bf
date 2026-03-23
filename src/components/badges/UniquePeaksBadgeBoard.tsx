@@ -37,10 +37,10 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
 
           const isHighPeaks = sub === 'high_peaks';
           const imgScale = userBadge.badge.id === 'peaks_100'
-            ? 1.52
+            ? 1.58
             : sub === 'unique_peaks'
-              ? 1.38
-              : 1.34;
+              ? 1.44
+              : 1.40;
           const glowShadow = userBadge.unlocked
             ? isHighPeaks
               ? isDarkTheme
