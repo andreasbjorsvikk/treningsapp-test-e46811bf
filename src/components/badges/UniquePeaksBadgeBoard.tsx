@@ -36,10 +36,10 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
 
           const isHighPeaks = sub === 'high_peaks';
           const extraScale = userBadge.badge.id === 'peaks_100'
-            ? 'w-[142%] h-[142%]'
+            ? 'w-[152%] h-[152%]'
             : sub === 'unique_peaks'
-              ? 'w-[128%] h-[128%]'
-              : 'w-[126%] h-[126%]';
+              ? 'w-[132%] h-[132%]'
+              : 'w-[130%] h-[130%]';
 
           return (
             <button
