@@ -59,7 +59,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     (((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8) <= 4)
   );
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [is3D, setIs3D] = useState(true);
+  const [is3D, setIs3D] = useState(() => !isConstrainedDevice);
   const [mapStyle, setMapStyle] = useState<'outdoors' | 'satellite' | 'streets' | 'topo'>('outdoors');
   const appliedStyleRef = useRef<string>('outdoors');
   const [showStyleMenu, setShowStyleMenu] = useState(false);
@@ -68,10 +68,15 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   const routeSourceId = 'peak-route-source';
   const routeLayerId = 'peak-route-layer';
   const onMapReadyRef = useRef(onMapReady);
+  const is3DRef = useRef(is3D);
 
   useEffect(() => {
     onMapReadyRef.current = onMapReady;
   }, [onMapReady]);
+
+  useEffect(() => {
+    is3DRef.current = is3D;
+  }, [is3D]);
 
   const getMapboxColorFromToken = useCallback((tokenName: string, fallback = 'rgb(34, 197, 94)') => {
     if (typeof window === 'undefined') return fallback;
@@ -128,6 +133,30 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       m.once('style.load', fn);
     }
   }, []);
+
+  const syncTerrainMode = useCallback((m: mapboxgl.Map) => {
+    whenStyleReady(m, () => {
+      if (!is3D) {
+        try {
+          m.setTerrain(null);
+        } catch {
+          // noop
+        }
+        return;
+      }
+
+      addEnhancedTerrain(m, {
+        exaggeration: isConstrainedDevice ? 1.0 : 1.4,
+        lightweight: isConstrainedDevice,
+      });
+    });
+  }, [is3D, isConstrainedDevice, whenStyleReady]);
+
+  const syncTerrainModeRef = useRef(syncTerrainMode);
+
+  useEffect(() => {
+    syncTerrainModeRef.current = syncTerrainMode;
+  }, [syncTerrainMode]);
 
   const ensureRouteLayer = useCallback((m: mapboxgl.Map) => {
     const routeColor = getMapboxColorFromToken('--success');
@@ -245,11 +274,11 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         style: 'mapbox://styles/mapbox/outdoors-v12',
         center,
         zoom,
-        pitch: isConstrainedDevice ? 44 : 60,
+        pitch: isConstrainedDevice ? 0 : 60,
         bearing: isConstrainedDevice ? 0 : -20,
         antialias: false,
         failIfMajorPerformanceCaveat: false,
-        maxTileCacheSize: isConstrainedDevice ? 24 : 40,
+        maxTileCacheSize: isConstrainedDevice ? 12 : 40,
       });
     } catch (err) {
       console.error('Failed to initialize map:', err);
@@ -258,7 +287,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
 
     m.addControl(new mapboxgl.NavigationControl(), 'top-right');
     const geolocate = new mapboxgl.GeolocateControl({
-      positionOptions: { enableHighAccuracy: true },
+      positionOptions: { enableHighAccuracy: !isConstrainedDevice },
       trackUserLocation: true,
       showUserHeading: true,
     });
@@ -281,10 +310,9 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     });
 
     m.on('style.load', () => {
-      addEnhancedTerrain(m, {
-        exaggeration: isConstrainedDevice ? 1.08 : 1.4,
-        lightweight: isConstrainedDevice,
-      });
+      if (is3DRef.current) {
+        syncTerrainModeRef.current(m);
+      }
       setMapLoaded(true);
       onMapReadyRef.current?.();
     });
@@ -359,19 +387,11 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     if (!map.current || !mapLoaded) return;
     const m = map.current;
     if (is3D) {
-      m.easeTo({ pitch: isConstrainedDevice ? 44 : 60, bearing: isConstrainedDevice ? 0 : -20, duration: 600 });
-      whenStyleReady(m, () => {
-        if (!m.getTerrain()) {
-          if (!m.getSource('mapbox-dem')) {
-            m.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
-          }
-          m.setTerrain({ source: 'mapbox-dem', exaggeration: isConstrainedDevice ? 1.08 : 1.5 });
-        }
-      });
+      m.easeTo({ pitch: isConstrainedDevice ? 34 : 60, bearing: isConstrainedDevice ? 0 : -20, duration: isConstrainedDevice ? 0 : 600 });
     } else {
-      m.easeTo({ pitch: 0, bearing: 0, duration: 600 });
-      m.setTerrain(null);
+      m.easeTo({ pitch: 0, bearing: 0, duration: isConstrainedDevice ? 0 : 400 });
     }
+    syncTerrainMode(m);
   }, [is3D, isConstrainedDevice, mapLoaded, whenStyleReady]);
 
   // Toggle map style — only when user actually changes it
@@ -427,10 +447,9 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         setMapLoaded(false);
         m.setStyle('mapbox://styles/mapbox/outdoors-v12');
         m.once('style.load', () => {
-          addEnhancedTerrain(m, {
-            exaggeration: isConstrainedDevice ? 1.08 : 1.4,
-            lightweight: isConstrainedDevice,
-          });
+          if (is3DRef.current) {
+            syncTerrainModeRef.current(m);
+          }
           setMapLoaded(true);
           addTopoOverlay();
         });
@@ -447,14 +466,12 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     setMapLoaded(false);
     m.setStyle(styleUrl);
     m.once('style.load', () => {
-      addEnhancedTerrain(m, {
-        exaggeration: isConstrainedDevice ? 1.08 : 1.4,
-        lightweight: isConstrainedDevice,
-      });
-      if (is3D) m.setTerrain({ source: 'mapbox-dem', exaggeration: isConstrainedDevice ? 1.08 : 1.5 });
+      if (is3DRef.current) {
+        syncTerrainModeRef.current(m);
+      }
       setMapLoaded(true);
     });
-  }, [is3D, isConstrainedDevice, mapStyle, mapLoaded, whenStyleReady]);
+  }, [isConstrainedDevice, mapStyle, mapLoaded, whenStyleReady]);
 
   // Route focus (especially important when opening route from Topper tab)
   useEffect(() => {
