@@ -56,7 +56,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                 <img
                   src={userBadge.badge.image}
                   alt={title}
-                  className={`w-[96%] h-[96%] object-contain transition-all duration-300 ${
+                  className={`w-[108%] h-[108%] object-contain transition-all duration-300 ${
                     userBadge.unlocked
                       ? ''
                       : 'grayscale saturate-0 brightness-[0.07] contrast-125 opacity-45'
