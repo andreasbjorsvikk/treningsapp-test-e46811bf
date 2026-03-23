@@ -32,12 +32,12 @@ const BadgeCard = ({ userBadge, onClick, showProgress = true }: BadgeCardProps) 
       }`}
     >
       {/* Badge visual */}
-      <div className={isImageBadge ? 'w-20 h-20' : 'w-16 h-16'} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className={isImageBadge ? 'w-24 h-24' : 'w-16 h-16'} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {badge.image ? (
           <img
             src={badge.image}
             alt={t(badge.nameKey)}
-            className={`w-20 h-20 object-contain ${unlocked ? '' : 'grayscale brightness-[0.08] opacity-30'}`}
+            className={`w-24 h-24 object-contain ${unlocked ? '' : 'grayscale brightness-[0.08] opacity-30'}`}
             style={unlocked ? {
               filter: `drop-shadow(0 0 8px ${glowColor})`,
             } : undefined}

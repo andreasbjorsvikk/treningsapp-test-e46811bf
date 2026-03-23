@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { Peak } from '@/data/peaks';
@@ -51,6 +51,7 @@ const MapPage = () => {
   const [activeRoutePeakId, setActiveRoutePeakId] = useState<string | null>(null);
   const [routeFocus, setRouteFocus] = useState<{ latitude: number; longitude: number; requestId: number } | null>(null);
   const [previewWaypoints, setPreviewWaypoints] = useState<{lat: number, lng: number}[]>([]);
+  const pendingRoutePeakRef = useRef<Peak | null>(null);
 
   // Map settings
   const [showSettings, setShowSettings] = useState(false);
@@ -204,15 +205,22 @@ const MapPage = () => {
     setSelectedPeak(null);
 
     if (openedFromTopper) {
-      // Switch to map tab first, then apply route after map has mounted
+      // Store pending route, switch tab, apply when map is ready
+      pendingRoutePeakRef.current = peak;
       setSubTab('kart');
-      setTimeout(() => {
-        applyRouteForPeak(peak);
-      }, 400);
     } else {
       applyRouteForPeak(peak);
     }
   };
+
+  const handleMapReady = useCallback(() => {
+    if (pendingRoutePeakRef.current) {
+      const peak = pendingRoutePeakRef.current;
+      pendingRoutePeakRef.current = null;
+      // Small delay to ensure map style is fully loaded
+      setTimeout(() => applyRouteForPeak(peak), 200);
+    }
+  }, [applyRouteForPeak]);
 
   useEffect(() => {
     if (showSuggestions && adminMode) {
@@ -279,6 +287,7 @@ const MapPage = () => {
               routeFocus={routeFocus}
               suppressInitialGeolocate={!!routeFocus}
               onClearRoute={handleHideRoute}
+              onMapReady={handleMapReady}
               previewWaypoints={previewWaypoints}
               onWaypointClick={(index) => setWaypointClickEvent({ index, timestamp: Date.now() })}
               onWaypointDrag={(index, lat, lng) => setWaypointDragEvent({ index, lat, lng, timestamp: Date.now() })}
