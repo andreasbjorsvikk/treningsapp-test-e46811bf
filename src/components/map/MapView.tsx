@@ -53,14 +53,16 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   const { t } = useTranslation();
   const { settings } = useSettings();
   const { user } = useAuth();
+  const isIOSDevice = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(window.navigator.userAgent);
   const isConstrainedDevice = typeof window !== 'undefined' && (
-    window.matchMedia('(max-width: 768px)').matches ||
+    isIOSDevice ||
+    window.matchMedia('(max-width: 900px)').matches ||
     window.matchMedia('(hover: none) and (pointer: coarse)').matches ||
-    (((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8) <= 4)
+    (((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8) <= 6)
   );
   const [mapLoaded, setMapLoaded] = useState(false);
   const [is3D, setIs3D] = useState(() => !isConstrainedDevice);
-  const [mapStyle, setMapStyle] = useState<'outdoors' | 'satellite' | 'streets' | 'topo'>('outdoors');
+  const [mapStyle, setMapStyle] = useState<'outdoors' | 'satellite' | 'streets' | 'topo'>(isConstrainedDevice ? 'streets' : 'outdoors');
   const appliedStyleRef = useRef<string>('outdoors');
   const [showStyleMenu, setShowStyleMenu] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -271,14 +273,15 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     try {
       m = new mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/outdoors-v12',
+        style: isConstrainedDevice ? 'mapbox://styles/mapbox/streets-v12' : 'mapbox://styles/mapbox/outdoors-v12',
         center,
         zoom,
         pitch: isConstrainedDevice ? 0 : 60,
         bearing: isConstrainedDevice ? 0 : -20,
         antialias: false,
         failIfMajorPerformanceCaveat: false,
-        maxTileCacheSize: isConstrainedDevice ? 12 : 40,
+        fadeDuration: isConstrainedDevice ? 0 : 300,
+        maxTileCacheSize: isConstrainedDevice ? 6 : 40,
       });
     } catch (err) {
       console.error('Failed to initialize map:', err);
@@ -288,8 +291,8 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     m.addControl(new mapboxgl.NavigationControl(), 'top-right');
     const geolocate = new mapboxgl.GeolocateControl({
       positionOptions: { enableHighAccuracy: !isConstrainedDevice },
-      trackUserLocation: true,
-      showUserHeading: true,
+      trackUserLocation: !isConstrainedDevice,
+      showUserHeading: !isConstrainedDevice,
     });
     m.addControl(geolocate, 'top-right');
 
@@ -300,7 +303,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     });
     
     m.on('load', () => {
-      if (!hasStoredPos && !suppressInitialGeolocate) {
+      if (!hasStoredPos && !suppressInitialGeolocate && !isConstrainedDevice) {
         geolocate.trigger();
       }
     });
@@ -524,7 +527,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           m.resize();
           m.fitBounds(bounds, {
             padding: { top: 92, right: 60, bottom: 76, left: 60 },
-            duration: 650,
+            duration: isConstrainedDevice ? 0 : 650,
             maxZoom: 15,
           });
         };
@@ -551,7 +554,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     return () => {
       fitTimers.forEach((timer) => window.clearTimeout(timer));
     };
-  }, [routeCoordinates, routeFocus, mapLoaded, whenStyleReady, ensureRouteLayer]);
+  }, [routeCoordinates, routeFocus, mapLoaded, whenStyleReady, ensureRouteLayer, isConstrainedDevice]);
 
   // Handle preview waypoints
   useEffect(() => {
