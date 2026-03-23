@@ -19,6 +19,11 @@ import badgeHighPeak3 from '@/assets/badges/3_topper_1000_moh.png';
 import badgeHighPeak5 from '@/assets/badges/5_topper_1000_moh.png';
 import badgeHighPeak10 from '@/assets/badges/10_topper_1000_moh.png';
 
+// Badge images - daily checkins
+import badge3Day from '@/assets/badges/3_topper_dag.png';
+import badge5Day from '@/assets/badges/5_topper_dag.png';
+import badge7Day from '@/assets/badges/7_topper_dag.png';
+
 export type BadgeCategory = 'fjell' | 'trening';
 export type BadgeRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
