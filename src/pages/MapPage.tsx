@@ -196,6 +196,11 @@ const MapPage = () => {
     setRouteFocus({ latitude: peak.latitude, longitude: peak.longitude, requestId: Date.now() });
   }, [normalizeRouteGeojson]);
 
+  const primeMapForRoute = useCallback((peak: Peak) => {
+    localStorage.setItem('map_last_center', JSON.stringify([peak.longitude, peak.latitude]));
+    localStorage.setItem('map_last_zoom', '13');
+  }, []);
+
   const handleShowRoute = (peak: Peak, fromTopper?: boolean) => {
     if (peak.route_status !== 'approved' || !peak.route_geojson) return;
 
@@ -203,12 +208,12 @@ const MapPage = () => {
 
     // Close the peak detail drawer so the map/route is visible
     setSelectedPeak(null);
+    primeMapForRoute(peak);
+    applyRouteForPeak(peak);
 
     if (openedFromTopper) {
       setPendingRoutePeak(peak);
       setSubTab('kart');
-    } else {
-      applyRouteForPeak(peak);
     }
   };
 
@@ -241,6 +246,7 @@ const MapPage = () => {
   }, [showSuggestions, adminMode]);
 
   const handleHideRoute = () => {
+    setPendingRoutePeak(null);
     setActiveRouteGeojson(null);
     setActiveRoutePeakId(null);
     setRouteFocus(null);
