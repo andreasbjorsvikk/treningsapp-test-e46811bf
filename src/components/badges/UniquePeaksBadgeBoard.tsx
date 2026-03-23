@@ -64,7 +64,9 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                   className={`${extraScale} object-contain transition-all duration-300 ${
                     userBadge.unlocked
                       ? ''
-                      : 'grayscale saturate-0 brightness-[0.07] contrast-125 opacity-45'
+                      : isHighPeaks
+                        ? 'grayscale brightness-[0.3] opacity-40'
+                        : 'grayscale saturate-0 brightness-[0.07] contrast-125 opacity-45'
                   }`}
                   style={userBadge.unlocked ? { filter: `drop-shadow(0 0 6px ${glowColor})` } : undefined}
                   loading="lazy"
