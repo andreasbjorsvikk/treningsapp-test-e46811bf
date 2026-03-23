@@ -103,7 +103,7 @@ const BadgesPage = () => {
                 {badgeList.map(b => (
                   <div key={b.badge.id} className="relative flex flex-col items-center gap-1.5">
                     <button onClick={() => setSelectedBadge(b)} className="flex flex-col items-center gap-1.5">
-                      <div className="w-20 h-20 flex items-center justify-center">
+                      <div className="w-20 h-20 flex items-center justify-center drop-shadow-md">
                         {b.badge.image ? (
                           <img
                             src={b.badge.image}

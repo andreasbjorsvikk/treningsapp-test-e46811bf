@@ -116,12 +116,12 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                   }}
                 />
                 <div
-                  className="relative flex items-center justify-center rounded-full overflow-hidden"
+                  className="relative flex items-center justify-center rounded-full overflow-hidden drop-shadow-md"
                   style={{
                     width: socketSize,
                     height: socketSize,
                     background: 'hsl(var(--card))',
-                    boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.16)',
+                    boxShadow: `inset 0 2px 6px rgba(0,0,0,0.16)${showGlow ? `, 0 0 12px ${glowColor}` : ''}`,
                   }}
                 >
                   <img

@@ -30,7 +30,7 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
   const rarityColor = highPeakGlow?.color || getRarityColor(def.rarity);
   const glowColor = highPeakGlow?.glow || getRarityGlow(def.rarity);
   const progressPercent = Math.min((progress / def.threshold) * 100, 100);
-  const rarityLabel = t(`badge.rarity.${def.rarity}`);
+  const _rarityLabel = t(`badge.rarity.${def.rarity}`);
   const isUniquePeaks = def.subcategory === 'unique_peaks';
   const thresholdKey = `${def.nameKey}Threshold` as any;
   const thresholdText = t(thresholdKey);
