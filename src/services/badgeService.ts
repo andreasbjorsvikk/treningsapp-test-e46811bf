@@ -19,6 +19,11 @@ import badgeHighPeak3 from '@/assets/badges/3_topper_1000_moh.png';
 import badgeHighPeak5 from '@/assets/badges/5_topper_1000_moh.png';
 import badgeHighPeak10 from '@/assets/badges/10_topper_1000_moh.png';
 
+// Badge images - daily checkins
+import badge3Day from '@/assets/badges/3_topper_dag.png';
+import badge5Day from '@/assets/badges/5_topper_dag.png';
+import badge7Day from '@/assets/badges/7_topper_dag.png';
+
 export type BadgeCategory = 'fjell' | 'trening';
 export type BadgeRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
@@ -72,9 +77,10 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: 'high_peak_5', category: 'fjell', subcategory: 'high_peaks', nameKey: 'badge.highPeak5', descriptionKey: 'badge.highPeak5Desc', requirementKey: 'badge.highPeak5Req', threshold: 5, rarity: 'rare', emoji: '🗻', image: badgeHighPeak5, sortOrder: 12 },
   { id: 'high_peak_10', category: 'fjell', subcategory: 'high_peaks', nameKey: 'badge.highPeak10', descriptionKey: 'badge.highPeak10Desc', requirementKey: 'badge.highPeak10Req', threshold: 10, rarity: 'epic', emoji: '🦅', image: badgeHighPeak10, sortOrder: 13 },
 
-  // ── Fjell: Innsjekkinger på en dag ──
-  { id: 'checkins_3_day', category: 'fjell', subcategory: 'daily_checkins', nameKey: 'badge.checkins3Day', descriptionKey: 'badge.checkins3DayDesc', requirementKey: 'badge.checkins3DayReq', threshold: 3, rarity: 'uncommon', emoji: '⚡', sortOrder: 20, repeatable: true },
-  { id: 'checkins_5_day', category: 'fjell', subcategory: 'daily_checkins', nameKey: 'badge.checkins5Day', descriptionKey: 'badge.checkins5DayDesc', requirementKey: 'badge.checkins5DayReq', threshold: 5, rarity: 'rare', emoji: '🔥', sortOrder: 21, repeatable: true },
+  // ── Fjell: Topper på en dag ──
+  { id: 'checkins_3_day', category: 'fjell', subcategory: 'daily_checkins', nameKey: 'badge.checkins3Day', descriptionKey: 'badge.checkins3DayDesc', requirementKey: 'badge.checkins3DayReq', threshold: 3, rarity: 'uncommon', emoji: '⚡', image: badge3Day, sortOrder: 20, repeatable: true },
+  { id: 'checkins_5_day', category: 'fjell', subcategory: 'daily_checkins', nameKey: 'badge.checkins5Day', descriptionKey: 'badge.checkins5DayDesc', requirementKey: 'badge.checkins5DayReq', threshold: 5, rarity: 'rare', emoji: '🔥', image: badge5Day, sortOrder: 21, repeatable: true },
+  { id: 'checkins_7_day', category: 'fjell', subcategory: 'daily_checkins', nameKey: 'badge.checkins7Day', descriptionKey: 'badge.checkins7DayDesc', requirementKey: 'badge.checkins7DayReq', threshold: 7, rarity: 'epic', emoji: '🏆', image: badge7Day, sortOrder: 22, repeatable: true },
 
   // ── Fjell: Dager på rad ──
   { id: 'streak_3', category: 'fjell', subcategory: 'streaks', nameKey: 'badge.streak3', descriptionKey: 'badge.streak3Desc', requirementKey: 'badge.streak3Req', threshold: 3, rarity: 'uncommon', emoji: '📅', sortOrder: 30, repeatable: true },
@@ -113,7 +119,7 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
 export const SUBCATEGORY_NAMES: Record<string, { no: string; en: string }> = {
   unique_peaks: { no: 'Unike topper', en: 'Unique peaks' },
   high_peaks: { no: 'Topper over 1000 moh', en: 'Peaks over 1000m' },
-  daily_checkins: { no: 'Innsjekkinger på en dag', en: 'Check-ins in a day' },
+  daily_checkins: { no: 'Topper på en dag', en: 'Peaks in a day' },
   streaks: { no: 'Dager på rad', en: 'Consecutive days' },
   total_sessions: { no: 'Totalt antall økter', en: 'Total sessions' },
   monthly_sessions: { no: 'Økter på en måned', en: 'Monthly sessions' },
@@ -359,6 +365,10 @@ export async function computeUserBadges(userId: string, isChild = false): Promis
     else if (badge.id === 'checkins_5_day') {
       repeatCount = countDaysWithCheckins(validDateMap, 5);
       progress = repeatCount > 0 ? 5 : Math.max(...Array.from(validDateMap.values()), 0);
+    }
+    else if (badge.id === 'checkins_7_day') {
+      repeatCount = countDaysWithCheckins(validDateMap, 7);
+      progress = repeatCount > 0 ? 7 : Math.max(...Array.from(validDateMap.values()), 0);
     }
     else if (badge.id === 'streak_3') {
       repeatCount = countStreakRuns(validCheckinDates, 3);

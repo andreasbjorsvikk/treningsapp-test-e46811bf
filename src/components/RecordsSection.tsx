@@ -370,13 +370,24 @@ const RecordsSection = () => {
           </p>
         </div>
         {records.map(r => (
-          <div key={r.label} className="flex items-center gap-3 px-4 py-3">
+          <button
+            key={r.label}
+            onClick={() => {
+              if (r.result?.sessionId) {
+                const session = sessions.find(s => s.id === r.result?.sessionId);
+                if (session) {
+                  window.dispatchEvent(new CustomEvent('open-workout-detail', { detail: session }));
+                }
+              }
+            }}
+            className="flex items-center gap-3 px-4 py-3 w-full text-left hover:bg-secondary/30 transition-colors"
+          >
             <span className="text-sm font-medium w-20 shrink-0">{r.label}</span>
             <span className="text-xs text-muted-foreground flex-1 text-center">
               {r.result && new Date(r.result.date).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
             </span>
             <span className="font-display font-bold text-sm">{r.result?.time}</span>
-          </div>
+          </button>
         ))}
       </div>
     );
@@ -431,15 +442,13 @@ const RecordsSection = () => {
                     onClick={() => setSelectedHike(h)}
                     className="w-full glass-card rounded-xl p-3 flex items-center gap-3 text-left hover:bg-secondary/30 transition-colors"
                   >
-                    <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-                      <Mountain className="w-4 h-4 text-muted-foreground" />
+                       <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                      <Mountain className="w-4 h-4 text-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold truncate">{h.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {h.entries.length} {h.entries.length === 1 ? t('records.registration') : t('records.registrations')}
-                        {best && ` · ${t('records.best')}: ${best.time}`}
-                        {h.elevation && ` · ${h.elevation} ${t('records.elevationUnit')}`}
+                        {best && `${t('records.best')}: ${best.time}`}
                         {h.distance && ` · ${h.distance} km`}
                         {h.elevationGain && ` · ${h.elevationGain} ${t('records.elevationGainUnit')}`}
                       </p>

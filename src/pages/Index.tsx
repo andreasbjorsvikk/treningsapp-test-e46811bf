@@ -325,6 +325,15 @@ const IndexContent = () => {
     return () => window.removeEventListener('navigate-to-settings', handler);
   }, []);
 
+  // Listen for open-workout-detail from records
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      if (e.detail) setDetailSession(e.detail);
+    };
+    window.addEventListener('open-workout-detail', handler as EventListener);
+    return () => window.removeEventListener('open-workout-detail', handler as EventListener);
+  }, []);
+
   // Load pinned challenges
   useEffect(() => {
     if (!user || !settings.pinnedChallengeIds?.length) {
@@ -651,8 +660,8 @@ const IndexContent = () => {
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-energy/10 via-background to-accent/5 border border-border/30 px-4 py-3">
               <div className="relative flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  {user && <ProfileButton />}
-                  {user && <BadgeShortcutButton />}
+                  {user && isMobile && <ProfileButton />}
+                  {user && isMobile && <BadgeShortcutButton />}
                   <div
                     className="flex-1 min-w-0 relative"
                     onTouchStart={() => {
@@ -916,7 +925,10 @@ const IndexContent = () => {
         showAdmin={adminMode}
         profileButton={
           !isMobile && user ? (
-            <ProfileButton className="ml-1" />
+            <div className="flex items-center gap-1">
+              <BadgeShortcutButton />
+              <ProfileButton className="ml-1" />
+            </div>
           ) : undefined
         }
       />

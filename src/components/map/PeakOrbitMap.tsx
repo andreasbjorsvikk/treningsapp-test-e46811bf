@@ -15,11 +15,8 @@ const PeakOrbitMap = ({ latitude, longitude, heightMoh, className }: PeakOrbitMa
   const mapRef = useRef<any>(null);
   const animRef = useRef<number>(0);
   const [failed, setFailed] = useState(false);
-  const prefersStaticPreview = typeof window !== 'undefined' && (
-    window.matchMedia('(max-width: 900px)').matches ||
-    window.matchMedia('(hover: none) and (pointer: coarse)').matches ||
-    (((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8) <= 6)
-  );
+  // Allow 3D orbit on all devices - use static only as fallback on failure
+  const prefersStaticPreview = false;
 
   const staticUrl = useMemo(() => {
     const marker = `pin-s+16a34a(${longitude},${latitude})`;
