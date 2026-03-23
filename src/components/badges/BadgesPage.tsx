@@ -99,10 +99,28 @@ const BadgesPage = () => {
             />
           ) : subcategory === 'daily_checkins' ? (
             <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 shadow-sm">
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-3">
                 {badgeList.map(b => (
-                  <div key={b.badge.id} className="relative">
-                    <BadgeCard userBadge={b} onClick={() => setSelectedBadge(b)} />
+                  <div key={b.badge.id} className="relative flex flex-col items-center gap-1.5">
+                    <button onClick={() => setSelectedBadge(b)} className="flex flex-col items-center gap-1.5">
+                      <div className="w-20 h-20 flex items-center justify-center">
+                        {b.badge.image ? (
+                          <img
+                            src={b.badge.image}
+                            alt={t(b.badge.nameKey)}
+                            className={`w-20 h-20 object-contain ${b.unlocked ? '' : 'grayscale brightness-[0.08] opacity-30'}`}
+                          />
+                        ) : (
+                          <span className={`text-3xl ${b.unlocked ? '' : 'grayscale opacity-30'}`}>{b.badge.emoji}</span>
+                        )}
+                      </div>
+                      <p className={`text-xs font-semibold text-center leading-tight ${b.unlocked ? 'text-foreground' : 'text-muted-foreground/60'}`}>
+                        {t(b.badge.nameKey)}
+                      </p>
+                      {!b.unlocked && (
+                        <p className="text-[10px] text-muted-foreground">{b.progress}/{b.badge.threshold}</p>
+                      )}
+                    </button>
                     {adminMode && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setPreviewUnlockBadge(b); }}
