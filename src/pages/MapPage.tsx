@@ -287,6 +287,7 @@ const MapPage = () => {
               routeFocus={routeFocus}
               suppressInitialGeolocate={!!routeFocus}
               onClearRoute={handleHideRoute}
+              onMapReady={handleMapReady}
               previewWaypoints={previewWaypoints}
               onWaypointClick={(index) => setWaypointClickEvent({ index, timestamp: Date.now() })}
               onWaypointDrag={(index, lat, lng) => setWaypointDragEvent({ index, lat, lng, timestamp: Date.now() })}
