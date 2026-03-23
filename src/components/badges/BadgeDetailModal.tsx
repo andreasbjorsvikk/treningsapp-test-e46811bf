@@ -49,7 +49,7 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
               <img
                 src={def.image}
                 alt={t(def.nameKey)}
-                className={`w-48 h-48 object-contain ${unlocked ? '' : 'grayscale brightness-[0.08] opacity-30'} ${
+                className={`w-52 h-52 object-contain ${unlocked ? '' : 'grayscale brightness-[0.08] opacity-30'} ${
                   spinning ? 'animate-coin-spin' : ''
                 }`}
                 style={unlocked ? {
