@@ -34,6 +34,9 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
             countLabel = t(userBadge.badge.descriptionKey);
           }
 
+          const isHighPeaks = sub === 'high_peaks';
+          const extraScale = userBadge.badge.id === 'peaks_100' ? 'w-[120%] h-[120%]' : 'w-[116%] h-[116%]';
+
           return (
             <button
               key={userBadge.badge.id}
@@ -41,13 +44,15 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
               className="relative flex flex-col items-center gap-1.5 rounded-xl py-3 px-1 transition-colors hover:bg-muted/40"
             >
               <div
-                className="relative flex items-center justify-center rounded-full"
+                className="relative flex items-center justify-center rounded-full overflow-hidden"
                 style={{
                   width: socketSize,
                   height: socketSize,
-                  background: userBadge.unlocked
-                    ? `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`
-                    : 'radial-gradient(circle, hsl(var(--muted) / 0.5) 0%, transparent 70%)',
+                  background: isHighPeaks
+                    ? '#1a1a2e'
+                    : userBadge.unlocked
+                      ? `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`
+                      : 'radial-gradient(circle, hsl(var(--muted) / 0.5) 0%, transparent 70%)',
                   boxShadow: userBadge.unlocked
                     ? `inset 0 2px 6px rgba(0,0,0,0.15), 0 0 20px ${glowColor}`
                     : 'inset 0 2px 6px rgba(0,0,0,0.12)',
@@ -56,7 +61,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                 <img
                   src={userBadge.badge.image}
                   alt={title}
-                  className={`w-[108%] h-[108%] object-contain transition-all duration-300 ${
+                  className={`${extraScale} object-contain transition-all duration-300 ${
                     userBadge.unlocked
                       ? ''
                       : 'grayscale saturate-0 brightness-[0.07] contrast-125 opacity-45'

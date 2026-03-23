@@ -14,10 +14,10 @@ import badgeSessions250 from '@/assets/badges/250_okter.png';
 import badgeSessions500 from '@/assets/badges/500_okter.png';
 
 // Badge images - high peaks
-import badgeHighPeak1 from '@/assets/badges/1_topp_1000moh.png';
-import badgeHighPeak3 from '@/assets/badges/3_topper_1000moh.png';
-import badgeHighPeak5 from '@/assets/badges/5_topper_1000moh.png';
-import badgeHighPeak10 from '@/assets/badges/10_topper_1000moh.png';
+import badgeHighPeak1 from '@/assets/badges/1_topp_1000_moh.png';
+import badgeHighPeak3 from '@/assets/badges/3_topper_1000_moh.png';
+import badgeHighPeak5 from '@/assets/badges/5_topper_1000_moh.png';
+import badgeHighPeak10 from '@/assets/badges/10_topper_1000_moh.png';
 
 export type BadgeCategory = 'fjell' | 'trening';
 export type BadgeRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
