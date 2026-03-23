@@ -278,8 +278,10 @@ const RecordsSection = () => {
     setShowAddEntry(false);
   };
 
+  const [showDeleteHikeConfirm, setShowDeleteHikeConfirm] = useState(false);
+  const [hikeToDelete, setHikeToDelete] = useState<string | null>(null);
+
   const handleDeleteHike = async (id: string) => {
-    if (!confirm(t('records.deleteHikeConfirm'))) return;
     if (user) {
       await supabase.from('hiking_records').delete().eq('id', id);
       loadHikingRecords();
