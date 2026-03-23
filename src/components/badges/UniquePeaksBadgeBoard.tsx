@@ -34,7 +34,8 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
             countLabel = t(userBadge.badge.descriptionKey);
           }
 
-          const extraScale = userBadge.badge.id === 'peaks_100' ? 'w-[126%] h-[126%]' : sub === 'unique_peaks' ? 'w-[120%] h-[120%]' : 'w-[120%] h-[120%]';
+          const isHighPeaks = sub === 'high_peaks';
+          const extraScale = userBadge.badge.id === 'peaks_100' ? 'w-[134%] h-[134%]' : sub === 'unique_peaks' ? 'w-[124%] h-[124%]' : 'w-[123%] h-[123%]';
 
           return (
             <button
@@ -47,9 +48,11 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                 style={{
                   width: socketSize,
                   height: socketSize,
-                  background: userBadge.unlocked
-                    ? `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`
-                    : 'radial-gradient(circle, hsl(var(--muted) / 0.5) 0%, transparent 70%)',
+                  background: isHighPeaks
+                    ? '#1a1a2e'
+                    : userBadge.unlocked
+                      ? `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`
+                      : 'radial-gradient(circle, hsl(var(--muted) / 0.5) 0%, transparent 70%)',
                   boxShadow: userBadge.unlocked
                     ? `inset 0 2px 6px rgba(0,0,0,0.15), 0 0 20px ${glowColor}`
                     : 'inset 0 2px 6px rgba(0,0,0,0.12)',
@@ -61,7 +64,9 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                   className={`${extraScale} object-contain transition-all duration-300 ${
                     userBadge.unlocked
                       ? ''
-                      : 'grayscale saturate-0 brightness-[0.07] contrast-125 opacity-45'
+                      : isHighPeaks
+                        ? 'grayscale brightness-[0.3] opacity-40'
+                        : 'grayscale saturate-0 brightness-[0.07] contrast-125 opacity-45'
                   }`}
                   style={userBadge.unlocked ? { filter: `drop-shadow(0 0 6px ${glowColor})` } : undefined}
                   loading="lazy"
