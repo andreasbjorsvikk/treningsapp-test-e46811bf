@@ -34,8 +34,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
             countLabel = t(userBadge.badge.descriptionKey);
           }
 
-          const isHighPeaks = sub === 'high_peaks';
-          const extraScale = userBadge.badge.id === 'peaks_100' ? 'w-[120%] h-[120%]' : 'w-[116%] h-[116%]';
+          const extraScale = userBadge.badge.id === 'peaks_100' ? 'w-[126%] h-[126%]' : sub === 'unique_peaks' ? 'w-[120%] h-[120%]' : 'w-[120%] h-[120%]';
 
           return (
             <button
@@ -48,11 +47,9 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                 style={{
                   width: socketSize,
                   height: socketSize,
-                  background: isHighPeaks
-                    ? '#1a1a2e'
-                    : userBadge.unlocked
-                      ? `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`
-                      : 'radial-gradient(circle, hsl(var(--muted) / 0.5) 0%, transparent 70%)',
+                  background: userBadge.unlocked
+                    ? `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`
+                    : 'radial-gradient(circle, hsl(var(--muted) / 0.5) 0%, transparent 70%)',
                   boxShadow: userBadge.unlocked
                     ? `inset 0 2px 6px rgba(0,0,0,0.15), 0 0 20px ${glowColor}`
                     : 'inset 0 2px 6px rgba(0,0,0,0.12)',
