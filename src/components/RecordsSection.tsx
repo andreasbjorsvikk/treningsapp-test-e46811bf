@@ -106,7 +106,7 @@ type RecordTab = 'running' | 'cycling' | 'hiking';
 const RecordsSection = () => {
   const appData = useAppDataContext();
   const { user } = useAuth();
-  const { t, locale } = useTranslation();
+  const { t, locale, language } = useTranslation();
   const [tab, setTab] = useState<RecordTab>('running');
   const [selectedHike, setSelectedHike] = useState<HikingRecord | null>(null);
   const [showAddHike, setShowAddHike] = useState(false);
