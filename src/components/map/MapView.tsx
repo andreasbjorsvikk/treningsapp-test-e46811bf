@@ -53,9 +53,9 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   const { t } = useTranslation();
   const { settings } = useSettings();
   const { user } = useAuth();
-  const { isConstrainedDevice, shouldUseSafeMapMode } = useMemo(() => {
+  const { isConstrainedDevice, isIOSDevice } = useMemo(() => {
     if (typeof window === 'undefined') {
-      return { isConstrainedDevice: false, shouldUseSafeMapMode: false };
+      return { isConstrainedDevice: false, isIOSDevice: false };
     }
 
     const nav = navigator as Navigator & { deviceMemory?: number };
@@ -68,8 +68,8 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     const constrained = isTouchDevice || hasLowMemory;
 
     return {
-      isConstrainedDevice: constrained,
-      shouldUseSafeMapMode: isIOSLike || constrained,
+      isConstrainedDevice: constrained || isIOSLike,
+      isIOSDevice: isIOSLike,
     };
   }, []);
   const [mapLoaded, setMapLoaded] = useState(false);

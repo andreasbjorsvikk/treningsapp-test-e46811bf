@@ -724,11 +724,6 @@ const IndexContent = () => {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 pl-1">
-                  {user && (
-                    <Button size="icon" variant="ghost" className="rounded-full h-10 w-10" onClick={handleManualSync} disabled={stravaSyncing}>
-                      {stravaSyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                    </Button>
-                  )}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button size="icon" variant="ghost" className="rounded-full h-10 w-10">
