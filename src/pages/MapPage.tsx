@@ -51,7 +51,7 @@ const MapPage = () => {
   const [activeRoutePeakId, setActiveRoutePeakId] = useState<string | null>(null);
   const [routeFocus, setRouteFocus] = useState<{ latitude: number; longitude: number; requestId: number } | null>(null);
   const [previewWaypoints, setPreviewWaypoints] = useState<{lat: number, lng: number}[]>([]);
-  const pendingRoutePeakRef = useRef<Peak | null>(null);
+  const [pendingRoutePeak, setPendingRoutePeak] = useState<Peak | null>(null);
 
   // Map settings
   const [showSettings, setShowSettings] = useState(false);
@@ -205,8 +205,7 @@ const MapPage = () => {
     setSelectedPeak(null);
 
     if (openedFromTopper) {
-      // Store pending route, switch tab, apply when map is ready
-      pendingRoutePeakRef.current = peak;
+      setPendingRoutePeak(peak);
       setSubTab('kart');
     } else {
       applyRouteForPeak(peak);
@@ -214,13 +213,26 @@ const MapPage = () => {
   };
 
   const handleMapReady = useCallback(() => {
-    if (pendingRoutePeakRef.current) {
-      const peak = pendingRoutePeakRef.current;
-      pendingRoutePeakRef.current = null;
-      // Small delay to ensure map style is fully loaded
-      setTimeout(() => applyRouteForPeak(peak), 200);
+    if (pendingRoutePeak) {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          applyRouteForPeak(pendingRoutePeak);
+          setPendingRoutePeak(null);
+        });
+      });
     }
-  }, [applyRouteForPeak]);
+  }, [applyRouteForPeak, pendingRoutePeak]);
+
+  useEffect(() => {
+    if (subTab !== 'kart' || !pendingRoutePeak) return;
+
+    const fallbackTimer = window.setTimeout(() => {
+      applyRouteForPeak(pendingRoutePeak);
+      setPendingRoutePeak(null);
+    }, 700);
+
+    return () => window.clearTimeout(fallbackTimer);
+  }, [subTab, pendingRoutePeak, applyRouteForPeak]);
 
   useEffect(() => {
     if (showSuggestions && adminMode) {
@@ -285,7 +297,7 @@ const MapPage = () => {
               onLongPress={handleLongPress}
               routeGeojson={activeRouteGeojson}
               routeFocus={routeFocus}
-              suppressInitialGeolocate={!!routeFocus}
+              suppressInitialGeolocate={!!routeFocus || !!pendingRoutePeak}
               onClearRoute={handleHideRoute}
               onMapReady={handleMapReady}
               previewWaypoints={previewWaypoints}
