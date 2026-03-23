@@ -89,12 +89,13 @@ const BadgesPage = () => {
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
             {SUBCATEGORY_NAMES[subcategory]?.[language] || subcategory}
           </p>
-          {subcategory === 'unique_peaks' ? (
+          {(subcategory === 'unique_peaks' || subcategory === 'high_peaks') ? (
             <UniquePeaksBadgeBoard
               badges={badgeList}
               onSelectBadge={setSelectedBadge}
               adminMode={adminMode}
               onPreviewBadge={setPreviewUnlockBadge}
+              columns={subcategory === 'high_peaks' ? 2 : 2}
             />
           ) : (
             <div className="grid grid-cols-3 gap-2">
