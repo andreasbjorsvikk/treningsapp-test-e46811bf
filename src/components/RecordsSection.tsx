@@ -728,6 +728,33 @@ const RecordsSection = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          {/* Delete hike confirmation */}
+          <AlertDialog open={showDeleteHikeConfirm} onOpenChange={setShowDeleteHikeConfirm}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{language === 'no' ? 'Er du sikker?' : 'Are you sure?'}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {language === 'no' ? 'Denne handlingen kan ikke angres. Alle registreringer for denne fjellturen vil bli slettet.' : 'This action cannot be undone. All entries for this hike will be deleted.'}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{language === 'no' ? 'Avbryt' : 'Cancel'}</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => {
+                    if (hikeToDelete) {
+                      handleDeleteHike(hikeToDelete);
+                      setSelectedHike(null);
+                      setHikeToDelete(null);
+                    }
+                  }}
+                >
+                  {language === 'no' ? 'Slett' : 'Delete'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       )}
     </div>
