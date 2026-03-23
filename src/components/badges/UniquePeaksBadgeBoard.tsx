@@ -51,7 +51,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                 onClick={() => onSelectBadge(userBadge)}
                 className="relative flex flex-col items-center gap-1.5 rounded-xl py-3 px-1 transition-colors hover:bg-muted/40"
               >
-                <div className="relative flex items-center justify-center" style={{ width: socketSize, height: socketSize }}>
+                <div className="relative flex items-center justify-center drop-shadow-md" style={{ width: socketSize, height: socketSize }}>
                   <img
                     src={userBadge.badge.image}
                     alt={title}
