@@ -53,6 +53,11 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   const { t } = useTranslation();
   const { settings } = useSettings();
   const { user } = useAuth();
+  const isConstrainedDevice = typeof window !== 'undefined' && (
+    window.matchMedia('(max-width: 768px)').matches ||
+    window.matchMedia('(hover: none) and (pointer: coarse)').matches ||
+    (((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8) <= 4)
+  );
   const [mapLoaded, setMapLoaded] = useState(false);
   const [is3D, setIs3D] = useState(true);
   const [mapStyle, setMapStyle] = useState<'outdoors' | 'satellite' | 'streets' | 'topo'>('outdoors');
@@ -240,11 +245,11 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         style: 'mapbox://styles/mapbox/outdoors-v12',
         center,
         zoom,
-        pitch: 60,
-        bearing: -20,
-        antialias: true,
+        pitch: isConstrainedDevice ? 44 : 60,
+        bearing: isConstrainedDevice ? 0 : -20,
+        antialias: false,
         failIfMajorPerformanceCaveat: false,
-        maxTileCacheSize: 50,
+        maxTileCacheSize: isConstrainedDevice ? 24 : 40,
       });
     } catch (err) {
       console.error('Failed to initialize map:', err);
@@ -276,14 +281,17 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     });
 
     m.on('style.load', () => {
-      addEnhancedTerrain(m, { exaggeration: 1.4 });
+      addEnhancedTerrain(m, {
+        exaggeration: isConstrainedDevice ? 1.08 : 1.4,
+        lightweight: isConstrainedDevice,
+      });
       setMapLoaded(true);
       onMapReadyRef.current?.();
     });
 
     map.current = m;
     return () => { m.remove(); map.current = null; };
-  }, []);
+  }, [isConstrainedDevice]);
 
   // Admin: click to add peak or waypoint
   useEffect(() => {
@@ -351,20 +359,20 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     if (!map.current || !mapLoaded) return;
     const m = map.current;
     if (is3D) {
-      m.easeTo({ pitch: 60, bearing: -20, duration: 600 });
+      m.easeTo({ pitch: isConstrainedDevice ? 44 : 60, bearing: isConstrainedDevice ? 0 : -20, duration: 600 });
       whenStyleReady(m, () => {
         if (!m.getTerrain()) {
           if (!m.getSource('mapbox-dem')) {
             m.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
           }
-          m.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+          m.setTerrain({ source: 'mapbox-dem', exaggeration: isConstrainedDevice ? 1.08 : 1.5 });
         }
       });
     } else {
       m.easeTo({ pitch: 0, bearing: 0, duration: 600 });
       m.setTerrain(null);
     }
-  }, [is3D, mapLoaded, whenStyleReady]);
+  }, [is3D, isConstrainedDevice, mapLoaded, whenStyleReady]);
 
   // Toggle map style — only when user actually changes it
   useEffect(() => {
@@ -419,7 +427,10 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         setMapLoaded(false);
         m.setStyle('mapbox://styles/mapbox/outdoors-v12');
         m.once('style.load', () => {
-          addEnhancedTerrain(m, { exaggeration: 1.4 });
+          addEnhancedTerrain(m, {
+            exaggeration: isConstrainedDevice ? 1.08 : 1.4,
+            lightweight: isConstrainedDevice,
+          });
           setMapLoaded(true);
           addTopoOverlay();
         });
@@ -436,11 +447,14 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     setMapLoaded(false);
     m.setStyle(styleUrl);
     m.once('style.load', () => {
-      addEnhancedTerrain(m, { exaggeration: 1.4 });
-      if (is3D) m.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+      addEnhancedTerrain(m, {
+        exaggeration: isConstrainedDevice ? 1.08 : 1.4,
+        lightweight: isConstrainedDevice,
+      });
+      if (is3D) m.setTerrain({ source: 'mapbox-dem', exaggeration: isConstrainedDevice ? 1.08 : 1.5 });
       setMapLoaded(true);
     });
-  }, [mapStyle, mapLoaded, whenStyleReady]);
+  }, [is3D, isConstrainedDevice, mapStyle, mapLoaded, whenStyleReady]);
 
   // Route focus (especially important when opening route from Topper tab)
   useEffect(() => {
