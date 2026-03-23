@@ -36,17 +36,61 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
           }
 
           const isHighPeaks = sub === 'high_peaks';
-          const imgScale = userBadge.badge.id === 'peaks_100'
-            ? 1.58
-            : sub === 'unique_peaks'
-              ? 1.44
-              : 1.40;
           const showGlow = userBadge.unlocked && !(isHighPeaks && !isDarkTheme);
-          const glowShadow = showGlow
-            ? isHighPeaks
-              ? `0 0 22px ${glowColor}`
-              : `0 0 24px ${glowColor}`
-            : 'none';
+
+          // High peaks: standalone images without circular socket
+          if (isHighPeaks) {
+            return (
+              <button
+                key={userBadge.badge.id}
+                onClick={() => onSelectBadge(userBadge)}
+                className="relative flex flex-col items-center gap-1.5 rounded-xl py-3 px-1 transition-colors hover:bg-muted/40"
+              >
+                <div className="relative flex items-center justify-center" style={{ width: socketSize, height: socketSize }}>
+                  <img
+                    src={userBadge.badge.image}
+                    alt={title}
+                    className={`object-contain transition-all duration-300 ${
+                      userBadge.unlocked
+                        ? ''
+                        : 'grayscale brightness-[0.42] opacity-60'
+                    }`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      ...(showGlow ? { filter: `drop-shadow(0 0 8px ${glowColor})` } : {}),
+                    }}
+                    loading="lazy"
+                  />
+                </div>
+
+                <div className="text-center">
+                  <p className="font-display text-[0.82rem] font-semibold leading-tight text-foreground">{title}</p>
+                  <p className="mt-0.5 text-[0.68rem] font-medium leading-tight text-muted-foreground">{countLabel}</p>
+                </div>
+
+                {!userBadge.unlocked && (
+                  <p className="text-[0.65rem] font-medium text-muted-foreground/70">
+                    {userBadge.progress}/{userBadge.badge.threshold}
+                  </p>
+                )}
+
+                {adminMode && onPreviewBadge && (
+                  <button
+                    onClick={(event) => { event.stopPropagation(); onPreviewBadge(userBadge); }}
+                    className="absolute right-1 top-1 z-10 rounded-full border border-border bg-background/90 p-1 shadow-sm transition-colors hover:bg-muted"
+                    title="Preview unlock animation"
+                  >
+                    <Play className="h-3 w-3 text-foreground" />
+                  </button>
+                )}
+              </button>
+            );
+          }
+
+          // Unique peaks: circular socket with glow
+          const imgScale = userBadge.badge.id === 'peaks_100' ? 1.06 : 1.0;
+          const glowShadow = showGlow ? `0 0 24px ${glowColor}` : 'none';
 
           return (
             <button
@@ -54,15 +98,13 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
               onClick={() => onSelectBadge(userBadge)}
               className="relative flex flex-col items-center gap-1.5 rounded-xl py-3 px-1 transition-colors hover:bg-muted/40"
             >
-              <div
-                className="relative flex items-center justify-center p-2"
-              >
+              <div className="relative flex items-center justify-center p-2">
                 <div
                   className="pointer-events-none absolute left-1/2 top-1/2 rounded-full -translate-x-1/2 -translate-y-1/2"
                   style={{
                     width: socketSize,
                     height: socketSize,
-                    background: !isHighPeaks && userBadge.unlocked
+                    background: userBadge.unlocked
                       ? `radial-gradient(circle, ${glowColor} 0%, transparent 72%)`
                       : 'transparent',
                     boxShadow: glowShadow,
@@ -73,27 +115,17 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                   style={{
                     width: socketSize,
                     height: socketSize,
-                    background: isHighPeaks ? 'transparent' : 'hsl(var(--card))',
+                    background: 'hsl(var(--card))',
                     boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.16)',
                   }}
                 >
-                  {isHighPeaks && !userBadge.unlocked && (
-                    <div
-                      className="absolute inset-0 rounded-full"
-                      style={{
-                        background: 'linear-gradient(180deg, hsl(var(--muted) / 0.34) 0%, hsl(var(--muted-foreground) / 0.18) 100%)',
-                      }}
-                    />
-                  )}
                   <img
                     src={userBadge.badge.image}
                     alt={title}
                     className={`relative z-10 object-contain transition-all duration-300 ${
                       userBadge.unlocked
                         ? ''
-                        : isHighPeaks
-                          ? 'grayscale brightness-[0.42] opacity-60'
-                          : 'grayscale saturate-0 brightness-[0.07] contrast-125 opacity-45'
+                        : 'grayscale saturate-0 brightness-[0.07] contrast-125 opacity-45'
                     }`}
                     style={{
                       width: '100%',
@@ -110,12 +142,8 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
               </div>
 
               <div className="text-center">
-                <p className="font-display text-[0.82rem] font-semibold leading-tight text-foreground">
-                  {title}
-                </p>
-                <p className="mt-0.5 text-[0.68rem] font-medium leading-tight text-muted-foreground">
-                  {countLabel}
-                </p>
+                <p className="font-display text-[0.82rem] font-semibold leading-tight text-foreground">{title}</p>
+                <p className="mt-0.5 text-[0.68rem] font-medium leading-tight text-muted-foreground">{countLabel}</p>
               </div>
 
               {!userBadge.unlocked && (
@@ -126,10 +154,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
 
               {adminMode && onPreviewBadge && (
                 <button
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onPreviewBadge(userBadge);
-                  }}
+                  onClick={(event) => { event.stopPropagation(); onPreviewBadge(userBadge); }}
                   className="absolute right-1 top-1 z-10 rounded-full border border-border bg-background/90 p-1 shadow-sm transition-colors hover:bg-muted"
                   title="Preview unlock animation"
                 >

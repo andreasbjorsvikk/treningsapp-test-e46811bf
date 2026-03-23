@@ -459,7 +459,26 @@ const RecordsSection = () => {
                         {h.elevationGain && ` · ${h.elevationGain} ${t('records.elevationGainUnit')}`}
                       </p>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedHike(h);
+                        setTimeout(() => openEditHike(), 50);
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-secondary/60 transition-colors shrink-0"
+                    >
+                      <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setHikeToDelete(h.id);
+                        setShowDeleteHikeConfirm(true);
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors shrink-0"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                    </button>
                   </button>
                 );
               })}
