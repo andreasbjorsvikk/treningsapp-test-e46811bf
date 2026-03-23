@@ -18,7 +18,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
   const isDarkTheme = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 shadow-sm">
+    <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 shadow-md">
       <div className={`grid ${gridCols} gap-3`}>
         {orderedBadges.map((userBadge) => {
           if (!userBadge.badge.image) return null;

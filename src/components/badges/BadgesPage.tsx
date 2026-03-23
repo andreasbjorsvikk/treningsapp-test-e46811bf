@@ -98,7 +98,7 @@ const BadgesPage = () => {
               columns={subcategory === 'high_peaks' ? 2 : 2}
             />
           ) : subcategory === 'daily_checkins' ? (
-            <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 shadow-sm">
+          <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 shadow-md">
               <div className="grid grid-cols-3 gap-3">
                 {badgeList.map(b => (
                   <div key={b.badge.id} className="relative flex flex-col items-center gap-1.5">

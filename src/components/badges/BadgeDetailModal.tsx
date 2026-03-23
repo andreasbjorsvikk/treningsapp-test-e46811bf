@@ -80,7 +80,11 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
         {showThresholdHeadline && (
           <p className="text-sm font-semibold mb-2" style={{ color: rarityColor }}>{thresholdText}</p>
         )}
-        {showDescription && <p className="text-sm text-muted-foreground mb-4">{t(def.descriptionKey)}</p>}
+        {showDescription && (
+          <p className="text-sm text-muted-foreground mb-4">
+            {unlocked ? t(def.descriptionKey) : t(def.requirementKey)}
+          </p>
+        )}
         {showRequirement && <p className="text-xs text-muted-foreground mb-3">{t(def.requirementKey)}</p>}
 
         {/* Repeat count */}
