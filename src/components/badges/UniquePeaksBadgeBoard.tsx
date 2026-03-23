@@ -15,15 +15,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
   const orderedBadges = [...badges].sort((a, b) => a.badge.sortOrder - b.badge.sortOrder);
   const gridCols = columns === 2 ? 'grid-cols-2' : columns === 3 ? 'grid-cols-3' : 'grid-cols-4';
   const socketSize = columns === 2 ? '7rem' : '5.2rem';
-  const glowSize = columns === 2 ? '7.9rem' : '5.9rem';
   const isDarkTheme = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
-
-  const getBadgeScale = (badge: BadgeDefinition) => {
-    if (badge.id === 'peaks_100') return 206;
-    if (badge.subcategory === 'unique_peaks') return 176;
-    if (badge.subcategory === 'high_peaks') return 162;
-    return 100;
-  };
 
   return (
     <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 shadow-sm">
@@ -44,7 +36,11 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
           }
 
           const isHighPeaks = sub === 'high_peaks';
-          const badgeScale = getBadgeScale(userBadge.badge);
+          const extraScale = userBadge.badge.id === 'peaks_100'
+            ? 'w-[176%] h-[176%]'
+            : sub === 'unique_peaks'
+              ? 'w-[144%] h-[144%]'
+              : 'w-[140%] h-[140%]';
           const glowShadow = userBadge.unlocked
             ? isHighPeaks
               ? isDarkTheme
@@ -57,16 +53,16 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
             <button
               key={userBadge.badge.id}
               onClick={() => onSelectBadge(userBadge)}
-              className="relative flex flex-col items-center gap-1.5 rounded-xl px-1 py-4 transition-colors hover:bg-muted/40"
+              className="relative flex flex-col items-center gap-1.5 rounded-xl py-3 px-1 transition-colors hover:bg-muted/40"
             >
               <div
-                className="relative flex items-center justify-center overflow-visible px-2 py-4"
+                className="relative flex items-center justify-center p-2"
               >
                 <div
                   className="pointer-events-none absolute left-1/2 top-1/2 rounded-full -translate-x-1/2 -translate-y-1/2"
                   style={{
-                    width: glowSize,
-                    height: glowSize,
+                    width: socketSize,
+                    height: socketSize,
                     background: !isHighPeaks && userBadge.unlocked
                       ? `radial-gradient(circle, ${glowColor} 0%, transparent 72%)`
                       : 'transparent',
@@ -74,48 +70,35 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                   }}
                 />
                 <div
-                  className="relative flex items-center justify-center rounded-full overflow-visible"
+                  className="relative flex items-center justify-center rounded-full overflow-hidden"
                   style={{
                     width: socketSize,
                     height: socketSize,
+                    background: isHighPeaks ? 'hsl(var(--badge-socket-high-peaks))' : 'hsl(var(--card))',
+                    boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.16)',
                   }}
                 >
-                  <div
-                    className="absolute inset-0 rounded-full overflow-hidden"
-                    style={{
-                      background: isHighPeaks ? 'hsl(var(--badge-socket-high-peaks))' : 'hsl(var(--card))',
-                      boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.16)',
-                    }}
-                  >
-                    {isHighPeaks && !userBadge.unlocked && (
-                      <div
-                        className="absolute inset-0 rounded-full"
-                        style={{
-                          background: 'linear-gradient(180deg, hsl(var(--muted) / 0.34) 0%, hsl(var(--muted-foreground) / 0.18) 100%)',
-                        }}
-                      />
-                    )}
-                    <img
-                      src={userBadge.badge.image}
-                      alt={title}
-                      className={`absolute left-1/2 top-1/2 z-10 object-contain transition-all duration-300 ${
-                        userBadge.unlocked
-                          ? ''
-                          : isHighPeaks
-                            ? 'grayscale brightness-[0.42] opacity-60'
-                            : 'grayscale saturate-0 brightness-[0.07] contrast-125 opacity-45'
-                      }`}
+                  {isHighPeaks && !userBadge.unlocked && (
+                    <div
+                      className="absolute inset-0 rounded-full"
                       style={{
-                        width: `${badgeScale}%`,
-                        height: `${badgeScale}%`,
-                        maxWidth: 'none',
-                        maxHeight: 'none',
-                        transform: 'translate(-50%, -50%)',
-                        ...(userBadge.unlocked ? { filter: `drop-shadow(0 0 7px ${glowColor})` } : {}),
+                        background: 'linear-gradient(180deg, hsl(var(--muted) / 0.34) 0%, hsl(var(--muted-foreground) / 0.18) 100%)',
                       }}
-                      loading="lazy"
                     />
-                  </div>
+                  )}
+                  <img
+                    src={userBadge.badge.image}
+                    alt={title}
+                    className={`relative z-10 ${extraScale} object-contain transition-all duration-300 ${
+                      userBadge.unlocked
+                        ? ''
+                        : isHighPeaks
+                          ? 'grayscale brightness-[0.42] opacity-60'
+                          : 'grayscale saturate-0 brightness-[0.07] contrast-125 opacity-45'
+                    }`}
+                    style={userBadge.unlocked ? { filter: `drop-shadow(0 0 6px ${glowColor})` } : undefined}
+                    loading="lazy"
+                  />
                 </div>
               </div>
 

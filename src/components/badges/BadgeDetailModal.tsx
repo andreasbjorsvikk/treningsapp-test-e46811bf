@@ -32,13 +32,6 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
   const progressPercent = Math.min((progress / def.threshold) * 100, 100);
   const rarityLabel = t(`badge.rarity.${def.rarity}`);
   const isUniquePeaks = def.subcategory === 'unique_peaks';
-  const detailBadgeScale = def.id === 'peaks_100'
-    ? 1.22
-    : def.subcategory === 'unique_peaks'
-      ? 1.14
-      : def.subcategory === 'high_peaks'
-        ? 1.1
-        : 1;
   const thresholdKey = `${def.nameKey}Threshold` as any;
   const thresholdText = t(thresholdKey);
   const hasThresholdText = thresholdText !== thresholdKey;
@@ -53,22 +46,19 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
         <div className="flex justify-center mb-4">
           {def.image ? (
             <div
-              className={`relative flex h-60 w-60 items-center justify-center overflow-visible ${isUniquePeaks && unlocked ? 'perspective-[600px]' : ''}`}
+              className={isUniquePeaks && unlocked ? 'perspective-[600px]' : ''}
               onClick={() => isUniquePeaks && unlocked && setSpinning(true)}
             >
               <img
                 src={def.image}
                 alt={t(def.nameKey)}
-                className={`h-56 w-56 object-contain ${unlocked ? '' : 'grayscale brightness-[0.08] opacity-30'} ${
+                className={`w-56 h-56 object-contain ${unlocked ? '' : 'grayscale brightness-[0.08] opacity-30'} ${
                   spinning ? 'animate-coin-spin' : ''
                 }`}
-                style={{
-                  transform: `scale(${detailBadgeScale})`,
-                  ...(unlocked ? {
-                    filter: `drop-shadow(0 0 24px ${glowColor})`,
-                    transformStyle: 'preserve-3d',
-                  } : {}),
-                }}
+                style={unlocked ? {
+                  filter: `drop-shadow(0 0 24px ${glowColor})`,
+                  transformStyle: 'preserve-3d',
+                } : undefined}
               />
             </div>
           ) : (

@@ -37,13 +37,6 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
   const rarityColor = highPeakGlow?.color || getRarityColor(mainBadge.badge.rarity);
   const glowColor = highPeakGlow?.glow || getRarityGlow(mainBadge.badge.rarity);
   const isLegendary = mainBadge.badge.rarity === 'legendary' || mainBadge.badge.rarity === 'epic';
-  const badgeScale = mainBadge.badge.id === 'peaks_100'
-    ? 1.22
-    : mainBadge.badge.subcategory === 'unique_peaks'
-      ? 1.14
-      : mainBadge.badge.subcategory === 'high_peaks'
-        ? 1.1
-        : 1;
   const thresholdKey = `${mainBadge.badge.nameKey}Threshold` as any;
   const thresholdText = t(thresholdKey);
   const hasThresholdText = thresholdText !== thresholdKey;
@@ -73,7 +66,7 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
             <>
               {/* Image badges: no circle, just the image with glow */}
               <div
-                className={`relative flex h-60 w-60 items-center justify-center overflow-visible transition-all duration-700 ${
+                className={`flex items-center justify-center transition-all duration-700 ${
                   isLegendary ? 'animate-pulse' : ''
                 }`}
                 style={{
@@ -83,11 +76,8 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
                 <img
                   src={mainBadge.badge.image}
                   alt={t(mainBadge.badge.nameKey)}
-                  className={`h-56 w-56 object-contain transition-transform duration-500 ${showContent ? 'scale-100' : 'scale-0'} ${spinIntro ? 'animate-coin-spin' : ''}`}
-                  style={{
-                    filter: `drop-shadow(0 0 16px ${glowColor})`,
-                    transform: `${showContent ? `scale(${badgeScale})` : 'scale(0)'}`,
-                  }}
+                  className={`w-56 h-56 object-contain transition-transform duration-500 ${showContent ? 'scale-100' : 'scale-0'} ${spinIntro ? 'animate-coin-spin' : ''}`}
+                  style={{ filter: `drop-shadow(0 0 16px ${glowColor})` }}
                 />
               </div>
             </>

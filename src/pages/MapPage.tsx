@@ -220,8 +220,10 @@ const MapPage = () => {
     primeMapForRoute(peak);
 
     if (openedFromTopper) {
-      applyRouteForPeak(peak);
-      setPendingRoutePeak(null);
+      setActiveRouteGeojson(null);
+      setActiveRoutePeakId(null);
+      setRouteFocus(null);
+      setPendingRoutePeak(peak);
       setSubTab('kart');
       return;
     }
