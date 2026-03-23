@@ -366,6 +366,10 @@ export async function computeUserBadges(userId: string, isChild = false): Promis
       repeatCount = countDaysWithCheckins(validDateMap, 5);
       progress = repeatCount > 0 ? 5 : Math.max(...Array.from(validDateMap.values()), 0);
     }
+    else if (badge.id === 'checkins_7_day') {
+      repeatCount = countDaysWithCheckins(validDateMap, 7);
+      progress = repeatCount > 0 ? 7 : Math.max(...Array.from(validDateMap.values()), 0);
+    }
     else if (badge.id === 'streak_3') {
       repeatCount = countStreakRuns(validCheckinDates, 3);
       progress = repeatCount > 0 ? 3 : maxStreak(validCheckinDates);
