@@ -28,6 +28,7 @@ interface MapViewProps {
   onLongPress?: (lat: number, lng: number) => void;
   routeGeojson?: any;
   routeFocus?: { latitude: number; longitude: number; requestId: number } | null;
+  routeRequestId?: number;
   suppressInitialGeolocate?: boolean;
   onClearRoute?: () => void;
   onMapReady?: () => void;
@@ -43,7 +44,7 @@ interface MapViewProps {
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
-const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, routeFocus, suppressInitialGeolocate, onClearRoute, onMapReady, previewWaypoints, onWaypointClick, onWaypointDrag, showHeatmap, heatmapPeriod, showAreaStats, onlyReachedThisYear, suggestedPeaks }: MapViewProps) => {
+const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, routeFocus, routeRequestId, suppressInitialGeolocate, onClearRoute, onMapReady, previewWaypoints, onWaypointClick, onWaypointDrag, showHeatmap, heatmapPeriod, showAreaStats, onlyReachedThisYear, suggestedPeaks }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -202,6 +203,42 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   }, []);
 
   const routeCoordinates = useMemo(() => extractRouteCoordinates(routeGeojson), [routeGeojson, extractRouteCoordinates]);
+
+  const syncRoutePresentation = useCallback((m: mapboxgl.Map, fitToRoute = true) => {
+    ensureRouteLayer(m);
+    const source = m.getSource(routeSourceId) as mapboxgl.GeoJSONSource | undefined;
+    if (!source) return;
+
+    if (routeCoordinates.length < 2) {
+      source.setData({ type: 'FeatureCollection', features: [] } as any);
+      return;
+    }
+
+    source.setData({
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: routeCoordinates,
+      },
+      properties: {},
+    } as any);
+
+    if (!fitToRoute) return;
+
+    const bounds = new mapboxgl.LngLatBounds(routeCoordinates[0], routeCoordinates[0]);
+    routeCoordinates.forEach((coord) => bounds.extend(coord));
+
+    if (routeFocus) {
+      bounds.extend([routeFocus.longitude, routeFocus.latitude]);
+    }
+
+    m.resize();
+    m.fitBounds(bounds, {
+      padding: { top: 72, right: 36, bottom: 132, left: 36 },
+      duration: 950,
+      maxZoom: 15,
+    });
+  }, [ensureRouteLayer, routeCoordinates, routeFocus]);
   
   // Checkins this year
   const thisYearCheckedIds = new Set(
@@ -444,7 +481,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
 
   // Route focus (especially important when opening route from Topper tab)
   useEffect(() => {
-    if (!map.current || !mapLoaded || !routeFocus) return;
+    if (!map.current || !mapLoaded || !routeFocus || routeCoordinates.length >= 2) return;
     const m = map.current;
 
     whenStyleReady(m, () => {
@@ -455,7 +492,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         duration: 700,
       });
     });
-  }, [routeFocus, mapLoaded, whenStyleReady]);
+  }, [routeFocus, routeCoordinates.length, mapLoaded, whenStyleReady]);
 
   // Draw route if provided
   useEffect(() => {
@@ -463,39 +500,22 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     const m = map.current;
 
     whenStyleReady(m, () => {
-      ensureRouteLayer(m);
-      const source = m.getSource(routeSourceId) as mapboxgl.GeoJSONSource | undefined;
-      if (!source) return;
-
-      if (routeCoordinates.length >= 2) {
-        source.setData({
-          type: 'Feature',
-          geometry: {
-            type: 'LineString',
-            coordinates: routeCoordinates,
-          },
-          properties: {},
-        } as any);
-
-        const bounds = new mapboxgl.LngLatBounds();
-        routeCoordinates.forEach((coord) => bounds.extend(coord));
-
-        if (routeFocus) {
-          bounds.extend([routeFocus.longitude, routeFocus.latitude]);
-        }
-
-        m.resize();
-        window.requestAnimationFrame(() => {
-          m.fitBounds(bounds, { padding: 60, duration: 900, maxZoom: 15 });
-          window.setTimeout(() => {
-            m.fitBounds(bounds, { padding: 60, duration: 500, maxZoom: 15 });
-          }, 350);
-        });
-      } else {
-        source.setData({ type: 'FeatureCollection', features: [] } as any);
-      }
+      syncRoutePresentation(m, true);
     });
-  }, [routeCoordinates, routeFocus, mapLoaded, whenStyleReady, ensureRouteLayer]);
+  }, [mapLoaded, whenStyleReady, syncRoutePresentation]);
+
+  useEffect(() => {
+    if (!map.current || !mapLoaded || !routeRequestId || routeCoordinates.length < 2) return;
+    const m = map.current;
+
+    whenStyleReady(m, () => {
+      const applyRoute = () => syncRoutePresentation(m, true);
+
+      window.requestAnimationFrame(applyRoute);
+      window.setTimeout(applyRoute, 260);
+      m.once('idle', applyRoute);
+    });
+  }, [routeRequestId, routeCoordinates.length, mapLoaded, whenStyleReady, syncRoutePresentation]);
 
   // Handle preview waypoints
   useEffect(() => {

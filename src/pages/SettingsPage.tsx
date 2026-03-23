@@ -1193,8 +1193,8 @@ const SettingsPage = () => {
             onClick={() => setView('badges' as SettingsView)}
             className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/30 transition-colors"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/50 bg-background/70 shadow-sm">
-              <img src={badgeShortcutImage} alt="" className="h-6 w-6 object-contain" loading="lazy" />
+            <div className="flex h-10 w-10 items-center justify-center">
+              <img src={badgeShortcutImage} alt="" className="h-8 w-8 object-contain" loading="lazy" />
             </div>
             <span className="flex-1 text-left font-display font-semibold text-sm">{t('badge.tab')}</span>
             <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
