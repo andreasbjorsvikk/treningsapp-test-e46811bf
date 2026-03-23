@@ -26,12 +26,16 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
           const glowColor = getHighPeakGlow(userBadge.badge.id)?.glow || getRarityGlow(userBadge.badge.rarity);
           const title = t(userBadge.badge.nameKey);
           const sub = userBadge.badge.subcategory;
+          let titleLine: string;
           let countLabel: string;
           if (sub === 'unique_peaks') {
+            titleLine = title;
             countLabel = language === 'no' ? `${userBadge.badge.threshold} unike topper` : `${userBadge.badge.threshold} unique peaks`;
           } else if (sub === 'high_peaks') {
-            countLabel = language === 'no' ? `over 1000 moh` : `over 1000m`;
+            titleLine = language === 'no' ? `${userBadge.badge.threshold === 1 ? '1 topp' : `${userBadge.badge.threshold} topper`}` : `${userBadge.badge.threshold} peak${userBadge.badge.threshold === 1 ? '' : 's'}`;
+            countLabel = language === 'no' ? 'over 1000 moh' : 'above 1000m';
           } else {
+            titleLine = title;
             countLabel = t(userBadge.badge.descriptionKey);
           }
 
