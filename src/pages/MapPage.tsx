@@ -51,7 +51,8 @@ const MapPage = () => {
   const [activeRoutePeakId, setActiveRoutePeakId] = useState<string | null>(null);
   const [routeFocus, setRouteFocus] = useState<{ latitude: number; longitude: number; requestId: number } | null>(null);
   const [previewWaypoints, setPreviewWaypoints] = useState<{lat: number, lng: number}[]>([]);
-  const [pendingRoutePeak, setPendingRoutePeak] = useState<Peak | null>(null);
+  const [queuedTopperRoutePeak, setQueuedTopperRoutePeak] = useState<Peak | null>(null);
+  const [routeRequestId, setRouteRequestId] = useState<number>(0);
 
   // Map settings
   const [showSettings, setShowSettings] = useState(false);
@@ -193,6 +194,7 @@ const MapPage = () => {
 
     setActiveRouteGeojson(routePayload);
     setActiveRoutePeakId(peak.id);
+    setRouteRequestId(Date.now());
     setRouteFocus({ latitude: peak.latitude, longitude: peak.longitude, requestId: Date.now() });
   }, [normalizeRouteGeojson]);
 
@@ -206,38 +208,29 @@ const MapPage = () => {
 
     const openedFromTopper = subTab === 'topper' || fromTopper === true;
 
-    // Close the peak detail drawer so the map/route is visible
     setSelectedPeak(null);
-    primeMapForRoute(peak);
-    applyRouteForPeak(peak);
 
     if (openedFromTopper) {
-      setPendingRoutePeak(peak);
+      primeMapForRoute(peak);
+      setQueuedTopperRoutePeak(peak);
       setSubTab('kart');
+      return;
     }
+
+    primeMapForRoute(peak);
+    applyRouteForPeak(peak);
   };
 
-  const handleMapReady = useCallback(() => {
-    if (pendingRoutePeak) {
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          applyRouteForPeak(pendingRoutePeak);
-          setPendingRoutePeak(null);
-        });
-      });
-    }
-  }, [applyRouteForPeak, pendingRoutePeak]);
-
   useEffect(() => {
-    if (subTab !== 'kart' || !pendingRoutePeak) return;
+    if (subTab !== 'kart' || !queuedTopperRoutePeak) return;
 
-    const fallbackTimer = window.setTimeout(() => {
-      applyRouteForPeak(pendingRoutePeak);
-      setPendingRoutePeak(null);
-    }, 700);
+    const animationFrame = window.requestAnimationFrame(() => {
+      applyRouteForPeak(queuedTopperRoutePeak);
+      setQueuedTopperRoutePeak(null);
+    });
 
-    return () => window.clearTimeout(fallbackTimer);
-  }, [subTab, pendingRoutePeak, applyRouteForPeak]);
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, [subTab, queuedTopperRoutePeak, applyRouteForPeak]);
 
   useEffect(() => {
     if (showSuggestions && adminMode) {
@@ -246,7 +239,7 @@ const MapPage = () => {
   }, [showSuggestions, adminMode]);
 
   const handleHideRoute = () => {
-    setPendingRoutePeak(null);
+    setQueuedTopperRoutePeak(null);
     setActiveRouteGeojson(null);
     setActiveRoutePeakId(null);
     setRouteFocus(null);
@@ -303,9 +296,9 @@ const MapPage = () => {
               onLongPress={handleLongPress}
               routeGeojson={activeRouteGeojson}
               routeFocus={routeFocus}
-              suppressInitialGeolocate={!!routeFocus || !!pendingRoutePeak}
+              routeRequestId={routeRequestId}
+              suppressInitialGeolocate={!!routeFocus || !!queuedTopperRoutePeak}
               onClearRoute={handleHideRoute}
-              onMapReady={handleMapReady}
               previewWaypoints={previewWaypoints}
               onWaypointClick={(index) => setWaypointClickEvent({ index, timestamp: Date.now() })}
               onWaypointDrag={(index, lat, lng) => setWaypointDragEvent({ index, lat, lng, timestamp: Date.now() })}
