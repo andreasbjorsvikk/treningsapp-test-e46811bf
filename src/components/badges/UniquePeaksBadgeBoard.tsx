@@ -70,7 +70,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                 </div>
 
                 <div className="text-center">
-                  <p className="font-display text-[0.82rem] font-semibold leading-tight text-foreground">{title}</p>
+                  <p className="font-display text-[0.82rem] font-semibold leading-tight text-foreground">{titleLine}</p>
                   <p className="mt-0.5 text-[0.68rem] font-medium leading-tight text-muted-foreground">{countLabel}</p>
                 </div>
 
