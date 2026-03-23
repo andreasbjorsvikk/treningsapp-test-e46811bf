@@ -379,32 +379,22 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
     const m = map.current;
-    if (shouldUseSafeMapMode) {
-      try {
-        m.setTerrain(null);
-      } catch {
-        // no-op
-      }
-
-      m.jumpTo({ pitch: 0, bearing: 0 });
-      return;
-    }
 
     if (is3D) {
-      m.easeTo({ pitch: isConstrainedDevice ? 44 : 60, bearing: isConstrainedDevice ? 0 : -20, duration: 600 });
+      m.easeTo({ pitch: isConstrainedDevice ? 40 : 60, bearing: isConstrainedDevice ? 0 : -20, duration: 600 });
       whenStyleReady(m, () => {
         if (!m.getTerrain()) {
           if (!m.getSource('mapbox-dem')) {
             m.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
           }
-          m.setTerrain({ source: 'mapbox-dem', exaggeration: isConstrainedDevice ? 1.08 : 1.5 });
+          m.setTerrain({ source: 'mapbox-dem', exaggeration: isConstrainedDevice ? 1.0 : 1.5 });
         }
       });
     } else {
       m.easeTo({ pitch: 0, bearing: 0, duration: 600 });
       m.setTerrain(null);
     }
-  }, [is3D, isConstrainedDevice, mapLoaded, shouldUseSafeMapMode, whenStyleReady]);
+  }, [is3D, isConstrainedDevice, mapLoaded, whenStyleReady]);
 
   // Toggle map style — only when user actually changes it
   useEffect(() => {
