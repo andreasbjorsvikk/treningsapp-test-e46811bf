@@ -58,7 +58,7 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
         {/* Badge visual with glow - much bigger */}
         <div className="relative">
           <div
-            className={`w-48 h-48 rounded-full flex items-center justify-center transition-all duration-700 ${
+            className={`w-56 h-56 rounded-full flex items-center justify-center transition-all duration-700 ${
               isLegendary ? 'animate-pulse' : ''
             }`}
             style={{
@@ -70,7 +70,7 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
               <img
                 src={mainBadge.badge.image}
                 alt={t(mainBadge.badge.nameKey)}
-                className={`w-40 h-40 object-contain transition-transform duration-500 ${showContent ? 'scale-100' : 'scale-0'}`}
+                className={`w-52 h-52 object-contain transition-transform duration-500 ${showContent ? 'scale-100' : 'scale-0'}`}
                 style={{ filter: `drop-shadow(0 0 16px ${glowColor})` }}
               />
             ) : (

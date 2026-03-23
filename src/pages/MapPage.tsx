@@ -202,10 +202,15 @@ const MapPage = () => {
 
     // Close the peak detail drawer so the map/route is visible
     setSelectedPeak(null);
-    applyRouteForPeak(peak);
 
     if (openedFromTopper) {
+      // Switch to map tab first, then apply route after map has mounted
       setSubTab('kart');
+      setTimeout(() => {
+        applyRouteForPeak(peak);
+      }, 400);
+    } else {
+      applyRouteForPeak(peak);
     }
   };
 
