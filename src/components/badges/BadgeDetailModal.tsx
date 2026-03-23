@@ -35,6 +35,9 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
   const thresholdKey = `${def.nameKey}Threshold` as any;
   const thresholdText = t(thresholdKey);
   const hasThresholdText = thresholdText !== thresholdKey;
+  const showThresholdHeadline = hasThresholdText && isUniquePeaks;
+  const showDescription = !isUniquePeaks;
+  const showRequirement = false;
 
   return (
     <Dialog open={open} onOpenChange={o => !o && onClose()}>
@@ -84,11 +87,11 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
         </div>
 
         <h3 className="font-display font-bold text-lg text-foreground mb-0.5">{t(def.nameKey)}</h3>
-        {hasThresholdText && (
+        {showThresholdHeadline && (
           <p className="text-sm font-semibold mb-2" style={{ color: rarityColor }}>{thresholdText}</p>
         )}
-        <p className="text-sm text-muted-foreground mb-4">{t(def.descriptionKey)}</p>
-        <p className="text-xs text-muted-foreground mb-3">{t(def.requirementKey)}</p>
+        {showDescription && <p className="text-sm text-muted-foreground mb-4">{t(def.descriptionKey)}</p>}
+        {showRequirement && <p className="text-xs text-muted-foreground mb-3">{t(def.requirementKey)}</p>}
 
         {/* Repeat count */}
         {repeatCount && repeatCount > 0 && (
