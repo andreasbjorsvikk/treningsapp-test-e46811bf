@@ -37,10 +37,10 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
 
           const isHighPeaks = sub === 'high_peaks';
           const imgScale = userBadge.badge.id === 'peaks_100'
-            ? 210
+            ? 2.18
             : sub === 'unique_peaks'
-              ? 164
-              : 158;
+              ? 1.7
+              : 1.61;
           const glowShadow = userBadge.unlocked
             ? isHighPeaks
               ? isDarkTheme
@@ -97,8 +97,12 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                           : 'grayscale saturate-0 brightness-[0.07] contrast-125 opacity-45'
                     }`}
                     style={{
-                      width: `${imgScale}%`,
-                      height: `${imgScale}%`,
+                      width: '100%',
+                      height: '100%',
+                      maxWidth: 'none',
+                      maxHeight: 'none',
+                      transform: `scale(${imgScale})`,
+                      transformOrigin: 'center',
                       ...(userBadge.unlocked ? { filter: `drop-shadow(0 0 6px ${glowColor})` } : {}),
                       ...(isHighPeaks && userBadge.unlocked && !isDarkTheme ? { filter: 'none' } : {}),
                     }}
