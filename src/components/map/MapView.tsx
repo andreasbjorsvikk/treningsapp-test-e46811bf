@@ -449,12 +449,10 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         setMapLoaded(false);
         m.setStyle('mapbox://styles/mapbox/outdoors-v12');
         m.once('style.load', () => {
-          if (!shouldUseSafeMapMode) {
-            addEnhancedTerrain(m, {
-              exaggeration: isConstrainedDevice ? 1.08 : 1.4,
-              lightweight: isConstrainedDevice,
-            });
-          }
+          addEnhancedTerrain(m, {
+            exaggeration: isConstrainedDevice ? 1.0 : 1.4,
+            lightweight: isConstrainedDevice,
+          });
           setMapLoaded(true);
           addTopoOverlay();
         });
@@ -471,22 +469,14 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     setMapLoaded(false);
     m.setStyle(styleUrl);
     m.once('style.load', () => {
-      if (shouldUseSafeMapMode) {
-        try {
-          m.setTerrain(null);
-        } catch {
-          // no-op
-        }
-      } else {
-        addEnhancedTerrain(m, {
-          exaggeration: isConstrainedDevice ? 1.08 : 1.4,
-          lightweight: isConstrainedDevice,
-        });
-        if (is3D) m.setTerrain({ source: 'mapbox-dem', exaggeration: isConstrainedDevice ? 1.08 : 1.5 });
-      }
+      addEnhancedTerrain(m, {
+        exaggeration: isConstrainedDevice ? 1.0 : 1.4,
+        lightweight: isConstrainedDevice,
+      });
+      if (is3D) m.setTerrain({ source: 'mapbox-dem', exaggeration: isConstrainedDevice ? 1.0 : 1.5 });
       setMapLoaded(true);
     });
-  }, [is3D, isConstrainedDevice, mapStyle, mapLoaded, shouldUseSafeMapMode, whenStyleReady]);
+  }, [is3D, isConstrainedDevice, mapStyle, mapLoaded, whenStyleReady]);
 
   // Route focus (especially important when opening route from Topper tab)
   useEffect(() => {
