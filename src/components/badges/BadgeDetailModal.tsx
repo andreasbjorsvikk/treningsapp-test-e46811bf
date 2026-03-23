@@ -76,16 +76,6 @@ const BadgeDetailModal = ({ badge, open, onClose }: BadgeDetailModalProps) => {
           )}
         </div>
 
-        {/* Rarity tag */}
-        <div className="flex justify-center mb-2">
-          <span
-            className="text-[10px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full"
-            style={{ color: rarityColor, backgroundColor: glowColor }}
-          >
-            {rarityLabel}
-          </span>
-        </div>
-
         <h3 className="font-display font-bold text-lg text-foreground mb-0.5">{t(def.nameKey)}</h3>
         {showThresholdHeadline && (
           <p className="text-sm font-semibold mb-2" style={{ color: rarityColor }}>{thresholdText}</p>
