@@ -87,10 +87,6 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     onMapReadyRef.current = onMapReady;
   }, [onMapReady]);
 
-  useEffect(() => {
-    if (false) { // 3D enabled for all devices
-    }
-  }, []);
 
   const getMapboxColorFromToken = useCallback((tokenName: string, fallback = 'rgb(34, 197, 94)') => {
     if (typeof window === 'undefined') return fallback;
