@@ -37,10 +37,10 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
 
           const isHighPeaks = sub === 'high_peaks';
           const extraScale = userBadge.badge.id === 'peaks_100'
-            ? 'w-[176%] h-[176%]'
+            ? 'w-[188%] h-[188%]'
             : sub === 'unique_peaks'
-              ? 'w-[144%] h-[144%]'
-              : 'w-[140%] h-[140%]';
+              ? 'w-[154%] h-[154%]'
+              : 'w-[146%] h-[146%]';
           const glowShadow = userBadge.unlocked
             ? isHighPeaks
               ? isDarkTheme
@@ -56,7 +56,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
               className="relative flex flex-col items-center gap-1.5 rounded-xl py-3 px-1 transition-colors hover:bg-muted/40"
             >
               <div
-                className="relative flex items-center justify-center p-2"
+                className="relative flex items-center justify-center px-2 py-3"
               >
                 <div
                   className="pointer-events-none absolute left-1/2 top-1/2 rounded-full -translate-x-1/2 -translate-y-1/2"
@@ -70,7 +70,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                   }}
                 />
                 <div
-                  className="relative flex items-center justify-center rounded-full overflow-hidden"
+                  className="relative flex items-center justify-center rounded-full overflow-visible"
                   style={{
                     width: socketSize,
                     height: socketSize,
@@ -78,6 +78,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                     boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.16)',
                   }}
                 >
+                  <div className="absolute inset-0 rounded-full overflow-hidden" />
                   {isHighPeaks && !userBadge.unlocked && (
                     <div
                       className="absolute inset-0 rounded-full"
@@ -96,7 +97,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                           ? 'grayscale brightness-[0.42] opacity-60'
                           : 'grayscale saturate-0 brightness-[0.07] contrast-125 opacity-45'
                     }`}
-                    style={userBadge.unlocked ? { filter: `drop-shadow(0 0 6px ${glowColor})` } : undefined}
+                    style={userBadge.unlocked ? { filter: `drop-shadow(0 0 7px ${glowColor})` } : undefined}
                     loading="lazy"
                   />
                 </div>
