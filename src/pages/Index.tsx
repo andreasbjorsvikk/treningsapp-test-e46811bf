@@ -631,11 +631,11 @@ const IndexContent = () => {
   const BadgeShortcutButton = () => (
     <button
       onClick={openBadges}
-      className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/50 bg-background/70 shadow-sm transition-all hover:bg-muted/70"
+      className="flex h-11 w-11 items-center justify-center transition-transform active:scale-95"
       title={t('badge.tab')}
       aria-label={t('badge.tab')}
     >
-      <img src={badgeShortcutImage} alt="" className="h-6 w-6 object-contain" loading="lazy" />
+      <img src={badgeShortcutImage} alt="" className="h-8 w-8 object-contain" loading="lazy" />
     </button>
   );
 

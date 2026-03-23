@@ -461,6 +461,8 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
     const m = map.current;
+    const fitTimers: number[] = [];
+    let idleHandled = false;
 
     whenStyleReady(m, () => {
       ensureRouteLayer(m);
@@ -484,17 +486,40 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           bounds.extend([routeFocus.longitude, routeFocus.latitude]);
         }
 
-        m.resize();
-        window.requestAnimationFrame(() => {
-          m.fitBounds(bounds, { padding: 60, duration: 900, maxZoom: 15 });
-          window.setTimeout(() => {
-            m.fitBounds(bounds, { padding: 60, duration: 500, maxZoom: 15 });
-          }, 350);
+        const fitRoute = () => {
+          if (!mapContainer.current || idleHandled) return;
+          if (mapContainer.current.offsetWidth === 0 || mapContainer.current.offsetHeight === 0) return;
+
+          m.resize();
+          m.fitBounds(bounds, {
+            padding: { top: 92, right: 60, bottom: 76, left: 60 },
+            duration: 650,
+            maxZoom: 15,
+          });
+        };
+
+        window.requestAnimationFrame(() => fitRoute());
+        [220, 700, 1300].forEach((delay) => {
+          fitTimers.push(window.setTimeout(() => fitRoute(), delay));
+        });
+
+        m.once('idle', () => {
+          idleHandled = true;
+          m.resize();
+          m.fitBounds(bounds, {
+            padding: { top: 92, right: 60, bottom: 76, left: 60 },
+            duration: 0,
+            maxZoom: 15,
+          });
         });
       } else {
         source.setData({ type: 'FeatureCollection', features: [] } as any);
       }
     });
+
+    return () => {
+      fitTimers.forEach((timer) => window.clearTimeout(timer));
+    };
   }, [routeCoordinates, routeFocus, mapLoaded, whenStyleReady, ensureRouteLayer]);
 
   // Handle preview waypoints
