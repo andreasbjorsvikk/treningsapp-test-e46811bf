@@ -1,6 +1,5 @@
 import { UserBadge, getRarityColor, getRarityGlow, getHighPeakGlow } from '@/services/badgeService';
 import { useTranslation } from '@/i18n/useTranslation';
-import { format } from 'date-fns';
 import { HelpCircle } from 'lucide-react';
 import { useState } from 'react';
 
@@ -37,7 +36,7 @@ const BadgeCard = ({ userBadge, onClick, showProgress = true }: BadgeCardProps) 
           <img
             src={badge.image}
             alt={t(badge.nameKey)}
-            className={`w-24 h-24 object-contain ${unlocked ? '' : 'grayscale brightness-[0.08] opacity-30'}`}
+            className={`object-contain ${badge.subcategory === 'unique_peaks' ? 'w-[5.6rem] h-[5.6rem]' : 'w-24 h-24'} ${unlocked ? '' : 'grayscale brightness-[0.08] opacity-30'}`}
             style={unlocked ? {
               filter: `drop-shadow(0 0 8px ${glowColor})`,
             } : undefined}
@@ -101,14 +100,10 @@ const BadgeCard = ({ userBadge, onClick, showProgress = true }: BadgeCardProps) 
         })()}
       </div>
 
-      {/* Progress or date */}
-      {unlocked && unlockedAt ? (
-        <p className="text-[10px] text-muted-foreground">
-          {format(new Date(unlockedAt), 'dd.MM.yyyy')}
-        </p>
-      ) : unlocked && !unlockedAt ? (
+      {/* Progress */}
+      {unlocked && !showProgress ? (
         <p className="text-[10px] text-muted-foreground">✓</p>
-      ) : showProgress ? (
+      ) : !unlocked && showProgress ? (
         <div className="w-full space-y-0.5">
           <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
             <div
