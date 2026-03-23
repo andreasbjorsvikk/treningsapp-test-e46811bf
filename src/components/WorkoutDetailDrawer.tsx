@@ -23,6 +23,15 @@ import { stravaService } from '@/services/stravaService';
 import { toast } from 'sonner';
 import { useTranslation } from '@/i18n/useTranslation';
 
+function formatDurationHMS(minutes: number): string {
+  const totalSeconds = Math.round(minutes * 60);
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 interface Props {
   session: WorkoutSession | null;
   open: boolean;
@@ -284,7 +293,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
             {/* Stat tiles */}
             <div className="px-4 py-3">
               <div className="grid grid-cols-3 gap-2">
-                <StatTile icon={<Clock className="w-4 h-4" />} value={formatDuration(session.durationMinutes)} label={t('workoutDetail.duration')} />
+                <StatTile icon={<Clock className="w-4 h-4" />} value={session.type === 'løping' ? formatDurationHMS(session.durationMinutes) : formatDuration(session.durationMinutes)} label={t('workoutDetail.duration')} />
                 {session.distance != null && (
                   <StatTile icon={<MapPin className="w-4 h-4" />} value={`${session.distance} km`} label={t('workoutDetail.distance')} />
                 )}

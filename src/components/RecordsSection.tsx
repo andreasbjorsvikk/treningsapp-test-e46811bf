@@ -15,6 +15,10 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import DurationPicker from '@/components/DurationPicker';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // Running distance benchmarks
 const RUNNING_BENCHMARKS = [
@@ -102,7 +106,7 @@ type RecordTab = 'running' | 'cycling' | 'hiking';
 const RecordsSection = () => {
   const appData = useAppDataContext();
   const { user } = useAuth();
-  const { t, locale } = useTranslation();
+  const { t, locale, language } = useTranslation();
   const [tab, setTab] = useState<RecordTab>('running');
   const [selectedHike, setSelectedHike] = useState<HikingRecord | null>(null);
   const [showAddHike, setShowAddHike] = useState(false);
@@ -278,8 +282,10 @@ const RecordsSection = () => {
     setShowAddEntry(false);
   };
 
+  const [showDeleteHikeConfirm, setShowDeleteHikeConfirm] = useState(false);
+  const [hikeToDelete, setHikeToDelete] = useState<string | null>(null);
+
   const handleDeleteHike = async (id: string) => {
-    if (!confirm(t('records.deleteHikeConfirm'))) return;
     if (user) {
       await supabase.from('hiking_records').delete().eq('id', id);
       loadHikingRecords();
@@ -601,7 +607,7 @@ const RecordsSection = () => {
                     <Button
                       variant="ghost"
                       className="text-destructive hover:text-destructive"
-                      onClick={() => { handleDeleteHike(selectedHike!.id); setSelectedHike(null); }}
+                      onClick={() => { setHikeToDelete(selectedHike!.id); setShowDeleteHikeConfirm(true); }}
                     >
                       <Trash2 className="w-4 h-4 mr-2" /> {t('common.delete')}
                     </Button>
@@ -722,6 +728,33 @@ const RecordsSection = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          {/* Delete hike confirmation */}
+          <AlertDialog open={showDeleteHikeConfirm} onOpenChange={setShowDeleteHikeConfirm}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{language === 'no' ? 'Er du sikker?' : 'Are you sure?'}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {language === 'no' ? 'Denne handlingen kan ikke angres. Alle registreringer for denne fjellturen vil bli slettet.' : 'This action cannot be undone. All entries for this hike will be deleted.'}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{language === 'no' ? 'Avbryt' : 'Cancel'}</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => {
+                    if (hikeToDelete) {
+                      handleDeleteHike(hikeToDelete);
+                      setSelectedHike(null);
+                      setHikeToDelete(null);
+                    }
+                  }}
+                >
+                  {language === 'no' ? 'Slett' : 'Delete'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       )}
     </div>
