@@ -53,13 +53,27 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   const { t } = useTranslation();
   const { settings } = useSettings();
   const { user } = useAuth();
-  const isConstrainedDevice = typeof window !== 'undefined' && (
-    window.matchMedia('(max-width: 768px)').matches ||
-    window.matchMedia('(hover: none) and (pointer: coarse)').matches ||
-    (((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8) <= 4)
-  );
+  const { isConstrainedDevice, shouldUseSafeMapMode } = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return { isConstrainedDevice: false, shouldUseSafeMapMode: false };
+    }
+
+    const nav = navigator as Navigator & { deviceMemory?: number };
+    const isIOSLike = /iPad|iPhone|iPod/.test(nav.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isTouchDevice =
+      window.matchMedia('(max-width: 768px)').matches ||
+      window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    const hasLowMemory = (nav.deviceMemory ?? 8) <= 4;
+    const constrained = isTouchDevice || hasLowMemory;
+
+    return {
+      isConstrainedDevice: constrained,
+      shouldUseSafeMapMode: isIOSLike || constrained,
+    };
+  }, []);
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [is3D, setIs3D] = useState(true);
+  const [is3D, setIs3D] = useState(() => !shouldUseSafeMapMode);
   const [mapStyle, setMapStyle] = useState<'outdoors' | 'satellite' | 'streets' | 'topo'>('outdoors');
   const appliedStyleRef = useRef<string>('outdoors');
   const [showStyleMenu, setShowStyleMenu] = useState(false);
@@ -72,6 +86,12 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   useEffect(() => {
     onMapReadyRef.current = onMapReady;
   }, [onMapReady]);
+
+  useEffect(() => {
+    if (shouldUseSafeMapMode) {
+      setIs3D(false);
+    }
+  }, [shouldUseSafeMapMode]);
 
   const getMapboxColorFromToken = useCallback((tokenName: string, fallback = 'rgb(34, 197, 94)') => {
     if (typeof window === 'undefined') return fallback;
@@ -245,11 +265,11 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         style: 'mapbox://styles/mapbox/outdoors-v12',
         center,
         zoom,
-        pitch: isConstrainedDevice ? 44 : 60,
-        bearing: isConstrainedDevice ? 0 : -20,
+        pitch: shouldUseSafeMapMode ? 0 : isConstrainedDevice ? 44 : 60,
+        bearing: shouldUseSafeMapMode ? 0 : isConstrainedDevice ? 0 : -20,
         antialias: false,
         failIfMajorPerformanceCaveat: false,
-        maxTileCacheSize: isConstrainedDevice ? 24 : 40,
+        maxTileCacheSize: shouldUseSafeMapMode ? 8 : isConstrainedDevice ? 12 : 40,
       });
     } catch (err) {
       console.error('Failed to initialize map:', err);
@@ -258,9 +278,11 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
 
     m.addControl(new mapboxgl.NavigationControl(), 'top-right');
     const geolocate = new mapboxgl.GeolocateControl({
-      positionOptions: { enableHighAccuracy: true },
-      trackUserLocation: true,
-      showUserHeading: true,
+      positionOptions: shouldUseSafeMapMode
+        ? { enableHighAccuracy: false, maximumAge: 60000, timeout: 10000 }
+        : { enableHighAccuracy: true },
+      trackUserLocation: !shouldUseSafeMapMode,
+      showUserHeading: !shouldUseSafeMapMode,
     });
     m.addControl(geolocate, 'top-right');
 
@@ -271,7 +293,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     });
     
     m.on('load', () => {
-      if (!hasStoredPos && !suppressInitialGeolocate) {
+      if (!hasStoredPos && !suppressInitialGeolocate && !shouldUseSafeMapMode) {
         geolocate.trigger();
       }
     });
@@ -281,17 +303,25 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     });
 
     m.on('style.load', () => {
-      addEnhancedTerrain(m, {
-        exaggeration: isConstrainedDevice ? 1.08 : 1.4,
-        lightweight: isConstrainedDevice,
-      });
+      if (shouldUseSafeMapMode) {
+        try {
+          m.setTerrain(null);
+        } catch {
+          // no-op
+        }
+      } else {
+        addEnhancedTerrain(m, {
+          exaggeration: isConstrainedDevice ? 1.08 : 1.4,
+          lightweight: isConstrainedDevice,
+        });
+      }
       setMapLoaded(true);
       onMapReadyRef.current?.();
     });
 
     map.current = m;
     return () => { m.remove(); map.current = null; };
-  }, [isConstrainedDevice]);
+  }, [isConstrainedDevice, shouldUseSafeMapMode, suppressInitialGeolocate]);
 
   // Admin: click to add peak or waypoint
   useEffect(() => {
@@ -358,6 +388,17 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
     const m = map.current;
+    if (shouldUseSafeMapMode) {
+      try {
+        m.setTerrain(null);
+      } catch {
+        // no-op
+      }
+
+      m.jumpTo({ pitch: 0, bearing: 0 });
+      return;
+    }
+
     if (is3D) {
       m.easeTo({ pitch: isConstrainedDevice ? 44 : 60, bearing: isConstrainedDevice ? 0 : -20, duration: 600 });
       whenStyleReady(m, () => {
@@ -372,7 +413,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       m.easeTo({ pitch: 0, bearing: 0, duration: 600 });
       m.setTerrain(null);
     }
-  }, [is3D, isConstrainedDevice, mapLoaded, whenStyleReady]);
+  }, [is3D, isConstrainedDevice, mapLoaded, shouldUseSafeMapMode, whenStyleReady]);
 
   // Toggle map style — only when user actually changes it
   useEffect(() => {
@@ -427,10 +468,12 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         setMapLoaded(false);
         m.setStyle('mapbox://styles/mapbox/outdoors-v12');
         m.once('style.load', () => {
-          addEnhancedTerrain(m, {
-            exaggeration: isConstrainedDevice ? 1.08 : 1.4,
-            lightweight: isConstrainedDevice,
-          });
+          if (!shouldUseSafeMapMode) {
+            addEnhancedTerrain(m, {
+              exaggeration: isConstrainedDevice ? 1.08 : 1.4,
+              lightweight: isConstrainedDevice,
+            });
+          }
           setMapLoaded(true);
           addTopoOverlay();
         });
@@ -447,14 +490,22 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     setMapLoaded(false);
     m.setStyle(styleUrl);
     m.once('style.load', () => {
-      addEnhancedTerrain(m, {
-        exaggeration: isConstrainedDevice ? 1.08 : 1.4,
-        lightweight: isConstrainedDevice,
-      });
-      if (is3D) m.setTerrain({ source: 'mapbox-dem', exaggeration: isConstrainedDevice ? 1.08 : 1.5 });
+      if (shouldUseSafeMapMode) {
+        try {
+          m.setTerrain(null);
+        } catch {
+          // no-op
+        }
+      } else {
+        addEnhancedTerrain(m, {
+          exaggeration: isConstrainedDevice ? 1.08 : 1.4,
+          lightweight: isConstrainedDevice,
+        });
+        if (is3D) m.setTerrain({ source: 'mapbox-dem', exaggeration: isConstrainedDevice ? 1.08 : 1.5 });
+      }
       setMapLoaded(true);
     });
-  }, [is3D, isConstrainedDevice, mapStyle, mapLoaded, whenStyleReady]);
+  }, [is3D, isConstrainedDevice, mapStyle, mapLoaded, shouldUseSafeMapMode, whenStyleReady]);
 
   // Route focus (especially important when opening route from Topper tab)
   useEffect(() => {
@@ -626,12 +677,19 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           : isUnpublished
             ? 'hsl(var(--warning) / 0.45)'
             : 'hsl(0 0% 88% / 0.72)'; // Light border in both modes
-      const markerShadow = isTaken && !isYearFiltered
-        ? '0 10px 24px hsl(var(--success) / 0.24), inset 0 1px 0 hsl(0 0% 100% / 0.18)'
-        : '0 10px 24px hsl(0 0% 0% / 0.14)';
-      const markerBackdrop = isTaken && !isYearFiltered
-        ? 'blur(6px) saturate(1.04)'
-        : 'blur(10px) saturate(1.12)';
+      const markerShadow = shouldUseSafeMapMode
+        ? isTaken && !isYearFiltered
+          ? '0 4px 10px hsl(var(--success) / 0.18)'
+          : '0 3px 8px hsl(0 0% 0% / 0.12)'
+        : isTaken && !isYearFiltered
+          ? '0 10px 24px hsl(var(--success) / 0.24), inset 0 1px 0 hsl(0 0% 100% / 0.18)'
+          : '0 10px 24px hsl(0 0% 0% / 0.14)';
+      const markerFilters = shouldUseSafeMapMode
+        ? ''
+        : `
+         backdrop-filter: ${isTaken && !isYearFiltered ? 'blur(6px) saturate(1.04)' : 'blur(10px) saturate(1.12)'};
+         -webkit-backdrop-filter: ${isTaken && !isYearFiltered ? 'blur(6px) saturate(1.04)' : 'blur(10px) saturate(1.12)'};
+        `;
       
       el.style.cssText = `
         width: 36px; height: 36px; cursor: pointer;
@@ -640,8 +698,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         border: 1.5px solid ${markerBorder};
         border-radius: 50%;
         box-shadow: ${markerShadow};
-        backdrop-filter: ${markerBackdrop};
-        -webkit-backdrop-filter: ${markerBackdrop};
+        ${markerFilters}
         ${isUnpublished ? 'opacity: 0.8;' : ''}
         ${isYearFiltered ? 'opacity: 0.6;' : ''}
       `;
@@ -1159,12 +1216,14 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     <div className={`relative w-full h-full ${is3D ? 'map-is-3d' : ''}`}>
       <div ref={mapContainer} className="w-full h-full" />
       <div className="absolute top-2 left-2 z-10 flex items-center gap-2">
-        <button
-          onClick={() => setIs3D(prev => !prev)}
-          className="px-3 py-1.5 rounded-lg text-xs font-semibold shadow-md border border-border bg-background text-foreground hover:bg-muted transition-colors h-[34px]"
-        >
-          {is3D ? '2D' : '3D'}
-        </button>
+        {!shouldUseSafeMapMode && (
+          <button
+            onClick={() => setIs3D(prev => !prev)}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold shadow-md border border-border bg-background text-foreground hover:bg-muted transition-colors h-[34px]"
+          >
+            {is3D ? '2D' : '3D'}
+          </button>
+        )}
         <div className="relative">
           <button
             onClick={() => setShowStyleMenu(prev => !prev)}
