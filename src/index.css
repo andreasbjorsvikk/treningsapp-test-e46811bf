@@ -45,6 +45,7 @@
 
     --energy: 152 60% 42%;
     --energy-glow: 152 50% 35%;
+    --badge-socket-high-peaks: 220 10% 18%;
 
     --font-display: 'Space Grotesk', sans-serif;
     --font-body: 'Inter', sans-serif;
@@ -96,6 +97,7 @@
 
     --energy: 152 55% 50%;
     --energy-glow: 152 45% 40%;
+    --badge-socket-high-peaks: 222 25% 12%;
 
     --sidebar-background: 222 30% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
