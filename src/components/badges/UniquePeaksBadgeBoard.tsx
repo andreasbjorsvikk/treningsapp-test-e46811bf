@@ -1,6 +1,4 @@
-import { Fragment } from 'react';
 import { UserBadge, getHighPeakGlow, getRarityGlow } from '@/services/badgeService';
-import coinHolderImage from '@/assets/badges/coin_holder_simple.png';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Play } from 'lucide-react';
 
@@ -11,87 +9,87 @@ interface UniquePeaksBadgeBoardProps {
   onPreviewBadge?: (badge: UserBadge) => void;
 }
 
-const COIN_POSITIONS = [
-  { left: '28%', coinTop: '5%', size: '22%' },
-  { left: '72%', coinTop: '5%', size: '22%' },
-  { left: '28%', coinTop: '52%', size: '22%' },
-  { left: '72%', coinTop: '52%', size: '22%' },
-] as const;
-
 const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPreviewBadge }: UniquePeaksBadgeBoardProps) => {
   const { t, language } = useTranslation();
   const orderedBadges = [...badges].sort((a, b) => a.badge.sortOrder - b.badge.sortOrder);
 
   return (
-    <div className="relative mx-auto w-full max-w-[22rem]">
-      {/* The holder frame – transparent background, just the dark plate */}
-      <div className="relative w-full" style={{ paddingBottom: '100%' }}>
-        <img
-          src={coinHolderImage}
-          alt="Merkeholder"
-          className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
-          loading="lazy"
-        />
-
-        {orderedBadges.map((userBadge, index) => {
-          const position = COIN_POSITIONS[index];
-          if (!position || !userBadge.badge.image) return null;
+    <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 shadow-sm">
+      <div className="grid grid-cols-2 gap-4">
+        {orderedBadges.map((userBadge) => {
+          if (!userBadge.badge.image) return null;
 
           const glowColor = getHighPeakGlow(userBadge.badge.id)?.glow || getRarityGlow(userBadge.badge.rarity);
+          const highPeakColors = getHighPeakGlow(userBadge.badge.id);
           const title = t(userBadge.badge.nameKey);
-          const countLabel = language === 'no' ? `${userBadge.badge.threshold} topper` : `${userBadge.badge.threshold} peaks`;
+          const countLabel = language === 'no'
+            ? `${userBadge.badge.threshold} unike topper`
+            : `${userBadge.badge.threshold} unique peaks`;
 
           return (
-            <Fragment key={userBadge.badge.id}>
-              {/* Coin */}
+            <button
+              key={userBadge.badge.id}
+              onClick={() => onSelectBadge(userBadge)}
+              className="relative flex flex-col items-center gap-2 rounded-xl py-3 px-2 transition-colors hover:bg-muted/40"
+            >
+              {/* Recessed socket */}
               <div
-                className="absolute -translate-x-1/2"
-                style={{ left: position.left, top: position.coinTop, width: position.size }}
+                className="relative flex items-center justify-center rounded-full"
+                style={{
+                  width: '5.5rem',
+                  height: '5.5rem',
+                  background: userBadge.unlocked
+                    ? `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`
+                    : 'radial-gradient(circle, hsl(var(--muted) / 0.5) 0%, transparent 70%)',
+                  boxShadow: userBadge.unlocked
+                    ? `inset 0 2px 6px rgba(0,0,0,0.15), 0 0 20px ${glowColor}`
+                    : 'inset 0 2px 6px rgba(0,0,0,0.12)',
+                }}
               >
-                <button
-                  onClick={() => onSelectBadge(userBadge)}
-                  className="relative flex aspect-square w-full items-center justify-center"
-                >
-                  <img
-                    src={userBadge.badge.image}
-                    alt={title}
-                    className={`object-contain transition-all duration-300 ${
-                      userBadge.unlocked
-                        ? 'h-[92%] w-[92%]'
-                        : 'h-[88%] w-[88%] grayscale saturate-0 brightness-[0.07] contrast-125 opacity-45'
-                    }`}
-                    style={userBadge.unlocked ? { filter: `drop-shadow(0 0 8px ${glowColor}) drop-shadow(0 0 16px ${glowColor})` } : undefined}
-                    loading="lazy"
-                  />
-                </button>
-
-                {adminMode && onPreviewBadge && (
-                  <button
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onPreviewBadge(userBadge);
-                    }}
-                    className="absolute -right-1 top-0 z-10 rounded-full border border-border bg-background/90 p-1 shadow-sm transition-colors hover:bg-muted"
-                    title="Preview unlock animation"
-                  >
-                    <Play className="h-3 w-3 text-foreground" />
-                  </button>
-                )}
+                <img
+                  src={userBadge.badge.image}
+                  alt={title}
+                  className={`w-[82%] h-[82%] object-contain transition-all duration-300 ${
+                    userBadge.unlocked
+                      ? ''
+                      : 'grayscale saturate-0 brightness-[0.07] contrast-125 opacity-45'
+                  }`}
+                  style={userBadge.unlocked ? { filter: `drop-shadow(0 0 6px ${glowColor})` } : undefined}
+                  loading="lazy"
+                />
               </div>
 
-              {/* Label below the coin slot */}
-              <div
-                className="absolute -translate-x-1/2 text-center"
-                style={{ left: position.left, top: `calc(${position.coinTop} + ${position.size} + 1.5%)`, width: '30%' }}
-              >
-                <p className="font-display text-[0.78rem] font-semibold leading-tight text-foreground sm:text-[0.85rem]">
+              {/* Label */}
+              <div className="text-center">
+                <p className="font-display text-[0.82rem] font-semibold leading-tight text-foreground">
                   {title}
                 </p>
-                <p className="mt-0.5 text-[0.65rem] font-medium leading-tight text-muted-foreground sm:text-[0.72rem]">
+                <p className="mt-0.5 text-[0.68rem] font-medium leading-tight text-muted-foreground">
                   {countLabel}
                 </p>
               </div>
-            </Fragment>
+
+              {/* Progress if locked */}
+              {!userBadge.unlocked && (
+                <p className="text-[0.65rem] font-medium text-muted-foreground/70">
+                  {userBadge.progress}/{userBadge.badge.threshold}
+                </p>
+              )}
+
+              {/* Admin preview */}
+              {adminMode && onPreviewBadge && (
+                <button
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onPreviewBadge(userBadge);
+                  }}
+                  className="absolute right-1 top-1 z-10 rounded-full border border-border bg-background/90 p-1 shadow-sm transition-colors hover:bg-muted"
+                  title="Preview unlock animation"
+                >
+                  <Play className="h-3 w-3 text-foreground" />
+                </button>
+              )}
+            </button>
           );
         })}
       </div>
