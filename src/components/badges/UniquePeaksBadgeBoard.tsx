@@ -35,7 +35,11 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
           }
 
           const isHighPeaks = sub === 'high_peaks';
-          const extraScale = userBadge.badge.id === 'peaks_100' ? 'w-[134%] h-[134%]' : sub === 'unique_peaks' ? 'w-[124%] h-[124%]' : 'w-[123%] h-[123%]';
+          const extraScale = userBadge.badge.id === 'peaks_100'
+            ? 'w-[142%] h-[142%]'
+            : sub === 'unique_peaks'
+              ? 'w-[128%] h-[128%]'
+              : 'w-[126%] h-[126%]';
 
           return (
             <button
@@ -49,7 +53,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                   width: socketSize,
                   height: socketSize,
                   background: isHighPeaks
-                    ? '#1a1a2e'
+                    ? 'hsl(var(--badge-socket-high-peaks))'
                     : userBadge.unlocked
                       ? `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`
                       : 'radial-gradient(circle, hsl(var(--muted) / 0.5) 0%, transparent 70%)',
@@ -58,14 +62,22 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                     : 'inset 0 2px 6px rgba(0,0,0,0.12)',
                 }}
               >
+                {isHighPeaks && !userBadge.unlocked && (
+                  <div
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      background: 'linear-gradient(180deg, hsl(var(--muted) / 0.34) 0%, hsl(var(--muted-foreground) / 0.18) 100%)',
+                    }}
+                  />
+                )}
                 <img
                   src={userBadge.badge.image}
                   alt={title}
-                  className={`${extraScale} object-contain transition-all duration-300 ${
+                  className={`relative z-10 ${extraScale} object-contain transition-all duration-300 ${
                     userBadge.unlocked
                       ? ''
                       : isHighPeaks
-                        ? 'grayscale brightness-[0.3] opacity-40'
+                        ? 'grayscale brightness-[0.42] opacity-60'
                         : 'grayscale saturate-0 brightness-[0.07] contrast-125 opacity-45'
                   }`}
                   style={userBadge.unlocked ? { filter: `drop-shadow(0 0 6px ${glowColor})` } : undefined}
