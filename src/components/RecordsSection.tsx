@@ -370,13 +370,24 @@ const RecordsSection = () => {
           </p>
         </div>
         {records.map(r => (
-          <div key={r.label} className="flex items-center gap-3 px-4 py-3">
+          <button
+            key={r.label}
+            onClick={() => {
+              if (r.result?.sessionId) {
+                const session = sessions.find(s => s.id === r.result?.sessionId);
+                if (session) {
+                  window.dispatchEvent(new CustomEvent('open-workout-detail', { detail: session }));
+                }
+              }
+            }}
+            className="flex items-center gap-3 px-4 py-3 w-full text-left hover:bg-secondary/30 transition-colors"
+          >
             <span className="text-sm font-medium w-20 shrink-0">{r.label}</span>
             <span className="text-xs text-muted-foreground flex-1 text-center">
               {r.result && new Date(r.result.date).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
             </span>
             <span className="font-display font-bold text-sm">{r.result?.time}</span>
-          </div>
+          </button>
         ))}
       </div>
     );

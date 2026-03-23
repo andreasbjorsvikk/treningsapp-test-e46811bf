@@ -916,7 +916,10 @@ const IndexContent = () => {
         showAdmin={adminMode}
         profileButton={
           !isMobile && user ? (
-            <ProfileButton className="ml-1" />
+            <div className="flex items-center gap-1">
+              <BadgeShortcutButton />
+              <ProfileButton className="ml-1" />
+            </div>
           ) : undefined
         }
       />
