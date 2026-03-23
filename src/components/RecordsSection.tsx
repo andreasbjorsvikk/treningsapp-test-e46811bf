@@ -437,9 +437,7 @@ const RecordsSection = () => {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold truncate">{h.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {h.entries.length} {h.entries.length === 1 ? t('records.registration') : t('records.registrations')}
-                        {best && ` · ${t('records.best')}: ${best.time}`}
-                        {h.elevation && ` · ${h.elevation} ${t('records.elevationUnit')}`}
+                        {best && `${t('records.best')}: ${best.time}`}
                         {h.distance && ` · ${h.distance} km`}
                         {h.elevationGain && ` · ${h.elevationGain} ${t('records.elevationGainUnit')}`}
                       </p>
