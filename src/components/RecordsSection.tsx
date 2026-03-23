@@ -431,8 +431,8 @@ const RecordsSection = () => {
                     onClick={() => setSelectedHike(h)}
                     className="w-full glass-card rounded-xl p-3 flex items-center gap-3 text-left hover:bg-secondary/30 transition-colors"
                   >
-                    <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-                      <Mountain className="w-4 h-4 text-muted-foreground" />
+                       <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                      <Mountain className="w-4 h-4 text-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold truncate">{h.name}</p>
