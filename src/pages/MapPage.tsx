@@ -205,15 +205,22 @@ const MapPage = () => {
     setSelectedPeak(null);
 
     if (openedFromTopper) {
-      // Switch to map tab first, then apply route after map has mounted
+      // Store pending route, switch tab, apply when map is ready
+      pendingRoutePeakRef.current = peak;
       setSubTab('kart');
-      setTimeout(() => {
-        applyRouteForPeak(peak);
-      }, 400);
     } else {
       applyRouteForPeak(peak);
     }
   };
+
+  const handleMapReady = useCallback(() => {
+    if (pendingRoutePeakRef.current) {
+      const peak = pendingRoutePeakRef.current;
+      pendingRoutePeakRef.current = null;
+      // Small delay to ensure map style is fully loaded
+      setTimeout(() => applyRouteForPeak(peak), 200);
+    }
+  }, [applyRouteForPeak]);
 
   useEffect(() => {
     if (showSuggestions && adminMode) {
