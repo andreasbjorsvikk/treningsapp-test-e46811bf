@@ -15,6 +15,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
   const orderedBadges = [...badges].sort((a, b) => a.badge.sortOrder - b.badge.sortOrder);
   const gridCols = columns === 2 ? 'grid-cols-2' : columns === 3 ? 'grid-cols-3' : 'grid-cols-4';
   const socketSize = columns === 2 ? '7rem' : '5.2rem';
+  const isDarkTheme = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
 
   return (
     <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 shadow-sm">
@@ -36,10 +37,17 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
 
           const isHighPeaks = sub === 'high_peaks';
           const extraScale = userBadge.badge.id === 'peaks_100'
-            ? 'w-[152%] h-[152%]'
+            ? 'w-[176%] h-[176%]'
             : sub === 'unique_peaks'
-              ? 'w-[132%] h-[132%]'
-              : 'w-[130%] h-[130%]';
+              ? 'w-[144%] h-[144%]'
+              : 'w-[140%] h-[140%]';
+          const glowShadow = userBadge.unlocked
+            ? isHighPeaks
+              ? isDarkTheme
+                ? `0 0 22px ${glowColor}`
+                : 'none'
+              : `0 0 24px ${glowColor}`
+            : 'none';
 
           return (
             <button
@@ -48,41 +56,50 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
               className="relative flex flex-col items-center gap-1.5 rounded-xl py-3 px-1 transition-colors hover:bg-muted/40"
             >
               <div
-                className="relative flex items-center justify-center rounded-full overflow-hidden"
-                style={{
-                  width: socketSize,
-                  height: socketSize,
-                  background: isHighPeaks
-                    ? 'hsl(var(--badge-socket-high-peaks))'
-                    : userBadge.unlocked
-                      ? `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`
-                      : 'radial-gradient(circle, hsl(var(--muted) / 0.5) 0%, transparent 70%)',
-                  boxShadow: userBadge.unlocked
-                    ? `inset 0 2px 6px rgba(0,0,0,0.15), 0 0 20px ${glowColor}`
-                    : 'inset 0 2px 6px rgba(0,0,0,0.12)',
-                }}
+                className="relative flex items-center justify-center p-2"
               >
-                {isHighPeaks && !userBadge.unlocked && (
-                  <div
-                    className="absolute inset-0 rounded-full"
-                    style={{
-                      background: 'linear-gradient(180deg, hsl(var(--muted) / 0.34) 0%, hsl(var(--muted-foreground) / 0.18) 100%)',
-                    }}
-                  />
-                )}
-                <img
-                  src={userBadge.badge.image}
-                  alt={title}
-                  className={`relative z-10 ${extraScale} object-contain transition-all duration-300 ${
-                    userBadge.unlocked
-                      ? ''
-                      : isHighPeaks
-                        ? 'grayscale brightness-[0.42] opacity-60'
-                        : 'grayscale saturate-0 brightness-[0.07] contrast-125 opacity-45'
-                  }`}
-                  style={userBadge.unlocked ? { filter: `drop-shadow(0 0 6px ${glowColor})` } : undefined}
-                  loading="lazy"
+                <div
+                  className="pointer-events-none absolute left-1/2 top-1/2 rounded-full -translate-x-1/2 -translate-y-1/2"
+                  style={{
+                    width: socketSize,
+                    height: socketSize,
+                    background: !isHighPeaks && userBadge.unlocked
+                      ? `radial-gradient(circle, ${glowColor} 0%, transparent 72%)`
+                      : 'transparent',
+                    boxShadow: glowShadow,
+                  }}
                 />
+                <div
+                  className="relative flex items-center justify-center rounded-full overflow-hidden"
+                  style={{
+                    width: socketSize,
+                    height: socketSize,
+                    background: isHighPeaks ? 'hsl(var(--badge-socket-high-peaks))' : 'hsl(var(--card))',
+                    boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.16)',
+                  }}
+                >
+                  {isHighPeaks && !userBadge.unlocked && (
+                    <div
+                      className="absolute inset-0 rounded-full"
+                      style={{
+                        background: 'linear-gradient(180deg, hsl(var(--muted) / 0.34) 0%, hsl(var(--muted-foreground) / 0.18) 100%)',
+                      }}
+                    />
+                  )}
+                  <img
+                    src={userBadge.badge.image}
+                    alt={title}
+                    className={`relative z-10 ${extraScale} object-contain transition-all duration-300 ${
+                      userBadge.unlocked
+                        ? ''
+                        : isHighPeaks
+                          ? 'grayscale brightness-[0.42] opacity-60'
+                          : 'grayscale saturate-0 brightness-[0.07] contrast-125 opacity-45'
+                    }`}
+                    style={userBadge.unlocked ? { filter: `drop-shadow(0 0 6px ${glowColor})` } : undefined}
+                    loading="lazy"
+                  />
+                </div>
               </div>
 
               <div className="text-center">

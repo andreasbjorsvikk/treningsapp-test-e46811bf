@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { addEnhancedTerrain } from '@/utils/mapTerrain';
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
@@ -15,9 +15,19 @@ const PeakOrbitMap = ({ latitude, longitude, heightMoh, className }: PeakOrbitMa
   const mapRef = useRef<any>(null);
   const animRef = useRef<number>(0);
   const [failed, setFailed] = useState(false);
+  const prefersStaticPreview = typeof window !== 'undefined' && (
+    window.matchMedia('(max-width: 900px)').matches ||
+    window.matchMedia('(hover: none) and (pointer: coarse)').matches ||
+    (((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8) <= 6)
+  );
+
+  const staticUrl = useMemo(() => {
+    const marker = `pin-s+16a34a(${longitude},${latitude})`;
+    return `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/static/${marker}/${longitude},${latitude},13.4,0,52/900x420@2x?access_token=${MAPBOX_TOKEN}`;
+  }, [latitude, longitude]);
 
   useEffect(() => {
-    if (!containerRef.current || failed) return;
+    if (!containerRef.current || failed || prefersStaticPreview) return;
 
     let cancelled = false;
 
@@ -37,14 +47,14 @@ const PeakOrbitMap = ({ latitude, longitude, heightMoh, className }: PeakOrbitMa
           style: 'mapbox://styles/mapbox/satellite-streets-v12',
           center: [longitude, latitude],
           zoom,
-          pitch: 65,
+          pitch: 58,
           bearing: 0,
           interactive: false,
           attributionControl: false,
           antialias: false,
           failIfMajorPerformanceCaveat: false,
           preserveDrawingBuffer: false,
-          maxTileCacheSize: 20,
+          maxTileCacheSize: 8,
         });
 
         mapRef.current = map;
@@ -61,8 +71,7 @@ const PeakOrbitMap = ({ latitude, longitude, heightMoh, className }: PeakOrbitMa
         map.on('style.load', () => {
           if (cancelled) return;
 
-          // Enhanced 3D terrain with stronger exaggeration for dramatic peaks
-          addEnhancedTerrain(map, { exaggeration: 1.6 });
+          addEnhancedTerrain(map, { exaggeration: 1.15, lightweight: true });
 
           // Start slow orbit once idle
           map.once('idle', () => {
@@ -100,12 +109,17 @@ const PeakOrbitMap = ({ latitude, longitude, heightMoh, className }: PeakOrbitMa
         mapRef.current = null;
       }
     };
-  }, [latitude, longitude, heightMoh, failed]);
+  }, [latitude, longitude, heightMoh, failed, prefersStaticPreview]);
 
-  if (failed) {
+  if (failed || prefersStaticPreview) {
     return (
-      <div className={`${className || 'w-full h-[180px] rounded-xl overflow-hidden'} bg-muted flex items-center justify-center`}>
-        <span className="text-xs text-muted-foreground">3D-visning utilgjengelig</span>
+      <div className={`${className || 'w-full h-[180px] rounded-xl overflow-hidden'} bg-muted`}>
+        <img
+          src={staticUrl}
+          alt="Kartforhåndsvisning av fjelltoppen"
+          className="w-full h-full object-cover"
+          loading="lazy"
+        />
       </div>
     );
   }
