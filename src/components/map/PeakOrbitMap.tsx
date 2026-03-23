@@ -15,8 +15,15 @@ const PeakOrbitMap = ({ latitude, longitude, heightMoh, className }: PeakOrbitMa
   const mapRef = useRef<any>(null);
   const animRef = useRef<number>(0);
   const [failed, setFailed] = useState(false);
-  // Allow 3D orbit on all devices - use static only as fallback on failure
-  const prefersStaticPreview = false;
+  // Use static preview on iOS / low-memory mobile devices to prevent WebGL crashes
+  // when main MapView is already consuming a WebGL context
+  const prefersStaticPreview = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isMobile = window.matchMedia('(max-width: 768px)').matches || window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    const lowMemory = ((navigator as any).deviceMemory ?? 8) <= 4;
+    return isIOS || (isMobile && lowMemory);
+  }, []);
 
   const staticUrl = useMemo(() => {
     const marker = `pin-s+16a34a(${longitude},${latitude})`;
