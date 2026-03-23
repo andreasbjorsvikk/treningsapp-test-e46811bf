@@ -48,9 +48,11 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                 style={{
                   width: socketSize,
                   height: socketSize,
-                  background: userBadge.unlocked
-                    ? `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`
-                    : 'radial-gradient(circle, hsl(var(--muted) / 0.5) 0%, transparent 70%)',
+                  background: isHighPeaks
+                    ? '#1a1a2e'
+                    : userBadge.unlocked
+                      ? `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`
+                      : 'radial-gradient(circle, hsl(var(--muted) / 0.5) 0%, transparent 70%)',
                   boxShadow: userBadge.unlocked
                     ? `inset 0 2px 6px rgba(0,0,0,0.15), 0 0 20px ${glowColor}`
                     : 'inset 0 2px 6px rgba(0,0,0,0.12)',
