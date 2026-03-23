@@ -48,6 +48,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { HealthEvent } from '@/types/workout';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchPendingSuggestions } from '@/services/peakSuggestionService';
+import badgeShortcutImage from '@/assets/badges/badge_shortcut.png';
 
 const Index = () => {
   return (
@@ -606,6 +607,12 @@ const IndexContent = () => {
 
   const currentOrder = isDragging ? dragOrder : sectionOrder;
 
+  const openBadges = () => {
+    setActiveTab('settings');
+    window.scrollTo({ top: 0 });
+    setTimeout(() => window.dispatchEvent(new CustomEvent('navigate-to-badges')), 50);
+  };
+
   // Profile button component
   const ProfileButton = ({ className }: { className?: string }) => (
     <button
@@ -618,6 +625,17 @@ const IndexContent = () => {
           {(username || user?.email?.charAt(0) || 'U').charAt(0).toUpperCase()}
         </AvatarFallback>
       </Avatar>
+    </button>
+  );
+
+  const BadgeShortcutButton = () => (
+    <button
+      onClick={openBadges}
+      className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/50 bg-background/70 shadow-sm transition-all hover:bg-muted/70"
+      title={t('badge.tab')}
+      aria-label={t('badge.tab')}
+    >
+      <img src={badgeShortcutImage} alt="" className="h-6 w-6 object-contain" loading="lazy" />
     </button>
   );
 
@@ -634,6 +652,7 @@ const IndexContent = () => {
               <div className="relative flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   {user && <ProfileButton />}
+                  {user && <BadgeShortcutButton />}
                   <div
                     className="flex-1 min-w-0 relative"
                     onTouchStart={() => {
@@ -695,7 +714,7 @@ const IndexContent = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 pl-1">
                   {user && (
                     <Button size="icon" variant="ghost" className="rounded-full h-10 w-10" onClick={handleManualSync} disabled={stravaSyncing}>
                       {stravaSyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
@@ -968,7 +987,7 @@ const IndexContent = () => {
         <BadgeUnlockOverlay
           badges={badgeUnlocks}
           onDismiss={() => setBadgeUnlocks([])}
-          onViewBadge={() => { setBadgeUnlocks([]); setActiveTab('settings'); }}
+          onViewBadge={() => { setBadgeUnlocks([]); openBadges(); }}
         />
       )}
 

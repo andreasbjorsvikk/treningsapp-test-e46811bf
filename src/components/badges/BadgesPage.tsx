@@ -6,6 +6,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import BadgeCard from './BadgeCard';
 import BadgeDetailModal from './BadgeDetailModal';
 import BadgeUnlockOverlay from './BadgeUnlockOverlay';
+import UniquePeaksBadgeBoard from './UniquePeaksBadgeBoard';
 import { Loader2, Play } from 'lucide-react';
 
 const BadgesPage = () => {
@@ -88,22 +89,31 @@ const BadgesPage = () => {
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
             {SUBCATEGORY_NAMES[subcategory]?.[language] || subcategory}
           </p>
-          <div className="grid grid-cols-3 gap-2">
-            {badgeList.map(b => (
-              <div key={b.badge.id} className="relative">
-                <BadgeCard userBadge={b} onClick={() => setSelectedBadge(b)} />
-                {adminMode && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setPreviewUnlockBadge(b); }}
-                    className="absolute top-1 left-1 p-1 rounded-full bg-background/80 border border-border shadow-sm hover:bg-muted transition-colors z-10"
-                    title="Preview unlock animation"
-                  >
-                    <Play className="w-3 h-3 text-foreground" />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
+          {subcategory === 'unique_peaks' ? (
+            <UniquePeaksBadgeBoard
+              badges={badgeList}
+              onSelectBadge={setSelectedBadge}
+              adminMode={adminMode}
+              onPreviewBadge={setPreviewUnlockBadge}
+            />
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {badgeList.map(b => (
+                <div key={b.badge.id} className="relative">
+                  <BadgeCard userBadge={b} onClick={() => setSelectedBadge(b)} />
+                  {adminMode && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setPreviewUnlockBadge(b); }}
+                      className="absolute top-1 left-1 p-1 rounded-full bg-background/80 border border-border shadow-sm hover:bg-muted transition-colors z-10"
+                      title="Preview unlock animation"
+                    >
+                      <Play className="w-3 h-3 text-foreground" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ))}
 

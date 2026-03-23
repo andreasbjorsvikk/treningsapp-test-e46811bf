@@ -15,6 +15,7 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
   const [visible, setVisible] = useState(false);
   const [showContent, setShowContent] = useState(false);
   const [pulseGlow, setPulseGlow] = useState(false);
+  const [spinIntro, setSpinIntro] = useState(false);
 
   const mainBadge = badges.length > 0 ? badges[badges.length - 1] : null;
   const extraCount = badges.length - 1;
@@ -24,7 +25,10 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
     requestAnimationFrame(() => setVisible(true));
     const t1 = setTimeout(() => setShowContent(true), 200);
     const t2 = setTimeout(() => setPulseGlow(true), ANIM_DURATION);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    const shouldSpin = mainBadge.badge.subcategory === 'unique_peaks';
+    if (shouldSpin) setSpinIntro(true);
+    const t3 = shouldSpin ? setTimeout(() => setSpinIntro(false), 1800) : undefined;
+    return () => { clearTimeout(t1); clearTimeout(t2); if (t3) clearTimeout(t3); };
   }, [mainBadge]);
 
   if (!mainBadge) return null;
@@ -72,7 +76,7 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
                 <img
                   src={mainBadge.badge.image}
                   alt={t(mainBadge.badge.nameKey)}
-                  className={`w-56 h-56 object-contain transition-transform duration-500 ${showContent ? 'scale-100' : 'scale-0'}`}
+                  className={`w-56 h-56 object-contain transition-transform duration-500 ${showContent ? 'scale-100' : 'scale-0'} ${spinIntro ? 'animate-coin-spin' : ''}`}
                   style={{ filter: `drop-shadow(0 0 16px ${glowColor})` }}
                 />
               </div>

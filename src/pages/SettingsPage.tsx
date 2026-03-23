@@ -27,6 +27,7 @@ import connectWithStravaImg from '@/assets/strava/connect-with-strava.png';
 import { toast } from 'sonner';
 import { getFriends, Friend } from '@/services/communityService';
 import { useAdmin } from '@/hooks/useAdmin';
+import badgeShortcutImage from '@/assets/badges/badge_shortcut.png';
 
 // Predefined color options for activity types
 const COLOR_PRESETS = [
@@ -134,6 +135,12 @@ const SettingsPage = () => {
     };
     window.addEventListener('navigate-to-profile', handler);
     return () => window.removeEventListener('navigate-to-profile', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setView('badges');
+    window.addEventListener('navigate-to-badges', handler);
+    return () => window.removeEventListener('navigate-to-badges', handler);
   }, []);
 
   // Load child profiles for privacy
@@ -1186,8 +1193,8 @@ const SettingsPage = () => {
             onClick={() => setView('badges' as SettingsView)}
             className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/30 transition-colors"
           >
-            <div className="rounded-lg p-2 bg-amber-500/10">
-              <Mountain className="w-4 h-4 text-amber-600" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/50 bg-background/70 shadow-sm">
+              <img src={badgeShortcutImage} alt="" className="h-6 w-6 object-contain" loading="lazy" />
             </div>
             <span className="flex-1 text-left font-display font-semibold text-sm">{t('badge.tab')}</span>
             <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
