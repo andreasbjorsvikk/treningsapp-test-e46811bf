@@ -34,8 +34,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
             countLabel = t(userBadge.badge.descriptionKey);
           }
 
-          const isHighPeaks = sub === 'high_peaks';
-          const extraScale = userBadge.badge.id === 'peaks_100' ? 'w-[120%] h-[120%]' : 'w-[116%] h-[116%]';
+          const extraScale = userBadge.badge.id === 'peaks_100' ? 'w-[126%] h-[126%]' : sub === 'unique_peaks' ? 'w-[120%] h-[120%]' : 'w-[120%] h-[120%]';
 
           return (
             <button
