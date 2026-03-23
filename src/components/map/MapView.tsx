@@ -302,25 +302,17 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     });
 
     m.on('style.load', () => {
-      if (shouldUseSafeMapMode) {
-        try {
-          m.setTerrain(null);
-        } catch {
-          // no-op
-        }
-      } else {
-        addEnhancedTerrain(m, {
-          exaggeration: isConstrainedDevice ? 1.08 : 1.4,
-          lightweight: isConstrainedDevice,
-        });
-      }
+      addEnhancedTerrain(m, {
+        exaggeration: isConstrainedDevice ? 1.0 : 1.4,
+        lightweight: isConstrainedDevice,
+      });
       setMapLoaded(true);
       onMapReadyRef.current?.();
     });
 
     map.current = m;
     return () => { m.remove(); map.current = null; };
-  }, [isConstrainedDevice, shouldUseSafeMapMode, suppressInitialGeolocate]);
+  }, [isConstrainedDevice, suppressInitialGeolocate]);
 
   // Admin: click to add peak or waypoint
   useEffect(() => {
