@@ -325,6 +325,15 @@ const IndexContent = () => {
     return () => window.removeEventListener('navigate-to-settings', handler);
   }, []);
 
+  // Listen for open-workout-detail from records
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      if (e.detail) setDetailSession(e.detail);
+    };
+    window.addEventListener('open-workout-detail', handler as EventListener);
+    return () => window.removeEventListener('open-workout-detail', handler as EventListener);
+  }, []);
+
   // Load pinned challenges
   useEffect(() => {
     if (!user || !settings.pinnedChallengeIds?.length) {
