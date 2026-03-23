@@ -74,7 +74,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                   style={{
                     width: socketSize,
                     height: socketSize,
-                    background: isHighPeaks ? 'hsl(var(--badge-socket-high-peaks))' : 'hsl(var(--card))',
+                    background: isHighPeaks ? 'transparent' : 'hsl(var(--card))',
                     boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.16)',
                   }}
                 >
