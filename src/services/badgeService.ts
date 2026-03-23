@@ -119,7 +119,7 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
 export const SUBCATEGORY_NAMES: Record<string, { no: string; en: string }> = {
   unique_peaks: { no: 'Unike topper', en: 'Unique peaks' },
   high_peaks: { no: 'Topper over 1000 moh', en: 'Peaks over 1000m' },
-  daily_checkins: { no: 'Innsjekkinger på en dag', en: 'Check-ins in a day' },
+  daily_checkins: { no: 'Topper på en dag', en: 'Peaks in a day' },
   streaks: { no: 'Dager på rad', en: 'Consecutive days' },
   total_sessions: { no: 'Totalt antall økter', en: 'Total sessions' },
   monthly_sessions: { no: 'Økter på en måned', en: 'Monthly sessions' },
