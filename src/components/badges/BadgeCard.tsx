@@ -31,7 +31,7 @@ const BadgeCard = ({ userBadge, onClick, showProgress = true }: BadgeCardProps) 
       }`}
     >
       {/* Badge visual */}
-      <div className={isImageBadge ? 'w-24 h-24' : 'w-16 h-16'} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className={`${isImageBadge ? 'w-24 h-24' : 'w-16 h-16'} drop-shadow-md`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {badge.image ? (
           <img
             src={badge.image}
