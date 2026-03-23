@@ -72,9 +72,10 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: 'high_peak_5', category: 'fjell', subcategory: 'high_peaks', nameKey: 'badge.highPeak5', descriptionKey: 'badge.highPeak5Desc', requirementKey: 'badge.highPeak5Req', threshold: 5, rarity: 'rare', emoji: '🗻', image: badgeHighPeak5, sortOrder: 12 },
   { id: 'high_peak_10', category: 'fjell', subcategory: 'high_peaks', nameKey: 'badge.highPeak10', descriptionKey: 'badge.highPeak10Desc', requirementKey: 'badge.highPeak10Req', threshold: 10, rarity: 'epic', emoji: '🦅', image: badgeHighPeak10, sortOrder: 13 },
 
-  // ── Fjell: Innsjekkinger på en dag ──
-  { id: 'checkins_3_day', category: 'fjell', subcategory: 'daily_checkins', nameKey: 'badge.checkins3Day', descriptionKey: 'badge.checkins3DayDesc', requirementKey: 'badge.checkins3DayReq', threshold: 3, rarity: 'uncommon', emoji: '⚡', sortOrder: 20, repeatable: true },
-  { id: 'checkins_5_day', category: 'fjell', subcategory: 'daily_checkins', nameKey: 'badge.checkins5Day', descriptionKey: 'badge.checkins5DayDesc', requirementKey: 'badge.checkins5DayReq', threshold: 5, rarity: 'rare', emoji: '🔥', sortOrder: 21, repeatable: true },
+  // ── Fjell: Topper på en dag ──
+  { id: 'checkins_3_day', category: 'fjell', subcategory: 'daily_checkins', nameKey: 'badge.checkins3Day', descriptionKey: 'badge.checkins3DayDesc', requirementKey: 'badge.checkins3DayReq', threshold: 3, rarity: 'uncommon', emoji: '⚡', image: badge3Day, sortOrder: 20, repeatable: true },
+  { id: 'checkins_5_day', category: 'fjell', subcategory: 'daily_checkins', nameKey: 'badge.checkins5Day', descriptionKey: 'badge.checkins5DayDesc', requirementKey: 'badge.checkins5DayReq', threshold: 5, rarity: 'rare', emoji: '🔥', image: badge5Day, sortOrder: 21, repeatable: true },
+  { id: 'checkins_7_day', category: 'fjell', subcategory: 'daily_checkins', nameKey: 'badge.checkins7Day', descriptionKey: 'badge.checkins7DayDesc', requirementKey: 'badge.checkins7DayReq', threshold: 7, rarity: 'epic', emoji: '🏆', image: badge7Day, sortOrder: 22, repeatable: true },
 
   // ── Fjell: Dager på rad ──
   { id: 'streak_3', category: 'fjell', subcategory: 'streaks', nameKey: 'badge.streak3', descriptionKey: 'badge.streak3Desc', requirementKey: 'badge.streak3Req', threshold: 3, rarity: 'uncommon', emoji: '📅', sortOrder: 30, repeatable: true },
