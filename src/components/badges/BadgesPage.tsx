@@ -117,9 +117,7 @@ const BadgesPage = () => {
                       <p className={`text-xs font-semibold text-center leading-tight ${b.unlocked ? 'text-foreground' : 'text-muted-foreground/60'}`}>
                         {t(b.badge.nameKey)}
                       </p>
-                      {!b.unlocked && (
-                        <p className="text-[10px] text-muted-foreground">{b.progress}/{b.badge.threshold}</p>
-                      )}
+                      
                     </button>
                     {adminMode && (
                       <button
