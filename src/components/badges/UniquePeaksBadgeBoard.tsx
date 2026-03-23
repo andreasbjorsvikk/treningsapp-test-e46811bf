@@ -1,4 +1,4 @@
-import { UserBadge, getHighPeakGlow, getRarityGlow } from '@/services/badgeService';
+import { UserBadge, getHighPeakGlow, getRarityGlow, BadgeDefinition } from '@/services/badgeService';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Play } from 'lucide-react';
 
@@ -7,37 +7,44 @@ interface UniquePeaksBadgeBoardProps {
   onSelectBadge: (badge: UserBadge) => void;
   adminMode?: boolean;
   onPreviewBadge?: (badge: UserBadge) => void;
+  columns?: 2 | 3 | 4;
 }
 
-const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPreviewBadge }: UniquePeaksBadgeBoardProps) => {
+const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPreviewBadge, columns = 2 }: UniquePeaksBadgeBoardProps) => {
   const { t, language } = useTranslation();
   const orderedBadges = [...badges].sort((a, b) => a.badge.sortOrder - b.badge.sortOrder);
+  const gridCols = columns === 2 ? 'grid-cols-2' : columns === 3 ? 'grid-cols-3' : 'grid-cols-4';
+  const socketSize = columns === 2 ? '7rem' : '5.2rem';
 
   return (
     <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 shadow-sm">
-      <div className="grid grid-cols-2 gap-4">
+      <div className={`grid ${gridCols} gap-3`}>
         {orderedBadges.map((userBadge) => {
           if (!userBadge.badge.image) return null;
 
           const glowColor = getHighPeakGlow(userBadge.badge.id)?.glow || getRarityGlow(userBadge.badge.rarity);
-          const highPeakColors = getHighPeakGlow(userBadge.badge.id);
           const title = t(userBadge.badge.nameKey);
-          const countLabel = language === 'no'
-            ? `${userBadge.badge.threshold} unike topper`
-            : `${userBadge.badge.threshold} unique peaks`;
+          const sub = userBadge.badge.subcategory;
+          let countLabel: string;
+          if (sub === 'unique_peaks') {
+            countLabel = language === 'no' ? `${userBadge.badge.threshold} unike topper` : `${userBadge.badge.threshold} unique peaks`;
+          } else if (sub === 'high_peaks') {
+            countLabel = language === 'no' ? `over 1000 moh` : `over 1000m`;
+          } else {
+            countLabel = t(userBadge.badge.descriptionKey);
+          }
 
           return (
             <button
               key={userBadge.badge.id}
               onClick={() => onSelectBadge(userBadge)}
-              className="relative flex flex-col items-center gap-2 rounded-xl py-3 px-2 transition-colors hover:bg-muted/40"
+              className="relative flex flex-col items-center gap-1.5 rounded-xl py-3 px-1 transition-colors hover:bg-muted/40"
             >
-              {/* Recessed socket */}
               <div
                 className="relative flex items-center justify-center rounded-full"
                 style={{
-                  width: '5.5rem',
-                  height: '5.5rem',
+                  width: socketSize,
+                  height: socketSize,
                   background: userBadge.unlocked
                     ? `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`
                     : 'radial-gradient(circle, hsl(var(--muted) / 0.5) 0%, transparent 70%)',
@@ -49,7 +56,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                 <img
                   src={userBadge.badge.image}
                   alt={title}
-                  className={`w-[82%] h-[82%] object-contain transition-all duration-300 ${
+                  className={`w-[96%] h-[96%] object-contain transition-all duration-300 ${
                     userBadge.unlocked
                       ? ''
                       : 'grayscale saturate-0 brightness-[0.07] contrast-125 opacity-45'
@@ -59,7 +66,6 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                 />
               </div>
 
-              {/* Label */}
               <div className="text-center">
                 <p className="font-display text-[0.82rem] font-semibold leading-tight text-foreground">
                   {title}
@@ -69,14 +75,12 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                 </p>
               </div>
 
-              {/* Progress if locked */}
               {!userBadge.unlocked && (
                 <p className="text-[0.65rem] font-medium text-muted-foreground/70">
                   {userBadge.progress}/{userBadge.badge.threshold}
                 </p>
               )}
 
-              {/* Admin preview */}
               {adminMode && onPreviewBadge && (
                 <button
                   onClick={(event) => {
