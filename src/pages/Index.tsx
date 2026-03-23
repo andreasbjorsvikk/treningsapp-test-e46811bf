@@ -34,7 +34,7 @@ import GoalCompletionOverlay from '@/components/GoalCompletionOverlay';
 import MonthGoalCompletionOverlay from '@/components/MonthGoalCompletionOverlay';
 import BadgeUnlockOverlay from '@/components/badges/BadgeUnlockOverlay';
 import { computeUserBadges, findNewlyUnlocked, UserBadge } from '@/services/badgeService';
-import { Plus, Sun, Moon, Dumbbell, Ambulance, LogIn, RefreshCw, Loader2, GripVertical, Check, User, BarChart3, TrendingUp } from 'lucide-react';
+import { Plus, Sun, Moon, Dumbbell, Ambulance, LogIn, Loader2, GripVertical, Check, User, BarChart3, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -724,11 +724,6 @@ const IndexContent = () => {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 pl-1">
-                  {user && (
-                    <Button size="icon" variant="ghost" className="rounded-full h-10 w-10" onClick={handleManualSync} disabled={stravaSyncing}>
-                      {stravaSyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                    </Button>
-                  )}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button size="icon" variant="ghost" className="rounded-full h-10 w-10">
