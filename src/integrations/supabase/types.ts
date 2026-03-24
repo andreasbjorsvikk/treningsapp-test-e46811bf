@@ -294,6 +294,41 @@ export type Database = {
         }
         Relationships: []
       }
+      hiking_record_shares: {
+        Row: {
+          created_at: string
+          hiking_record_id: string
+          id: string
+          owner_id: string
+          shared_with_user_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          hiking_record_id: string
+          id?: string
+          owner_id: string
+          shared_with_user_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          hiking_record_id?: string
+          id?: string
+          owner_id?: string
+          shared_with_user_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiking_record_shares_hiking_record_id_fkey"
+            columns: ["hiking_record_id"]
+            isOneToOne: false
+            referencedRelation: "hiking_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hiking_records: {
         Row: {
           created_at: string
@@ -303,6 +338,7 @@ export type Database = {
           entries: Json
           id: string
           name: string
+          route_description: string | null
           user_id: string
         }
         Insert: {
@@ -313,6 +349,7 @@ export type Database = {
           entries?: Json
           id?: string
           name: string
+          route_description?: string | null
           user_id: string
         }
         Update: {
@@ -323,6 +360,7 @@ export type Database = {
           entries?: Json
           id?: string
           name?: string
+          route_description?: string | null
           user_id?: string
         }
         Relationships: []
@@ -566,6 +604,47 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
+      }
+      shared_hiking_entries: {
+        Row: {
+          avg_heartrate: number | null
+          created_at: string
+          date: string
+          hiking_record_id: string
+          id: string
+          max_heartrate: number | null
+          time: string
+          user_id: string
+        }
+        Insert: {
+          avg_heartrate?: number | null
+          created_at?: string
+          date?: string
+          hiking_record_id: string
+          id?: string
+          max_heartrate?: number | null
+          time: string
+          user_id: string
+        }
+        Update: {
+          avg_heartrate?: number | null
+          created_at?: string
+          date?: string
+          hiking_record_id?: string
+          id?: string
+          max_heartrate?: number | null
+          time?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_hiking_entries_hiking_record_id_fkey"
+            columns: ["hiking_record_id"]
+            isOneToOne: false
+            referencedRelation: "hiking_records"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       strava_connections: {
         Row: {

@@ -1,4 +1,4 @@
-import { UserBadge, getHighPeakGlow, getRarityGlow, BadgeDefinition } from '@/services/badgeService';
+import { UserBadge, getHighPeakGlow, getRarityGlow, getRarityColor, BadgeDefinition } from '@/services/badgeService';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Play } from 'lucide-react';
 
@@ -15,7 +15,15 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
   const orderedBadges = [...badges].sort((a, b) => a.badge.sortOrder - b.badge.sortOrder);
   const gridCols = columns === 2 ? 'grid-cols-2' : columns === 3 ? 'grid-cols-3' : 'grid-cols-4';
   const socketSize = columns === 2 ? '7rem' : '5.2rem';
-  const isDarkTheme = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+
+  // For monthly_elevation: find the first locked badge to show progress on
+  const isMonthlyElev = orderedBadges.length > 0 && orderedBadges[0].badge.subcategory === 'monthly_elevation';
+  let progressTargetId: string | null = null;
+  if (isMonthlyElev) {
+    // Find lowest threshold locked badge
+    const firstLocked = orderedBadges.find(b => !b.unlocked);
+    if (firstLocked) progressTargetId = firstLocked.badge.id;
+  }
 
   return (
     <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 shadow-md">
@@ -24,6 +32,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
           if (!userBadge.badge.image) return null;
 
           const glowColor = getHighPeakGlow(userBadge.badge.id)?.glow || getRarityGlow(userBadge.badge.rarity);
+          const rarityColor = getHighPeakGlow(userBadge.badge.id)?.color || getRarityColor(userBadge.badge.rarity);
           const title = t(userBadge.badge.nameKey);
           const sub = userBadge.badge.subcategory;
           let titleLine: string;
@@ -34,6 +43,9 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
           } else if (sub === 'high_peaks') {
             titleLine = language === 'no' ? `${userBadge.badge.threshold === 1 ? '1 topp' : `${userBadge.badge.threshold} topper`}` : `${userBadge.badge.threshold} peak${userBadge.badge.threshold === 1 ? '' : 's'}`;
             countLabel = language === 'no' ? 'over 1000 moh' : 'above 1000m';
+          } else if (sub === 'monthly_elevation') {
+            titleLine = `${userBadge.badge.threshold.toLocaleString()} m`;
+            countLabel = language === 'no' ? 'på en måned' : 'in a month';
           } else {
             titleLine = title;
             countLabel = t(userBadge.badge.descriptionKey);
@@ -41,10 +53,14 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
 
           const isHighPeaks = sub === 'high_peaks';
           const isUniquePeaks = sub === 'unique_peaks';
+          const isMonthlyElevation = sub === 'monthly_elevation';
+          const isStandalone = isHighPeaks || isMonthlyElevation;
           const showGlow = false;
+          const showProgressBar = isMonthlyElevation && !userBadge.unlocked && progressTargetId === userBadge.badge.id;
+          const progressPercent = showProgressBar ? Math.min((userBadge.progress / userBadge.badge.threshold) * 100, 100) : 0;
 
-          // High peaks: standalone images without circular socket
-          if (isHighPeaks) {
+          // Standalone images (high peaks, monthly elevation) without circular socket
+          if (isStandalone) {
             return (
               <button
                 key={userBadge.badge.id}
@@ -67,6 +83,19 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                     }}
                     loading="lazy"
                   />
+                  {showProgressBar && (
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[85%]">
+                      <div className="w-full h-1.5 rounded-full bg-muted/60 overflow-hidden backdrop-blur-sm">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{ width: `${progressPercent}%`, backgroundColor: rarityColor }}
+                        />
+                      </div>
+                      <p className="text-[0.6rem] font-medium text-muted-foreground/70 text-center mt-0.5">
+                        {Math.round(userBadge.progress)}/{userBadge.badge.threshold}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="text-center">
@@ -74,7 +103,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                   <p className="mt-0.5 text-[0.68rem] font-medium leading-tight text-muted-foreground">{countLabel}</p>
                 </div>
 
-                {!userBadge.unlocked && (
+                {!userBadge.unlocked && !showProgressBar && isHighPeaks && (
                   <p className="text-[0.65rem] font-medium text-muted-foreground/70">
                     {userBadge.progress}/{userBadge.badge.threshold}
                   </p>
@@ -93,8 +122,8 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
             );
           }
 
-          // Unique peaks: circular socket with glow
-          const imgScale = 1.58;
+          // Unique peaks: circular socket
+          const imgScale = 1.06;
           const glowShadow = showGlow ? `0 0 12px ${glowColor}` : 'none';
 
           return (
@@ -105,23 +134,12 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
             >
               <div className="relative flex items-center justify-center p-2">
                 <div
-                  className="pointer-events-none absolute left-1/2 top-1/2 rounded-full -translate-x-1/2 -translate-y-1/2"
-                  style={{
-                    width: socketSize,
-                    height: socketSize,
-                    background: userBadge.unlocked
-                      ? `radial-gradient(circle, ${glowColor} 0%, transparent 72%)`
-                      : 'transparent',
-                    boxShadow: glowShadow,
-                  }}
-                />
-                <div
                   className="relative flex items-center justify-center rounded-full overflow-hidden drop-shadow-md"
                   style={{
                     width: socketSize,
                     height: socketSize,
                     background: 'hsl(var(--card))',
-                    boxShadow: `inset 0 2px 6px rgba(0,0,0,0.16)${showGlow ? `, 0 0 12px ${glowColor}` : ''}`,
+                    boxShadow: `inset 0 2px 6px rgba(0,0,0,0.16)`,
                   }}
                 >
                   <img
@@ -130,7 +148,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                     className={`relative z-10 object-contain transition-all duration-300 ${
                       userBadge.unlocked
                         ? ''
-                        : 'grayscale saturate-0 brightness-[0.07] contrast-125 opacity-45'
+                        : 'grayscale brightness-[0.15] opacity-30'
                     }`}
                     style={{
                       width: '100%',
@@ -139,7 +157,6 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                       maxHeight: 'none',
                       transform: `scale(${imgScale})`,
                       transformOrigin: 'center',
-                      ...(showGlow ? { filter: `drop-shadow(0 0 6px ${glowColor})` } : {}),
                     }}
                     loading="lazy"
                   />
