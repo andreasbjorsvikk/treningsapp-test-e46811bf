@@ -126,7 +126,7 @@ const BadgesPage = () => {
                         <p className={`text-xs font-semibold leading-tight ${b.unlocked ? 'text-foreground' : 'text-muted-foreground/60'}`}>
                           {badgeName}
                         </p>
-                        {isStreak && (
+                        {(isStreak || subcategory === 'monthly_sessions') && (
                           <p className="mt-0.5 text-[0.65rem] font-medium leading-tight text-muted-foreground">{subLabel}</p>
                         )}
                       </div>
