@@ -29,6 +29,12 @@ import badgeStreak3 from '@/assets/badges/fjellfokus_3_dager.png';
 import badgeStreak5 from '@/assets/badges/fjellrytme_5_dager.png';
 import badgeStreak10 from '@/assets/badges/fjellflyt_10_dager.png';
 
+// Badge images - monthly elevation
+import badgeElev1000 from '@/assets/badges/elev_1000m.png';
+import badgeElev3000 from '@/assets/badges/elev_3000m.png';
+import badgeElev5000 from '@/assets/badges/elev_5000m.png';
+import badgeElev10000 from '@/assets/badges/elev_10000m.png';
+
 export type BadgeCategory = 'fjell' | 'trening';
 export type BadgeRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
@@ -105,10 +111,10 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: 'month_sessions_30', category: 'trening', subcategory: 'monthly_sessions', nameKey: 'badge.monthSessions30', descriptionKey: 'badge.monthSessions30Desc', requirementKey: 'badge.monthSessions30Req', threshold: 30, rarity: 'rare', emoji: '🏋️', sortOrder: 12, repeatable: true },
 
   // ── Trening: Månedlige høydemeter ──
-  { id: 'month_elev_1000', category: 'trening', subcategory: 'monthly_elevation', nameKey: 'badge.monthElev1000', descriptionKey: 'badge.monthElev1000Desc', requirementKey: 'badge.monthElev1000Req', threshold: 1000, rarity: 'common', emoji: '⛰️', sortOrder: 13, repeatable: true },
-  { id: 'month_elev_3000', category: 'trening', subcategory: 'monthly_elevation', nameKey: 'badge.monthElev3000', descriptionKey: 'badge.monthElev3000Desc', requirementKey: 'badge.monthElev3000Req', threshold: 3000, rarity: 'uncommon', emoji: '🏔️', sortOrder: 14, repeatable: true },
-  { id: 'month_elev_5000', category: 'trening', subcategory: 'monthly_elevation', nameKey: 'badge.monthElev5000', descriptionKey: 'badge.monthElev5000Desc', requirementKey: 'badge.monthElev5000Req', threshold: 5000, rarity: 'rare', emoji: '🗻', sortOrder: 15, repeatable: true },
-  { id: 'month_elev_10000', category: 'trening', subcategory: 'monthly_elevation', nameKey: 'badge.monthElev10000', descriptionKey: 'badge.monthElev10000Desc', requirementKey: 'badge.monthElev10000Req', threshold: 10000, rarity: 'epic', emoji: '🦅', sortOrder: 16, repeatable: true },
+  { id: 'month_elev_1000', category: 'trening', subcategory: 'monthly_elevation', nameKey: 'badge.monthElev1000', descriptionKey: 'badge.monthElev1000Desc', requirementKey: 'badge.monthElev1000Req', threshold: 1000, rarity: 'common', emoji: '⛰️', image: badgeElev1000, sortOrder: 13, repeatable: true },
+  { id: 'month_elev_3000', category: 'trening', subcategory: 'monthly_elevation', nameKey: 'badge.monthElev3000', descriptionKey: 'badge.monthElev3000Desc', requirementKey: 'badge.monthElev3000Req', threshold: 3000, rarity: 'uncommon', emoji: '🏔️', image: badgeElev3000, sortOrder: 14, repeatable: true },
+  { id: 'month_elev_5000', category: 'trening', subcategory: 'monthly_elevation', nameKey: 'badge.monthElev5000', descriptionKey: 'badge.monthElev5000Desc', requirementKey: 'badge.monthElev5000Req', threshold: 5000, rarity: 'rare', emoji: '🗻', image: badgeElev5000, sortOrder: 15, repeatable: true },
+  { id: 'month_elev_10000', category: 'trening', subcategory: 'monthly_elevation', nameKey: 'badge.monthElev10000', descriptionKey: 'badge.monthElev10000Desc', requirementKey: 'badge.monthElev10000Req', threshold: 10000, rarity: 'epic', emoji: '🦅', image: badgeElev10000, sortOrder: 16, repeatable: true },
 
   // ── Trening: Månedlig samme type ──
   { id: 'month_same_5', category: 'trening', subcategory: 'monthly_sametype', nameKey: 'badge.monthSame5', descriptionKey: 'badge.monthSame5Desc', requirementKey: 'badge.monthSame5Req', threshold: 5, rarity: 'common', emoji: '🎯', sortOrder: 17, repeatable: true },
@@ -125,7 +131,7 @@ export const SUBCATEGORY_NAMES: Record<string, { no: string; en: string }> = {
   unique_peaks: { no: 'Unike topper', en: 'Unique peaks' },
   high_peaks: { no: 'Topper over 1000 moh', en: 'Peaks over 1000m' },
   daily_checkins: { no: 'Topper på én dag', en: 'Peaks in one day' },
-  streaks: { no: 'Dager på rad', en: 'Consecutive days' },
+  streaks: { no: 'Dager på rad med innsjekking', en: 'Consecutive check-in days' },
   total_sessions: { no: 'Totalt antall økter', en: 'Total sessions' },
   monthly_sessions: { no: 'Økter på en måned', en: 'Monthly sessions' },
   monthly_elevation: { no: 'Høydemeter på en måned', en: 'Monthly elevation' },
