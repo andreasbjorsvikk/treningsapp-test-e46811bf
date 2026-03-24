@@ -66,11 +66,10 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
             <>
               {/* Image badges: no circle, just the image with glow */}
               <div
-                className={`flex items-center justify-center transition-all duration-700 ${
-                  isLegendary ? 'animate-pulse' : ''
-                }`}
+                className="flex items-center justify-center transition-all duration-700"
                 style={{
                   filter: pulseGlow ? `drop-shadow(0 0 30px ${glowColor}) drop-shadow(0 0 60px ${glowColor})` : 'none',
+                  animation: pulseGlow && isLegendary ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none',
                 }}
               >
                 <img
