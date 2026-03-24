@@ -13,6 +13,11 @@ import badgeSessions100 from '@/assets/badges/100_okter.png';
 import badgeSessions250 from '@/assets/badges/250_okter.png';
 import badgeSessions500 from '@/assets/badges/500_okter.png';
 
+// Badge images - monthly sessions
+import badgeMonthSessions10 from '@/assets/badges/month_sessions_10.png';
+import badgeMonthSessions20 from '@/assets/badges/month_sessions_20.png';
+import badgeMonthSessions30 from '@/assets/badges/month_sessions_30.png';
+
 // Badge images - high peaks
 import badgeHighPeak1 from '@/assets/badges/1_topp_1000_moh.png';
 import badgeHighPeak3 from '@/assets/badges/3_topper_1000_moh.png';
