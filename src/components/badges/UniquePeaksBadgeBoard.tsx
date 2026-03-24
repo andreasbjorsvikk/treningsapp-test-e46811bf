@@ -44,7 +44,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
             titleLine = language === 'no' ? `${userBadge.badge.threshold === 1 ? '1 topp' : `${userBadge.badge.threshold} topper`}` : `${userBadge.badge.threshold} peak${userBadge.badge.threshold === 1 ? '' : 's'}`;
             countLabel = language === 'no' ? 'over 1000 moh' : 'above 1000m';
           } else if (sub === 'monthly_elevation') {
-            titleLine = `${userBadge.badge.threshold >= 1000 ? `${(userBadge.badge.threshold / 1000).toLocaleString()} 000` : userBadge.badge.threshold} m`;
+            titleLine = `${userBadge.badge.threshold.toLocaleString()} m`;
             countLabel = language === 'no' ? 'på en måned' : 'in a month';
           } else {
             titleLine = title;
