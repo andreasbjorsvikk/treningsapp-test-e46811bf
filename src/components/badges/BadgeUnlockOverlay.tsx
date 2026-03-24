@@ -84,9 +84,7 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
             <>
               {/* Emoji badges: keep glow circle */}
               <div
-                className={`w-56 h-56 rounded-full flex items-center justify-center transition-all duration-700 ${
-                  isLegendary ? 'animate-pulse' : ''
-                }`}
+                className="w-56 h-56 rounded-full flex items-center justify-center transition-all duration-700"
                 style={{
                   background: `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`,
                   boxShadow: pulseGlow ? `0 0 50px ${glowColor}, 0 0 100px ${glowColor}` : 'none',

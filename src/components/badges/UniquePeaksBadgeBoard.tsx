@@ -148,7 +148,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
                     className={`relative z-10 object-contain transition-all duration-300 ${
                       userBadge.unlocked
                         ? ''
-                        : 'grayscale brightness-[0.15] opacity-30'
+                        : 'grayscale brightness-[0.08] opacity-20'
                     }`}
                     style={{
                       width: '100%',
