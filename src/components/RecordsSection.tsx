@@ -5,7 +5,7 @@ import { formatDuration } from '@/utils/workoutUtils';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Trophy, ChevronRight, Plus, Trash2, Mountain, Pencil, UserPlus, X } from 'lucide-react';
+import { Trophy, ChevronRight, Plus, Trash2, Mountain, Pencil, UserPlus, X, ArrowLeft, Heart, Route, ArrowUpRight, Clock, Calendar, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -101,6 +101,7 @@ export interface HikingEntry {
   date: string;
   avgHeartrate?: number;
   maxHeartrate?: number;
+  notes?: string;
 }
 
 interface SharedEntry {
@@ -144,11 +145,14 @@ const RecordsSection = () => {
   const [newEntryAvgHr, setNewEntryAvgHr] = useState('');
   const [newEntryMaxHr, setNewEntryMaxHr] = useState('');
   const [newEntryDate, setNewEntryDate] = useState(new Date().toISOString().slice(0, 10));
+  const [newEntryNotes, setNewEntryNotes] = useState('');
 
   const [hikingRecords, setHikingRecords] = useState<HikingRecord[]>([]);
 
   // Sharing state
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [showInviteConfirm, setShowInviteConfirm] = useState(false);
+  const [inviteTarget, setInviteTarget] = useState<{ id: string; username: string } | null>(null);
   const [friends, setFriends] = useState<{ id: string; username: string; avatar_url?: string }[]>([]);
   const [shares, setShares] = useState<ShareInfo[]>([]);
   const [sharedEntries, setSharedEntries] = useState<SharedEntry[]>([]);
@@ -156,8 +160,17 @@ const RecordsSection = () => {
   const [profileCache, setProfileCache] = useState<Map<string, { username: string; avatar_url?: string }>>(new Map());
   const [showRemoveFriendConfirm, setShowRemoveFriendConfirm] = useState(false);
   const [friendToRemove, setFriendToRemove] = useState<string | null>(null);
-  const [editingEntry, setEditingEntry] = useState<HikingEntry | SharedEntry | null>(null);
-  const [showEditEntry, setShowEditEntry] = useState(false);
+  const [showSharedFriends, setShowSharedFriends] = useState(false);
+
+  // Entry detail view
+  const [selectedEntry, setSelectedEntry] = useState<{ entry: HikingEntry; isShared: boolean } | null>(null);
+  const [editingEntryTime, setEditingEntryTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [editingEntryDate, setEditingEntryDate] = useState('');
+  const [editingEntryAvgHr, setEditingEntryAvgHr] = useState('');
+  const [editingEntryMaxHr, setEditingEntryMaxHr] = useState('');
+  const [editingEntryNotes, setEditingEntryNotes] = useState('');
+  const [showEditDurationPicker, setShowEditDurationPicker] = useState(false);
+  const [showDeleteEntryConfirm, setShowDeleteEntryConfirm] = useState(false);
 
   // Load hiking records from DB (or localStorage fallback)
   const loadHikingRecords = useCallback(async () => {
@@ -268,7 +281,6 @@ const RecordsSection = () => {
       .eq('hiking_record_id', hikeId) as any;
     
     if (data) {
-      // Load profiles for entry users
       const userIds = [...new Set((data as SharedEntry[]).map(e => e.user_id))];
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
@@ -371,12 +383,9 @@ const RecordsSection = () => {
       ? `${newEntryHours}:${String(newEntryMinutes).padStart(2, '0')}:${String(newEntrySeconds).padStart(2, '0')}`
       : `${newEntryMinutes}:${String(newEntrySeconds).padStart(2, '0')}`;
     
-    // If hike is shared and user is not the owner, save to shared_hiking_entries
-    const isOwner = selectedHike.entries !== undefined; // Owner has entries in the record
     const hikeOwnedByUser = hikingRecords.some(h => h.id === selectedHike.id);
     
     if (user && !hikeOwnedByUser) {
-      // User is a shared participant, save to shared_hiking_entries
       await supabase.from('shared_hiking_entries').insert({
         hiking_record_id: selectedHike.id,
         user_id: user.id,
@@ -393,6 +402,7 @@ const RecordsSection = () => {
         date: newEntryDate,
         avgHeartrate: newEntryAvgHr ? Number(newEntryAvgHr) : undefined,
         maxHeartrate: newEntryMaxHr ? Number(newEntryMaxHr) : undefined,
+        notes: newEntryNotes.trim() || undefined,
       };
       const newEntries = [...selectedHike.entries, entry];
       if (user) {
@@ -415,6 +425,7 @@ const RecordsSection = () => {
     setNewEntrySeconds(0);
     setNewEntryAvgHr('');
     setNewEntryMaxHr('');
+    setNewEntryNotes('');
     setShowAddEntry(false);
   };
 
@@ -491,12 +502,56 @@ const RecordsSection = () => {
     }
   };
 
+  const handleUpdateEntry = async () => {
+    if (!selectedHike || !selectedEntry) return;
+    const timeStr = editingEntryTime.hours > 0
+      ? `${editingEntryTime.hours}:${String(editingEntryTime.minutes).padStart(2, '0')}:${String(editingEntryTime.seconds).padStart(2, '0')}`
+      : `${editingEntryTime.minutes}:${String(editingEntryTime.seconds).padStart(2, '0')}`;
+
+    if (selectedEntry.isShared) {
+      // Update shared entry not supported in current schema, skip
+    } else {
+      const newEntries = selectedHike.entries.map(e =>
+        e.id === selectedEntry.entry.id
+          ? {
+              ...e,
+              time: timeStr,
+              date: editingEntryDate,
+              avgHeartrate: editingEntryAvgHr ? Number(editingEntryAvgHr) : undefined,
+              maxHeartrate: editingEntryMaxHr ? Number(editingEntryMaxHr) : undefined,
+              notes: editingEntryNotes.trim() || undefined,
+            }
+          : e
+      );
+      if (user) {
+        await supabase.from('hiking_records').update({ entries: newEntries } as any).eq('id', selectedHike.id);
+        await loadHikingRecords();
+        setSelectedHike(prev => prev ? { ...prev, entries: newEntries } : null);
+      } else {
+        const updated = hikingRecords.map(h =>
+          h.id === selectedHike.id ? { ...h, entries: newEntries } : h
+        );
+        saveHikingRecords(updated);
+        setSelectedHike(updated.find(h => h.id === selectedHike.id) || null);
+      }
+    }
+    setSelectedEntry(null);
+    toast.success(language === 'no' ? 'Tid oppdatert' : 'Time updated');
+  };
+
   // Parse time string like "3:45" or "1:23:45" to minutes for sorting
   const parseTimeToMinutes = (t: string): number => {
     const parts = t.split(':').map(Number);
     if (parts.length === 3) return parts[0] * 60 + parts[1] + parts[2] / 60;
     if (parts.length === 2) return parts[0] * 60 + parts[1];
     return Infinity;
+  };
+
+  const parseTimeComponents = (t: string) => {
+    const parts = t.split(':').map(Number);
+    if (parts.length === 3) return { hours: parts[0], minutes: parts[1], seconds: parts[2] };
+    if (parts.length === 2) return { hours: 0, minutes: parts[0], seconds: parts[1] };
+    return { hours: 0, minutes: 0, seconds: 0 };
   };
 
   // Invite friend to share hike
@@ -510,7 +565,6 @@ const RecordsSection = () => {
     } as any);
     
     // Send notification
-    const friendProfile = friends.find(f => f.id === friendId);
     await supabase.from('community_notifications').insert({
       user_id: friendId,
       from_user_id: user.id,
@@ -524,6 +578,8 @@ const RecordsSection = () => {
     toast.success(t('records.inviteSent'));
     await loadShares(selectedHike.id);
     setShowInviteDialog(false);
+    setShowInviteConfirm(false);
+    setInviteTarget(null);
   };
 
   const handleRemoveFriend = async (shareId: string) => {
@@ -578,6 +634,7 @@ const RecordsSection = () => {
   };
 
   const hasAcceptedShares = shares.some(s => s.status === 'accepted');
+  const acceptedShares = shares.filter(s => s.status === 'accepted');
 
   // Combine own entries and shared entries for "all" view
   const getAllEntries = () => {
@@ -588,6 +645,7 @@ const RecordsSection = () => {
       date: e.date,
       avgHeartrate: e.avgHeartrate,
       maxHeartrate: e.maxHeartrate,
+      notes: e.notes,
       userId: user?.id || '',
       isShared: false,
     }));
@@ -599,10 +657,22 @@ const RecordsSection = () => {
         date: e.date,
         avgHeartrate: e.avg_heartrate || undefined,
         maxHeartrate: e.max_heartrate || undefined,
+        notes: undefined as string | undefined,
         userId: e.user_id,
         isShared: true,
       }));
     return [...ownEntries, ...friendEntries].sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+  };
+
+  // Open entry detail
+  const openEntryDetail = (entry: HikingEntry, isShared: boolean) => {
+    setSelectedEntry({ entry, isShared });
+    const tc = parseTimeComponents(entry.time);
+    setEditingEntryTime(tc);
+    setEditingEntryDate(entry.date);
+    setEditingEntryAvgHr(entry.avgHeartrate?.toString() || '');
+    setEditingEntryMaxHr(entry.maxHeartrate?.toString() || '');
+    setEditingEntryNotes(entry.notes || '');
   };
 
   return (
@@ -654,37 +724,33 @@ const RecordsSection = () => {
                     onClick={() => setSelectedHike(h)}
                     className="w-full glass-card rounded-xl p-3 flex items-center gap-3 text-left hover:bg-secondary/30 transition-colors"
                   >
-                       <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                    <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
                       <Mountain className="w-4 h-4 text-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold truncate">{h.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {best && `${t('records.best')}: ${best.time}`}
-                        {h.distance && ` · ${h.distance} km`}
-                        {h.elevationGain && ` · ${h.elevationGain} ${t('records.elevationGainUnit')}`}
-                      </p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                        {h.distance && (
+                          <span className="flex items-center gap-0.5">
+                            <Route className="w-3 h-3" />
+                            {h.distance} km
+                          </span>
+                        )}
+                        {h.elevationGain && (
+                          <span className="flex items-center gap-0.5">
+                            <ArrowUpRight className="w-3 h-3" />
+                            {h.elevationGain} m
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedHike(h);
-                        setTimeout(() => openEditHike(), 50);
-                      }}
-                      className="p-1.5 rounded-lg hover:bg-secondary/60 transition-colors shrink-0"
-                    >
-                      <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setHikeToDelete(h.id);
-                        setShowDeleteHikeConfirm(true);
-                      }}
-                      className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors shrink-0"
-                    >
-                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                    </button>
+                    {best && (
+                      <div className="text-right shrink-0">
+                        <p className="font-display font-bold text-base text-foreground">{best.time}</p>
+                        <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'beste' : 'best'}</p>
+                      </div>
+                    )}
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                   </button>
                 );
               })}
@@ -740,7 +806,7 @@ const RecordsSection = () => {
           </Dialog>
 
           {/* Hike detail drawer */}
-          <Drawer open={!!selectedHike} onOpenChange={o => { if (!o) setSelectedHike(null); }}>
+          <Drawer open={!!selectedHike && !selectedEntry} onOpenChange={o => { if (!o) setSelectedHike(null); }}>
             <DrawerContent className="max-h-[85vh]">
               <div className="overflow-y-auto scrollbar-hide pb-6">
                 <DrawerHeader className="text-left">
@@ -749,19 +815,37 @@ const RecordsSection = () => {
                       <Mountain className="w-5 h-5 text-muted-foreground" />
                       {selectedHike?.name}
                     </DrawerTitle>
-                    {user && (
-                      <button
-                        onClick={() => { loadFriends(); setShowInviteDialog(true); }}
-                        className="p-2 rounded-lg hover:bg-secondary/60 transition-colors"
-                        title={t('records.inviteFriend')}
-                      >
-                        <UserPlus className="w-5 h-5 text-muted-foreground" />
-                      </button>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {/* Stacked friend avatars */}
+                      {acceptedShares.length > 0 && (
+                        <button
+                          onClick={() => setShowSharedFriends(true)}
+                          className="flex items-center -space-x-2 mr-1"
+                        >
+                          {acceptedShares.slice(0, 3).map((s, i) => (
+                            <Avatar key={s.id} className="w-6 h-6 border-2 border-background" style={{ zIndex: 3 - i }}>
+                              <AvatarImage src={s.avatar_url} />
+                              <AvatarFallback className="text-[8px]">{(s.username || '?')[0]}</AvatarFallback>
+                            </Avatar>
+                          ))}
+                          {acceptedShares.length > 3 && (
+                            <div className="w-6 h-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[8px] font-medium">
+                              +{acceptedShares.length - 3}
+                            </div>
+                          )}
+                        </button>
+                      )}
+                      {user && (
+                        <button
+                          onClick={() => { loadFriends(); setShowInviteDialog(true); }}
+                          className="p-2 rounded-lg hover:bg-secondary/60 transition-colors"
+                          title={t('records.inviteFriend')}
+                        >
+                          <UserPlus className="w-5 h-5 text-muted-foreground" />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <DrawerDescription>
-                    {selectedHike?.entries.length || 0} {t('records.registrations')}
-                  </DrawerDescription>
                 </DrawerHeader>
 
                 {/* Route description */}
@@ -793,30 +877,6 @@ const RecordsSection = () => {
                           <p className="font-display font-bold text-sm">{selectedHike.elevationGain} m</p>
                         </div>
                       )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Shared with section */}
-                {shares.filter(s => s.status === 'accepted').length > 0 && (
-                  <div className="px-4 pb-3">
-                    <p className="text-xs font-semibold text-muted-foreground mb-1.5">{t('records.sharedWith')}</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {shares.filter(s => s.status === 'accepted').map(s => (
-                        <div key={s.id} className="flex items-center gap-1.5 bg-secondary/50 rounded-full pl-1 pr-2 py-0.5">
-                          <Avatar className="w-5 h-5">
-                            <AvatarImage src={s.avatar_url} />
-                            <AvatarFallback className="text-[8px]">{(s.username || '?')[0]}</AvatarFallback>
-                          </Avatar>
-                          <span className="text-xs">{s.username}</span>
-                          <button
-                            onClick={() => { setFriendToRemove(s.id); setShowRemoveFriendConfirm(true); }}
-                            className="ml-0.5 p-0.5 rounded-full hover:bg-destructive/10"
-                          >
-                            <X className="w-3 h-3 text-muted-foreground" />
-                          </button>
-                        </div>
-                      ))}
                     </div>
                   </div>
                 )}
@@ -867,7 +927,6 @@ const RecordsSection = () => {
                             const profile = e.userId === user?.id
                               ? { username: language === 'no' ? 'Deg' : 'You', avatar_url: undefined }
                               : profileCache.get(e.userId) || { username: 'Ukjent' };
-                            const isOwnEntry = e.userId === user?.id;
                             return (
                               <div key={e.id} className="flex items-center gap-2.5 px-4 py-3">
                                 <span className={`text-xs font-bold w-6 text-center ${
@@ -880,9 +939,7 @@ const RecordsSection = () => {
                                   <AvatarFallback className="text-[8px]">{(profile.username || '?')[0]}</AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-xs font-medium text-muted-foreground truncate">{profile.username}</span>
-                                  </div>
+                                  <span className="text-xs font-medium text-muted-foreground truncate block">{profile.username}</span>
                                   <span className="font-display font-bold text-sm">{e.time}</span>
                                 </div>
                                 <span className="text-xs text-muted-foreground">
@@ -895,18 +952,22 @@ const RecordsSection = () => {
                       );
                     }
 
-                    // "Mine" view (default)
+                    // "Mine" view (default) - only show time and date, click to see details
                     const sorted = [...selectedHike.entries].sort((a, b) =>
                       parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time)
                     );
-                     return sorted.length === 0 ? (
-                       <p className="text-center py-6 text-muted-foreground text-sm">
-                         {t('records.noTimes')}
+                    return sorted.length === 0 ? (
+                      <p className="text-center py-6 text-muted-foreground text-sm">
+                        {t('records.noTimes')}
                       </p>
                     ) : (
                       <div className="glass-card rounded-xl overflow-hidden divide-y divide-border/50">
                         {sorted.map((e, i) => (
-                          <div key={e.id} className="flex items-center gap-3 px-4 py-3">
+                          <button
+                            key={e.id}
+                            onClick={() => openEntryDetail(e, false)}
+                            className="flex items-center gap-3 px-4 py-3 w-full text-left hover:bg-secondary/30 transition-colors"
+                          >
                             <span className={`text-xs font-bold w-6 text-center ${
                               i === 0 ? 'text-warning' : 'text-muted-foreground'
                             }`}>
@@ -914,24 +975,12 @@ const RecordsSection = () => {
                             </span>
                             <div className="flex-1">
                               <span className="font-display font-bold text-sm">{e.time}</span>
-                              {(e.avgHeartrate || e.maxHeartrate) && (
-                                <div className="text-[10px] text-muted-foreground mt-0.5">
-                                  {e.avgHeartrate && <span>♥ {e.avgHeartrate}</span>}
-                                  {e.avgHeartrate && e.maxHeartrate && <span> / </span>}
-                                  {e.maxHeartrate && <span>maks {e.maxHeartrate}</span>}
-                                </div>
-                              )}
                             </div>
                             <span className="text-xs text-muted-foreground">
                               {new Date(e.date).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
                             </span>
-                            <button
-                              onClick={() => handleDeleteEntry(e.id)}
-                              className="p-1 rounded hover:bg-destructive/10 transition-colors"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                            </button>
-                          </div>
+                            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                          </button>
                         ))}
                       </div>
                     );
@@ -958,6 +1007,204 @@ const RecordsSection = () => {
             </DrawerContent>
           </Drawer>
 
+          {/* Entry detail drawer */}
+          <Drawer open={!!selectedEntry} onOpenChange={o => { if (!o) setSelectedEntry(null); }}>
+            <DrawerContent className="max-h-[85vh]">
+              <div className="overflow-y-auto scrollbar-hide pb-6">
+                <div className="px-4 pt-4 pb-2">
+                  <button
+                    onClick={() => setSelectedEntry(null)}
+                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    {selectedHike?.name}
+                  </button>
+                  <h3 className="font-display font-bold text-xl text-foreground flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-muted-foreground" />
+                    {selectedEntry?.entry.time}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {selectedEntry && new Date(selectedEntry.entry.date).toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                  </p>
+                </div>
+
+                <div className="px-4 space-y-4 mt-2">
+                  {/* Stats */}
+                  {selectedEntry && (selectedEntry.entry.avgHeartrate || selectedEntry.entry.maxHeartrate) && (
+                    <div className="flex gap-3">
+                      {selectedEntry.entry.avgHeartrate && (
+                        <div className="flex-1 rounded-xl bg-secondary/50 p-3 text-center">
+                          <div className="flex items-center justify-center gap-1 mb-1">
+                            <Heart className="w-3.5 h-3.5 text-muted-foreground" />
+                            <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Snitt-puls' : 'Avg HR'}</p>
+                          </div>
+                          <p className="font-display font-bold text-lg">{selectedEntry.entry.avgHeartrate}</p>
+                        </div>
+                      )}
+                      {selectedEntry.entry.maxHeartrate && (
+                        <div className="flex-1 rounded-xl bg-secondary/50 p-3 text-center">
+                          <div className="flex items-center justify-center gap-1 mb-1">
+                            <Heart className="w-3.5 h-3.5 text-muted-foreground" />
+                            <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Maks-puls' : 'Max HR'}</p>
+                          </div>
+                          <p className="font-display font-bold text-lg">{selectedEntry.entry.maxHeartrate}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Notes */}
+                  {selectedEntry?.entry.notes && (
+                    <div className="rounded-xl bg-secondary/30 p-3">
+                      <p className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
+                        <FileText className="w-3 h-3" /> {language === 'no' ? 'Notat' : 'Note'}
+                      </p>
+                      <p className="text-sm text-foreground">{selectedEntry.entry.notes}</p>
+                    </div>
+                  )}
+
+                  {/* Edit fields */}
+                  {!selectedEntry?.isShared && (
+                    <div className="space-y-3 pt-2">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        {language === 'no' ? 'Rediger' : 'Edit'}
+                      </p>
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">{t('workout.duration')}</label>
+                        <button
+                          type="button"
+                          onClick={() => setShowEditDurationPicker(true)}
+                          className="w-full h-10 px-3 rounded-md border border-input bg-background text-left text-sm font-medium hover:bg-accent/50 transition-colors"
+                        >
+                          {editingEntryTime.hours > 0
+                            ? `${editingEntryTime.hours}:${String(editingEntryTime.minutes).padStart(2, '0')}:${String(editingEntryTime.seconds).padStart(2, '0')}`
+                            : `${editingEntryTime.minutes}:${String(editingEntryTime.seconds).padStart(2, '0')}`}
+                        </button>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">{t('workout.date')}</label>
+                        <Input
+                          type="date"
+                          value={editingEntryDate}
+                          onChange={e => setEditingEntryDate(e.target.value)}
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-sm font-medium mb-1 block">{language === 'no' ? 'Snitt-puls' : 'Avg HR'}</label>
+                          <Input
+                            type="number"
+                            value={editingEntryAvgHr}
+                            onChange={e => setEditingEntryAvgHr(e.target.value)}
+                            placeholder={language === 'no' ? 'Valgfri' : 'Optional'}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium mb-1 block">{language === 'no' ? 'Maks-puls' : 'Max HR'}</label>
+                          <Input
+                            type="number"
+                            value={editingEntryMaxHr}
+                            onChange={e => setEditingEntryMaxHr(e.target.value)}
+                            placeholder={language === 'no' ? 'Valgfri' : 'Optional'}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">{language === 'no' ? 'Notat' : 'Note'}</label>
+                        <Textarea
+                          value={editingEntryNotes}
+                          onChange={e => setEditingEntryNotes(e.target.value)}
+                          placeholder={language === 'no' ? 'Legg til et notat...' : 'Add a note...'}
+                          rows={3}
+                        />
+                      </div>
+
+                      <div className="flex gap-2 pt-1">
+                        <Button onClick={handleUpdateEntry} className="flex-1">
+                          {t('common.save')}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setShowDeleteEntryConfirm(true)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </DrawerContent>
+          </Drawer>
+
+          {/* Edit duration picker for entry detail */}
+          <DurationPicker
+            open={showEditDurationPicker}
+            onClose={() => setShowEditDurationPicker(false)}
+            hours={editingEntryTime.hours}
+            minutes={editingEntryTime.minutes}
+            seconds={editingEntryTime.seconds}
+            showSeconds
+            onConfirm={(h, m, s) => {
+              setEditingEntryTime({ hours: h, minutes: m, seconds: s ?? 0 });
+            }}
+          />
+
+          {/* Delete entry confirm */}
+          <AlertDialog open={showDeleteEntryConfirm} onOpenChange={setShowDeleteEntryConfirm}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{language === 'no' ? 'Slett tid?' : 'Delete time?'}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {language === 'no' ? 'Denne handlingen kan ikke angres.' : 'This action cannot be undone.'}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{language === 'no' ? 'Avbryt' : 'Cancel'}</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => {
+                    if (selectedEntry) {
+                      handleDeleteEntry(selectedEntry.entry.id, selectedEntry.isShared);
+                      setSelectedEntry(null);
+                      setShowDeleteEntryConfirm(false);
+                    }
+                  }}
+                >
+                  {language === 'no' ? 'Slett' : 'Delete'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* Shared friends popup */}
+          <Dialog open={showSharedFriends} onOpenChange={setShowSharedFriends}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{language === 'no' ? 'Delt med' : 'Shared with'}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-2">
+                {acceptedShares.map(s => (
+                  <div key={s.id} className="flex items-center gap-3 p-2 rounded-xl">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={s.avatar_url} />
+                      <AvatarFallback>{(s.username || '?')[0]}</AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-medium flex-1">{s.username}</span>
+                    <button
+                      onClick={() => { setFriendToRemove(s.id); setShowRemoveFriendConfirm(true); setShowSharedFriends(false); }}
+                      className="p-1.5 rounded-lg hover:bg-destructive/10"
+                    >
+                      <X className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
+
           {/* Invite friend dialog */}
           <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
             <DialogContent>
@@ -969,7 +1216,10 @@ const RecordsSection = () => {
                 {friends.filter(f => !shares.some(s => s.shared_with_user_id === f.id)).map(friend => (
                   <button
                     key={friend.id}
-                    onClick={() => handleInviteFriend(friend.id)}
+                    onClick={() => {
+                      setInviteTarget({ id: friend.id, username: friend.username });
+                      setShowInviteConfirm(true);
+                    }}
                     className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/50 transition-colors"
                   >
                     <Avatar className="w-8 h-8">
@@ -1004,6 +1254,26 @@ const RecordsSection = () => {
             </DialogContent>
           </Dialog>
 
+          {/* Invite confirmation dialog */}
+          <AlertDialog open={showInviteConfirm} onOpenChange={setShowInviteConfirm}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{language === 'no' ? 'Inviter venn' : 'Invite friend'}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {language === 'no'
+                    ? `Vil du invitere ${inviteTarget?.username} til å dele rekordtider på denne fjellturen?`
+                    : `Do you want to invite ${inviteTarget?.username} to share record times on this hike?`}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{language === 'no' ? 'Nei' : 'No'}</AlertDialogCancel>
+                <AlertDialogAction onClick={() => inviteTarget && handleInviteFriend(inviteTarget.id)}>
+                  {language === 'no' ? 'Ja' : 'Yes'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           {/* Add entry dialog */}
           <Dialog open={showAddEntry} onOpenChange={setShowAddEntry}>
             <DialogContent>
@@ -1031,25 +1301,26 @@ const RecordsSection = () => {
                     type="date"
                     value={newEntryDate}
                     onChange={e => setNewEntryDate(e.target.value)}
+                    className="w-full"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium mb-1 block">Snitt-puls</label>
+                    <label className="text-sm font-medium mb-1 block">{language === 'no' ? 'Snitt-puls' : 'Avg HR'}</label>
                     <Input
                       type="number"
                       value={newEntryAvgHr}
                       onChange={e => setNewEntryAvgHr(e.target.value)}
-                      placeholder="Valgfri"
+                      placeholder={language === 'no' ? 'Valgfri' : 'Optional'}
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium mb-1 block">Maks-puls</label>
+                    <label className="text-sm font-medium mb-1 block">{language === 'no' ? 'Maks-puls' : 'Max HR'}</label>
                     <Input
                       type="number"
                       value={newEntryMaxHr}
                       onChange={e => setNewEntryMaxHr(e.target.value)}
-                      placeholder="Valgfri"
+                      placeholder={language === 'no' ? 'Valgfri' : 'Optional'}
                     />
                   </div>
                 </div>
