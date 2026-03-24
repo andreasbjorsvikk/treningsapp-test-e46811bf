@@ -97,7 +97,7 @@ const BadgesPage = () => {
               onPreviewBadge={setPreviewUnlockBadge}
               columns={2}
             />
-          ) : (subcategory === 'daily_checkins' || subcategory === 'streaks') ? (
+          ) : (subcategory === 'daily_checkins' || subcategory === 'streaks' || subcategory === 'monthly_sessions') ? (
           <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 shadow-md">
               <div className="grid grid-cols-3 gap-3">
                 {badgeList.map(b => {
@@ -105,6 +105,8 @@ const BadgesPage = () => {
                   const badgeName = t(b.badge.nameKey);
                   const subLabel = isStreak
                     ? (language === 'no' ? `${b.badge.threshold} dager på rad` : `${b.badge.threshold}-day streak`)
+                    : (subcategory === 'monthly_sessions')
+                    ? (language === 'no' ? 'på en måned' : 'in a month')
                     : '';
                   return (
                   <div key={b.badge.id} className="relative flex flex-col items-center gap-1.5">
