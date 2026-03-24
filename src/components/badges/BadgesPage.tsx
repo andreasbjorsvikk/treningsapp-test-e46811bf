@@ -89,35 +89,45 @@ const BadgesPage = () => {
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
             {SUBCATEGORY_NAMES[subcategory]?.[language] || subcategory}
           </p>
-          {(subcategory === 'unique_peaks' || subcategory === 'high_peaks') ? (
+          {(subcategory === 'unique_peaks' || subcategory === 'high_peaks' || subcategory === 'monthly_elevation') ? (
             <UniquePeaksBadgeBoard
               badges={badgeList}
               onSelectBadge={setSelectedBadge}
               adminMode={adminMode}
               onPreviewBadge={setPreviewUnlockBadge}
-              columns={subcategory === 'high_peaks' ? 2 : 2}
+              columns={2}
             />
           ) : (subcategory === 'daily_checkins' || subcategory === 'streaks') ? (
           <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 shadow-md">
               <div className="grid grid-cols-3 gap-3">
-                {badgeList.map(b => (
+                {badgeList.map(b => {
+                  const isStreak = subcategory === 'streaks';
+                  const badgeName = t(b.badge.nameKey);
+                  const subLabel = isStreak
+                    ? (language === 'no' ? `${b.badge.threshold} dager på rad` : `${b.badge.threshold}-day streak`)
+                    : '';
+                  return (
                   <div key={b.badge.id} className="relative flex flex-col items-center gap-1.5">
                     <button onClick={() => setSelectedBadge(b)} className="flex flex-col items-center gap-1.5">
                       <div className="w-20 h-20 flex items-center justify-center drop-shadow-md">
                         {b.badge.image ? (
                           <img
                             src={b.badge.image}
-                            alt={t(b.badge.nameKey)}
+                            alt={badgeName}
                             className={`w-20 h-20 object-contain ${b.unlocked ? '' : 'grayscale brightness-[0.08] opacity-30'}`}
                           />
                         ) : (
                           <span className={`text-3xl ${b.unlocked ? '' : 'grayscale opacity-30'}`}>{b.badge.emoji}</span>
                         )}
                       </div>
-                      <p className={`text-xs font-semibold text-center leading-tight ${b.unlocked ? 'text-foreground' : 'text-muted-foreground/60'}`}>
-                        {t(b.badge.nameKey)}
-                      </p>
-                      
+                      <div className="text-center">
+                        <p className={`text-xs font-semibold leading-tight ${b.unlocked ? 'text-foreground' : 'text-muted-foreground/60'}`}>
+                          {badgeName}
+                        </p>
+                        {isStreak && (
+                          <p className="mt-0.5 text-[0.65rem] font-medium leading-tight text-muted-foreground">{subLabel}</p>
+                        )}
+                      </div>
                     </button>
                     {adminMode && (
                       <button
@@ -129,7 +139,8 @@ const BadgesPage = () => {
                       </button>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ) : (

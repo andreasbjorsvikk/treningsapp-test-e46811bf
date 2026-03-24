@@ -94,7 +94,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
           }
 
           // Unique peaks: circular socket with glow
-          const imgScale = userBadge.badge.id === 'peaks_100' ? 1.06 : 1.0;
+          const imgScale = 1.58;
           const glowShadow = showGlow ? `0 0 12px ${glowColor}` : 'none';
 
           return (
