@@ -97,7 +97,7 @@ const BadgesPage = () => {
               onPreviewBadge={setPreviewUnlockBadge}
               columns={subcategory === 'high_peaks' ? 2 : 2}
             />
-          ) : subcategory === 'daily_checkins' ? (
+          ) : (subcategory === 'daily_checkins' || subcategory === 'streaks') ? (
           <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 shadow-md">
               <div className="grid grid-cols-3 gap-3">
                 {badgeList.map(b => (

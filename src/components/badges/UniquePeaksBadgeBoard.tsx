@@ -41,7 +41,7 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
 
           const isHighPeaks = sub === 'high_peaks';
           const isUniquePeaks = sub === 'unique_peaks';
-          const showGlow = userBadge.unlocked && !isHighPeaks && !(isUniquePeaks && !isDarkTheme);
+          const showGlow = false;
 
           // High peaks: standalone images without circular socket
           if (isHighPeaks) {

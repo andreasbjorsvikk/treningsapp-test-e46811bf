@@ -24,6 +24,11 @@ import badge3Day from '@/assets/badges/3_topper_dag.png';
 import badge5Day from '@/assets/badges/5_topper_dag.png';
 import badge7Day from '@/assets/badges/7_topper_dag.png';
 
+// Badge images - streaks
+import badgeStreak3 from '@/assets/badges/fjellfokus_3_dager.png';
+import badgeStreak5 from '@/assets/badges/fjellrytme_5_dager.png';
+import badgeStreak10 from '@/assets/badges/fjellflyt_10_dager.png';
+
 export type BadgeCategory = 'fjell' | 'trening';
 export type BadgeRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
@@ -83,9 +88,9 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: 'checkins_7_day', category: 'fjell', subcategory: 'daily_checkins', nameKey: 'badge.checkins7Day', descriptionKey: 'badge.checkins7DayDesc', requirementKey: 'badge.checkins7DayReq', threshold: 7, rarity: 'epic', emoji: '🏆', image: badge7Day, sortOrder: 22, repeatable: true },
 
   // ── Fjell: Dager på rad ──
-  { id: 'streak_3', category: 'fjell', subcategory: 'streaks', nameKey: 'badge.streak3', descriptionKey: 'badge.streak3Desc', requirementKey: 'badge.streak3Req', threshold: 3, rarity: 'uncommon', emoji: '📅', sortOrder: 30, repeatable: true },
-  { id: 'streak_5', category: 'fjell', subcategory: 'streaks', nameKey: 'badge.streak5', descriptionKey: 'badge.streak5Desc', requirementKey: 'badge.streak5Req', threshold: 5, rarity: 'rare', emoji: '🗓️', sortOrder: 31, repeatable: true },
-  { id: 'streak_10', category: 'fjell', subcategory: 'streaks', nameKey: 'badge.streak10', descriptionKey: 'badge.streak10Desc', requirementKey: 'badge.streak10Req', threshold: 10, rarity: 'epic', emoji: '🏅', sortOrder: 32, repeatable: true },
+  { id: 'streak_3', category: 'fjell', subcategory: 'streaks', nameKey: 'badge.streak3', descriptionKey: 'badge.streak3Desc', requirementKey: 'badge.streak3Req', threshold: 3, rarity: 'uncommon', emoji: '📅', image: badgeStreak3, sortOrder: 30, repeatable: true },
+  { id: 'streak_5', category: 'fjell', subcategory: 'streaks', nameKey: 'badge.streak5', descriptionKey: 'badge.streak5Desc', requirementKey: 'badge.streak5Req', threshold: 5, rarity: 'rare', emoji: '🗓️', image: badgeStreak5, sortOrder: 31, repeatable: true },
+  { id: 'streak_10', category: 'fjell', subcategory: 'streaks', nameKey: 'badge.streak10', descriptionKey: 'badge.streak10Desc', requirementKey: 'badge.streak10Req', threshold: 10, rarity: 'epic', emoji: '🏅', image: badgeStreak10, sortOrder: 32, repeatable: true },
 
   // ── Trening: Totalt antall økter ──
   { id: 'sessions_10', category: 'trening', subcategory: 'total_sessions', nameKey: 'badge.sessions10', descriptionKey: 'badge.sessions10Desc', requirementKey: 'badge.sessions10Req', threshold: 10, rarity: 'common', emoji: '💪', image: badgeSessions10, sortOrder: 1 },
