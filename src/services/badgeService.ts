@@ -29,6 +29,12 @@ import badgeStreak3 from '@/assets/badges/fjellfokus_3_dager.png';
 import badgeStreak5 from '@/assets/badges/fjellrytme_5_dager.png';
 import badgeStreak10 from '@/assets/badges/fjellflyt_10_dager.png';
 
+// Badge images - monthly elevation
+import badgeElev1000 from '@/assets/badges/elev_1000m.png';
+import badgeElev3000 from '@/assets/badges/elev_3000m.png';
+import badgeElev5000 from '@/assets/badges/elev_5000m.png';
+import badgeElev10000 from '@/assets/badges/elev_10000m.png';
+
 export type BadgeCategory = 'fjell' | 'trening';
 export type BadgeRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
