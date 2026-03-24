@@ -111,9 +111,9 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: 'sessions_500', category: 'trening', subcategory: 'total_sessions', nameKey: 'badge.sessions500', descriptionKey: 'badge.sessions500Desc', requirementKey: 'badge.sessions500Req', threshold: 500, rarity: 'legendary', emoji: '🎖️', image: badgeSessions500, sortOrder: 5 },
 
   // ── Trening: Månedlige økter ──
-  { id: 'month_sessions_10', category: 'trening', subcategory: 'monthly_sessions', nameKey: 'badge.monthSessions10', descriptionKey: 'badge.monthSessions10Desc', requirementKey: 'badge.monthSessions10Req', threshold: 10, rarity: 'common', emoji: '📊', sortOrder: 10, repeatable: true },
-  { id: 'month_sessions_20', category: 'trening', subcategory: 'monthly_sessions', nameKey: 'badge.monthSessions20', descriptionKey: 'badge.monthSessions20Desc', requirementKey: 'badge.monthSessions20Req', threshold: 20, rarity: 'uncommon', emoji: '📈', sortOrder: 11, repeatable: true },
-  { id: 'month_sessions_30', category: 'trening', subcategory: 'monthly_sessions', nameKey: 'badge.monthSessions30', descriptionKey: 'badge.monthSessions30Desc', requirementKey: 'badge.monthSessions30Req', threshold: 30, rarity: 'rare', emoji: '🏋️', sortOrder: 12, repeatable: true },
+  { id: 'month_sessions_10', category: 'trening', subcategory: 'monthly_sessions', nameKey: 'badge.monthSessions10', descriptionKey: 'badge.monthSessions10Desc', requirementKey: 'badge.monthSessions10Req', threshold: 10, rarity: 'common', emoji: '📊', image: badgeMonthSessions10, sortOrder: 10, repeatable: true },
+  { id: 'month_sessions_20', category: 'trening', subcategory: 'monthly_sessions', nameKey: 'badge.monthSessions20', descriptionKey: 'badge.monthSessions20Desc', requirementKey: 'badge.monthSessions20Req', threshold: 20, rarity: 'uncommon', emoji: '📈', image: badgeMonthSessions20, sortOrder: 11, repeatable: true },
+  { id: 'month_sessions_30', category: 'trening', subcategory: 'monthly_sessions', nameKey: 'badge.monthSessions30', descriptionKey: 'badge.monthSessions30Desc', requirementKey: 'badge.monthSessions30Req', threshold: 30, rarity: 'rare', emoji: '🏋️', image: badgeMonthSessions30, sortOrder: 12, repeatable: true },
 
   // ── Trening: Månedlige høydemeter ──
   { id: 'month_elev_1000', category: 'trening', subcategory: 'monthly_elevation', nameKey: 'badge.monthElev1000', descriptionKey: 'badge.monthElev1000Desc', requirementKey: 'badge.monthElev1000Req', threshold: 1000, rarity: 'common', emoji: '⛰️', image: badgeElev1000, sortOrder: 13, repeatable: true },
