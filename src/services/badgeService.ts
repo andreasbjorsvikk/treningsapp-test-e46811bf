@@ -24,6 +24,11 @@ import badge3Day from '@/assets/badges/3_topper_dag.png';
 import badge5Day from '@/assets/badges/5_topper_dag.png';
 import badge7Day from '@/assets/badges/7_topper_dag.png';
 
+// Badge images - streaks
+import badgeStreak3 from '@/assets/badges/fjellfokus_3_dager.png';
+import badgeStreak5 from '@/assets/badges/fjellrytme_5_dager.png';
+import badgeStreak10 from '@/assets/badges/fjellflyt_10_dager.png';
+
 export type BadgeCategory = 'fjell' | 'trening';
 export type BadgeRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
