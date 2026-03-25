@@ -633,17 +633,17 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       const markerBackground = isYearFiltered
         ? 'hsl(var(--background) / 0.42)'
         : isTaken
-          ? 'hsl(var(--success) / 0.75)'
+          ? 'hsl(var(--success) / 0.88)'
           : isUnpublished
             ? 'hsl(var(--warning) / 0.26)'
-            : 'hsl(0 0% 98% / 0.58)'; // Light color in both modes
+            : 'hsl(0 0% 98% / 0.78)'; // Light color in both modes
       const markerBorder = isYearFiltered
         ? 'hsl(var(--border) / 0.55)'
         : isTaken
-          ? 'hsl(var(--success) / 0.72)'
+          ? 'hsl(var(--success) / 0.85)'
           : isUnpublished
             ? 'hsl(var(--warning) / 0.45)'
-            : 'hsl(0 0% 88% / 0.72)'; // Light border in both modes
+            : 'hsl(0 0% 88% / 0.85)'; // Light border in both modes
       const markerShadow = isConstrainedDevice
         ? isTaken && !isYearFiltered
           ? '0 4px 10px hsl(var(--success) / 0.18)'

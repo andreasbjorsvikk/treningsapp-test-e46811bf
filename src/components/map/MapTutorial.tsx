@@ -202,7 +202,7 @@ const OverviewContent = () => (
       </svg>
       <div>
         <p className="text-sm font-semibold text-foreground">Feed</p>
-        <p className="text-[11px] text-muted-foreground">Se de siste innsjekkingene fra deg selv og vennene dine, med bilder.</p>
+        <p className="text-[11px] text-muted-foreground">Se de siste innsjekkingene fra deg selv og vennene dine.</p>
       </div>
     </div>
     <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
@@ -271,7 +271,7 @@ const steps: TutorialStep[] = [
   },
   {
     title: 'AR-visning 📷',
-    text: 'Bruk AR-funksjonen for å finne fjelltopper rundt deg ved hjelp av kameraet.',
+    text: 'Bruk AR-funksjonen for å identifisere fjelltopper rundt deg ved hjelp av kameraet.',
     icon: <Camera className="w-12 h-12 text-primary" />,
     customContent: <ARContent />,
   },
