@@ -34,7 +34,7 @@ import GoalCompletionOverlay from '@/components/GoalCompletionOverlay';
 import MonthGoalCompletionOverlay from '@/components/MonthGoalCompletionOverlay';
 import BadgeUnlockOverlay from '@/components/badges/BadgeUnlockOverlay';
 import { computeUserBadges, findNewlyUnlocked, UserBadge } from '@/services/badgeService';
-import { Plus, Sun, Moon, Dumbbell, Ambulance, LogIn, Loader2, GripVertical, Check, User, BarChart3, TrendingUp } from 'lucide-react';
+import { Plus, Sun, Moon, Dumbbell, Ambulance, LogIn, Loader2, GripVertical, Check, User, BarChart3, TrendingUp, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -44,6 +44,7 @@ import GoalTutorialDialog from '@/components/GoalTutorialDialog';
 import TrainingTutorialDialog from '@/components/TrainingTutorialDialog';
 import CalendarTutorialDialog from '@/components/CalendarTutorialDialog';
 import WelcomeDialog from '@/components/WelcomeDialog';
+import FullTutorialFlow from '@/components/FullTutorialFlow';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { HealthEvent } from '@/types/workout';
 import { supabase } from '@/integrations/supabase/client';
@@ -105,6 +106,9 @@ const IndexContent = () => {
   const [adminSuggestionsDot, setAdminSuggestionsDot] = useState(false);
   const [badgeUnlocks, setBadgeUnlocks] = useState<UserBadge[]>([]);
   const badgeSnapshotRef = useRef<UserBadge[] | null>(null);
+  const [adminPreviewMonth, setAdminPreviewMonth] = useState(false);
+  const [adminPreviewYear, setAdminPreviewYear] = useState(false);
+  const [showFullTutorial, setShowFullTutorial] = useState(false);
 
   // Profile info
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -160,6 +164,16 @@ const IndexContent = () => {
     };
     window.addEventListener('navigate-to-map-suggestions', handler);
     return () => window.removeEventListener('navigate-to-map-suggestions', handler);
+  }, []);
+
+  // Listen for full tutorial start from help section
+  useEffect(() => {
+    const handler = () => {
+      setActiveTab('trening');
+      setShowFullTutorial(true);
+    };
+    window.addEventListener('start-full-tutorial', handler);
+    return () => window.removeEventListener('start-full-tutorial', handler);
   }, []);
 
   // Direct drag-and-drop reordering
@@ -555,18 +569,40 @@ const IndexContent = () => {
       case 'trainingGoals':
         return (
           <div className="grid grid-cols-2 gap-3">
-            <ProgressWheel
-              percent={monthData.percent} current={monthData.current} target={monthData.target}
-              unit={monthData.unit} title={t(`month.${new Date().getMonth()}`)}
-              hasGoal={!!primaryGoal} expectedFraction={monthData.expectedFraction}
-              paceDiff={monthData.diff} showPaceLabel onClick={navigateToGoals}
-            />
-            <ProgressWheel
-              percent={yearData.percent} current={yearData.current} target={yearData.target}
-              unit={yearData.unit} title={String(new Date().getFullYear())}
-              hasGoal={!!primaryGoal} expectedFraction={yearData.expectedFraction}
-              paceDiff={yearData.diff} showPaceLabel onClick={navigateToGoals}
-            />
+            <div className="relative">
+              <ProgressWheel
+                percent={monthData.percent} current={monthData.current} target={monthData.target}
+                unit={monthData.unit} title={t(`month.${new Date().getMonth()}`)}
+                hasGoal={!!primaryGoal} expectedFraction={monthData.expectedFraction}
+                paceDiff={monthData.diff} showPaceLabel onClick={navigateToGoals}
+              />
+              {adminMode && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setAdminPreviewMonth(true); }}
+                  className="absolute top-1 right-1 z-10 p-1 rounded-full bg-muted/80 hover:bg-muted transition-colors"
+                  title="Preview month completion"
+                >
+                  <Play className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
+            </div>
+            <div className="relative">
+              <ProgressWheel
+                percent={yearData.percent} current={yearData.current} target={yearData.target}
+                unit={yearData.unit} title={String(new Date().getFullYear())}
+                hasGoal={!!primaryGoal} expectedFraction={yearData.expectedFraction}
+                paceDiff={yearData.diff} showPaceLabel onClick={navigateToGoals}
+              />
+              {adminMode && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setAdminPreviewYear(true); }}
+                  className="absolute top-1 right-1 z-10 p-1 rounded-full bg-muted/80 hover:bg-muted transition-colors"
+                  title="Preview year completion"
+                >
+                  <Play className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
+            </div>
           </div>
         );
       case 'last7dCalendar':
@@ -990,6 +1026,26 @@ const IndexContent = () => {
         onDismiss={() => setMonthGoalCompleted(false)}
       />
 
+      {/* Admin preview overlays */}
+      {adminMode && adminPreviewMonth && (
+        <MonthGoalCompletionOverlay
+          open={true}
+          current={monthData.target}
+          target={monthData.target}
+          monthLabel={t(`month.${new Date().getMonth()}`)}
+          onDismiss={() => setAdminPreviewMonth(false)}
+        />
+      )}
+      {adminMode && adminPreviewYear && (
+        <MonthGoalCompletionOverlay
+          open={true}
+          current={yearData.target}
+          target={yearData.target}
+          monthLabel={String(new Date().getFullYear())}
+          onDismiss={() => setAdminPreviewYear(false)}
+        />
+      )}
+
       {badgeUnlocks.length > 0 && (
         <BadgeUnlockOverlay
           badges={badgeUnlocks}
@@ -1003,6 +1059,11 @@ const IndexContent = () => {
       <TrainingTutorialDialog open={showTrainingTutorial} onClose={() => setShowTrainingTutorial(false)} />
       <CalendarTutorialDialog open={showCalendarTutorial} onClose={() => setShowCalendarTutorial(false)} />
       <WelcomeDialog open={showWelcome} onClose={() => setShowWelcome(false)} username={username} />
+      <FullTutorialFlow
+        open={showFullTutorial}
+        onClose={() => setShowFullTutorial(false)}
+        onNavigateTab={(tab) => { setActiveTab(tab as TabId); window.scrollTo({ top: 0 }); }}
+      />
     </div>
   );
 };

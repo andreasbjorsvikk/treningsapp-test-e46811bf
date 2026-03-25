@@ -81,6 +81,13 @@ const SettingsPage = () => {
   const [helpOpenSections, setHelpOpenSections] = useState<Set<string>>(new Set());
   const [showSettingsTutorial, setShowSettingsTutorial] = useState(false);
 
+  // Listen for full tutorial flow showing settings tutorial
+  useEffect(() => {
+    const handler = () => setShowSettingsTutorial(true);
+    window.addEventListener('show-settings-tutorial', handler);
+    return () => window.removeEventListener('show-settings-tutorial', handler);
+  }, []);
+
   // Child privacy options
   const [hasChildren, setHasChildren] = useState(false);
   const [childPrivacyProfile, setChildPrivacyProfile] = useState('friends');
@@ -1249,6 +1256,16 @@ const SettingsPage = () => {
             </div>
           </div>
           <p className="text-sm text-muted-foreground">{t('help.welcomeDesc')}</p>
+          <Button
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('start-full-tutorial'));
+            }}
+            className="w-full mt-2"
+            size="lg"
+          >
+            <HelpCircle className="w-4 h-4 mr-2" />
+            Vis tutorial
+          </Button>
         </div>
 
         {/* Treningsmål */}

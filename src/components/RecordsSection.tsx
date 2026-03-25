@@ -1276,7 +1276,7 @@ const RecordsSection = () => {
 
           {/* Add entry dialog */}
           <Dialog open={showAddEntry} onOpenChange={setShowAddEntry}>
-            <DialogContent>
+            <DialogContent className="max-w-[min(calc(100vw-2rem),26rem)] overflow-hidden">
               <DialogHeader>
                 <DialogTitle>{t('records.newTime')} – {selectedHike?.name}</DialogTitle>
               </DialogHeader>

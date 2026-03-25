@@ -42,6 +42,7 @@ const SettingsTutorialDialog = ({ open, onClose }: SettingsTutorialDialogProps) 
   const dismiss = () => {
     onClose();
     localStorage.setItem(TUTORIAL_KEY, 'true');
+    window.dispatchEvent(new CustomEvent('settings-tutorial-dismissed'));
   };
 
   const next = () => {
