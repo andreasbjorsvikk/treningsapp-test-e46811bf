@@ -88,6 +88,29 @@ function buildActivityRow(a: any, userId: string) {
   };
 }
 
+function isWithin(a: number, b: number, pct: number): boolean {
+  if (a === 0 && b === 0) return true;
+  if (a === 0 || b === 0) return false;
+  return Math.abs(a - b) / Math.max(a, b) <= pct;
+}
+
+function isDuplicate(row: any, manualSessions: any[]): boolean {
+  const rowDate = new Date(row.date);
+  for (const m of manualSessions) {
+    if (m.type !== row.type) continue;
+    const mDate = new Date(m.date);
+    // Same calendar day
+    if (rowDate.toISOString().slice(0, 10) !== mDate.toISOString().slice(0, 10)) continue;
+    // Duration within 5%
+    if (!isWithin(row.duration_minutes, m.duration_minutes, 0.05)) continue;
+    // At least one of distance or elevation matches within 5% (if both exist)
+    const distMatch = row.distance && m.distance ? isWithin(row.distance, m.distance, 0.05) : false;
+    const elevMatch = row.elevation_gain && m.elevation_gain ? isWithin(row.elevation_gain, m.elevation_gain, 0.05) : false;
+    if (distMatch || elevMatch || (!row.distance && !row.elevation_gain)) return true;
+  }
+  return false;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -166,7 +189,7 @@ Deno.serve(async (req) => {
         activities.push(...batch);
         page++;
       }
-      // Get existing strava_activity_ids for this user to count only truly new ones
+      // Get existing strava_activity_ids and manual sessions for dedup
       const existingIds = new Set<number>();
       const { data: existingRows } = await admin.from("workout_sessions")
         .select("strava_activity_id")
@@ -177,18 +200,27 @@ Deno.serve(async (req) => {
           if (r.strava_activity_id) existingIds.add(Number(r.strava_activity_id));
         }
       }
-      const newCount = activities.filter((a: any) => !existingIds.has(a.id)).length;
 
-      // Upsert all activities – the unique constraint prevents duplicates
-      for (let i = 0; i < activities.length; i += 100) {
-        const batch = activities.slice(i, i + 100);
-        const rows = batch.map((a) => buildActivityRow(a, userId));
+      // Fetch manual sessions for duplicate detection
+      const { data: manualSessions } = await admin.from("workout_sessions")
+        .select("type, date, duration_minutes, distance, elevation_gain")
+        .eq("user_id", userId)
+        .is("strava_activity_id", null);
+
+      // Build rows, filter out duplicates of manual sessions
+      const allRows = activities.map((a) => buildActivityRow(a, userId));
+      const rowsToUpsert = allRows.filter(r => !isDuplicate(r, manualSessions || []));
+      const newCount = rowsToUpsert.filter(r => !existingIds.has(Number(r.strava_activity_id))).length;
+      const skipped = allRows.length - rowsToUpsert.length;
+
+      for (let i = 0; i < rowsToUpsert.length; i += 100) {
+        const batch = rowsToUpsert.slice(i, i + 100);
         const { error } = await admin.from("workout_sessions")
-          .upsert(rows, { onConflict: "user_id,strava_activity_id", ignoreDuplicates: false })
+          .upsert(batch, { onConflict: "user_id,strava_activity_id", ignoreDuplicates: false })
           .select("id");
         if (error) { console.error("Upsert error:", error); return new Response(JSON.stringify({ error: "Failed to upsert activities" }), { status: 500, headers: corsHeaders }); }
       }
-      return new Response(JSON.stringify({ synced: newCount, total: activities.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ synced: newCount, total: activities.length, skipped }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ===== SYNC-ALL =====
@@ -207,19 +239,28 @@ Deno.serve(async (req) => {
         activities.push(...batch);
         page++;
       }
-      // Upsert all activities – the unique index on (user_id, strava_activity_id) prevents duplicates
+
+      // Fetch manual sessions for duplicate detection
+      const { data: manualSessions } = await admin.from("workout_sessions")
+        .select("type, date, duration_minutes, distance, elevation_gain")
+        .eq("user_id", userId)
+        .is("strava_activity_id", null);
+
+      const allRows = activities.map((a) => buildActivityRow(a, userId));
+      const rowsToUpsert = allRows.filter(r => !isDuplicate(r, manualSessions || []));
+      const skipped = allRows.length - rowsToUpsert.length;
+
       let synced = 0;
-      for (let i = 0; i < activities.length; i += 100) {
-        const batch = activities.slice(i, i + 100);
-        const rows = batch.map((a) => buildActivityRow(a, userId));
+      for (let i = 0; i < rowsToUpsert.length; i += 100) {
+        const batch = rowsToUpsert.slice(i, i + 100);
         const { data: upserted, error } = await admin.from("workout_sessions")
-          .upsert(rows, { onConflict: "user_id,strava_activity_id", ignoreDuplicates: false })
+          .upsert(batch, { onConflict: "user_id,strava_activity_id", ignoreDuplicates: false })
           .select("id");
         if (error) { console.error("Upsert error:", error); return new Response(JSON.stringify({ error: "Failed to upsert activities", synced: i }), { status: 500, headers: corsHeaders }); }
         synced += (upserted || []).length;
       }
 
-      return new Response(JSON.stringify({ synced, total: activities.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ synced, total: activities.length, skipped }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ===== FETCH-STREAMS: get detailed streams for one activity =====
