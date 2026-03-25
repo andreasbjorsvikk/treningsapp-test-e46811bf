@@ -99,14 +99,12 @@ function isDuplicate(row: any, manualSessions: any[]): boolean {
   for (const m of manualSessions) {
     if (m.type !== row.type) continue;
     const mDate = new Date(m.date);
-    // Same calendar day
     if (rowDate.toISOString().slice(0, 10) !== mDate.toISOString().slice(0, 10)) continue;
-    // Duration within 5%
-    if (!isWithin(row.duration_minutes, m.duration_minutes, 0.05)) continue;
-    // At least one of distance or elevation matches within 5% (if both exist)
-    const distMatch = row.distance && m.distance ? isWithin(row.distance, m.distance, 0.05) : false;
-    const elevMatch = row.elevation_gain && m.elevation_gain ? isWithin(row.elevation_gain, m.elevation_gain, 0.05) : false;
-    if (distMatch || elevMatch || (!row.distance && !row.elevation_gain)) return true;
+    // At least one value within 20%
+    const durMatch = isWithin(row.duration_minutes, m.duration_minutes, 0.20);
+    const distMatch = row.distance && m.distance ? isWithin(row.distance, m.distance, 0.20) : false;
+    const elevMatch = row.elevation_gain && m.elevation_gain ? isWithin(row.elevation_gain, m.elevation_gain, 0.20) : false;
+    if (durMatch || distMatch || elevMatch) return true;
   }
   return false;
 }
