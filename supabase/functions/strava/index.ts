@@ -189,7 +189,7 @@ Deno.serve(async (req) => {
         activities.push(...batch);
         page++;
       }
-      // Get existing strava_activity_ids for this user to count only truly new ones
+      // Get existing strava_activity_ids and manual sessions for dedup
       const existingIds = new Set<number>();
       const { data: existingRows } = await admin.from("workout_sessions")
         .select("strava_activity_id")
@@ -200,14 +200,23 @@ Deno.serve(async (req) => {
           if (r.strava_activity_id) existingIds.add(Number(r.strava_activity_id));
         }
       }
-      const newCount = activities.filter((a: any) => !existingIds.has(a.id)).length;
 
-      // Upsert all activities – the unique constraint prevents duplicates
-      for (let i = 0; i < activities.length; i += 100) {
-        const batch = activities.slice(i, i + 100);
-        const rows = batch.map((a) => buildActivityRow(a, userId));
+      // Fetch manual sessions for duplicate detection
+      const { data: manualSessions } = await admin.from("workout_sessions")
+        .select("type, date, duration_minutes, distance, elevation_gain")
+        .eq("user_id", userId)
+        .is("strava_activity_id", null);
+
+      // Build rows, filter out duplicates of manual sessions
+      const allRows = activities.map((a) => buildActivityRow(a, userId));
+      const rowsToUpsert = allRows.filter(r => !isDuplicate(r, manualSessions || []));
+      const newCount = rowsToUpsert.filter(r => !existingIds.has(Number(r.strava_activity_id))).length;
+      const skipped = allRows.length - rowsToUpsert.length;
+
+      for (let i = 0; i < rowsToUpsert.length; i += 100) {
+        const batch = rowsToUpsert.slice(i, i + 100);
         const { error } = await admin.from("workout_sessions")
-          .upsert(rows, { onConflict: "user_id,strava_activity_id", ignoreDuplicates: false })
+          .upsert(batch, { onConflict: "user_id,strava_activity_id", ignoreDuplicates: false })
           .select("id");
         if (error) { console.error("Upsert error:", error); return new Response(JSON.stringify({ error: "Failed to upsert activities" }), { status: 500, headers: corsHeaders }); }
       }
