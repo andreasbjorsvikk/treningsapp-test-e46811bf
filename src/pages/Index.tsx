@@ -1014,6 +1014,26 @@ const IndexContent = () => {
         onDismiss={() => setMonthGoalCompleted(false)}
       />
 
+      {/* Admin preview overlays */}
+      {adminMode && adminPreviewMonth && (
+        <MonthGoalCompletionOverlay
+          open={true}
+          current={monthData.target}
+          target={monthData.target}
+          monthLabel={t(`month.${new Date().getMonth()}`)}
+          onDismiss={() => setAdminPreviewMonth(false)}
+        />
+      )}
+      {adminMode && adminPreviewYear && (
+        <MonthGoalCompletionOverlay
+          open={true}
+          current={yearData.target}
+          target={yearData.target}
+          monthLabel={String(new Date().getFullYear())}
+          onDismiss={() => setAdminPreviewYear(false)}
+        />
+      )}
+
       {badgeUnlocks.length > 0 && (
         <BadgeUnlockOverlay
           badges={badgeUnlocks}
