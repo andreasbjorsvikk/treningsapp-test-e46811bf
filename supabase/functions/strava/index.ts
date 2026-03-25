@@ -144,8 +144,8 @@ Deno.serve(async (req) => {
         access_token: tokens.access_token, refresh_token: tokens.refresh_token,
         expires_at: new Date(tokens.expires_at * 1000).toISOString(),
       }, { onConflict: "user_id" });
-      const appUrl = req.headers.get("referer")?.split("/").slice(0, 3).join("/") || "";
-      return new Response(null, { status: 302, headers: { Location: `${appUrl}/settings?strava=connected` } });
+      const APP_URL = Deno.env.get("APP_URL") || "https://treningsappen.no";
+      return new Response(null, { status: 302, headers: { Location: `${APP_URL}/settings?strava=connected` } });
     }
 
     // ===== STATUS =====
