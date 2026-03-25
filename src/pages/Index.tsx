@@ -166,6 +166,16 @@ const IndexContent = () => {
     return () => window.removeEventListener('navigate-to-map-suggestions', handler);
   }, []);
 
+  // Listen for full tutorial start from help section
+  useEffect(() => {
+    const handler = () => {
+      setActiveTab('trening');
+      setShowFullTutorial(true);
+    };
+    window.addEventListener('start-full-tutorial', handler);
+    return () => window.removeEventListener('start-full-tutorial', handler);
+  }, []);
+
   // Direct drag-and-drop reordering
   const [isDragging, setIsDragging] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
