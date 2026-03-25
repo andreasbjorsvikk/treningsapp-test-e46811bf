@@ -44,6 +44,7 @@ import GoalTutorialDialog from '@/components/GoalTutorialDialog';
 import TrainingTutorialDialog from '@/components/TrainingTutorialDialog';
 import CalendarTutorialDialog from '@/components/CalendarTutorialDialog';
 import WelcomeDialog from '@/components/WelcomeDialog';
+import FullTutorialFlow from '@/components/FullTutorialFlow';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { HealthEvent } from '@/types/workout';
 import { supabase } from '@/integrations/supabase/client';
@@ -107,6 +108,7 @@ const IndexContent = () => {
   const badgeSnapshotRef = useRef<UserBadge[] | null>(null);
   const [adminPreviewMonth, setAdminPreviewMonth] = useState(false);
   const [adminPreviewYear, setAdminPreviewYear] = useState(false);
+  const [showFullTutorial, setShowFullTutorial] = useState(false);
 
   // Profile info
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
