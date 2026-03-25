@@ -34,7 +34,7 @@ import GoalCompletionOverlay from '@/components/GoalCompletionOverlay';
 import MonthGoalCompletionOverlay from '@/components/MonthGoalCompletionOverlay';
 import BadgeUnlockOverlay from '@/components/badges/BadgeUnlockOverlay';
 import { computeUserBadges, findNewlyUnlocked, UserBadge } from '@/services/badgeService';
-import { Plus, Sun, Moon, Dumbbell, Ambulance, LogIn, Loader2, GripVertical, Check, User, BarChart3, TrendingUp } from 'lucide-react';
+import { Plus, Sun, Moon, Dumbbell, Ambulance, LogIn, Loader2, GripVertical, Check, User, BarChart3, TrendingUp, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -105,6 +105,8 @@ const IndexContent = () => {
   const [adminSuggestionsDot, setAdminSuggestionsDot] = useState(false);
   const [badgeUnlocks, setBadgeUnlocks] = useState<UserBadge[]>([]);
   const badgeSnapshotRef = useRef<UserBadge[] | null>(null);
+  const [adminPreviewMonth, setAdminPreviewMonth] = useState(false);
+  const [adminPreviewYear, setAdminPreviewYear] = useState(false);
 
   // Profile info
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -555,18 +557,40 @@ const IndexContent = () => {
       case 'trainingGoals':
         return (
           <div className="grid grid-cols-2 gap-3">
-            <ProgressWheel
-              percent={monthData.percent} current={monthData.current} target={monthData.target}
-              unit={monthData.unit} title={t(`month.${new Date().getMonth()}`)}
-              hasGoal={!!primaryGoal} expectedFraction={monthData.expectedFraction}
-              paceDiff={monthData.diff} showPaceLabel onClick={navigateToGoals}
-            />
-            <ProgressWheel
-              percent={yearData.percent} current={yearData.current} target={yearData.target}
-              unit={yearData.unit} title={String(new Date().getFullYear())}
-              hasGoal={!!primaryGoal} expectedFraction={yearData.expectedFraction}
-              paceDiff={yearData.diff} showPaceLabel onClick={navigateToGoals}
-            />
+            <div className="relative">
+              <ProgressWheel
+                percent={monthData.percent} current={monthData.current} target={monthData.target}
+                unit={monthData.unit} title={t(`month.${new Date().getMonth()}`)}
+                hasGoal={!!primaryGoal} expectedFraction={monthData.expectedFraction}
+                paceDiff={monthData.diff} showPaceLabel onClick={navigateToGoals}
+              />
+              {adminMode && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setAdminPreviewMonth(true); }}
+                  className="absolute top-1 right-1 z-10 p-1 rounded-full bg-muted/80 hover:bg-muted transition-colors"
+                  title="Preview month completion"
+                >
+                  <Play className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
+            </div>
+            <div className="relative">
+              <ProgressWheel
+                percent={yearData.percent} current={yearData.current} target={yearData.target}
+                unit={yearData.unit} title={String(new Date().getFullYear())}
+                hasGoal={!!primaryGoal} expectedFraction={yearData.expectedFraction}
+                paceDiff={yearData.diff} showPaceLabel onClick={navigateToGoals}
+              />
+              {adminMode && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setAdminPreviewYear(true); }}
+                  className="absolute top-1 right-1 z-10 p-1 rounded-full bg-muted/80 hover:bg-muted transition-colors"
+                  title="Preview year completion"
+                >
+                  <Play className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
+            </div>
           </div>
         );
       case 'last7dCalendar':
