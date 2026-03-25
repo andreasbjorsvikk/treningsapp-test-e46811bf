@@ -92,11 +92,17 @@ const CommunityTutorial = () => {
   useEffect(() => {
     const done = localStorage.getItem(TUTORIAL_KEY);
     if (!done) setVisible(true);
+
+    // Listen for full tutorial flow trigger
+    const handler = () => setVisible(true);
+    window.addEventListener('show-community-tutorial', handler);
+    return () => window.removeEventListener('show-community-tutorial', handler);
   }, []);
 
   const dismiss = () => {
     setVisible(false);
     localStorage.setItem(TUTORIAL_KEY, 'true');
+    window.dispatchEvent(new CustomEvent('community-tutorial-dismissed'));
   };
 
   const next = () => {

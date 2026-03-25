@@ -284,11 +284,17 @@ const MapTutorial = () => {
   useEffect(() => {
     const done = localStorage.getItem(TUTORIAL_KEY);
     if (!done) setVisible(true);
+
+    // Listen for full tutorial flow trigger
+    const handler = () => { setStep(0); setVisible(true); };
+    window.addEventListener('show-map-tutorial', handler);
+    return () => window.removeEventListener('show-map-tutorial', handler);
   }, []);
 
   const dismiss = () => {
     setVisible(false);
     localStorage.setItem(TUTORIAL_KEY, 'true');
+    window.dispatchEvent(new CustomEvent('map-tutorial-dismissed'));
   };
 
   const next = () => {

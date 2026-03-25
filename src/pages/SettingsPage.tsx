@@ -1249,6 +1249,16 @@ const SettingsPage = () => {
             </div>
           </div>
           <p className="text-sm text-muted-foreground">{t('help.welcomeDesc')}</p>
+          <Button
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('start-full-tutorial'));
+            }}
+            className="w-full mt-2"
+            size="lg"
+          >
+            <HelpCircle className="w-4 h-4 mr-2" />
+            Vis tutorial
+          </Button>
         </div>
 
         {/* Treningsmål */}
