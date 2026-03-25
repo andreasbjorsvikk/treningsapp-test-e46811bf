@@ -81,6 +81,13 @@ const SettingsPage = () => {
   const [helpOpenSections, setHelpOpenSections] = useState<Set<string>>(new Set());
   const [showSettingsTutorial, setShowSettingsTutorial] = useState(false);
 
+  // Listen for full tutorial flow showing settings tutorial
+  useEffect(() => {
+    const handler = () => setShowSettingsTutorial(true);
+    window.addEventListener('show-settings-tutorial', handler);
+    return () => window.removeEventListener('show-settings-tutorial', handler);
+  }, []);
+
   // Child privacy options
   const [hasChildren, setHasChildren] = useState(false);
   const [childPrivacyProfile, setChildPrivacyProfile] = useState('friends');
