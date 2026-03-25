@@ -1059,6 +1059,11 @@ const IndexContent = () => {
       <TrainingTutorialDialog open={showTrainingTutorial} onClose={() => setShowTrainingTutorial(false)} />
       <CalendarTutorialDialog open={showCalendarTutorial} onClose={() => setShowCalendarTutorial(false)} />
       <WelcomeDialog open={showWelcome} onClose={() => setShowWelcome(false)} username={username} />
+      <FullTutorialFlow
+        open={showFullTutorial}
+        onClose={() => setShowFullTutorial(false)}
+        onNavigateTab={(tab) => { setActiveTab(tab as TabId); window.scrollTo({ top: 0 }); }}
+      />
     </div>
   );
 };
