@@ -220,7 +220,7 @@ Deno.serve(async (req) => {
           .select("id");
         if (error) { console.error("Upsert error:", error); return new Response(JSON.stringify({ error: "Failed to upsert activities" }), { status: 500, headers: corsHeaders }); }
       }
-      return new Response(JSON.stringify({ synced: newCount, total: activities.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ synced: newCount, total: activities.length, skipped }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ===== SYNC-ALL =====
@@ -239,19 +239,28 @@ Deno.serve(async (req) => {
         activities.push(...batch);
         page++;
       }
-      // Upsert all activities – the unique index on (user_id, strava_activity_id) prevents duplicates
+
+      // Fetch manual sessions for duplicate detection
+      const { data: manualSessions } = await admin.from("workout_sessions")
+        .select("type, date, duration_minutes, distance, elevation_gain")
+        .eq("user_id", userId)
+        .is("strava_activity_id", null);
+
+      const allRows = activities.map((a) => buildActivityRow(a, userId));
+      const rowsToUpsert = allRows.filter(r => !isDuplicate(r, manualSessions || []));
+      const skipped = allRows.length - rowsToUpsert.length;
+
       let synced = 0;
-      for (let i = 0; i < activities.length; i += 100) {
-        const batch = activities.slice(i, i + 100);
-        const rows = batch.map((a) => buildActivityRow(a, userId));
+      for (let i = 0; i < rowsToUpsert.length; i += 100) {
+        const batch = rowsToUpsert.slice(i, i + 100);
         const { data: upserted, error } = await admin.from("workout_sessions")
-          .upsert(rows, { onConflict: "user_id,strava_activity_id", ignoreDuplicates: false })
+          .upsert(batch, { onConflict: "user_id,strava_activity_id", ignoreDuplicates: false })
           .select("id");
         if (error) { console.error("Upsert error:", error); return new Response(JSON.stringify({ error: "Failed to upsert activities", synced: i }), { status: 500, headers: corsHeaders }); }
         synced += (upserted || []).length;
       }
 
-      return new Response(JSON.stringify({ synced, total: activities.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ synced, total: activities.length, skipped }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ===== FETCH-STREAMS: get detailed streams for one activity =====
