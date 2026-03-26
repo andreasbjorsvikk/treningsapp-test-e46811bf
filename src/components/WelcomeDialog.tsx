@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { X, ChevronRight, Home, CalendarDays, Map, Dumbbell, Users, Settings, Sparkles } from 'lucide-react';
+import { X, ChevronRight, Home, CalendarDays, Map, Dumbbell, Users, Settings, Sparkles, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import connectWithStravaImg from '@/assets/strava/connect-with-strava.png';
 
 interface WelcomeDialogProps {
   open: boolean;
   onClose: () => void;
   username?: string;
+  onNavigateToStrava?: () => void;
 }
 
 const tabs = [
@@ -18,7 +20,9 @@ const tabs = [
   { icon: Settings, label: 'Innstillinger', desc: 'Tilpass appen etter dine ønsker' },
 ];
 
-const WelcomeDialog = ({ open, onClose, username }: WelcomeDialogProps) => {
+const TOTAL_STEPS = 3;
+
+const WelcomeDialog = ({ open, onClose, username, onNavigateToStrava }: WelcomeDialogProps) => {
   const [step, setStep] = useState(0);
 
   const handleOpenChange = (v: boolean) => {
@@ -26,7 +30,7 @@ const WelcomeDialog = ({ open, onClose, username }: WelcomeDialogProps) => {
   };
 
   const next = () => {
-    if (step === 0) setStep(1);
+    if (step < TOTAL_STEPS - 1) setStep(s => s + 1);
     else { onClose(); setStep(0); }
   };
 
@@ -55,7 +59,7 @@ const WelcomeDialog = ({ open, onClose, username }: WelcomeDialogProps) => {
                 </p>
               </div>
             </>
-          ) : (
+          ) : step === 1 ? (
             <>
               <div className="text-center space-y-1">
                 <h3 className="font-display font-bold text-lg text-foreground">Utforsk fanene</h3>
@@ -75,16 +79,40 @@ const WelcomeDialog = ({ open, onClose, username }: WelcomeDialogProps) => {
                 ))}
               </div>
             </>
+          ) : (
+            <>
+              <div className="flex justify-center text-primary">
+                <RefreshCw className="w-8 h-8" />
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className="font-display font-bold text-lg text-foreground">Tips: Strava-synkronisering</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Koble til Strava i innstillinger for å få dine Strava-økter automatisk inn i appen. Du kan også der velge å importere alle tidligere Strava-økter for å få alt med på statistikken.
+                </p>
+              </div>
+              <div className="flex justify-center pt-1">
+                <button
+                  onClick={() => {
+                    onClose();
+                    setStep(0);
+                    onNavigateToStrava?.();
+                  }}
+                  className="transition-transform hover:scale-105 active:scale-95"
+                >
+                  <img src={connectWithStravaImg} alt="Connect with Strava" className="h-10 object-contain" />
+                </button>
+              </div>
+            </>
           )}
 
           <div className="flex items-center justify-between pt-2">
             <div className="flex gap-1.5">
-              {[0, 1].map(i => (
+              {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
                 <div key={i} className={`w-2 h-2 rounded-full transition-colors ${i === step ? 'bg-primary' : 'bg-muted'}`} />
               ))}
             </div>
             <Button size="sm" onClick={next} className="gap-1">
-              {step === 0 ? <>Neste <ChevronRight className="w-3.5 h-3.5" /></> : 'La oss begynne!'}
+              {step < TOTAL_STEPS - 1 ? <>Neste <ChevronRight className="w-3.5 h-3.5" /></> : 'La oss begynne!'}
             </Button>
           </div>
         </div>
