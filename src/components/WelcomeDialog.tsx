@@ -9,6 +9,7 @@ interface WelcomeDialogProps {
   onClose: () => void;
   username?: string;
   onNavigateToStrava?: () => void;
+  onRequestExit?: () => void;
 }
 
 const tabs = [
@@ -22,7 +23,7 @@ const tabs = [
 
 const TOTAL_STEPS = 3;
 
-const WelcomeDialog = ({ open, onClose, username, onNavigateToStrava }: WelcomeDialogProps) => {
+const WelcomeDialog = ({ open, onClose, username, onNavigateToStrava, onRequestExit }: WelcomeDialogProps) => {
   const [step, setStep] = useState(0);
 
   const handleOpenChange = (v: boolean) => {
@@ -39,7 +40,7 @@ const WelcomeDialog = ({ open, onClose, username, onNavigateToStrava }: WelcomeD
       <DialogContent className="max-w-sm p-0 gap-0 border-0 bg-transparent shadow-none [&>button]:hidden">
         <div className="bg-card border border-border rounded-2xl shadow-2xl p-6 space-y-4">
           <button
-            onClick={() => { onClose(); setStep(0); }}
+            onClick={() => { if (onRequestExit) onRequestExit(); else { onClose(); setStep(0); } }}
             className="absolute top-3 right-3 p-1 rounded-full hover:bg-muted transition-colors text-muted-foreground"
           >
             <X className="w-4 h-4" />
