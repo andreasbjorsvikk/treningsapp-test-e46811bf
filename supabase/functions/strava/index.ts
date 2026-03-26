@@ -311,7 +311,7 @@ Deno.serve(async (req) => {
           .select("id");
         if (error) { console.error("Upsert error:", error); return new Response(JSON.stringify({ error: "Failed to upsert activities" }), { status: 500, headers: corsHeaders }); }
       }
-      return new Response(JSON.stringify({ synced: newCount, total: activities.length, skipped }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ synced: newCount, merged, total: activities.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ===== SYNC-ALL =====
@@ -331,15 +331,63 @@ Deno.serve(async (req) => {
         page++;
       }
 
-      // Fetch manual sessions for duplicate detection
-      const { data: manualSessions } = await admin.from("workout_sessions")
-        .select("type, date, duration_minutes, distance, elevation_gain")
+      // Fetch non-strava sessions for merge detection
+      const { data: nonStravaSessions } = await admin.from("workout_sessions")
+        .select("id, type, date, duration_minutes, distance, elevation_gain, source_primary, apple_health_workout_id")
         .eq("user_id", userId)
         .is("strava_activity_id", null);
 
+      // Get existing strava IDs for quick skip
+      const existingStravaIds = new Set<number>();
+      const { data: stravaRows } = await admin.from("workout_sessions")
+        .select("strava_activity_id")
+        .eq("user_id", userId)
+        .not("strava_activity_id", "is", null);
+      if (stravaRows) {
+        for (const r of stravaRows) {
+          if (r.strava_activity_id) existingStravaIds.add(Number(r.strava_activity_id));
+        }
+      }
+
       const allRows = activities.map((a) => buildActivityRow(a, userId));
-      const rowsToUpsert = allRows.filter(r => !isDuplicate(r, manualSessions || []));
-      const skipped = allRows.length - rowsToUpsert.length;
+      const rowsToUpsert: any[] = [];
+      const mergeUpdates: any[] = [];
+      let merged = 0;
+      const remainingSessions = [...(nonStravaSessions || [])];
+
+      for (const row of allRows) {
+        if (existingStravaIds.has(Number(row.strava_activity_id))) {
+          rowsToUpsert.push(row);
+          continue;
+        }
+        const match = findMatchingSession(row, remainingSessions);
+        if (match) {
+          mergeUpdates.push({
+            id: match.id,
+            strava_activity_id: row.strava_activity_id,
+            source_primary: 'strava',
+            sync_status: 'matched',
+            source_history: [
+              { source: match.source_primary || 'manual', linked_at: new Date().toISOString(), action: 'merged_with_strava' }
+            ],
+          });
+          const idx = remainingSessions.indexOf(match);
+          if (idx >= 0) remainingSessions.splice(idx, 1);
+          merged++;
+        } else {
+          rowsToUpsert.push(row);
+        }
+      }
+
+      // Execute merge updates
+      for (const upd of mergeUpdates) {
+        await admin.from("workout_sessions").update({
+          strava_activity_id: upd.strava_activity_id,
+          source_primary: upd.source_primary,
+          sync_status: upd.sync_status,
+          source_history: upd.source_history,
+        }).eq("id", upd.id);
+      }
 
       let synced = 0;
       for (let i = 0; i < rowsToUpsert.length; i += 100) {
@@ -351,7 +399,7 @@ Deno.serve(async (req) => {
         synced += (upserted || []).length;
       }
 
-      return new Response(JSON.stringify({ synced, total: activities.length, skipped }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ synced, merged, total: activities.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ===== FETCH-STREAMS: get detailed streams for one activity =====
