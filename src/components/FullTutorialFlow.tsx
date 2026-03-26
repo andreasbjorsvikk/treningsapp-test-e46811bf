@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
 import TrainingTutorialDialog from '@/components/TrainingTutorialDialog';
 import CalendarTutorialDialog from '@/components/CalendarTutorialDialog';
-import GoalTutorialDialog from '@/components/GoalTutorialDialog';
 
-// These tutorials render their own modals internally so we just control open/close
-// For Map and Community tutorials, we dispatch events to navigate and show them
+// Community, Map and Settings tutorials are self-rendering, triggered via events
 
-type TutorialPhase = 'training' | 'calendar' | 'goals' | 'community' | 'map' | 'settings' | 'done';
+type TutorialPhase = 'training' | 'calendar' | 'community' | 'map' | 'settings' | 'done';
 
-const PHASE_ORDER: TutorialPhase[] = ['training', 'calendar', 'goals', 'community', 'map', 'settings'];
+const PHASE_ORDER: TutorialPhase[] = ['training', 'calendar', 'community', 'map', 'settings'];
 
 interface FullTutorialFlowProps {
   open: boolean;
@@ -30,47 +28,47 @@ const FullTutorialFlow = ({ open, onClose, onNavigateTab }: FullTutorialFlowProp
     if (idx < PHASE_ORDER.length - 1) {
       const next = PHASE_ORDER[idx + 1];
       setPhase(next);
-      // Navigate to the appropriate tab
       switch (next) {
         case 'training': onNavigateTab('trening'); break;
         case 'calendar': onNavigateTab('kalender'); break;
-        case 'goals': onNavigateTab('trening'); break;
         case 'community':
           onNavigateTab('fellesskap');
-          // Reset community tutorial flag temporarily so it shows
           localStorage.removeItem('treningslogg_community_tutorial_done');
           setTimeout(() => window.dispatchEvent(new CustomEvent('show-community-tutorial')), 300);
-          // Wait for user to dismiss community tutorial, then advance
-          const handler = () => {
-            window.removeEventListener('community-tutorial-dismissed', handler);
-            advanceFromCommunity();
-          };
-          window.addEventListener('community-tutorial-dismissed', handler);
+          {
+            const handler = () => {
+              window.removeEventListener('community-tutorial-dismissed', handler);
+              advanceFromCommunity();
+            };
+            window.addEventListener('community-tutorial-dismissed', handler);
+          }
           break;
         case 'map':
           onNavigateTab('kart');
-          // Reset map tutorial flag temporarily so it shows
           localStorage.removeItem('treningslogg_map_tutorial_done');
           setTimeout(() => window.dispatchEvent(new CustomEvent('show-map-tutorial')), 300);
-          const mapHandler = () => {
-            window.removeEventListener('map-tutorial-dismissed', mapHandler);
-            advanceFromMap();
-          };
-          window.addEventListener('map-tutorial-dismissed', mapHandler);
+          {
+            const mapHandler = () => {
+              window.removeEventListener('map-tutorial-dismissed', mapHandler);
+              advanceFromMap();
+            };
+            window.addEventListener('map-tutorial-dismissed', mapHandler);
+          }
           break;
         case 'settings':
           onNavigateTab('settings');
-          // Reset settings tutorial flag temporarily so it shows  
           localStorage.removeItem('treningslogg_settings_tutorial_done');
           setTimeout(() => {
             window.dispatchEvent(new CustomEvent('navigate-to-profile'));
             setTimeout(() => window.dispatchEvent(new CustomEvent('show-settings-tutorial')), 300);
           }, 200);
-          const settingsHandler = () => {
-            window.removeEventListener('settings-tutorial-dismissed', settingsHandler);
-            finish();
-          };
-          window.addEventListener('settings-tutorial-dismissed', settingsHandler);
+          {
+            const settingsHandler = () => {
+              window.removeEventListener('settings-tutorial-dismissed', settingsHandler);
+              finish();
+            };
+            window.addEventListener('settings-tutorial-dismissed', settingsHandler);
+          }
           break;
       }
     } else {
@@ -127,9 +125,6 @@ const FullTutorialFlow = ({ open, onClose, onNavigateTab }: FullTutorialFlowProp
       )}
       {phase === 'calendar' && (
         <CalendarTutorialDialog open={true} onClose={advanceToNext} />
-      )}
-      {phase === 'goals' && (
-        <GoalTutorialDialog open={true} onClose={advanceToNext} />
       )}
       {/* Community, Map and Settings tutorials are self-rendering, triggered via events */}
     </>

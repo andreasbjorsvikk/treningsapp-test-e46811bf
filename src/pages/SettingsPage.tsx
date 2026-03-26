@@ -88,6 +88,20 @@ const SettingsPage = () => {
     return () => window.removeEventListener('show-settings-tutorial', handler);
   }, []);
 
+  // Listen for settings-reset-to-main event (when clicking settings nav while already on settings)
+  useEffect(() => {
+    const handler = () => setView('main');
+    window.addEventListener('settings-reset-to-main', handler);
+    return () => window.removeEventListener('settings-reset-to-main', handler);
+  }, []);
+
+  // Listen for navigate-to-strava-sync from welcome dialog
+  useEffect(() => {
+    const handler = () => setView('sync');
+    window.addEventListener('navigate-to-strava-sync', handler);
+    return () => window.removeEventListener('navigate-to-strava-sync', handler);
+  }, []);
+
   // Child privacy options
   const [hasChildren, setHasChildren] = useState(false);
   const [childPrivacyProfile, setChildPrivacyProfile] = useState('friends');
