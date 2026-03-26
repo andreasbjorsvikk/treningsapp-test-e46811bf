@@ -678,13 +678,14 @@ const IndexContent = () => {
     switch (id) {
       case 'trainingGoals':
         return (
-          <div className="grid grid-cols-2 gap-2">
-            <div className="relative">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="relative min-w-0">
               <ProgressWheel
                 percent={monthData.percent} current={monthData.current} target={monthData.target}
                 unit={monthData.unit} title={t(`month.${new Date().getMonth()}`)}
                 hasGoal={!!primaryGoal} expectedFraction={monthData.expectedFraction}
                 paceDiff={monthData.diff} showPaceLabel onClick={navigateToGoals}
+                compact
               />
               {adminMode && (
                 <button
@@ -696,12 +697,13 @@ const IndexContent = () => {
                 </button>
               )}
             </div>
-            <div className="relative">
+            <div className="relative min-w-0">
               <ProgressWheel
                 percent={yearData.percent} current={yearData.current} target={yearData.target}
                 unit={yearData.unit} title={String(new Date().getFullYear())}
                 hasGoal={!!primaryGoal} expectedFraction={yearData.expectedFraction}
                 paceDiff={yearData.diff} showPaceLabel onClick={navigateToGoals}
+                compact
               />
               {adminMode && (
                 <button

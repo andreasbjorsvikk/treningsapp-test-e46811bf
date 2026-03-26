@@ -62,7 +62,7 @@ const ClockGraphic = ({ value }: { value: string }) => (
     <line x1="60" y1="45" x2="60" y2="22" stroke="hsla(210, 50%, 60%, 0.45)" strokeWidth="2" strokeLinecap="round" />
     <line x1="60" y1="45" x2="75" y2="38" stroke="hsla(210, 50%, 60%, 0.35)" strokeWidth="1.5" strokeLinecap="round" />
     <circle cx="60" cy="45" r="2" fill="hsla(210, 50%, 60%, 0.45)" />
-    <text x="60" y="58" textAnchor="middle" className="fill-foreground font-bold" fontSize="13">{value}</text>
+    <text x="60" y="61" textAnchor="middle" className="fill-foreground font-bold" fontSize="13">{value}</text>
   </svg>
 );
 
