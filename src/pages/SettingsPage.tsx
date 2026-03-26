@@ -88,6 +88,13 @@ const SettingsPage = () => {
     return () => window.removeEventListener('show-settings-tutorial', handler);
   }, []);
 
+  // Listen for settings-reset-to-main event (when clicking settings nav while already on settings)
+  useEffect(() => {
+    const handler = () => setView('main');
+    window.addEventListener('settings-reset-to-main', handler);
+    return () => window.removeEventListener('settings-reset-to-main', handler);
+  }, []);
+
   // Child privacy options
   const [hasChildren, setHasChildren] = useState(false);
   const [childPrivacyProfile, setChildPrivacyProfile] = useState('friends');

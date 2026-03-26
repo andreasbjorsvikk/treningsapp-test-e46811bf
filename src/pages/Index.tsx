@@ -948,6 +948,10 @@ const IndexContent = () => {
               localStorage.setItem('treningslogg_calendar_tutorial_shown', 'true');
             }
           }
+          // If already on settings, reset to main view
+          if (tab === 'settings' && activeTab === 'settings') {
+            window.dispatchEvent(new CustomEvent('settings-reset-to-main'));
+          }
           setActiveTab(tab);
           window.scrollTo({ top: 0 });
         }}
