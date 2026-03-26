@@ -20,9 +20,9 @@ interface ReportDialogProps {
 // Custom SVG: Mountain with elevation text inside
 const MountainGraphic = ({ value }: { value: string }) => (
   <svg viewBox="0 0 120 90" className="w-full h-full" fill="none">
-    <path d="M10 85 L40 20 L55 45 L70 15 L110 85 Z" fill="hsl(var(--primary) / 0.15)" stroke="hsl(var(--primary) / 0.3)" strokeWidth="1.5" />
-    <path d="M40 20 L48 35 L55 45 L50 38 Z" fill="hsl(var(--primary) / 0.08)" />
-    <path d="M70 15 L78 30 L85 42 L75 35 Z" fill="hsl(var(--primary) / 0.08)" />
+    <path d="M10 85 L40 20 L55 45 L70 15 L110 85 Z" fill="hsla(142, 40%, 55%, 0.18)" stroke="hsla(142, 40%, 55%, 0.35)" strokeWidth="1.5" />
+    <path d="M40 20 L48 35 L55 45 L50 38 Z" fill="hsla(142, 40%, 55%, 0.1)" />
+    <path d="M70 15 L78 30 L85 42 L75 35 Z" fill="hsla(142, 40%, 55%, 0.1)" />
     <path d="M37 25 L40 20 L43 25 L41 24 Z" fill="hsl(var(--muted-foreground) / 0.2)" />
     <path d="M67 20 L70 15 L73 20 L71 19 Z" fill="hsl(var(--muted-foreground) / 0.2)" />
     <text x="60" y="68" textAnchor="middle" className="fill-foreground font-extrabold" fontSize="16">{value} m</text>
@@ -33,15 +33,15 @@ const MountainGraphic = ({ value }: { value: string }) => (
 const DistanceGraphic = ({ value }: { value: string }) => (
   <svg viewBox="0 0 120 90" className="w-full h-full" fill="none">
     {/* Left pin */}
-    <circle cx="20" cy="38" r="8" fill="hsl(var(--primary) / 0.2)" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1.5" />
-    <circle cx="20" cy="38" r="3" fill="hsl(var(--primary) / 0.5)" />
-    <path d="M20 46 L20 52" stroke="hsl(var(--primary) / 0.3)" strokeWidth="1.5" />
+    <circle cx="20" cy="38" r="8" fill="hsla(0, 50%, 60%, 0.2)" stroke="hsla(0, 50%, 60%, 0.4)" strokeWidth="1.5" />
+    <circle cx="20" cy="38" r="3" fill="hsla(0, 50%, 60%, 0.5)" />
+    <path d="M20 46 L20 52" stroke="hsla(0, 50%, 60%, 0.3)" strokeWidth="1.5" />
     {/* Right pin */}
-    <circle cx="100" cy="38" r="8" fill="hsl(var(--primary) / 0.2)" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1.5" />
-    <circle cx="100" cy="38" r="3" fill="hsl(var(--primary) / 0.5)" />
-    <path d="M100 46 L100 52" stroke="hsl(var(--primary) / 0.3)" strokeWidth="1.5" />
+    <circle cx="100" cy="38" r="8" fill="hsla(0, 50%, 60%, 0.2)" stroke="hsla(0, 50%, 60%, 0.4)" strokeWidth="1.5" />
+    <circle cx="100" cy="38" r="3" fill="hsla(0, 50%, 60%, 0.5)" />
+    <path d="M100 46 L100 52" stroke="hsla(0, 50%, 60%, 0.3)" strokeWidth="1.5" />
     {/* Dashed line between */}
-    <path d="M28 50 L92 50" stroke="hsl(var(--primary) / 0.25)" strokeWidth="1.5" strokeDasharray="4 3" />
+    <path d="M28 50 L92 50" stroke="hsla(0, 50%, 60%, 0.25)" strokeWidth="1.5" strokeDasharray="4 3" />
     {/* Value */}
     <text x="60" y="72" textAnchor="middle" className="fill-foreground font-extrabold" fontSize="16">{value} km</text>
   </svg>
@@ -50,19 +50,19 @@ const DistanceGraphic = ({ value }: { value: string }) => (
 // Custom SVG: Clock with time inside
 const ClockGraphic = ({ value }: { value: string }) => (
   <svg viewBox="0 0 120 90" className="w-full h-full" fill="none">
-    <circle cx="60" cy="45" r="35" fill="hsl(var(--primary) / 0.08)" stroke="hsl(var(--primary) / 0.25)" strokeWidth="2" />
+    <circle cx="60" cy="45" r="35" fill="hsla(210, 50%, 60%, 0.15)" stroke="hsla(210, 50%, 60%, 0.3)" strokeWidth="2" />
     {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((angle) => {
       const rad = (angle * Math.PI) / 180;
       const x1 = 60 + 30 * Math.sin(rad);
       const y1 = 45 - 30 * Math.cos(rad);
       const x2 = 60 + 33 * Math.sin(rad);
       const y2 = 45 - 33 * Math.cos(rad);
-      return <line key={angle} x1={x1} y1={y1} x2={x2} y2={y2} stroke="hsl(var(--primary) / 0.3)" strokeWidth="1.5" />;
+      return <line key={angle} x1={x1} y1={y1} x2={x2} y2={y2} stroke="hsla(210, 50%, 60%, 0.35)" strokeWidth="1.5" />;
     })}
-    <line x1="60" y1="45" x2="60" y2="22" stroke="hsl(var(--primary) / 0.4)" strokeWidth="2" strokeLinecap="round" />
-    <line x1="60" y1="45" x2="75" y2="38" stroke="hsl(var(--primary) / 0.3)" strokeWidth="1.5" strokeLinecap="round" />
-    <circle cx="60" cy="45" r="2" fill="hsl(var(--primary) / 0.4)" />
-    <text x="60" y="58" textAnchor="middle" className="fill-foreground font-bold" fontSize="10">{value}</text>
+    <line x1="60" y1="45" x2="60" y2="22" stroke="hsla(210, 50%, 60%, 0.45)" strokeWidth="2" strokeLinecap="round" />
+    <line x1="60" y1="45" x2="75" y2="38" stroke="hsla(210, 50%, 60%, 0.35)" strokeWidth="1.5" strokeLinecap="round" />
+    <circle cx="60" cy="45" r="2" fill="hsla(210, 50%, 60%, 0.45)" />
+    <text x="60" y="58" textAnchor="middle" className="fill-foreground font-bold" fontSize="13">{value}</text>
   </svg>
 );
 
