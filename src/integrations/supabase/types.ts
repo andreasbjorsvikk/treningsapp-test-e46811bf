@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      apple_health_connections: {
+        Row: {
+          calories_enabled: boolean
+          connected_at: string
+          created_at: string
+          disconnected_at: string | null
+          id: string
+          last_sync_at: string | null
+          steps_enabled: boolean
+          updated_at: string
+          user_id: string
+          workouts_enabled: boolean
+        }
+        Insert: {
+          calories_enabled?: boolean
+          connected_at?: string
+          created_at?: string
+          disconnected_at?: string | null
+          id?: string
+          last_sync_at?: string | null
+          steps_enabled?: boolean
+          updated_at?: string
+          user_id: string
+          workouts_enabled?: boolean
+        }
+        Update: {
+          calories_enabled?: boolean
+          connected_at?: string
+          created_at?: string
+          disconnected_at?: string | null
+          id?: string
+          last_sync_at?: string | null
+          steps_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+          workouts_enabled?: boolean
+        }
+        Relationships: []
+      }
       challenge_participants: {
         Row: {
           challenge_id: string
@@ -185,6 +224,39 @@ export type Database = {
           read?: boolean
           title?: string
           type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_health_metrics: {
+        Row: {
+          active_calories: number | null
+          created_at: string
+          date: string
+          id: string
+          source: string
+          steps: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_calories?: number | null
+          created_at?: string
+          date: string
+          id?: string
+          source?: string
+          steps?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_calories?: number | null
+          created_at?: string
+          date?: string
+          id?: string
+          source?: string
+          steps?: number | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -699,6 +771,7 @@ export type Database = {
       }
       workout_sessions: {
         Row: {
+          apple_health_workout_id: string | null
           average_heartrate: number | null
           created_at: string
           date: string
@@ -706,16 +779,21 @@ export type Database = {
           duration_minutes: number
           elevation_gain: number | null
           id: string
+          imported_at: string | null
           max_heartrate: number | null
           notes: string | null
+          source_history: Json | null
+          source_primary: string
           strava_activity_id: number | null
           summary_polyline: string | null
+          sync_status: string | null
           title: string | null
           type: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          apple_health_workout_id?: string | null
           average_heartrate?: number | null
           created_at?: string
           date: string
@@ -723,16 +801,21 @@ export type Database = {
           duration_minutes: number
           elevation_gain?: number | null
           id?: string
+          imported_at?: string | null
           max_heartrate?: number | null
           notes?: string | null
+          source_history?: Json | null
+          source_primary?: string
           strava_activity_id?: number | null
           summary_polyline?: string | null
+          sync_status?: string | null
           title?: string | null
           type: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          apple_health_workout_id?: string | null
           average_heartrate?: number | null
           created_at?: string
           date?: string
@@ -740,10 +823,14 @@ export type Database = {
           duration_minutes?: number
           elevation_gain?: number | null
           id?: string
+          imported_at?: string | null
           max_heartrate?: number | null
           notes?: string | null
+          source_history?: Json | null
+          source_primary?: string
           strava_activity_id?: number | null
           summary_polyline?: string | null
+          sync_status?: string | null
           title?: string | null
           type?: string
           updated_at?: string

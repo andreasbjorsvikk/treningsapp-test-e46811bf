@@ -16,7 +16,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { SessionType } from '@/types/workout';
-import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw, Loader2, Check, Pencil, Dumbbell, Lock, HelpCircle, Target, BarChart3, Calendar, Users, Zap, ShieldCheck, Download, Mountain } from 'lucide-react';
+import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw, Loader2, Check, Pencil, Dumbbell, Lock, HelpCircle, Target, BarChart3, Calendar, Users, Zap, ShieldCheck, Download, Mountain, Heart, Footprints, Flame } from 'lucide-react';
+import { isNativePlatform, isIOS } from '@/utils/capacitor';
+import { appleHealthService, AppleHealthConnection } from '@/services/appleHealthService';
 import { getActivityColors, activityColorMap, saveActivityColors } from '@/utils/activityColors';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
@@ -78,6 +80,11 @@ const SettingsPage = () => {
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
   const [realFriends, setRealFriends] = useState<Friend[]>([]);
   const [gdprSubView, setGdprSubView] = useState<'main' | 'deleteData' | 'deleteAccount' | 'downloadData'>('main');
+  // Apple Health state
+  const [ahConnection, setAhConnection] = useState<AppleHealthConnection | null>(null);
+  const [ahLoading, setAhLoading] = useState(false);
+  const [showStravaSourceModal, setShowStravaSourceModal] = useState(false);
+  const [showAhWorkoutPrompt, setShowAhWorkoutPrompt] = useState(false);
   const [helpOpenSections, setHelpOpenSections] = useState<Set<string>>(new Set());
   const [showSettingsTutorial, setShowSettingsTutorial] = useState(false);
   const [sessionTypesOpen, setSessionTypesOpen] = useState(false);
@@ -117,6 +124,9 @@ const SettingsPage = () => {
       setView('sync');
     }
     stravaService.getStatus().then(s => setStravaConnected(s.connected)).catch(() => {});
+    if (isNativePlatform() && isIOS()) {
+      appleHealthService.getConnection().then(c => setAhConnection(c)).catch(() => {});
+    }
   }, [user]);
   // Load profile
   useEffect(() => {
@@ -960,6 +970,13 @@ const SettingsPage = () => {
       try {
         await stravaService.disconnect();
         setStravaConnected(false);
+        // Check if Apple Health is connected and offer workout import
+        if (isNativePlatform() && isIOS()) {
+          const result = await appleHealthService.onStravaDisconnected();
+          if (result.appleHealthConnected) {
+            setShowAhWorkoutPrompt(true);
+          }
+        }
         toast.success(t('settings.stravaNotConnected'));
       } catch {
         toast.error(t('sync.disconnectFailed'));
@@ -1099,6 +1116,173 @@ const SettingsPage = () => {
             </>
           )}
         </div>
+
+        {/* Apple Health Section — only visible on native iOS */}
+        {isNativePlatform() && isIOS() && (
+          <div className="glass-card rounded-xl p-4 space-y-4">
+            <div className="flex items-center gap-4 p-4 rounded-xl bg-secondary/50">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-400 to-pink-500 flex items-center justify-center shrink-0">
+                <Heart className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm">Apple Helse</p>
+                <p className="text-xs text-muted-foreground">
+                  Synkroniser skritt, kalorier og treningsøkter fra Apple Helse.
+                </p>
+                {ahConnection && (
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+                    <Check className="w-3 h-3" /> Tilkoblet
+                  </p>
+                )}
+              </div>
+              {!ahConnection ? (
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    setAhLoading(true);
+                    try {
+                      // TODO (Native): Trigger HealthKit authorization via Capacitor plugin first
+                      const conn = await appleHealthService.connect();
+                      setAhConnection(conn);
+                      toast.success('Apple Helse tilkoblet');
+                    } catch {
+                      toast.error('Kunne ikke koble til Apple Helse');
+                    }
+                    setAhLoading(false);
+                  }}
+                  disabled={ahLoading || !user}
+                >
+                  {ahLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Koble til'}
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={async () => {
+                    setAhLoading(true);
+                    try {
+                      await appleHealthService.disconnect();
+                      setAhConnection(null);
+                      toast.success('Apple Helse frakoblet');
+                    } catch {
+                      toast.error('Kunne ikke koble fra');
+                    }
+                    setAhLoading(false);
+                  }}
+                  disabled={ahLoading}
+                >
+                  Koble fra
+                </Button>
+              )}
+            </div>
+
+            {/* Sync toggles when connected */}
+            {ahConnection && (
+              <div className="space-y-3 pl-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Footprints className="w-4 h-4 text-muted-foreground" />
+                    <Label className="text-sm">Skritt</Label>
+                  </div>
+                  <Switch
+                    checked={ahConnection.steps_enabled}
+                    onCheckedChange={async (checked) => {
+                      await appleHealthService.updateSettings({ steps_enabled: checked });
+                      setAhConnection(prev => prev ? { ...prev, steps_enabled: checked } : null);
+                    }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Flame className="w-4 h-4 text-muted-foreground" />
+                    <Label className="text-sm">Aktive kalorier</Label>
+                  </div>
+                  <Switch
+                    checked={ahConnection.calories_enabled}
+                    onCheckedChange={async (checked) => {
+                      await appleHealthService.updateSettings({ calories_enabled: checked });
+                      setAhConnection(prev => prev ? { ...prev, calories_enabled: checked } : null);
+                    }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Dumbbell className="w-4 h-4 text-muted-foreground" />
+                    <Label className="text-sm">Treningsøkter</Label>
+                  </div>
+                  {stravaConnected ? (
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                      Via Strava
+                    </span>
+                  ) : (
+                    <Switch
+                      checked={ahConnection.workouts_enabled}
+                      onCheckedChange={async (checked) => {
+                        await appleHealthService.updateSettings({ workouts_enabled: checked });
+                        setAhConnection(prev => prev ? { ...prev, workouts_enabled: checked } : null);
+                      }}
+                    />
+                  )}
+                </div>
+
+                {stravaConnected && (
+                  <p className="text-xs text-muted-foreground pl-6">
+                    Treningsøkter synkroniseres fra Strava. Apple Helse kan fortsatt gi skritt og aktive kalorier.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Modal: Strava now handles workouts */}
+        <Dialog open={showStravaSourceModal} onOpenChange={setShowStravaSourceModal}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Strava er nå tilkoblet</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Fremtidige treningsøkter vil nå synkroniseres fra Strava i stedet for Apple Helse.
+              Apple Helse kan fortsatt gi skritt og aktive kalorier.
+            </p>
+            <Button onClick={() => setShowStravaSourceModal(false)}>OK</Button>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal: Use Apple Health for workouts after Strava disconnect */}
+        <Dialog open={showAhWorkoutPrompt} onOpenChange={setShowAhWorkoutPrompt}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Strava frakoblet</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Vil du at Apple Helse skal importere treningsøkter? Apple Helse kan uansett fortsatt synkronisere skritt og aktive kalorier.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowAhWorkoutPrompt(false)}
+              >
+                Ikke nå
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={async () => {
+                  await appleHealthService.enableWorkoutsImport();
+                  setAhConnection(prev => prev ? { ...prev, workouts_enabled: true } : null);
+                  setShowAhWorkoutPrompt(false);
+                  toast.success('Apple Helse vil nå importere treningsøkter');
+                }}
+              >
+                Ja, bruk Apple Helse
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
