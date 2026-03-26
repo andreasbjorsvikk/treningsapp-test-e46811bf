@@ -880,6 +880,55 @@ const IndexContent = () => {
               </div>
             </div>
 
+            {/* ===== REPORT BANNERS ===== */}
+            {(pendingWeekReport || pendingMonthReport || (adminMode && isAdmin)) && (
+              <div className="space-y-2">
+                {/* Admin report preview buttons */}
+                {adminMode && isAdmin && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs gap-1.5"
+                      onClick={() => openReport('week')}
+                    >
+                      <FileText className="w-3.5 h-3.5" /> Se ukesrapport
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs gap-1.5"
+                      onClick={() => openReport('month')}
+                    >
+                      <FileText className="w-3.5 h-3.5" /> Se månedsrapport
+                    </Button>
+                  </div>
+                )}
+                {pendingWeekReport && (
+                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-primary/5 border border-primary/15">
+                    <BarChart3 className="w-4 h-4 text-primary shrink-0" />
+                    <button onClick={() => handleReportView('week')} className="flex-1 text-left text-sm font-medium text-foreground hover:underline">
+                      Se ukesrapport
+                    </button>
+                    <button onClick={() => dismissPendingReport('week')} className="p-1 rounded-full hover:bg-muted transition-colors text-muted-foreground">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+                {pendingMonthReport && (
+                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-primary/5 border border-primary/15">
+                    <BarChart3 className="w-4 h-4 text-primary shrink-0" />
+                    <button onClick={() => handleReportView('month')} className="flex-1 text-left text-sm font-medium text-foreground hover:underline">
+                      Se månedsrapport
+                    </button>
+                    <button onClick={() => dismissPendingReport('month')} className="p-1 rounded-full hover:bg-muted transition-colors text-muted-foreground">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* ===== FIXED TOP SECTION (not reorderable) ===== */}
             <div className="space-y-5">
               {/* Desktop: 3-column layout */}
