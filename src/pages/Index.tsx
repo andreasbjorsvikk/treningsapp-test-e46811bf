@@ -5,6 +5,7 @@ import { AppDataProvider, useAppDataContext } from '@/contexts/AppDataContext';
 import { computeMonthWheelData, computeYearWheelData } from '@/utils/goalWheelData';
 import { useAuth } from '@/hooks/useAuth';
 import { stravaService } from '@/services/stravaService';
+import { goalService } from '@/services/goalService';
 import { getChallenges, getChallengeParticipants, getChallengeProgress, getUnreadNotificationCount, ChallengeRow } from '@/services/communityService';
 import { ChallengeWithParticipants } from '@/pages/CommunityPage';
 import { toast } from 'sonner';
@@ -1249,6 +1250,14 @@ const IndexContent = () => {
         open={showReport}
         onClose={() => { setShowReport(false); setReportData(null); }}
         data={reportData}
+        onRepeatGoal={async (goalId) => {
+          try {
+            await goalService.update(goalId, { repeating: true });
+            toast.success('Målet vil gjentas automatisk');
+          } catch {
+            toast.error('Kunne ikke oppdatere målet');
+          }
+        }}
       />
     </div>
   );
