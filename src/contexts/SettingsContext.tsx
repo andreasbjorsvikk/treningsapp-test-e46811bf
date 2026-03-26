@@ -29,6 +29,8 @@ export interface AppSettings {
   privacyPeakCheckins: PrivacyLevel;
   pinnedChallengeIds: string[];
   homeSectionOrder: string[];
+  weeklyReportEnabled: boolean;
+  monthlyReportEnabled: boolean;
 }
 
 interface ThemeColors {
@@ -176,6 +178,8 @@ const defaultSettings: AppSettings = {
   privacyPeakCheckins: 'friends',
   pinnedChallengeIds: [],
   homeSectionOrder: ['wheels', 'activity', 'stats', 'challenges', 'extraGoals'],
+  weeklyReportEnabled: true,
+  monthlyReportEnabled: true,
 };
 
 interface SettingsContextType {

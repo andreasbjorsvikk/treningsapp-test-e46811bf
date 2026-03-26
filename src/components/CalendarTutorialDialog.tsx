@@ -6,9 +6,10 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 interface CalendarTutorialDialogProps {
   open: boolean;
   onClose: () => void;
+  onRequestExit?: () => void;
 }
 
-const CalendarTutorialDialog = ({ open, onClose }: CalendarTutorialDialogProps) => {
+const CalendarTutorialDialog = ({ open, onClose, onRequestExit }: CalendarTutorialDialogProps) => {
   const handleOpenChange = (v: boolean) => {
     if (!v) onClose();
   };
@@ -18,7 +19,7 @@ const CalendarTutorialDialog = ({ open, onClose }: CalendarTutorialDialogProps) 
       <DialogContent className="max-w-sm p-0 gap-0 border-0 bg-transparent shadow-none [&>button]:hidden">
         <div className="bg-card border border-border rounded-2xl shadow-2xl p-6 space-y-4">
           <button
-            onClick={onClose}
+            onClick={() => { if (onRequestExit) onRequestExit(); else onClose(); }}
             className="absolute top-3 right-3 p-1 rounded-full hover:bg-muted transition-colors text-muted-foreground"
           >
             <X className="w-4 h-4" />

@@ -34,7 +34,7 @@ import GoalCompletionOverlay from '@/components/GoalCompletionOverlay';
 import MonthGoalCompletionOverlay from '@/components/MonthGoalCompletionOverlay';
 import BadgeUnlockOverlay from '@/components/badges/BadgeUnlockOverlay';
 import { computeUserBadges, findNewlyUnlocked, UserBadge } from '@/services/badgeService';
-import { Plus, Sun, Moon, Dumbbell, Ambulance, LogIn, Loader2, GripVertical, Check, User, BarChart3, TrendingUp, Play } from 'lucide-react';
+import { Plus, Sun, Moon, Dumbbell, Ambulance, LogIn, Loader2, GripVertical, Check, User, BarChart3, TrendingUp, Play, FileText, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -45,6 +45,9 @@ import TrainingTutorialDialog from '@/components/TrainingTutorialDialog';
 import CalendarTutorialDialog from '@/components/CalendarTutorialDialog';
 import WelcomeDialog from '@/components/WelcomeDialog';
 import FullTutorialFlow from '@/components/FullTutorialFlow';
+import ReportDialog from '@/components/ReportDialog';
+import ReportPrompt from '@/components/ReportPrompt';
+import { computeWeeklyReport, computeMonthlyReport, shouldShowWeeklyReport, shouldShowMonthlyReport, getReportDismissKey, getReportLaterKey, ReportData } from '@/utils/reportUtils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { HealthEvent } from '@/types/workout';
 import { supabase } from '@/integrations/supabase/client';
@@ -110,6 +113,13 @@ const IndexContent = () => {
   const [adminPreviewYear, setAdminPreviewYear] = useState(false);
   const [showFullTutorial, setShowFullTutorial] = useState(false);
 
+  // Report state
+  const [reportPromptType, setReportPromptType] = useState<'week' | 'month' | null>(null);
+  const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [showReport, setShowReport] = useState(false);
+  const [pendingWeekReport, setPendingWeekReport] = useState(false);
+  const [pendingMonthReport, setPendingMonthReport] = useState(false);
+
   // Profile info
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [username, setUsername] = useState('');
@@ -166,10 +176,63 @@ const IndexContent = () => {
     return () => window.removeEventListener('navigate-to-map-suggestions', handler);
   }, []);
 
+  // Report trigger logic
+  useEffect(() => {
+    if (!user || appData.loading) return;
+
+    // Check weekly report
+    if (settings.weeklyReportEnabled !== false) {
+      const weekKey = getReportDismissKey('week');
+      const dismissed = localStorage.getItem(weekKey);
+      const laterKey = getReportLaterKey('week');
+      const laterTs = localStorage.getItem(laterKey);
+      
+      if (!dismissed) {
+        if (laterTs) {
+          // "Se senere" was chosen - show banner for 48h
+          const ts = parseInt(laterTs);
+          if (Date.now() - ts < 48 * 60 * 60 * 1000) {
+            setPendingWeekReport(true);
+          } else {
+            localStorage.setItem(weekKey, 'true');
+            setPendingWeekReport(false);
+          }
+        } else if (shouldShowWeeklyReport()) {
+          // Show prompt
+          setTimeout(() => setReportPromptType('week'), 1500);
+        }
+      }
+    }
+
+    // Check monthly report
+    if (settings.monthlyReportEnabled !== false) {
+      const monthKey = getReportDismissKey('month');
+      const dismissed = localStorage.getItem(monthKey);
+      const laterKey = getReportLaterKey('month');
+      const laterTs = localStorage.getItem(laterKey);
+      
+      if (!dismissed) {
+        if (laterTs) {
+          const ts = parseInt(laterTs);
+          if (Date.now() - ts < 48 * 60 * 60 * 1000) {
+            setPendingMonthReport(true);
+          } else {
+            localStorage.setItem(monthKey, 'true');
+            setPendingMonthReport(false);
+          }
+        } else if (shouldShowMonthlyReport() && !reportPromptType) {
+          setTimeout(() => {
+            if (!reportPromptType) setReportPromptType('month');
+          }, 2000);
+        }
+      }
+    }
+  }, [user, appData.loading, settings.weeklyReportEnabled, settings.monthlyReportEnabled]);
+
   // Listen for full tutorial start from help section
   useEffect(() => {
     const handler = () => {
-      setActiveTab('trening');
+      setActiveTab('hjem');
       setShowFullTutorial(true);
     };
     window.addEventListener('start-full-tutorial', handler);
@@ -405,6 +468,44 @@ const IndexContent = () => {
     }
   };
   const handleHealthSave = async (data: Omit<HealthEvent, 'id'>) => { await appData.addHealthEvent(data); };
+
+  // Report handlers
+  const openReport = (type: 'week' | 'month') => {
+    const data = type === 'week'
+      ? computeWeeklyReport(allSessions, appData.primaryGoals, appData.goals, allSessions)
+      : computeMonthlyReport(allSessions, appData.primaryGoals, appData.goals, allSessions, monthData.target, monthData.current);
+    setReportData(data);
+    setShowReport(true);
+    setReportPromptType(null);
+  };
+
+  const handleReportView = (type: 'week' | 'month') => {
+    openReport(type);
+    // Clear pending banner
+    if (type === 'week') setPendingWeekReport(false);
+    if (type === 'month') setPendingMonthReport(false);
+    localStorage.setItem(getReportDismissKey(type), 'true');
+  };
+
+  const handleReportLater = (type: 'week' | 'month') => {
+    localStorage.setItem(getReportLaterKey(type), String(Date.now()));
+    if (type === 'week') setPendingWeekReport(true);
+    if (type === 'month') setPendingMonthReport(true);
+    setReportPromptType(null);
+  };
+
+  const handleReportDismiss = (type: 'week' | 'month') => {
+    localStorage.setItem(getReportDismissKey(type), 'true');
+    if (type === 'week') setPendingWeekReport(false);
+    if (type === 'month') setPendingMonthReport(false);
+    setReportPromptType(null);
+  };
+
+  const dismissPendingReport = (type: 'week' | 'month') => {
+    localStorage.setItem(getReportDismissKey(type), 'true');
+    if (type === 'week') setPendingWeekReport(false);
+    if (type === 'month') setPendingMonthReport(false);
+  };
 
   const navigateToGoals = () => {
     if (!primaryGoal) {
@@ -779,6 +880,55 @@ const IndexContent = () => {
               </div>
             </div>
 
+            {/* ===== REPORT BANNERS ===== */}
+            {(pendingWeekReport || pendingMonthReport || (adminMode && isAdmin)) && (
+              <div className="space-y-2">
+                {/* Admin report preview buttons */}
+                {adminMode && isAdmin && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs gap-1.5"
+                      onClick={() => openReport('week')}
+                    >
+                      <FileText className="w-3.5 h-3.5" /> Se ukesrapport
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs gap-1.5"
+                      onClick={() => openReport('month')}
+                    >
+                      <FileText className="w-3.5 h-3.5" /> Se månedsrapport
+                    </Button>
+                  </div>
+                )}
+                {pendingWeekReport && (
+                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-primary/5 border border-primary/15">
+                    <BarChart3 className="w-4 h-4 text-primary shrink-0" />
+                    <button onClick={() => handleReportView('week')} className="flex-1 text-left text-sm font-medium text-foreground hover:underline">
+                      Se ukesrapport
+                    </button>
+                    <button onClick={() => dismissPendingReport('week')} className="p-1 rounded-full hover:bg-muted transition-colors text-muted-foreground">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+                {pendingMonthReport && (
+                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-primary/5 border border-primary/15">
+                    <BarChart3 className="w-4 h-4 text-primary shrink-0" />
+                    <button onClick={() => handleReportView('month')} className="flex-1 text-left text-sm font-medium text-foreground hover:underline">
+                      Se månedsrapport
+                    </button>
+                    <button onClick={() => dismissPendingReport('month')} className="p-1 rounded-full hover:bg-muted transition-colors text-muted-foreground">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* ===== FIXED TOP SECTION (not reorderable) ===== */}
             <div className="space-y-5">
               {/* Desktop: 3-column layout */}
@@ -1075,6 +1225,22 @@ const IndexContent = () => {
         open={showFullTutorial}
         onClose={() => setShowFullTutorial(false)}
         onNavigateTab={(tab) => { setActiveTab(tab as TabId); window.scrollTo({ top: 0 }); }}
+      />
+
+      {/* Report prompt & dialog */}
+      {reportPromptType && (
+        <ReportPrompt
+          open={true}
+          type={reportPromptType}
+          onView={() => handleReportView(reportPromptType)}
+          onLater={() => handleReportLater(reportPromptType)}
+          onDismiss={() => handleReportDismiss(reportPromptType)}
+        />
+      )}
+      <ReportDialog
+        open={showReport}
+        onClose={() => { setShowReport(false); setReportData(null); }}
+        data={reportData}
       />
     </div>
   );

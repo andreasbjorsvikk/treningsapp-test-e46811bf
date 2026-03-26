@@ -80,6 +80,7 @@ const SettingsPage = () => {
   const [gdprSubView, setGdprSubView] = useState<'main' | 'deleteData' | 'deleteAccount' | 'downloadData'>('main');
   const [helpOpenSections, setHelpOpenSections] = useState<Set<string>>(new Set());
   const [showSettingsTutorial, setShowSettingsTutorial] = useState(false);
+  const [sessionTypesOpen, setSessionTypesOpen] = useState(false);
 
   // Listen for full tutorial flow showing settings tutorial
   useEffect(() => {
@@ -467,37 +468,76 @@ const SettingsPage = () => {
     return (
       <div className="space-y-4">
         {backButton(t('settings.training'))}
-        <div className="glass-card rounded-xl p-4 space-y-3">
-          <Label className="text-sm font-semibold">{t('settings.activeSessionTypes')}</Label>
-          <p className="text-xs text-muted-foreground">{t('settings.activeSessionTypesDesc')}</p>
-          <div className="space-y-1">
-            {allSessionTypes.filter(tp => tp !== 'annet').map(tp => {
-              const colors = getActivityColors(tp, settings.darkMode);
-              const isActive = !disabledTypes.includes(tp);
-              return (
-                <div key={tp} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-muted/30 transition-colors">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: colors.bg, opacity: isActive ? 1 : 0.4 }}
-                  >
-                    <ActivityIcon type={tp} className="w-5 h-5" colorOverride={!settings.darkMode ? colors.text : undefined} />
-                  </div>
-                  <span className={`flex-1 text-sm font-medium ${!isActive ? 'text-muted-foreground' : ''}`}>{t(`activity.${tp}`)}</span>
-                  <Switch
-                    checked={isActive}
-                    onCheckedChange={(checked) => {
-                      const current = [...(settings.disabledSessionTypes || [])];
-                      if (checked) {
-                        updateSettings({ disabledSessionTypes: current.filter(x => x !== tp) });
-                      } else {
-                        updateSettings({ disabledSessionTypes: [...current, tp] });
-                      }
-                    }}
-                  />
-                </div>
-              );
-            })}
+
+        {/* Report toggles */}
+        <div className="glass-card rounded-xl p-4 space-y-1">
+          <Label className="text-sm font-semibold">Rapporter</Label>
+          <p className="text-xs text-muted-foreground mb-2">Få oppsummering av treningen din</p>
+          <div className="flex items-center justify-between py-2 border-b border-border/40">
+            <div>
+              <p className="text-sm font-medium">Ukesrapport</p>
+              <p className="text-xs text-muted-foreground">Vises søndag kveld / mandag</p>
+            </div>
+            <Switch
+              checked={settings.weeklyReportEnabled !== false}
+              onCheckedChange={(v) => updateSettings({ weeklyReportEnabled: v })}
+            />
           </div>
+          <div className="flex items-center justify-between py-2">
+            <div>
+              <p className="text-sm font-medium">Månedsrapport</p>
+              <p className="text-xs text-muted-foreground">Vises siste dag i måneden</p>
+            </div>
+            <Switch
+              checked={settings.monthlyReportEnabled !== false}
+              onCheckedChange={(v) => updateSettings({ monthlyReportEnabled: v })}
+            />
+          </div>
+        </div>
+
+        {/* Active session types - collapsible */}
+        <div className="glass-card rounded-xl overflow-hidden">
+          <button
+            onClick={() => setSessionTypesOpen(!sessionTypesOpen)}
+            className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/30 transition-colors"
+          >
+            <Dumbbell className="w-4 h-4 text-muted-foreground" />
+            <div className="flex-1 text-left">
+              <span className="font-display font-semibold text-sm">{t('settings.activeSessionTypes')}</span>
+              <p className="text-xs text-muted-foreground">{t('settings.activeSessionTypesDesc')}</p>
+            </div>
+            <ChevronRight className={`w-4 h-4 text-muted-foreground/50 transition-transform duration-200 ${sessionTypesOpen ? 'rotate-90' : ''}`} />
+          </button>
+          {sessionTypesOpen && (
+            <div className="px-4 pb-4 border-t border-border/40 pt-2 space-y-1">
+              {allSessionTypes.filter(tp => tp !== 'annet').map(tp => {
+                const colors = getActivityColors(tp, settings.darkMode);
+                const isActive = !disabledTypes.includes(tp);
+                return (
+                  <div key={tp} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-muted/30 transition-colors">
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: colors.bg, opacity: isActive ? 1 : 0.4 }}
+                    >
+                      <ActivityIcon type={tp} className="w-5 h-5" colorOverride={!settings.darkMode ? colors.text : undefined} />
+                    </div>
+                    <span className={`flex-1 text-sm font-medium ${!isActive ? 'text-muted-foreground' : ''}`}>{t(`activity.${tp}`)}</span>
+                    <Switch
+                      checked={isActive}
+                      onCheckedChange={(checked) => {
+                        const current = [...(settings.disabledSessionTypes || [])];
+                        if (checked) {
+                          updateSettings({ disabledSessionTypes: current.filter(x => x !== tp) });
+                        } else {
+                          updateSettings({ disabledSessionTypes: [...current, tp] });
+                        }
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     );
