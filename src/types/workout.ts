@@ -28,6 +28,12 @@ export interface WorkoutSession {
   maxHeartrate?: number;
   summaryPolyline?: string;
   stravaActivityId?: number;
+  // Source tracking fields
+  sourcePrimary?: 'manual' | 'strava' | 'apple_health';
+  appleHealthWorkoutId?: string;
+  syncStatus?: string;
+  importedAt?: string;
+  sourceHistory?: Record<string, any>[];
 }
 
 export interface WorkoutStreams {
