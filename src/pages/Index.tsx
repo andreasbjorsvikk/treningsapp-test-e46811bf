@@ -686,7 +686,6 @@ const IndexContent = () => {
                 hasGoal={!!primaryGoal} expectedFraction={monthData.expectedFraction}
                 paceDiff={monthData.diff} showPaceLabel onClick={navigateToGoals}
               />
-              />
               {adminMode && (
                 <button
                   onClick={(e) => { e.stopPropagation(); setAdminPreviewMonth(true); }}
