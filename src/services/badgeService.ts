@@ -40,6 +40,11 @@ import badgeElev3000 from '@/assets/badges/elev_3000m.png';
 import badgeElev5000 from '@/assets/badges/elev_5000m.png';
 import badgeElev10000 from '@/assets/badges/elev_10000m.png';
 
+// Badge images - monthly distance
+import badgeDist50 from '@/assets/badges/50_km.png';
+import badgeDist100 from '@/assets/badges/100_km.png';
+import badgeDist150 from '@/assets/badges/150_km.png';
+
 export type BadgeCategory = 'fjell' | 'trening';
 export type BadgeRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
@@ -127,9 +132,9 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: 'month_same_15', category: 'trening', subcategory: 'monthly_sametype', nameKey: 'badge.monthSame15', descriptionKey: 'badge.monthSame15Desc', requirementKey: 'badge.monthSame15Req', threshold: 15, rarity: 'rare', emoji: '🎯', sortOrder: 19, repeatable: true },
 
   // ── Trening: Månedlig distanse ──
-  { id: 'month_dist_50', category: 'trening', subcategory: 'monthly_distance', nameKey: 'badge.monthDist50', descriptionKey: 'badge.monthDist50Desc', requirementKey: 'badge.monthDist50Req', threshold: 50, rarity: 'common', emoji: '🏃', sortOrder: 20, repeatable: true },
-  { id: 'month_dist_100', category: 'trening', subcategory: 'monthly_distance', nameKey: 'badge.monthDist100', descriptionKey: 'badge.monthDist100Desc', requirementKey: 'badge.monthDist100Req', threshold: 100, rarity: 'uncommon', emoji: '🏃', sortOrder: 21, repeatable: true },
-  { id: 'month_dist_150', category: 'trening', subcategory: 'monthly_distance', nameKey: 'badge.monthDist150', descriptionKey: 'badge.monthDist150Desc', requirementKey: 'badge.monthDist150Req', threshold: 150, rarity: 'rare', emoji: '🏃', sortOrder: 22, repeatable: true },
+  { id: 'month_dist_50', category: 'trening', subcategory: 'monthly_distance', nameKey: 'badge.monthDist50', descriptionKey: 'badge.monthDist50Desc', requirementKey: 'badge.monthDist50Req', threshold: 50, rarity: 'common', emoji: '🏃', image: badgeDist50, sortOrder: 20, repeatable: true },
+  { id: 'month_dist_100', category: 'trening', subcategory: 'monthly_distance', nameKey: 'badge.monthDist100', descriptionKey: 'badge.monthDist100Desc', requirementKey: 'badge.monthDist100Req', threshold: 100, rarity: 'uncommon', emoji: '🏃', image: badgeDist100, sortOrder: 21, repeatable: true },
+  { id: 'month_dist_150', category: 'trening', subcategory: 'monthly_distance', nameKey: 'badge.monthDist150', descriptionKey: 'badge.monthDist150Desc', requirementKey: 'badge.monthDist150Req', threshold: 150, rarity: 'rare', emoji: '🏃', image: badgeDist150, sortOrder: 22, repeatable: true },
 ];
 
 export const SUBCATEGORY_NAMES: Record<string, { no: string; en: string }> = {

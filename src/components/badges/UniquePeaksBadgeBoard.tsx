@@ -16,11 +16,11 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
   const gridCols = columns === 2 ? 'grid-cols-2' : columns === 3 ? 'grid-cols-3' : 'grid-cols-4';
   const socketSize = columns === 2 ? '7rem' : '5.2rem';
 
-  // For monthly_elevation: find the first locked badge to show progress on
-  const isMonthlyElev = orderedBadges.length > 0 && orderedBadges[0].badge.subcategory === 'monthly_elevation';
+  // For monthly_elevation and monthly_distance: find the first locked badge to show progress on
+  const subcategoryType = orderedBadges.length > 0 ? orderedBadges[0].badge.subcategory : '';
+  const hasProgressBar = subcategoryType === 'monthly_elevation' || subcategoryType === 'monthly_distance';
   let progressTargetId: string | null = null;
-  if (isMonthlyElev) {
-    // Find lowest threshold locked badge
+  if (hasProgressBar) {
     const firstLocked = orderedBadges.find(b => !b.unlocked);
     if (firstLocked) progressTargetId = firstLocked.badge.id;
   }
@@ -46,6 +46,9 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
           } else if (sub === 'monthly_elevation') {
             titleLine = `${userBadge.badge.threshold.toLocaleString()} m`;
             countLabel = language === 'no' ? 'på en måned' : 'in a month';
+          } else if (sub === 'monthly_distance') {
+            titleLine = `${userBadge.badge.threshold} km`;
+            countLabel = language === 'no' ? 'på en måned' : 'in a month';
           } else {
             titleLine = title;
             countLabel = t(userBadge.badge.descriptionKey);
@@ -54,9 +57,10 @@ const UniquePeaksBadgeBoard = ({ badges, onSelectBadge, adminMode = false, onPre
           const isHighPeaks = sub === 'high_peaks';
           const isUniquePeaks = sub === 'unique_peaks';
           const isMonthlyElevation = sub === 'monthly_elevation';
-          const isStandalone = isHighPeaks || isMonthlyElevation;
+          const isMonthlyDistance = sub === 'monthly_distance';
+          const isStandalone = isHighPeaks || isMonthlyElevation || isMonthlyDistance;
           const showGlow = false;
-          const showProgressBar = isMonthlyElevation && !userBadge.unlocked && progressTargetId === userBadge.badge.id;
+          const showProgressBar = (isMonthlyElevation || isMonthlyDistance) && !userBadge.unlocked && progressTargetId === userBadge.badge.id;
           const progressPercent = showProgressBar ? Math.min((userBadge.progress / userBadge.badge.threshold) * 100, 100) : 0;
 
           // Standalone images (high peaks, monthly elevation) without circular socket

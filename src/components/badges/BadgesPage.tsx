@@ -89,13 +89,13 @@ const BadgesPage = () => {
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
             {SUBCATEGORY_NAMES[subcategory]?.[language] || subcategory}
           </p>
-          {(subcategory === 'unique_peaks' || subcategory === 'high_peaks' || subcategory === 'monthly_elevation') ? (
+          {(subcategory === 'unique_peaks' || subcategory === 'high_peaks' || subcategory === 'monthly_elevation' || subcategory === 'monthly_distance') ? (
             <UniquePeaksBadgeBoard
               badges={badgeList}
               onSelectBadge={setSelectedBadge}
               adminMode={adminMode}
               onPreviewBadge={setPreviewUnlockBadge}
-              columns={2}
+              columns={subcategory === 'monthly_distance' ? 3 : 2}
             />
           ) : (subcategory === 'daily_checkins' || subcategory === 'streaks' || subcategory === 'monthly_sessions') ? (
           <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 shadow-md">
