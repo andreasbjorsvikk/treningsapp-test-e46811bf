@@ -1062,7 +1062,15 @@ const IndexContent = () => {
       <GoalTutorialDialog open={showGoalTip} onClose={() => setShowGoalTip(false)} />
       <TrainingTutorialDialog open={showTrainingTutorial} onClose={() => setShowTrainingTutorial(false)} />
       <CalendarTutorialDialog open={showCalendarTutorial} onClose={() => setShowCalendarTutorial(false)} />
-      <WelcomeDialog open={showWelcome} onClose={() => setShowWelcome(false)} username={username} />
+      <WelcomeDialog
+        open={showWelcome}
+        onClose={() => setShowWelcome(false)}
+        username={username}
+        onNavigateToStrava={() => {
+          setActiveTab('settings');
+          setTimeout(() => window.dispatchEvent(new CustomEvent('navigate-to-strava-sync')), 100);
+        }}
+      />
       <FullTutorialFlow
         open={showFullTutorial}
         onClose={() => setShowFullTutorial(false)}
