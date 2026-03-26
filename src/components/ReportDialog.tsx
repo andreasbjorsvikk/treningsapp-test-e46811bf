@@ -50,12 +50,16 @@ const ReportDialog = ({ open, onClose, data }: ReportDialogProps) => {
               {Object.entries(data.sessionsByType)
                 .filter(([, count]) => count > 0)
                 .sort(([, a], [, b]) => b - a)
-                .map(([type, count]) => (
-                  <div key={type} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-muted/50 border border-border/30">
-                    <ActivityIcon type={type as SessionType} className="w-4 h-4" />
-                    <span className="text-xs font-medium">{count}</span>
-                  </div>
-                ))}
+                .map(([type, count]) => {
+                  const colors = getActivityColors(type as SessionType, isDark);
+                  return (
+                    <div key={type} className="flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-border/30"
+                      style={{ backgroundColor: colors.bg }}>
+                      <ActivityIcon type={type as SessionType} className="w-4 h-4" colorOverride={colors.text} />
+                      <span className="text-xs font-medium" style={{ color: colors.text }}>{count}</span>
+                    </div>
+                  );
+                })}
             </div>
           </div>
 
