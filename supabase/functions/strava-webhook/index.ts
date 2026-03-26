@@ -152,7 +152,64 @@ Deno.serve(async (req) => {
           max_heartrate: a.max_heartrate ? Math.round(a.max_heartrate) : null,
           summary_polyline: a.map?.summary_polyline || null,
           notes: null,
+          source_primary: 'strava',
+          sync_status: 'synced',
+          imported_at: new Date().toISOString(),
         };
+
+        // For CREATE: check for matching non-strava sessions to merge
+        if (aspect_type === "create") {
+          const { data: nonStravaSessions } = await admin.from("workout_sessions")
+            .select("id, type, date, duration_minutes, distance, elevation_gain, source_primary")
+            .eq("user_id", userId)
+            .is("strava_activity_id", null);
+
+          const rowTime = new Date(row.date).getTime();
+          const rowGroup = getActivityGroup(row.type);
+          let matchId: string | null = null;
+
+          for (const m of (nonStravaSessions || [])) {
+            const mTime = new Date(m.date).getTime();
+            if (Math.abs(rowTime - mTime) > 15 * 60 * 1000) continue;
+            const mGroup = getActivityGroup(m.type);
+            if (rowGroup !== mGroup) continue;
+            if (rowGroup === 'other' && mGroup === 'other') continue;
+
+            // Check 2/3 metrics
+            const checks: (boolean | null)[] = [];
+            if (row.duration_minutes > 0 && m.duration_minutes > 0) {
+              const diff = Math.abs(row.duration_minutes - m.duration_minutes);
+              checks.push(diff / Math.max(row.duration_minutes, m.duration_minutes) <= 0.20);
+            } else checks.push(null);
+            if (row.distance && m.distance) {
+              const diff = Math.abs(row.distance - m.distance);
+              checks.push(diff / Math.max(row.distance, m.distance) <= 0.20);
+            } else checks.push(null);
+            if (row.elevation_gain && m.elevation_gain) {
+              const diff = Math.abs(row.elevation_gain - m.elevation_gain);
+              checks.push(diff / Math.max(row.elevation_gain, m.elevation_gain) <= 0.20);
+            } else checks.push(null);
+
+            const matchCount = checks.filter(c => c === true).length;
+            const conclusiveCount = checks.filter(c => c !== null).length;
+            if (matchCount >= 2 || (conclusiveCount === 1 && matchCount === 1)) {
+              matchId = m.id;
+              break;
+            }
+          }
+
+          if (matchId) {
+            // Merge: update existing session with strava link
+            await admin.from("workout_sessions").update({
+              strava_activity_id: a.id,
+              source_primary: 'strava',
+              sync_status: 'matched',
+              source_history: [{ source: 'merged_via_webhook', linked_at: new Date().toISOString() }],
+            }).eq("id", matchId);
+            console.log(`Merged activity ${a.id} with existing session ${matchId} for user ${userId}`);
+            return new Response("OK", { status: 200, headers: corsHeaders });
+          }
+        }
 
         const { error } = await admin
           .from("workout_sessions")
@@ -161,7 +218,7 @@ Deno.serve(async (req) => {
         if (error) {
           console.error("Upsert error:", error);
         } else {
-          console.log(`Upserted activity ${object_id} (${aspect_type}) for user ${userId}`);
+          console.log(`Upserted activity ${a.id} (${aspect_type}) for user ${userId}`);
         }
 
         // If it's an update, clear cached streams so they get re-fetched
