@@ -28,12 +28,12 @@ const StatsOverview = ({ stats, compact, onClick }: StatsOverviewProps) => {
           onClick={onClick}
         >
           <div className="flex items-center gap-1.5 mb-0.5">
-            <stat.icon className={`w-3 h-3 ${stat.accent}`} />
-            <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wide">
+            <stat.icon className={`w-3.5 h-3.5 ${stat.accent}`} />
+            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
               {stat.label}
             </span>
           </div>
-          <p className={`font-display font-bold ${compact ? 'text-sm' : 'text-lg'}`}>{stat.value}</p>
+          <p className={`font-display font-bold ${compact ? 'text-base' : 'text-xl'}`}>{stat.value}</p>
         </div>
       ))}
     </div>
