@@ -20,39 +20,29 @@ interface ReportDialogProps {
 // Custom SVG: Mountain with elevation text inside
 const MountainGraphic = ({ value }: { value: string }) => (
   <svg viewBox="0 0 120 90" className="w-full h-full" fill="none">
-    {/* Mountain shape */}
     <path d="M10 85 L40 20 L55 45 L70 15 L110 85 Z" fill="hsl(var(--primary) / 0.15)" stroke="hsl(var(--primary) / 0.3)" strokeWidth="1.5" />
     <path d="M40 20 L48 35 L55 45 L50 38 Z" fill="hsl(var(--primary) / 0.08)" />
     <path d="M70 15 L78 30 L85 42 L75 35 Z" fill="hsl(var(--primary) / 0.08)" />
-    {/* Snow caps */}
     <path d="M37 25 L40 20 L43 25 L41 24 Z" fill="hsl(var(--muted-foreground) / 0.2)" />
     <path d="M67 20 L70 15 L73 20 L71 19 Z" fill="hsl(var(--muted-foreground) / 0.2)" />
-    {/* Value text centered in mountain */}
-    <text x="60" y="62" textAnchor="middle" className="fill-foreground font-extrabold" fontSize="18">{value}</text>
-    <text x="60" y="76" textAnchor="middle" className="fill-muted-foreground" fontSize="8" letterSpacing="1">HØYDEMETER</text>
+    <text x="60" y="62" textAnchor="middle" className="fill-foreground font-extrabold" fontSize="16">{value} m</text>
   </svg>
 );
 
-// Custom SVG: Road/path with km on it
+// Custom SVG: Horizontal road with km on it
 const RoadGraphic = ({ value }: { value: string }) => (
   <svg viewBox="0 0 120 90" className="w-full h-full" fill="none">
-    {/* Road shape */}
-    <path d="M15 80 Q30 50 50 45 Q70 40 90 25 L95 20" stroke="hsl(var(--primary) / 0.3)" strokeWidth="16" strokeLinecap="round" />
-    <path d="M15 80 Q30 50 50 45 Q70 40 90 25 L95 20" stroke="hsl(var(--primary) / 0.12)" strokeWidth="12" strokeLinecap="round" />
-    {/* Dashed center line */}
-    <path d="M15 80 Q30 50 50 45 Q70 40 90 25 L95 20" stroke="hsl(var(--primary) / 0.25)" strokeWidth="1" strokeLinecap="round" strokeDasharray="4 4" />
-    {/* Value on the road */}
-    <text x="55" y="42" textAnchor="middle" className="fill-foreground font-extrabold" fontSize="18">{value}</text>
-    <text x="55" y="56" textAnchor="middle" className="fill-muted-foreground" fontSize="8" letterSpacing="1">KM</text>
+    <path d="M5 55 L115 55" stroke="hsl(var(--primary) / 0.3)" strokeWidth="18" strokeLinecap="round" />
+    <path d="M5 55 L115 55" stroke="hsl(var(--primary) / 0.12)" strokeWidth="14" strokeLinecap="round" />
+    <path d="M10 55 L110 55" stroke="hsl(var(--primary) / 0.25)" strokeWidth="1" strokeLinecap="round" strokeDasharray="6 5" />
+    <text x="60" y="42" textAnchor="middle" className="fill-foreground font-extrabold" fontSize="16">{value} km</text>
   </svg>
 );
 
 // Custom SVG: Clock with time inside
 const ClockGraphic = ({ value }: { value: string }) => (
   <svg viewBox="0 0 120 90" className="w-full h-full" fill="none">
-    {/* Clock circle */}
     <circle cx="60" cy="45" r="35" fill="hsl(var(--primary) / 0.08)" stroke="hsl(var(--primary) / 0.25)" strokeWidth="2" />
-    {/* Hour markers */}
     {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((angle) => {
       const rad = (angle * Math.PI) / 180;
       const x1 = 60 + 30 * Math.sin(rad);
@@ -61,13 +51,10 @@ const ClockGraphic = ({ value }: { value: string }) => (
       const y2 = 45 - 33 * Math.cos(rad);
       return <line key={angle} x1={x1} y1={y1} x2={x2} y2={y2} stroke="hsl(var(--primary) / 0.3)" strokeWidth="1.5" />;
     })}
-    {/* Clock hands */}
     <line x1="60" y1="45" x2="60" y2="22" stroke="hsl(var(--primary) / 0.4)" strokeWidth="2" strokeLinecap="round" />
     <line x1="60" y1="45" x2="75" y2="38" stroke="hsl(var(--primary) / 0.3)" strokeWidth="1.5" strokeLinecap="round" />
     <circle cx="60" cy="45" r="2" fill="hsl(var(--primary) / 0.4)" />
-    {/* Value centered */}
-    <text x="60" y="50" textAnchor="middle" className="fill-foreground font-extrabold" fontSize="14">{value}</text>
-    <text x="60" y="62" textAnchor="middle" className="fill-muted-foreground" fontSize="7" letterSpacing="1">VARIGHET</text>
+    <text x="60" y="56" textAnchor="middle" className="fill-foreground font-bold" fontSize="11">{value}</text>
   </svg>
 );
 
@@ -146,7 +133,7 @@ const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) 
               </div>
             )}
             <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-              <ClockGraphic value={data.totalMinutes >= 60 ? `${Math.floor(data.totalMinutes / 60)}t${data.totalMinutes % 60}m` : `${data.totalMinutes}m`} />
+              <ClockGraphic value={data.totalMinutes >= 60 ? `${Math.floor(data.totalMinutes / 60)}t ${data.totalMinutes % 60}m` : `${data.totalMinutes}m`} />
             </div>
           </div>
 
@@ -182,8 +169,8 @@ const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) 
           </h3>
         </div>
 
-        <div className="flex justify-center">
-          <div className="w-40 h-40">
+        <div className="flex justify-center py-2">
+          <div className="w-44 h-44">
             <ProgressWheel
               percent={percent}
               current={data.primaryGoalCurrent!}
@@ -191,6 +178,7 @@ const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) 
               unit={data.primaryGoalUnit}
               title=""
               hasGoal={true}
+              naked={true}
             />
           </div>
         </div>
@@ -236,10 +224,10 @@ const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) 
             const currentDisplay = goal.metric === 'distance' ? current.toFixed(1) : Math.round(current);
             return (
               <div key={goal.id}
-                className={`p-3 rounded-2xl border space-y-2 ${
+                className={`p-3 rounded-2xl border-2 space-y-2 ${
                   reached
-                    ? 'bg-green-500/8 border-green-500/20'
-                    : 'bg-red-500/8 border-red-500/20'
+                    ? 'bg-green-500/8 border-green-500/40'
+                    : 'bg-red-500/8 border-red-500/40'
                 }`}
               >
                 <div className="flex items-center gap-3">
