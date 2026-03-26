@@ -25,17 +25,25 @@ const MountainGraphic = ({ value }: { value: string }) => (
     <path d="M70 15 L78 30 L85 42 L75 35 Z" fill="hsl(var(--primary) / 0.08)" />
     <path d="M37 25 L40 20 L43 25 L41 24 Z" fill="hsl(var(--muted-foreground) / 0.2)" />
     <path d="M67 20 L70 15 L73 20 L71 19 Z" fill="hsl(var(--muted-foreground) / 0.2)" />
-    <text x="60" y="62" textAnchor="middle" className="fill-foreground font-extrabold" fontSize="16">{value} m</text>
+    <text x="60" y="68" textAnchor="middle" className="fill-foreground font-extrabold" fontSize="16">{value} m</text>
   </svg>
 );
 
-// Custom SVG: Horizontal road with km on it
-const RoadGraphic = ({ value }: { value: string }) => (
+// Custom SVG: Distance pins with line between
+const DistanceGraphic = ({ value }: { value: string }) => (
   <svg viewBox="0 0 120 90" className="w-full h-full" fill="none">
-    <path d="M5 55 L115 55" stroke="hsl(var(--primary) / 0.3)" strokeWidth="18" strokeLinecap="round" />
-    <path d="M5 55 L115 55" stroke="hsl(var(--primary) / 0.12)" strokeWidth="14" strokeLinecap="round" />
-    <path d="M10 55 L110 55" stroke="hsl(var(--primary) / 0.25)" strokeWidth="1" strokeLinecap="round" strokeDasharray="6 5" />
-    <text x="60" y="42" textAnchor="middle" className="fill-foreground font-extrabold" fontSize="16">{value} km</text>
+    {/* Left pin */}
+    <circle cx="20" cy="38" r="8" fill="hsl(var(--primary) / 0.2)" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1.5" />
+    <circle cx="20" cy="38" r="3" fill="hsl(var(--primary) / 0.5)" />
+    <path d="M20 46 L20 52" stroke="hsl(var(--primary) / 0.3)" strokeWidth="1.5" />
+    {/* Right pin */}
+    <circle cx="100" cy="38" r="8" fill="hsl(var(--primary) / 0.2)" stroke="hsl(var(--primary) / 0.4)" strokeWidth="1.5" />
+    <circle cx="100" cy="38" r="3" fill="hsl(var(--primary) / 0.5)" />
+    <path d="M100 46 L100 52" stroke="hsl(var(--primary) / 0.3)" strokeWidth="1.5" />
+    {/* Dashed line between */}
+    <path d="M28 50 L92 50" stroke="hsl(var(--primary) / 0.25)" strokeWidth="1.5" strokeDasharray="4 3" />
+    {/* Value */}
+    <text x="60" y="72" textAnchor="middle" className="fill-foreground font-extrabold" fontSize="16">{value} km</text>
   </svg>
 );
 
@@ -54,7 +62,7 @@ const ClockGraphic = ({ value }: { value: string }) => (
     <line x1="60" y1="45" x2="60" y2="22" stroke="hsl(var(--primary) / 0.4)" strokeWidth="2" strokeLinecap="round" />
     <line x1="60" y1="45" x2="75" y2="38" stroke="hsl(var(--primary) / 0.3)" strokeWidth="1.5" strokeLinecap="round" />
     <circle cx="60" cy="45" r="2" fill="hsl(var(--primary) / 0.4)" />
-    <text x="60" y="56" textAnchor="middle" className="fill-foreground font-bold" fontSize="11">{value}</text>
+    <text x="60" y="58" textAnchor="middle" className="fill-foreground font-bold" fontSize="10">{value}</text>
   </svg>
 );
 
