@@ -18,6 +18,8 @@ interface ReportDialogProps {
 
 const ReportDialog = ({ open, onClose, data }: ReportDialogProps) => {
   const [slide, setSlide] = useState(0);
+  const { settings } = useSettings();
+  const isDark = settings.darkMode;
 
   if (!data) return null;
 
