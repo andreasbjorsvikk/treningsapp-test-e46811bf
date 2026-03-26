@@ -80,6 +80,7 @@ const SettingsPage = () => {
   const [gdprSubView, setGdprSubView] = useState<'main' | 'deleteData' | 'deleteAccount' | 'downloadData'>('main');
   const [helpOpenSections, setHelpOpenSections] = useState<Set<string>>(new Set());
   const [showSettingsTutorial, setShowSettingsTutorial] = useState(false);
+  const [sessionTypesOpen, setSessionTypesOpen] = useState(false);
 
   // Listen for full tutorial flow showing settings tutorial
   useEffect(() => {
@@ -464,7 +465,6 @@ const SettingsPage = () => {
   // ========== TRAINING VIEW ==========
   if (view === 'training') {
     const disabledTypes = settings.disabledSessionTypes || [];
-    const [sessionTypesOpen, setSessionTypesOpen] = useState(false);
     return (
       <div className="space-y-4">
         {backButton(t('settings.training'))}
