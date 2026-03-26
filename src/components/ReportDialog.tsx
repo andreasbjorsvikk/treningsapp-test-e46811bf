@@ -7,6 +7,8 @@ import ActivityIcon from '@/components/ActivityIcon';
 import ProgressWheel from '@/components/ProgressWheel';
 import GoalProgressVisual from '@/components/GoalProgressVisual';
 import { SessionType } from '@/types/workout';
+import { getActivityColors } from '@/utils/activityColors';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface ReportDialogProps {
   open: boolean;
