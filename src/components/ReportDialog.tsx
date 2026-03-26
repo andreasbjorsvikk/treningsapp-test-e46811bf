@@ -178,6 +178,7 @@ const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) 
               unit={data.primaryGoalUnit}
               title=""
               hasGoal={true}
+              naked={true}
             />
           </div>
         </div>
