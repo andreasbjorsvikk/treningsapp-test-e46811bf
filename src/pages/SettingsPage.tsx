@@ -124,6 +124,9 @@ const SettingsPage = () => {
       setView('sync');
     }
     stravaService.getStatus().then(s => setStravaConnected(s.connected)).catch(() => {});
+    if (isNativePlatform() && isIOS()) {
+      appleHealthService.getConnection().then(c => setAhConnection(c)).catch(() => {});
+    }
   }, [user]);
   // Load profile
   useEffect(() => {
