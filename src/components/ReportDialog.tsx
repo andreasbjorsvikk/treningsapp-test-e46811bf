@@ -74,7 +74,7 @@ const ReportDialog = ({ open, onClose, data }: ReportDialogProps) => {
             {data.totalElevation > 0 && (
               <div className="text-center p-3 rounded-xl bg-muted/40 border border-border/30">
                 <p className="text-lg font-bold text-foreground">{data.totalElevation.toLocaleString()}</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">hm</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">høydemeter</p>
               </div>
             )}
             <div className="text-center p-3 rounded-xl bg-muted/40 border border-border/30">
@@ -130,14 +130,18 @@ const ReportDialog = ({ open, onClose, data }: ReportDialogProps) => {
             <>
               <p className="text-lg font-bold text-foreground">Du nådde målet!</p>
               {diff > 0 && (
-                <p className="text-sm text-muted-foreground">{diff} {data.primaryGoalUnit} mer enn målet</p>
+                <p className="text-sm text-muted-foreground">
+                  {diff} {diff === 1 ? 'økt' : data.primaryGoalUnit} mer enn målet
+                </p>
               )}
             </>
           ) : (
             <>
               <p className="text-lg font-bold text-foreground">Nesten!</p>
               <p className="text-sm text-muted-foreground">
-                {Math.abs(diff)} {data.primaryGoalUnit} {diff < 0 ? 'fra målet' : 'over målet'}
+                {Math.abs(diff)} {Math.abs(diff) === 1 ? 'økt' : data.primaryGoalUnit} fra målet
+              </p>
+            </>
               </p>
             </>
           )}
