@@ -237,7 +237,7 @@ Deno.serve(async (req) => {
         activities.push(...batch);
         page++;
       }
-      // Get existing strava_activity_ids and manual sessions for dedup
+      // Get existing strava_activity_ids for quick skip
       const existingIds = new Set<number>();
       const { data: existingRows } = await admin.from("workout_sessions")
         .select("strava_activity_id")
@@ -249,17 +249,60 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Fetch manual sessions for duplicate detection
-      const { data: manualSessions } = await admin.from("workout_sessions")
-        .select("type, date, duration_minutes, distance, elevation_gain")
+      // Fetch non-strava sessions for merge detection (manual + apple_health)
+      const { data: nonStravaSessions } = await admin.from("workout_sessions")
+        .select("id, type, date, duration_minutes, distance, elevation_gain, source_primary, apple_health_workout_id")
         .eq("user_id", userId)
         .is("strava_activity_id", null);
 
-      // Build rows, filter out duplicates of manual sessions
       const allRows = activities.map((a) => buildActivityRow(a, userId));
-      const rowsToUpsert = allRows.filter(r => !isDuplicate(r, manualSessions || []));
+
+      // Separate into: already synced (update), matched (merge), new (insert)
+      const rowsToUpsert: any[] = [];
+      const mergeUpdates: { id: string; strava_activity_id: number; source_primary: string; sync_status: string; source_history: any }[] = [];
+      let merged = 0;
+
+      for (const row of allRows) {
+        // Already synced via strava_activity_id — just upsert to update
+        if (existingIds.has(Number(row.strava_activity_id))) {
+          rowsToUpsert.push(row);
+          continue;
+        }
+
+        // Try to find a matching non-strava session to merge with
+        const match = findMatchingSession(row, nonStravaSessions || []);
+        if (match) {
+          // Merge: update existing session with strava link
+          mergeUpdates.push({
+            id: match.id,
+            strava_activity_id: row.strava_activity_id,
+            source_primary: 'strava',
+            sync_status: 'matched',
+            source_history: [
+              { source: match.source_primary || 'manual', linked_at: new Date().toISOString(), action: 'merged_with_strava' }
+            ],
+          });
+          // Remove from candidates so it can't match again
+          const idx = (nonStravaSessions || []).indexOf(match);
+          if (idx >= 0) nonStravaSessions!.splice(idx, 1);
+          merged++;
+        } else {
+          // No match — insert as new
+          rowsToUpsert.push(row);
+        }
+      }
+
+      // Execute merge updates
+      for (const upd of mergeUpdates) {
+        await admin.from("workout_sessions").update({
+          strava_activity_id: upd.strava_activity_id,
+          source_primary: upd.source_primary,
+          sync_status: upd.sync_status,
+          source_history: upd.source_history,
+        }).eq("id", upd.id);
+      }
+
       const newCount = rowsToUpsert.filter(r => !existingIds.has(Number(r.strava_activity_id))).length;
-      const skipped = allRows.length - rowsToUpsert.length;
 
       for (let i = 0; i < rowsToUpsert.length; i += 100) {
         const batch = rowsToUpsert.slice(i, i + 100);
