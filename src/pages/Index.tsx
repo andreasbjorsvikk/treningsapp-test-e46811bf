@@ -176,6 +176,59 @@ const IndexContent = () => {
     return () => window.removeEventListener('navigate-to-map-suggestions', handler);
   }, []);
 
+  // Report trigger logic
+  useEffect(() => {
+    if (!user || appData.loading) return;
+
+    // Check weekly report
+    if (settings.weeklyReportEnabled !== false) {
+      const weekKey = getReportDismissKey('week');
+      const dismissed = localStorage.getItem(weekKey);
+      const laterKey = getReportLaterKey('week');
+      const laterTs = localStorage.getItem(laterKey);
+      
+      if (!dismissed) {
+        if (laterTs) {
+          // "Se senere" was chosen - show banner for 48h
+          const ts = parseInt(laterTs);
+          if (Date.now() - ts < 48 * 60 * 60 * 1000) {
+            setPendingWeekReport(true);
+          } else {
+            localStorage.setItem(weekKey, 'true');
+            setPendingWeekReport(false);
+          }
+        } else if (shouldShowWeeklyReport()) {
+          // Show prompt
+          setTimeout(() => setReportPromptType('week'), 1500);
+        }
+      }
+    }
+
+    // Check monthly report
+    if (settings.monthlyReportEnabled !== false) {
+      const monthKey = getReportDismissKey('month');
+      const dismissed = localStorage.getItem(monthKey);
+      const laterKey = getReportLaterKey('month');
+      const laterTs = localStorage.getItem(laterKey);
+      
+      if (!dismissed) {
+        if (laterTs) {
+          const ts = parseInt(laterTs);
+          if (Date.now() - ts < 48 * 60 * 60 * 1000) {
+            setPendingMonthReport(true);
+          } else {
+            localStorage.setItem(monthKey, 'true');
+            setPendingMonthReport(false);
+          }
+        } else if (shouldShowMonthlyReport() && !reportPromptType) {
+          setTimeout(() => {
+            if (!reportPromptType) setReportPromptType('month');
+          }, 2000);
+        }
+      }
+    }
+  }, [user, appData.loading, settings.weeklyReportEnabled, settings.monthlyReportEnabled]);
+
   // Listen for full tutorial start from help section
   useEffect(() => {
     const handler = () => {
