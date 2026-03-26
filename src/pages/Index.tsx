@@ -113,6 +113,13 @@ const IndexContent = () => {
   const [adminPreviewYear, setAdminPreviewYear] = useState(false);
   const [showFullTutorial, setShowFullTutorial] = useState(false);
 
+  // Report state
+  const [reportPromptType, setReportPromptType] = useState<'week' | 'month' | null>(null);
+  const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [showReport, setShowReport] = useState(false);
+  const [pendingWeekReport, setPendingWeekReport] = useState(false);
+  const [pendingMonthReport, setPendingMonthReport] = useState(false);
+
   // Profile info
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [username, setUsername] = useState('');
