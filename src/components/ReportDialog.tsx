@@ -132,7 +132,7 @@ const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) 
           <div className="grid grid-cols-3 gap-2">
             {data.totalDistance > 0 && (
               <div className="animate-fade-in">
-                <RoadGraphic value={data.totalDistance.toFixed(1)} />
+                <DistanceGraphic value={data.totalDistance.toFixed(1)} />
               </div>
             )}
             {data.totalElevation > 0 && (
