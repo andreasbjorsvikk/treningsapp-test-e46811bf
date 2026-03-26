@@ -169,7 +169,7 @@ const IndexContent = () => {
   // Listen for full tutorial start from help section
   useEffect(() => {
     const handler = () => {
-      setActiveTab('trening');
+      setActiveTab('hjem');
       setShowFullTutorial(true);
     };
     window.addEventListener('start-full-tutorial', handler);
