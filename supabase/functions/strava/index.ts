@@ -85,6 +85,9 @@ function buildActivityRow(a: any, userId: string) {
     max_heartrate: a.max_heartrate ? Math.round(a.max_heartrate) : null,
     summary_polyline: a.map?.summary_polyline || null,
     notes: null,
+    source_primary: 'strava',
+    sync_status: 'synced',
+    imported_at: new Date().toISOString(),
   };
 }
 
