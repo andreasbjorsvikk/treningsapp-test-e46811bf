@@ -169,8 +169,8 @@ const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) 
           </h3>
         </div>
 
-        <div className="flex justify-center">
-          <div className="w-40 h-40">
+        <div className="flex justify-center py-2">
+          <div className="w-44 h-44">
             <ProgressWheel
               percent={percent}
               current={data.primaryGoalCurrent!}
@@ -223,10 +223,10 @@ const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) 
             const currentDisplay = goal.metric === 'distance' ? current.toFixed(1) : Math.round(current);
             return (
               <div key={goal.id}
-                className={`p-3 rounded-2xl border space-y-2 ${
+                className={`p-3 rounded-2xl border-2 space-y-2 ${
                   reached
-                    ? 'bg-green-500/8 border-green-500/20'
-                    : 'bg-red-500/8 border-red-500/20'
+                    ? 'bg-green-500/8 border-green-500/40'
+                    : 'bg-red-500/8 border-red-500/40'
                 }`}
               >
                 <div className="flex items-center gap-3">
