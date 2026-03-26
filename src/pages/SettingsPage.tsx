@@ -95,6 +95,13 @@ const SettingsPage = () => {
     return () => window.removeEventListener('settings-reset-to-main', handler);
   }, []);
 
+  // Listen for navigate-to-strava-sync from welcome dialog
+  useEffect(() => {
+    const handler = () => setView('sync');
+    window.addEventListener('navigate-to-strava-sync', handler);
+    return () => window.removeEventListener('navigate-to-strava-sync', handler);
+  }, []);
+
   // Child privacy options
   const [hasChildren, setHasChildren] = useState(false);
   const [childPrivacyProfile, setChildPrivacyProfile] = useState('friends');
