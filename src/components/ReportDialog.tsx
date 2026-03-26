@@ -133,7 +133,7 @@ const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) 
               </div>
             )}
             <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-              <ClockGraphic value={data.totalMinutes >= 60 ? `${Math.floor(data.totalMinutes / 60)}t${data.totalMinutes % 60}m` : `${data.totalMinutes}m`} />
+              <ClockGraphic value={data.totalMinutes >= 60 ? `${Math.floor(data.totalMinutes / 60)}t ${data.totalMinutes % 60}m` : `${data.totalMinutes}m`} />
             </div>
           </div>
 
