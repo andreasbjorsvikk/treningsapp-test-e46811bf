@@ -80,6 +80,11 @@ const SettingsPage = () => {
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
   const [realFriends, setRealFriends] = useState<Friend[]>([]);
   const [gdprSubView, setGdprSubView] = useState<'main' | 'deleteData' | 'deleteAccount' | 'downloadData'>('main');
+  // Apple Health state
+  const [ahConnection, setAhConnection] = useState<AppleHealthConnection | null>(null);
+  const [ahLoading, setAhLoading] = useState(false);
+  const [showStravaSourceModal, setShowStravaSourceModal] = useState(false);
+  const [showAhWorkoutPrompt, setShowAhWorkoutPrompt] = useState(false);
   const [helpOpenSections, setHelpOpenSections] = useState<Set<string>>(new Set());
   const [showSettingsTutorial, setShowSettingsTutorial] = useState(false);
   const [sessionTypesOpen, setSessionTypesOpen] = useState(false);
