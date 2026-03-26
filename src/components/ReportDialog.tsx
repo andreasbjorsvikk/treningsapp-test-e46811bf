@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, ChevronRight, ChevronLeft, Trophy, Award, Check, Mountain, Route, Clock, RefreshCw } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Trophy, Award, Check, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ReportData } from '@/utils/reportUtils';
@@ -17,6 +17,60 @@ interface ReportDialogProps {
   onRepeatGoal?: (goalId: string) => void;
 }
 
+// Custom SVG: Mountain with elevation text inside
+const MountainGraphic = ({ value }: { value: string }) => (
+  <svg viewBox="0 0 120 90" className="w-full h-full" fill="none">
+    {/* Mountain shape */}
+    <path d="M10 85 L40 20 L55 45 L70 15 L110 85 Z" fill="hsl(var(--primary) / 0.15)" stroke="hsl(var(--primary) / 0.3)" strokeWidth="1.5" />
+    <path d="M40 20 L48 35 L55 45 L50 38 Z" fill="hsl(var(--primary) / 0.08)" />
+    <path d="M70 15 L78 30 L85 42 L75 35 Z" fill="hsl(var(--primary) / 0.08)" />
+    {/* Snow caps */}
+    <path d="M37 25 L40 20 L43 25 L41 24 Z" fill="hsl(var(--muted-foreground) / 0.2)" />
+    <path d="M67 20 L70 15 L73 20 L71 19 Z" fill="hsl(var(--muted-foreground) / 0.2)" />
+    {/* Value text centered in mountain */}
+    <text x="60" y="62" textAnchor="middle" className="fill-foreground font-extrabold" fontSize="18">{value}</text>
+    <text x="60" y="76" textAnchor="middle" className="fill-muted-foreground" fontSize="8" letterSpacing="1">HØYDEMETER</text>
+  </svg>
+);
+
+// Custom SVG: Road/path with km on it
+const RoadGraphic = ({ value }: { value: string }) => (
+  <svg viewBox="0 0 120 90" className="w-full h-full" fill="none">
+    {/* Road shape */}
+    <path d="M15 80 Q30 50 50 45 Q70 40 90 25 L95 20" stroke="hsl(var(--primary) / 0.3)" strokeWidth="16" strokeLinecap="round" />
+    <path d="M15 80 Q30 50 50 45 Q70 40 90 25 L95 20" stroke="hsl(var(--primary) / 0.12)" strokeWidth="12" strokeLinecap="round" />
+    {/* Dashed center line */}
+    <path d="M15 80 Q30 50 50 45 Q70 40 90 25 L95 20" stroke="hsl(var(--primary) / 0.25)" strokeWidth="1" strokeLinecap="round" strokeDasharray="4 4" />
+    {/* Value on the road */}
+    <text x="55" y="42" textAnchor="middle" className="fill-foreground font-extrabold" fontSize="18">{value}</text>
+    <text x="55" y="56" textAnchor="middle" className="fill-muted-foreground" fontSize="8" letterSpacing="1">KM</text>
+  </svg>
+);
+
+// Custom SVG: Clock with time inside
+const ClockGraphic = ({ value }: { value: string }) => (
+  <svg viewBox="0 0 120 90" className="w-full h-full" fill="none">
+    {/* Clock circle */}
+    <circle cx="60" cy="45" r="35" fill="hsl(var(--primary) / 0.08)" stroke="hsl(var(--primary) / 0.25)" strokeWidth="2" />
+    {/* Hour markers */}
+    {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((angle) => {
+      const rad = (angle * Math.PI) / 180;
+      const x1 = 60 + 30 * Math.sin(rad);
+      const y1 = 45 - 30 * Math.cos(rad);
+      const x2 = 60 + 33 * Math.sin(rad);
+      const y2 = 45 - 33 * Math.cos(rad);
+      return <line key={angle} x1={x1} y1={y1} x2={x2} y2={y2} stroke="hsl(var(--primary) / 0.3)" strokeWidth="1.5" />;
+    })}
+    {/* Clock hands */}
+    <line x1="60" y1="45" x2="60" y2="22" stroke="hsl(var(--primary) / 0.4)" strokeWidth="2" strokeLinecap="round" />
+    <line x1="60" y1="45" x2="75" y2="38" stroke="hsl(var(--primary) / 0.3)" strokeWidth="1.5" strokeLinecap="round" />
+    <circle cx="60" cy="45" r="2" fill="hsl(var(--primary) / 0.4)" />
+    {/* Value centered */}
+    <text x="60" y="50" textAnchor="middle" className="fill-foreground font-extrabold" fontSize="14">{value}</text>
+    <text x="60" y="62" textAnchor="middle" className="fill-muted-foreground" fontSize="7" letterSpacing="1">VARIGHET</text>
+  </svg>
+);
+
 const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) => {
   const [slide, setSlide] = useState(0);
   const [repeatConfirm, setRepeatConfirm] = useState<string | null>(null);
@@ -32,19 +86,18 @@ const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) 
     return 'økter';
   };
 
-  // Build slides dynamically
   const slides: React.ReactNode[] = [];
 
-  // Slide 1: Overview stats — redesigned
+  // Slide 1: Overview
   slides.push(
-    <div className="space-y-6" key="overview">
+    <div className="space-y-5" key="overview">
       <div className="text-center space-y-0.5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
           {data.period === 'week' ? 'Ukesrapport' : 'Månedsrapport'}
         </p>
         <h3 className="font-display font-bold text-2xl text-foreground">
           {data.period === 'month'
-            ? data.periodLabel.split(' ')[0] // Just "Mars" not "Mars 2026"
+            ? data.periodLabel.split(' ')[0]
             : data.periodLabel}
         </h3>
       </div>
@@ -58,12 +111,12 @@ const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) 
           {/* Session count */}
           <div className="text-center">
             <p className="text-5xl font-extrabold text-foreground leading-none">{data.totalSessions}</p>
-            <p className="text-sm text-muted-foreground mt-0.5">
+            <p className="text-sm text-muted-foreground mt-0">
               {data.totalSessions === 1 ? 'økt' : 'økter'}
             </p>
           </div>
 
-          {/* Session type chips - larger */}
+          {/* Session type chips */}
           <div className="flex justify-center gap-2 flex-wrap">
             {Object.entries(data.sessionsByType)
               .filter(([, count]) => count > 0)
@@ -80,49 +133,33 @@ const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) 
               })}
           </div>
 
-          {/* Stats cards with illustrations */}
+          {/* Custom graphic stats */}
           <div className="grid grid-cols-3 gap-2">
             {data.totalDistance > 0 && (
-              <div className="text-center p-3 rounded-2xl bg-muted/30 border border-border/20 relative overflow-hidden">
-                <div className="absolute inset-0 flex items-end justify-center opacity-10 pointer-events-none">
-                  <Route className="w-16 h-16 text-primary" strokeWidth={1} />
-                </div>
-                <p className="text-xl font-extrabold text-foreground relative z-10 animate-fade-in">{data.totalDistance.toFixed(1)}</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider relative z-10">km</p>
+              <div className="animate-fade-in">
+                <RoadGraphic value={data.totalDistance.toFixed(1)} />
               </div>
             )}
             {data.totalElevation > 0 && (
-              <div className="text-center p-3 rounded-2xl bg-muted/30 border border-border/20 relative overflow-hidden">
-                <div className="absolute inset-0 flex items-end justify-center opacity-10 pointer-events-none">
-                  <Mountain className="w-16 h-16 text-primary" strokeWidth={1} />
-                </div>
-                <p className="text-xl font-extrabold text-foreground relative z-10 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-                  {data.totalElevation.toLocaleString()}
-                </p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider relative z-10">høydemeter</p>
+              <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                <MountainGraphic value={data.totalElevation.toLocaleString()} />
               </div>
             )}
-            <div className="text-center p-3 rounded-2xl bg-muted/30 border border-border/20 relative overflow-hidden">
-              <div className="absolute inset-0 flex items-end justify-center opacity-10 pointer-events-none">
-                <Clock className="w-16 h-16 text-primary" strokeWidth={1} />
-              </div>
-              <p className="text-xl font-extrabold text-foreground relative z-10 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-                {data.totalMinutes >= 60 ? `${Math.floor(data.totalMinutes / 60)}t ${data.totalMinutes % 60}m` : `${data.totalMinutes}m`}
-              </p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider relative z-10">varighet</p>
+            <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+              <ClockGraphic value={data.totalMinutes >= 60 ? `${Math.floor(data.totalMinutes / 60)}t${data.totalMinutes % 60}m` : `${data.totalMinutes}m`} />
             </div>
           </div>
 
-          {/* Fun facts - more exciting */}
+          {/* Fun facts - compact */}
           {data.funFacts.length > 0 && (
-            <div className="space-y-2 pt-1">
+            <div className="space-y-1.5 pt-1">
               {data.funFacts.map((fact, i) => (
-                <div key={i} className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/15 animate-fade-in"
+                <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/15 animate-fade-in"
                   style={{ animationDelay: `${0.3 + i * 0.1}s` }}>
-                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                    <Trophy className="w-4 h-4 text-primary" />
+                  <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                    <Trophy className="w-3.5 h-3.5 text-amber-500" />
                   </div>
-                  <p className="text-sm font-semibold text-foreground">{fact}</p>
+                  <p className="text-xs font-semibold text-foreground">{fact}</p>
                 </div>
               ))}
             </div>
@@ -132,12 +169,12 @@ const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) 
     </div>
   );
 
-  // Slide 2 (month only): Primary goal wheel — no card wrapper
+  // Slide 2 (month only): Primary goal wheel — NO card wrapper
   if (data.period === 'month' && data.primaryGoalTarget !== null && data.primaryGoalTarget > 0) {
     const percent = (data.primaryGoalCurrent! / data.primaryGoalTarget) * 100;
     const diff = data.primaryGoalCurrent! - data.primaryGoalTarget;
     slides.push(
-      <div className="space-y-5" key="primary-goal">
+      <div className="space-y-4" key="primary-goal">
         <div className="text-center space-y-0.5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Månedsmål</p>
           <h3 className="font-display font-bold text-lg text-foreground">
@@ -146,7 +183,7 @@ const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) 
         </div>
 
         <div className="flex justify-center">
-          <div className="w-44 h-44">
+          <div className="w-40 h-40">
             <ProgressWheel
               percent={percent}
               current={data.primaryGoalCurrent!}
@@ -158,7 +195,7 @@ const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) 
           </div>
         </div>
 
-        <div className="text-center space-y-1.5">
+        <div className="text-center space-y-1">
           {data.primaryGoalCurrent! >= data.primaryGoalTarget ? (
             <>
               <p className="text-lg font-bold text-foreground">Du nådde målet! 🎯</p>
@@ -181,7 +218,7 @@ const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) 
     );
   }
 
-  // Slide 3: Extra goals for the period
+  // Slide 3: Extra goals
   if (data.extraGoals.length > 0) {
     slides.push(
       <div className="space-y-5" key="extra-goals">
@@ -198,7 +235,13 @@ const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) 
             const unit = formatMetricUnit(goal.metric);
             const currentDisplay = goal.metric === 'distance' ? current.toFixed(1) : Math.round(current);
             return (
-              <div key={goal.id} className="p-3 rounded-2xl bg-muted/30 border border-border/20 space-y-2">
+              <div key={goal.id}
+                className={`p-3 rounded-2xl border space-y-2 ${
+                  reached
+                    ? 'bg-green-500/8 border-green-500/20'
+                    : 'bg-red-500/8 border-red-500/20'
+                }`}
+              >
                 <div className="flex items-center gap-3">
                   <div className="w-14 h-14 shrink-0">
                     <GoalProgressVisual
@@ -217,7 +260,6 @@ const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) 
                       {currentDisplay} {unit} {reached ? 'oppnådd' : `av ${goal.target}`}
                     </p>
                   </div>
-                  {/* Medal or X */}
                   {reached ? (
                     <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
                       <Award className="w-5 h-5 text-green-500" />
@@ -254,7 +296,7 @@ const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) 
                       onClick={() => setRepeatConfirm(goal.id)}
                     >
                       <RefreshCw className="w-3 h-3" />
-                      Gjenta mål
+                      Gjenta mål?
                     </Button>
                   )
                 ) : (
