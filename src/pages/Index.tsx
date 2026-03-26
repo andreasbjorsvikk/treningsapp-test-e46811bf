@@ -1226,6 +1226,22 @@ const IndexContent = () => {
         onClose={() => setShowFullTutorial(false)}
         onNavigateTab={(tab) => { setActiveTab(tab as TabId); window.scrollTo({ top: 0 }); }}
       />
+
+      {/* Report prompt & dialog */}
+      {reportPromptType && (
+        <ReportPrompt
+          open={true}
+          type={reportPromptType}
+          onView={() => handleReportView(reportPromptType)}
+          onLater={() => handleReportLater(reportPromptType)}
+          onDismiss={() => handleReportDismiss(reportPromptType)}
+        />
+      )}
+      <ReportDialog
+        open={showReport}
+        onClose={() => { setShowReport(false); setReportData(null); }}
+        data={reportData}
+      />
     </div>
   );
 };
