@@ -697,12 +697,13 @@ const IndexContent = () => {
                 </button>
               )}
             </div>
-            <div className="relative">
+            <div className="relative min-w-0">
               <ProgressWheel
                 percent={yearData.percent} current={yearData.current} target={yearData.target}
                 unit={yearData.unit} title={String(new Date().getFullYear())}
                 hasGoal={!!primaryGoal} expectedFraction={yearData.expectedFraction}
                 paceDiff={yearData.diff} showPaceLabel onClick={navigateToGoals}
+                compact
               />
               {adminMode && (
                 <button
