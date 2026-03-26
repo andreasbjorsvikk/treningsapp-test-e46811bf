@@ -43,7 +43,7 @@ const ProgressWheel = ({
 
   const RADIUS = compact ? 50 : 62;
   const STROKE = compact ? 9 : 12;
-  const PADDING = compact ? 12 : 18;
+  const PADDING = compact ? 12 : 8;
   const SIZE = (RADIUS + STROKE) * 2 + PADDING * 2;
   const CENTER = SIZE / 2;
   const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
