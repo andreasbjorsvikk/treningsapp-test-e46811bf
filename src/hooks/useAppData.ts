@@ -127,17 +127,24 @@ export function useAppData() {
     if (loading || initialCheckDone.current || goals.length === 0 || sessions.length === 0) return;
     initialCheckDone.current = true;
     
+    // Use sessionStorage to prevent re-showing on same browser session
+    const sessionShownKey = 'treningslogg_goal_shown_this_session';
+    const alreadyShownThisSession = new Set<string>(JSON.parse(sessionStorage.getItem(sessionShownKey) || '[]'));
+    
     const celebratedKey = 'treningslogg_celebrated_goals';
     const celebrated = new Set<string>(JSON.parse(localStorage.getItem(celebratedKey) || '[]'));
     
     for (const g of goals.filter(g => !g.archived)) {
       if (celebrated.has(g.id)) continue;
+      if (alreadyShownThisSession.has(g.id)) continue;
       const periodSessions = getSessionsInPeriod(sessions, g.period, g.activityType, g.customStart, g.customEnd);
       const current = computeProgress(periodSessions, g.metric);
       if (current >= g.target) {
         setCompletedGoal(g);
         celebrated.add(g.id);
         localStorage.setItem(celebratedKey, JSON.stringify([...celebrated]));
+        alreadyShownThisSession.add(g.id);
+        sessionStorage.setItem(sessionShownKey, JSON.stringify([...alreadyShownThisSession]));
         return; // Show one at a time
       }
     }
