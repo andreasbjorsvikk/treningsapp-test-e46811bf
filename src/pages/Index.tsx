@@ -376,11 +376,19 @@ const IndexContent = () => {
       return;
     }
 
+    // Also check sessionStorage to avoid re-showing during same browser session
+    const sessionMonthKey = `treningslogg_month_goal_shown_session_${now.getFullYear()}_${now.getMonth()}`;
+    if (sessionStorage.getItem(sessionMonthKey)) {
+      prevMonthCurrentRef.current = monthData.current;
+      return;
+    }
+
     // Detect completion: either on first load or when crossing threshold
     const wasBelow = prevMonthCurrentRef.current === null || prevMonthCurrentRef.current < monthData.target;
     if (wasBelow && monthData.current >= monthData.target) {
       setMonthGoalCompleted(true);
       localStorage.setItem(monthKey, 'true');
+      sessionStorage.setItem(sessionMonthKey, 'true');
     }
     prevMonthCurrentRef.current = monthData.current;
   }, [monthData.current, monthData.target, primaryGoal]);

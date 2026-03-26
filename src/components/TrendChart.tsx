@@ -24,6 +24,7 @@ function getMetricValueForType(sessions: WorkoutSession[], metric: ChartMetric):
     case 'distance': return Math.round(sessions.reduce((s, w) => s + (w.distance || 0), 0) * 10) / 10;
     case 'elevation': return Math.round(sessions.reduce((s, w) => s + (w.elevationGain || 0), 0));
     case 'minutes': return sessions.reduce((s, w) => s + w.durationMinutes, 0);
+    case 'steps': return 0;
   }
 }
 
@@ -32,6 +33,7 @@ const metricSuffix: Record<ChartMetric, string> = {
   distance: ' km',
   elevation: ' m',
   minutes: ' t',
+  steps: '',
 };
 
 const metricUnitLabel: Record<ChartMetric, string> = {
@@ -39,6 +41,7 @@ const metricUnitLabel: Record<ChartMetric, string> = {
   distance: 'Km',
   elevation: 'Meter',
   minutes: 'Timer',
+  steps: 'Skritt',
 };
 
 const TrendChart = ({ sessions, period, month, year, metric }: TrendChartProps) => {

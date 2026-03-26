@@ -7,6 +7,8 @@ import ActivityIcon from '@/components/ActivityIcon';
 import ProgressWheel from '@/components/ProgressWheel';
 import GoalProgressVisual from '@/components/GoalProgressVisual';
 import { SessionType } from '@/types/workout';
+import { getActivityColors } from '@/utils/activityColors';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface ReportDialogProps {
   open: boolean;
@@ -16,6 +18,8 @@ interface ReportDialogProps {
 
 const ReportDialog = ({ open, onClose, data }: ReportDialogProps) => {
   const [slide, setSlide] = useState(0);
+  const { settings } = useSettings();
+  const isDark = settings.darkMode;
 
   if (!data) return null;
 
@@ -46,12 +50,16 @@ const ReportDialog = ({ open, onClose, data }: ReportDialogProps) => {
               {Object.entries(data.sessionsByType)
                 .filter(([, count]) => count > 0)
                 .sort(([, a], [, b]) => b - a)
-                .map(([type, count]) => (
-                  <div key={type} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-muted/50 border border-border/30">
-                    <ActivityIcon type={type as SessionType} className="w-4 h-4" />
-                    <span className="text-xs font-medium">{count}</span>
-                  </div>
-                ))}
+                .map(([type, count]) => {
+                  const colors = getActivityColors(type as SessionType, isDark);
+                  return (
+                    <div key={type} className="flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-border/30"
+                      style={{ backgroundColor: colors.bg }}>
+                      <ActivityIcon type={type as SessionType} className="w-4 h-4" colorOverride={colors.text} />
+                      <span className="text-xs font-medium" style={{ color: colors.text }}>{count}</span>
+                    </div>
+                  );
+                })}
             </div>
           </div>
 
@@ -66,7 +74,7 @@ const ReportDialog = ({ open, onClose, data }: ReportDialogProps) => {
             {data.totalElevation > 0 && (
               <div className="text-center p-3 rounded-xl bg-muted/40 border border-border/30">
                 <p className="text-lg font-bold text-foreground">{data.totalElevation.toLocaleString()}</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">hm</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">høydemeter</p>
               </div>
             )}
             <div className="text-center p-3 rounded-xl bg-muted/40 border border-border/30">
@@ -122,14 +130,16 @@ const ReportDialog = ({ open, onClose, data }: ReportDialogProps) => {
             <>
               <p className="text-lg font-bold text-foreground">Du nådde målet!</p>
               {diff > 0 && (
-                <p className="text-sm text-muted-foreground">{diff} {data.primaryGoalUnit} mer enn målet</p>
+                <p className="text-sm text-muted-foreground">
+                  {diff} {diff === 1 ? 'økt' : data.primaryGoalUnit} mer enn målet
+                </p>
               )}
             </>
           ) : (
             <>
               <p className="text-lg font-bold text-foreground">Nesten!</p>
               <p className="text-sm text-muted-foreground">
-                {Math.abs(diff)} {data.primaryGoalUnit} {diff < 0 ? 'fra målet' : 'over målet'}
+                {Math.abs(diff)} {Math.abs(diff) === 1 ? 'økt' : data.primaryGoalUnit} fra målet
               </p>
             </>
           )}

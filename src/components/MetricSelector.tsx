@@ -1,6 +1,6 @@
 import { useTranslation } from '@/i18n/useTranslation';
 
-export type ChartMetric = 'sessions' | 'distance' | 'elevation' | 'minutes';
+export type ChartMetric = 'sessions' | 'distance' | 'elevation' | 'minutes' | 'steps';
 
 interface MetricSelectorProps {
   selected: ChartMetric;
@@ -15,6 +15,7 @@ const MetricSelector = ({ selected, onSelect }: MetricSelectorProps) => {
     { id: 'distance', label: t('stats.distance') },
     { id: 'elevation', label: t('stats.elevation') },
     { id: 'minutes', label: t('metric.totalTime') },
+    { id: 'steps', label: 'Skritt' },
   ];
 
   return (
