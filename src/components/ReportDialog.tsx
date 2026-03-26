@@ -142,8 +142,6 @@ const ReportDialog = ({ open, onClose, data }: ReportDialogProps) => {
                 {Math.abs(diff)} {Math.abs(diff) === 1 ? 'økt' : data.primaryGoalUnit} fra målet
               </p>
             </>
-              </p>
-            </>
           )}
         </div>
       </div>
