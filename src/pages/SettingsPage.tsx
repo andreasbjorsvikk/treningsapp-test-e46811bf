@@ -970,6 +970,13 @@ const SettingsPage = () => {
       try {
         await stravaService.disconnect();
         setStravaConnected(false);
+        // Check if Apple Health is connected and offer workout import
+        if (isNativePlatform() && isIOS()) {
+          const result = await appleHealthService.onStravaDisconnected();
+          if (result.appleHealthConnected) {
+            setShowAhWorkoutPrompt(true);
+          }
+        }
         toast.success(t('settings.stravaNotConnected'));
       } catch {
         toast.error(t('sync.disconnectFailed'));
