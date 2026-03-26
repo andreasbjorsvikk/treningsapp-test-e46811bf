@@ -469,6 +469,44 @@ const IndexContent = () => {
   };
   const handleHealthSave = async (data: Omit<HealthEvent, 'id'>) => { await appData.addHealthEvent(data); };
 
+  // Report handlers
+  const openReport = (type: 'week' | 'month') => {
+    const data = type === 'week'
+      ? computeWeeklyReport(allSessions, appData.primaryGoals, appData.goals, allSessions)
+      : computeMonthlyReport(allSessions, appData.primaryGoals, appData.goals, allSessions, monthData.target, monthData.current);
+    setReportData(data);
+    setShowReport(true);
+    setReportPromptType(null);
+  };
+
+  const handleReportView = (type: 'week' | 'month') => {
+    openReport(type);
+    // Clear pending banner
+    if (type === 'week') setPendingWeekReport(false);
+    if (type === 'month') setPendingMonthReport(false);
+    localStorage.setItem(getReportDismissKey(type), 'true');
+  };
+
+  const handleReportLater = (type: 'week' | 'month') => {
+    localStorage.setItem(getReportLaterKey(type), String(Date.now()));
+    if (type === 'week') setPendingWeekReport(true);
+    if (type === 'month') setPendingMonthReport(true);
+    setReportPromptType(null);
+  };
+
+  const handleReportDismiss = (type: 'week' | 'month') => {
+    localStorage.setItem(getReportDismissKey(type), 'true');
+    if (type === 'week') setPendingWeekReport(false);
+    if (type === 'month') setPendingMonthReport(false);
+    setReportPromptType(null);
+  };
+
+  const dismissPendingReport = (type: 'week' | 'month') => {
+    localStorage.setItem(getReportDismissKey(type), 'true');
+    if (type === 'week') setPendingWeekReport(false);
+    if (type === 'month') setPendingMonthReport(false);
+  };
+
   const navigateToGoals = () => {
     if (!primaryGoal) {
       const tipShown = localStorage.getItem('treningslogg_goal_tip_shown');
