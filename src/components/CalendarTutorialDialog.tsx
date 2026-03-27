@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, CalendarDays, Plus, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface CalendarTutorialDialogProps {
   open: boolean;
@@ -10,6 +11,8 @@ interface CalendarTutorialDialogProps {
 }
 
 const CalendarTutorialDialog = ({ open, onClose, onRequestExit }: CalendarTutorialDialogProps) => {
+  const { t } = useTranslation();
+  
   const handleOpenChange = (v: boolean) => {
     if (!v) onClose();
   };
@@ -29,9 +32,9 @@ const CalendarTutorialDialog = ({ open, onClose, onRequestExit }: CalendarTutori
             <CalendarDays className="w-8 h-8" />
           </div>
           <div className="text-center space-y-2">
-            <h3 className="font-display font-bold text-lg text-foreground">Kalender</h3>
+            <h3 className="font-display font-bold text-lg text-foreground">{t('nav.calendar')}</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Trykk på en dato for å se detaljer, legge til en økt manuelt, eller registrere en helsehendelse.
+              {t('help.calendarP2').replace('📅 <strong>Trykk på en dag:</strong> ', '').replace('📅 <strong>Tap a day:</strong> ', '')}
             </p>
           </div>
 
@@ -40,19 +43,19 @@ const CalendarTutorialDialog = ({ open, onClose, onRequestExit }: CalendarTutori
               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                 <Plus className="w-4 h-4 text-primary" />
               </div>
-              <span className="text-muted-foreground">Legg til ny økt eller helsehendelse</span>
+              <span className="text-muted-foreground">{t('common.addSession')}</span>
             </div>
             <div className="flex items-center gap-3 text-sm">
               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                 <Pencil className="w-4 h-4 text-primary" />
               </div>
-              <span className="text-muted-foreground">Trykk på en økt for å se detaljer eller redigere</span>
+              <span className="text-muted-foreground">{t('workoutDetail.edit')}</span>
             </div>
           </div>
 
           <div className="flex justify-end pt-2">
             <Button size="sm" onClick={onClose}>
-              Forstått!
+              {t('tutorial.understood')}
             </Button>
           </div>
         </div>

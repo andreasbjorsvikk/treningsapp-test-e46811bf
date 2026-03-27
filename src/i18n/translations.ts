@@ -1021,6 +1021,79 @@ const no: Record<string, string> = {
 
   // Map view
   'mapView.changeStyle': 'Endre karttype',
+
+  // Full tutorial flow
+  'fullTutorial.exitTitle': 'Vil du avslutte tutorial?',
+  'fullTutorial.exitDesc': 'Du kan starte den igjen fra hjelp-seksjonen i innstillinger.',
+  'fullTutorial.continue': 'Fortsett',
+  'fullTutorial.exit': 'Avslutt',
+
+  // Peak feed UI
+  'peakFeed.all': 'Alle',
+  'peakFeed.friends': 'Venner',
+  'peakFeed.mine': 'Mine',
+  'peakFeed.global': 'Global',
+  'peakFeed.noCheckins': 'Ingen innsjekkinger å vise.',
+  'peakFeed.today': 'I dag',
+  'peakFeed.yesterday': 'I går',
+  'peakFeed.wasAlong': 'var med',
+  'peakFeed.removeChild': 'fjernet fra innsjekkingen',
+  'peakFeed.removeChildFailed': 'Kunne ikke fjerne barn',
+  'peakFeed.removeImage': 'Fjern bilde',
+  'peakFeed.addChildren': 'Legg til barn',
+  'peakFeed.addNChildren': 'Legg til {n} barn',
+  'peakFeed.deleteCheckin': 'Slett innsjekking',
+  'peakFeed.deleteCheckinTitle': 'Slett innsjekking',
+  'peakFeed.deleteCheckinDesc': 'Er du sikker på at du vil slette denne innsjekkingen? Dette kan ikke angres.',
+
+  // Peak detail UI
+  'peakDetail.deleteCheckinTitle': 'Slett innsjekking',
+  'peakDetail.deleteCheckinDesc': 'Er du sikker på at du vil slette denne innsjekkingen? Dette kan ikke angres.',
+  'peakDetail.checkedIn': 'Du er sjekket inn',
+  'peakDetail.deleteCheckin': 'Slett innsjekking',
+  'peakDetail.checkinChildren': 'Sjekk inn barn',
+  'peakDetail.hideRoute': 'Skjul rute',
+  'peakDetail.showRoute': 'Vis rute',
+  'peakDetail.manualCheckin': 'Manuell innsjekking',
+  'peakDetail.searchUserChild': 'Søk etter bruker eller barn',
+  'peakDetail.searchPlaceholder': 'Brukernavn eller barnenavn...',
+  'peakDetail.includeChildren': 'Inkluder barn',
+  'peakDetail.checkinDate': 'Dato for innsjekking',
+  'peakDetail.selectDate': 'Velg dato',
+  'peakDetail.registerCheckin': 'Registrer innsjekking',
+  'peakDetail.allCheckins': 'Alle innsjekkinger',
+  'peakDetail.checkinsAt': 'Innsjekkinger på',
+  'peakDetail.noCheckinsYet': 'Ingen innsjekkinger ennå',
+  'peakDetail.child': 'barn',
+  'peakDetail.unknownUser': 'Ukjent bruker',
+
+  // Peaks list UI
+  'peaksList.all': 'Alle',
+  'peaksList.reached': 'Nådd',
+  'peaksList.notReached': 'Ikke nådd',
+  'peaksList.peaks': 'topper',
+  'peaksList.noPeaks': 'Ingen topper å vise.',
+  'peaksList.filterPeaks': 'Filtrer topper',
+  'peaksList.minElevation': 'Minimum høyde',
+  'peaksList.noMin': 'Ingen',
+  'peaksList.municipalityLabel': 'Kommune',
+  'peaksList.resetFilters': 'Nullstill filtre',
+  'peaksList.unpublished': 'Upublisert',
+  'peaksList.awayM': '{n} m unna',
+  'peaksList.awayKm': '{n} km unna',
+
+  // Global leaderboard UI
+  'globalLeaderboard.unknown': 'Ukjent',
+
+  // User profile drawer UI
+  'userProfileDrawer.week': 'Uke',
+  'userProfileDrawer.month': 'Måned',
+  'userProfileDrawer.year': 'År',
+  'userProfileDrawer.profile': 'Profil',
+  'userProfileDrawer.unknown': 'Ukjent',
+
+  // Report dialog UI
+  'report.noSessionsInPeriod': 'Ingen økter registrert denne {period}.',
 };
 
 const en: Record<string, string> = {
@@ -2044,6 +2117,79 @@ const en: Record<string, string> = {
 
   // Map view
   'mapView.changeStyle': 'Change map style',
+
+  // Full tutorial flow
+  'fullTutorial.exitTitle': 'Exit tutorial?',
+  'fullTutorial.exitDesc': 'You can restart it from the help section in settings.',
+  'fullTutorial.continue': 'Continue',
+  'fullTutorial.exit': 'Exit',
+
+  // Peak feed UI
+  'peakFeed.all': 'All',
+  'peakFeed.friends': 'Friends',
+  'peakFeed.mine': 'Mine',
+  'peakFeed.global': 'Global',
+  'peakFeed.noCheckins': 'No check-ins to show.',
+  'peakFeed.today': 'Today',
+  'peakFeed.yesterday': 'Yesterday',
+  'peakFeed.wasAlong': 'was along',
+  'peakFeed.removeChild': 'removed from check-in',
+  'peakFeed.removeChildFailed': 'Could not remove child',
+  'peakFeed.removeImage': 'Remove image',
+  'peakFeed.addChildren': 'Add children',
+  'peakFeed.addNChildren': 'Add {n} children',
+  'peakFeed.deleteCheckin': 'Delete check-in',
+  'peakFeed.deleteCheckinTitle': 'Delete check-in',
+  'peakFeed.deleteCheckinDesc': 'Are you sure you want to delete this check-in? This cannot be undone.',
+
+  // Peak detail UI
+  'peakDetail.deleteCheckinTitle': 'Delete check-in',
+  'peakDetail.deleteCheckinDesc': 'Are you sure you want to delete this check-in? This cannot be undone.',
+  'peakDetail.checkedIn': 'You are checked in',
+  'peakDetail.deleteCheckin': 'Delete check-in',
+  'peakDetail.checkinChildren': 'Check in children',
+  'peakDetail.hideRoute': 'Hide route',
+  'peakDetail.showRoute': 'Show route',
+  'peakDetail.manualCheckin': 'Manual check-in',
+  'peakDetail.searchUserChild': 'Search for user or child',
+  'peakDetail.searchPlaceholder': 'Username or child name...',
+  'peakDetail.includeChildren': 'Include children',
+  'peakDetail.checkinDate': 'Check-in date',
+  'peakDetail.selectDate': 'Select date',
+  'peakDetail.registerCheckin': 'Register check-in',
+  'peakDetail.allCheckins': 'All check-ins',
+  'peakDetail.checkinsAt': 'Check-ins at',
+  'peakDetail.noCheckinsYet': 'No check-ins yet',
+  'peakDetail.child': 'child',
+  'peakDetail.unknownUser': 'Unknown user',
+
+  // Peaks list UI
+  'peaksList.all': 'All',
+  'peaksList.reached': 'Reached',
+  'peaksList.notReached': 'Not reached',
+  'peaksList.peaks': 'peaks',
+  'peaksList.noPeaks': 'No peaks to show.',
+  'peaksList.filterPeaks': 'Filter peaks',
+  'peaksList.minElevation': 'Minimum elevation',
+  'peaksList.noMin': 'None',
+  'peaksList.municipalityLabel': 'Municipality',
+  'peaksList.resetFilters': 'Reset filters',
+  'peaksList.unpublished': 'Unpublished',
+  'peaksList.awayM': '{n} m away',
+  'peaksList.awayKm': '{n} km away',
+
+  // Global leaderboard UI
+  'globalLeaderboard.unknown': 'Unknown',
+
+  // User profile drawer UI
+  'userProfileDrawer.week': 'Week',
+  'userProfileDrawer.month': 'Month',
+  'userProfileDrawer.year': 'Year',
+  'userProfileDrawer.profile': 'Profile',
+  'userProfileDrawer.unknown': 'Unknown',
+
+  // Report dialog UI
+  'report.noSessionsInPeriod': 'No workouts recorded this {period}.',
 };
 
 export const translations: Record<Language, Record<string, string>> = { no, en };

@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { X, ChevronRight, Mountain, Map, MapPin, List, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { peakIconTiers, getCheckedPeakIcon } from '@/utils/peakIcons';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const TUTORIAL_KEY = 'treningslogg_map_tutorial_done';
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
-// Correct Hovlandsnuten (Tysnes) coordinates from DB
 const HOVLANDSNUTEN = { lat: 60.0149, lng: 5.6774, elev: 726 };
 
 interface TutorialStep {
@@ -16,8 +16,7 @@ interface TutorialStep {
   customContent?: React.ReactNode;
 }
 
-// ── Step 1: Check-in animation with button press ──
-const CheckinAnimation = () => {
+const CheckinAnimation = ({ t }: { t: (key: string) => string }) => {
   const [phase, setPhase] = useState<'idle' | 'pressing' | 'checked'>('idle');
 
   useEffect(() => {
@@ -34,7 +33,6 @@ const CheckinAnimation = () => {
   return (
     <div className="flex flex-col items-center gap-3 py-2">
       <div className="flex items-center gap-2">
-        {/* Peak marker */}
         <div className="relative">
           <div
             className={`w-14 h-14 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
@@ -47,7 +45,6 @@ const CheckinAnimation = () => {
           >
             <img src={peakIconTiers.high} alt="" className={`w-9 h-9 object-contain ${phase === 'checked' ? 'brightness-0 invert' : ''}`} />
           </div>
-          {/* Ripple effect */}
           {phase === 'checked' && (
             <>
               <div className="absolute inset-0 rounded-full border-2 border-[hsl(152,60%,42%)] animate-ping opacity-30" />
@@ -56,7 +53,6 @@ const CheckinAnimation = () => {
           )}
         </div>
 
-        {/* Sjekk inn button with press animation */}
         <div className="relative">
           <div
             className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-300 ${
@@ -67,9 +63,8 @@ const CheckinAnimation = () => {
                 : 'bg-muted text-muted-foreground scale-100'
             }`}
           >
-            {phase === 'checked' ? '✓ Nådd!' : 'Sjekk inn'}
+            {phase === 'checked' ? t('mapTutorial.checkedIn') : t('map.checkin')}
           </div>
-          {/* Finger/tap indicator during pressing */}
           {phase === 'pressing' && (
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 animate-bounce">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -86,12 +81,11 @@ const CheckinAnimation = () => {
   );
 };
 
-// ── Step 2: Static map preview rotating between satellite and terrain ──
-const MapStylePreview = () => {
+const MapStylePreview = ({ t }: { t: (key: string) => string }) => {
   const [styleIdx, setStyleIdx] = useState(0);
   const mapStyles = [
-    { name: 'Satellitt', style: 'satellite-streets-v12' },
-    { name: 'Terreng', style: 'outdoors-v12' },
+    { name: t('mapTutorial.satellite'), style: 'satellite-streets-v12' },
+    { name: t('mapTutorial.terrain'), style: 'outdoors-v12' },
   ];
 
   useEffect(() => {
@@ -119,12 +113,10 @@ const MapStylePreview = () => {
           className="w-full h-full object-cover"
           key={`map-style-${styleIdx}`}
         />
-        {/* Style label */}
         <div className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded-md bg-black/50 text-white text-[9px] font-medium backdrop-blur-sm">
           {current.name}
         </div>
       </div>
-      {/* Style dots */}
       <div className="flex gap-1.5">
         {mapStyles.map((_, i) => (
           <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i === styleIdx ? 'bg-primary' : 'bg-muted'}`} />
@@ -134,7 +126,6 @@ const MapStylePreview = () => {
   );
 };
 
-// ── Step 3: Long-press suggestion animation with terrain map ──
 const LongPressAnimation = () => {
   const [phase, setPhase] = useState<'idle' | 'pressing' | 'spawned'>('idle');
 
@@ -157,9 +148,7 @@ const LongPressAnimation = () => {
   return (
     <div className="flex flex-col items-center py-2">
       <div className="w-56 h-32 rounded-xl border border-border/60 relative overflow-hidden shadow-md">
-        <img src={staticUrl} alt="Terrengkart" className="w-full h-full object-cover" />
-
-        {/* Finger pressing with ripple */}
+        <img src={staticUrl} alt="" className="w-full h-full object-cover" />
         {phase === 'pressing' && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
             <div className="absolute inset-[-12px] rounded-full border-2 border-primary/30 animate-ping" />
@@ -172,8 +161,6 @@ const LongPressAnimation = () => {
             </svg>
           </div>
         )}
-
-        {/* Spawned peak icon */}
         {phase === 'spawned' && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-scale-in">
             <div className="w-10 h-10 rounded-full bg-card border-2 border-border flex items-center justify-center shadow-lg">
@@ -186,14 +173,13 @@ const LongPressAnimation = () => {
   );
 };
 
-// ── Step 4 content: Topper, Feed & Lederliste combined ──
-const OverviewContent = () => (
+const OverviewContent = ({ t }: { t: (key: string) => string }) => (
   <div className="space-y-2 py-1">
     <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
       <Mountain className="w-5 h-5 text-primary shrink-0 mt-0.5" />
       <div>
-        <p className="text-sm font-semibold text-foreground">Topper</p>
-        <p className="text-[11px] text-muted-foreground">Bla gjennom alle topper sortert etter høyde eller avstand fra deg.</p>
+        <p className="text-sm font-semibold text-foreground">{t('mapTutorial.peaks')}</p>
+        <p className="text-[11px] text-muted-foreground">{t('mapTutorial.peaksDesc')}</p>
       </div>
     </div>
     <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
@@ -201,8 +187,8 @@ const OverviewContent = () => (
         <path d="M4 11a9 9 0 0 1 9 9" /><path d="M4 4a16 16 0 0 1 16 16" /><circle cx="5" cy="19" r="1" />
       </svg>
       <div>
-        <p className="text-sm font-semibold text-foreground">Feed</p>
-        <p className="text-[11px] text-muted-foreground">Se de siste innsjekkingene fra deg selv og vennene dine.</p>
+        <p className="text-sm font-semibold text-foreground">{t('mapTutorial.feed')}</p>
+        <p className="text-[11px] text-muted-foreground">{t('mapTutorial.feedDesc')}</p>
       </div>
     </div>
     <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
@@ -210,32 +196,31 @@ const OverviewContent = () => (
         <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C7 4 7 7 7 7" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5C17 4 17 7 17 7" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
       </svg>
       <div>
-        <p className="text-sm font-semibold text-foreground">Lederliste</p>
-        <p className="text-[11px] text-muted-foreground">Se hvem som har flest innsjekkinger og unike topper.</p>
+        <p className="text-sm font-semibold text-foreground">{t('mapTutorial.leaderboard')}</p>
+        <p className="text-[11px] text-muted-foreground">{t('mapTutorial.leaderboardDesc')}</p>
       </div>
     </div>
   </div>
 );
 
-// ── Step 5 content: AR view explanation ──
-const ARContent = () => (
+const ARContent = ({ t }: { t: (key: string) => string }) => (
   <div className="space-y-2 py-1">
     <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
       <Camera className="w-5 h-5 text-primary shrink-0 mt-0.5" />
       <div>
-        <p className="text-sm font-semibold text-foreground">AR-kamera</p>
-        <p className="text-[11px] text-muted-foreground">Pek mobilen mot fjellene for å se toppnavnene rett i kamera-bildet.</p>
+        <p className="text-sm font-semibold text-foreground">{t('mapTutorial.arCamera')}</p>
+        <p className="text-[11px] text-muted-foreground">{t('mapTutorial.arCameraDesc')}</p>
       </div>
     </div>
     <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl bg-muted/60 border border-border/40">
       <Map className="w-5 h-5 text-primary shrink-0 mt-0.5" />
       <div>
-        <p className="text-sm font-semibold text-foreground">3D-kart</p>
-        <p className="text-[11px] text-muted-foreground">Bytt over til et interaktivt 3D-kart som følger retningen din.</p>
+        <p className="text-sm font-semibold text-foreground">{t('mapTutorial.ar3d')}</p>
+        <p className="text-[11px] text-muted-foreground">{t('mapTutorial.ar3dDesc')}</p>
       </div>
     </div>
     <div className="px-3 py-2 rounded-xl bg-muted/40 border border-border/30">
-      <p className="text-[10px] text-muted-foreground italic">Nøyaktigheten avhenger av mobilkompassets presisjon.</p>
+      <p className="text-[10px] text-muted-foreground italic">{t('mapTutorial.arNote')}</p>
     </div>
   </div>
 );
@@ -244,48 +229,48 @@ const PeakIcon = ({ src }: { src: string }) => (
   <img src={src} alt="" className="w-12 h-12 object-contain" />
 );
 
-const steps: TutorialStep[] = [
-  {
-    title: 'Velkommen til fjelltopp-kartet! ⛰️',
-    text: 'Her kan du sjekke inn på fjelltopper som du bestiger. Du kan sjekke inn flere ganger på hver topp og øke scoren din på lederlistene.',
-    icon: <PeakIcon src={peakIconTiers.veryHigh} />,
-    customContent: <CheckinAnimation />,
-  },
-  {
-    title: 'Kartvisning',
-    text: 'Bytt mellom satellitt- og terrengvisning. Du kan også veksle mellom 2D og 3D-visning.',
-    icon: <PeakIcon src={peakIconTiers.high} />,
-    customContent: <MapStylePreview />,
-  },
-  {
-    title: 'Foreslå ny topp',
-    text: 'For å foreslå en ny fjelltopp som ikke finnes her enda, trykk og hold inne på kartet der toppen er. Om du står på toppen vil du bli sjekket inn når den blir godkjent. Andre kan også sjekke inn på toppen du la til før den har blitt godkjent.',
-    icon: <PeakIcon src={peakIconTiers.medium} />,
-    customContent: <LongPressAnimation />,
-  },
-  {
-    title: 'Utforsk de andre fanene',
-    text: '',
-    icon: <PeakIcon src={peakIconTiers.low} />,
-    customContent: <OverviewContent />,
-  },
-  {
-    title: 'AR-visning 📷',
-    text: 'Bruk AR-funksjonen for å identifisere fjelltopper rundt deg ved hjelp av kameraet.',
-    icon: <Camera className="w-12 h-12 text-primary" />,
-    customContent: <ARContent />,
-  },
-];
-
 const MapTutorial = () => {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState(0);
+
+  const steps: TutorialStep[] = [
+    {
+      title: t('mapTutorial.welcome'),
+      text: t('mapTutorial.welcomeDesc'),
+      icon: <PeakIcon src={peakIconTiers.veryHigh} />,
+      customContent: <CheckinAnimation t={t} />,
+    },
+    {
+      title: t('mapTutorial.mapView'),
+      text: t('mapTutorial.mapViewDesc'),
+      icon: <PeakIcon src={peakIconTiers.high} />,
+      customContent: <MapStylePreview t={t} />,
+    },
+    {
+      title: t('mapTutorial.suggest'),
+      text: t('mapTutorial.suggestDesc'),
+      icon: <PeakIcon src={peakIconTiers.medium} />,
+      customContent: <LongPressAnimation />,
+    },
+    {
+      title: t('mapTutorial.explore'),
+      text: '',
+      icon: <PeakIcon src={peakIconTiers.low} />,
+      customContent: <OverviewContent t={t} />,
+    },
+    {
+      title: t('mapTutorial.arTitle'),
+      text: t('mapTutorial.arDesc'),
+      icon: <Camera className="w-12 h-12 text-primary" />,
+      customContent: <ARContent t={t} />,
+    },
+  ];
 
   useEffect(() => {
     const done = localStorage.getItem(TUTORIAL_KEY);
     if (!done) setVisible(true);
 
-    // Listen for full tutorial flow trigger
     const handler = () => { setStep(0); setVisible(true); };
     window.addEventListener('show-map-tutorial', handler);
     return () => window.removeEventListener('show-map-tutorial', handler);
@@ -346,14 +331,14 @@ const MapTutorial = () => {
             <div className="flex gap-2">
               {step < steps.length - 1 && (
                 <Button variant="ghost" size="sm" onClick={dismiss} className="text-muted-foreground">
-                  Hopp over
+                  {t('tutorial.skip')}
                 </Button>
               )}
               <Button size="sm" onClick={next} className="gap-1">
                 {step < steps.length - 1 ? (
-                  <>Neste <ChevronRight className="w-3.5 h-3.5" /></>
+                  <>{t('tutorial.next')} <ChevronRight className="w-3.5 h-3.5" /></>
                 ) : (
-                  'Forstått!'
+                  t('tutorial.understood')
                 )}
               </Button>
             </div>
