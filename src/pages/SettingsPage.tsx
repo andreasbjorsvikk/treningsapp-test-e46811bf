@@ -94,6 +94,18 @@ const SettingsPage = () => {
   const [helpOpenSections, setHelpOpenSections] = useState<Set<string>>(new Set());
   const [showSettingsTutorial, setShowSettingsTutorial] = useState(false);
   const [sessionTypesOpen, setSessionTypesOpen] = useState(false);
+  const [deadLetterCount, setDeadLetterCount] = useState(0);
+
+  // Notification preferences hook
+  const { preferences: notifPrefs, updatePreference: updateNotifPref } = useNotificationPreferences();
+  // Sync queue hooks
+  const { pendingCount, isFlushing, flush: flushSync } = useSyncQueue();
+  const { isOnline } = useNetworkStatus();
+
+  // Load dead letter count
+  useEffect(() => {
+    deadLetterLength().then(setDeadLetterCount).catch(() => {});
+  }, [pendingCount]);
 
   // Listen for full tutorial flow showing settings tutorial
   useEffect(() => {
