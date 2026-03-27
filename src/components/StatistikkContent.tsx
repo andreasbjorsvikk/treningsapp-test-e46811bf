@@ -1,4 +1,5 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
+import { BarChart3, TrendingUp } from 'lucide-react';
 import { SessionType, WorkoutSession } from '@/types/workout';
 import { Period } from '@/components/PeriodSelector';
 import { ChartMetric } from '@/components/MetricSelector';
@@ -41,6 +42,7 @@ const StatistikkContent = ({
   monthNames, primaryGoal,
   onGoToGoals,
 }: StatistikkContentProps) => {
+  const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
   const handlePrev = useCallback(() => {
     if (period === 'month') {
       if (statMonth === 0) { setStatMonth(11); setStatYear(statYear - 1); }
@@ -112,7 +114,33 @@ const StatistikkContent = ({
           <MetricSelector selected={chartMetric} onSelect={setChartMetric} />
 
           <div className="h-[280px] lg:h-[360px]">
-            <TrendChart sessions={statSessions} period={period} month={statMonth} year={statYear} metric={chartMetric} />
+            <TrendChart sessions={statSessions} period={period} month={statMonth} year={statYear} metric={chartMetric} chartType={chartType} />
+          </div>
+
+          {/* Chart type toggle */}
+          <div className="flex items-center justify-center gap-2">
+            <button
+              onClick={() => setChartType('bar')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                chartType === 'bar'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              Stolpe
+            </button>
+            <button
+              onClick={() => setChartType('line')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                chartType === 'line'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+              }`}
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              Linje
+            </button>
           </div>
         </div>
       </div>

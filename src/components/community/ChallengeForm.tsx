@@ -22,7 +22,7 @@ interface ChallengeFormProps {
   editChallenge?: ChallengeWithParticipants | null;
 }
 
-type ChallengeMetric = 'sessions' | 'distance' | 'duration' | 'elevation';
+type ChallengeMetric = 'sessions' | 'distance' | 'duration' | 'elevation' | 'unique_peaks' | 'most_checkins';
 
 function toLocalDateStr(d: Date): string {
   const y = d.getFullYear();
@@ -218,13 +218,14 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
             <Select value={metric} onValueChange={(v) => setMetric(v as ChallengeMetric)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {(['sessions', 'distance', 'duration', 'elevation'] as ChallengeMetric[]).map(o => (
+                {(['sessions', 'distance', 'duration', 'elevation', 'unique_peaks', 'most_checkins'] as ChallengeMetric[]).map(o => (
                   <SelectItem key={o} value={o}>{t(`challenge.metric${o.charAt(0).toUpperCase() + o.slice(1)}`)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
+          {metric !== 'unique_peaks' && metric !== 'most_checkins' && (
           <div>
             <Label className="text-xs">{t('challenge.activityType')}</Label>
             <div className="flex flex-wrap gap-1.5 justify-center mt-1.5">
@@ -261,6 +262,7 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
               })}
             </div>
           </div>
+          )}
 
           <div className="flex gap-2">
             <div className="flex-1">
