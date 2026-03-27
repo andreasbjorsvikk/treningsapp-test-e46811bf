@@ -133,18 +133,14 @@ const FullTutorialFlow = ({ open, onClose, onNavigateTab }: FullTutorialFlowProp
         <DialogContent className="max-w-xs p-0 gap-0 border-0 bg-transparent shadow-none [&>button]:hidden">
           <div className="bg-card border border-border rounded-2xl shadow-2xl p-6 space-y-4 text-center">
             <h3 className="font-display font-bold text-lg text-foreground">
-              {t('language') === 'en' ? 'Exit tutorial?' : 'Vil du avslutte tutorial?'}
+              {t('fullTutorial.exitTitle')}
             </h3>
             <p className="text-sm text-muted-foreground">
-              {t('language') === 'en' ? 'You can restart it from the help section in settings.' : 'Du kan starte den igjen fra hjelp-seksjonen i innstillinger.'}
+              {t('fullTutorial.exitDesc')}
             </p>
             <div className="flex gap-3 justify-center pt-2">
-              <Button variant="outline" size="sm" onClick={cancelExit}>
-                {t('language') === 'en' ? 'Continue' : 'Fortsett'}
-              </Button>
-              <Button variant="destructive" size="sm" onClick={confirmExit}>
-                {t('language') === 'en' ? 'Exit' : 'Avslutt'}
-              </Button>
+              <Button variant="outline" size="sm" onClick={cancelExit}>{t('fullTutorial.continue')}</Button>
+              <Button variant="destructive" size="sm" onClick={confirmExit}>{t('fullTutorial.exit')}</Button>
             </div>
           </div>
         </DialogContent>
