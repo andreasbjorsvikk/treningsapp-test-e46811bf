@@ -107,6 +107,19 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
       }
     }
 
+    // Pre-fetch hike share statuses
+    const hikeShareIds = raw.filter(n => n.type === 'hike_share' && n.challenge_id).map(n => n.challenge_id!);
+    const respondedHikeShares = new Set<string>();
+    if (hikeShareIds.length > 0) {
+      const { data: hikeShares } = await supabase
+        .from('hiking_record_shares')
+        .select('id, status')
+        .in('id', hikeShareIds);
+      for (const s of hikeShares || []) {
+        if ((s as any).status !== 'pending') respondedHikeShares.add((s as any).id);
+      }
+    }
+
     const enriched = raw.map(n => {
       let alreadyResponded = false;
 
