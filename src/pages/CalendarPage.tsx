@@ -110,7 +110,7 @@ const SessionBadge = ({ session, size = 'md', isDark }: {
 
 const CalendarPage = () => {
   const { settings } = useSettings();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const isMobile = useIsMobile();
   const appData = useAppDataContext();
   const sundayStart = settings.firstDayOfWeek === 'sunday';
