@@ -234,7 +234,7 @@ const PeakTripPlanner = React.forwardRef<HTMLDivElement, PeakTripPlannerProps>((
   };
 
   return (
-    <div className="space-y-3">
+    <div ref={ref} className="space-y-3">
       {/* Day selector */}
       <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
         {forecasts.map((day, i) => (
