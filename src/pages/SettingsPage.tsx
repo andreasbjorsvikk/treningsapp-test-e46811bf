@@ -967,6 +967,107 @@ const SettingsPage = () => {
     );
   }
 
+  // ========== NOTIFICATIONS VIEW ==========
+  if (view === 'notifications') {
+    const notifCategories: { key: keyof typeof notifPrefs; labelKey: string; descKey: string }[] = [
+      { key: 'friend_challenge', labelKey: 'notif.friendChallenge', descKey: 'notif.friendChallengeDesc' },
+      { key: 'challenge_complete', labelKey: 'notif.challengeComplete', descKey: 'notif.challengeCompleteDesc' },
+      { key: 'goal_reached', labelKey: 'notif.goalReached', descKey: 'notif.goalReachedDesc' },
+      { key: 'weekly_report', labelKey: 'notif.weeklyReport', descKey: 'notif.weeklyReportDesc' },
+      { key: 'monthly_report', labelKey: 'notif.monthlyReport', descKey: 'notif.monthlyReportDesc' },
+    ];
+
+    return (
+      <div className="space-y-4">
+        {backButton(t('notif.title'))}
+        <div className="glass-card rounded-xl p-4 space-y-1">
+          <p className="text-xs text-muted-foreground mb-3">{t('notif.description')}</p>
+          {notifCategories.map(cat => (
+            <div key={cat.key} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
+              <div className="min-w-0 flex-1 pr-4">
+                <p className="text-sm font-medium">{t(cat.labelKey)}</p>
+                <p className="text-xs text-muted-foreground">{t(cat.descKey)}</p>
+              </div>
+              <Switch
+                checked={notifPrefs[cat.key]}
+                onCheckedChange={(v) => updateNotifPref(cat.key, v)}
+              />
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground px-2">{t('notif.pushNote')}</p>
+      </div>
+    );
+  }
+
+  // ========== SYNC STATUS VIEW ==========
+  if (view === 'syncStatus') {
+    const handleRetryDeadLetter = async () => {
+      const count = await retryDeadLetter();
+      setDeadLetterCount(0);
+      if (count > 0) {
+        toast.success(t('syncStatus.retriedCount').replace('{n}', String(count)));
+        flushSync();
+      }
+    };
+
+    return (
+      <div className="space-y-4">
+        {backButton(t('syncStatus.title'))}
+        <div className="glass-card rounded-xl p-4 space-y-4">
+          {/* Online status */}
+          <div className="flex items-center gap-3">
+            {isOnline ? (
+              <Wifi className="w-5 h-5 text-green-500" />
+            ) : (
+              <WifiOff className="w-5 h-5 text-destructive" />
+            )}
+            <div>
+              <p className="text-sm font-medium">{isOnline ? t('syncStatus.online') : t('syncStatus.offline')}</p>
+              <p className="text-xs text-muted-foreground">{isOnline ? t('syncStatus.onlineDesc') : t('syncStatus.offlineDesc')}</p>
+            </div>
+          </div>
+
+          {/* Pending operations */}
+          <div className="flex items-center gap-3">
+            <Cloud className="w-5 h-5 text-muted-foreground" />
+            <div className="flex-1">
+              <p className="text-sm font-medium">
+                {pendingCount === 0
+                  ? t('syncStatus.allSynced')
+                  : t('syncStatus.pendingCount').replace('{n}', String(pendingCount))}
+              </p>
+              {pendingCount > 0 && (
+                <p className="text-xs text-muted-foreground">{t('syncStatus.pendingDesc')}</p>
+              )}
+            </div>
+            {pendingCount > 0 && isOnline && (
+              <Button size="sm" variant="outline" onClick={flushSync} disabled={isFlushing}>
+                {isFlushing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              </Button>
+            )}
+          </div>
+
+          {/* Dead letter / failed */}
+          {deadLetterCount > 0 && (
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-destructive">
+                  {t('syncStatus.failedCount').replace('{n}', String(deadLetterCount))}
+                </p>
+                <p className="text-xs text-muted-foreground">{t('syncStatus.failedDesc')}</p>
+              </div>
+              <Button size="sm" variant="outline" onClick={handleRetryDeadLetter}>
+                {t('syncStatus.retry')}
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   // ========== SYNC VIEW ==========
   if (view === 'sync') {
     const handleStravaConnect = async () => {
