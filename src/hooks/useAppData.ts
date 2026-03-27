@@ -436,11 +436,14 @@ export function useAppData() {
   const deleteHealthEvent = useCallback(async (id: string) => {
     if (isOnline && user) {
       await healthEventServiceAsync.delete(id);
+    } else if (user && !networkOnline) {
+      healthEventService.delete(id);
+      await enqueue('health_events', 'delete', { id });
     } else {
       healthEventService.delete(id);
     }
     await reload();
-  }, [isOnline, user, reload]);
+  }, [isOnline, user, networkOnline, reload]);
 
   // Computed stats
   const { weekly: weekStats, monthly: monthStats } = computeStatsFromSessions(sessions);
