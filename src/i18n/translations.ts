@@ -1785,6 +1785,8 @@ const en: Record<string, string> = {
   'challenge.metricDistance': 'Distance (km)',
   'challenge.metricDuration': 'Duration (min)',
   'challenge.metricElevation': 'Elevation (m)',
+  'challenge.metricUnique_peaks': 'Unique peaks',
+  'challenge.metricMost_checkins': 'Most check-ins',
   'challenge.daysLeft': 'days left',
   'challenge.inviteLink': 'Invite link copied!',
   'challenge.removedFromHome': 'Removed from home',
