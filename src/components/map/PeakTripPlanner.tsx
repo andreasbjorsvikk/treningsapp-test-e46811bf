@@ -207,8 +207,9 @@ const PeakTripPlanner = React.forwardRef<HTMLDivElement, PeakTripPlannerProps>((
           });
         }
         setForecasts(days);
-      } catch {
-        // silent
+      } catch (e: any) {
+        console.error('PeakTripPlanner fetch error:', e);
+        setError(e?.message || 'Feil ved lasting av værdata');
       } finally {
         setLoading(false);
       }
