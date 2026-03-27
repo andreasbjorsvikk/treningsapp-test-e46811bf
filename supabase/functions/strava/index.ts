@@ -85,6 +85,9 @@ function buildActivityRow(a: any, userId: string) {
     max_heartrate: a.max_heartrate ? Math.round(a.max_heartrate) : null,
     summary_polyline: a.map?.summary_polyline || null,
     notes: null,
+    source_primary: 'strava',
+    sync_status: 'synced',
+    imported_at: new Date().toISOString(),
   };
 }
 
@@ -94,19 +97,66 @@ function isWithin(a: number, b: number, pct: number): boolean {
   return Math.abs(a - b) / Math.max(a, b) <= pct;
 }
 
-function isDuplicate(row: any, manualSessions: any[]): boolean {
-  const rowDate = new Date(row.date);
-  for (const m of manualSessions) {
-    if (m.type !== row.type) continue;
-    const mDate = new Date(m.date);
-    if (rowDate.toISOString().slice(0, 10) !== mDate.toISOString().slice(0, 10)) continue;
-    // At least one value within 20%
-    const durMatch = isWithin(row.duration_minutes, m.duration_minutes, 0.20);
-    const distMatch = row.distance && m.distance ? isWithin(row.distance, m.distance, 0.20) : false;
-    const elevMatch = row.elevation_gain && m.elevation_gain ? isWithin(row.elevation_gain, m.elevation_gain, 0.20) : false;
-    if (durMatch || distMatch || elevMatch) return true;
+// Stricter duplicate detection: ±15 min, same activity group, 2/3 metrics within 20%
+const TIME_TOLERANCE_MS = 15 * 60 * 1000;
+
+function activityGroup(type: string): string {
+  const groups: Record<string, string> = {
+    løping: 'running', tredemølle: 'running',
+    sykling: 'cycling',
+    fjelltur: 'hiking', gå: 'walking',
+    svømming: 'swimming',
+    styrke: 'strength',
+    yoga: 'yoga', tennis: 'tennis', fotball: 'football',
+    roing: 'rowing', kajakk: 'kayaking',
+    trappemaskin: 'stairclimber',
+    annet: 'other',
+  };
+  return groups[type] || 'other';
+}
+
+function findMatchingSession(row: any, existingSessions: any[]): any | null {
+  const rowTime = new Date(row.date).getTime();
+  const rowGroup = activityGroup(row.type);
+
+  for (const m of existingSessions) {
+    // Time check: ±15 minutes
+    const mTime = new Date(m.date).getTime();
+    if (Math.abs(rowTime - mTime) > TIME_TOLERANCE_MS) continue;
+
+    // Activity group check
+    const mGroup = activityGroup(m.type);
+    if (rowGroup !== mGroup && !(rowGroup === 'other' || mGroup === 'other')) continue;
+    // Don't match 'other' to 'other' (too generic)
+    if (rowGroup === 'other' && mGroup === 'other') continue;
+
+    // Metric checks: at least 2 of 3 within 20%
+    const checks: (boolean | null)[] = [];
+
+    // Duration
+    if (row.duration_minutes > 0 && m.duration_minutes > 0) {
+      checks.push(isWithin(row.duration_minutes, m.duration_minutes, 0.20));
+    } else { checks.push(null); }
+
+    // Distance
+    if (row.distance && m.distance) {
+      checks.push(isWithin(row.distance, m.distance, 0.20));
+    } else { checks.push(null); }
+
+    // Elevation
+    if (row.elevation_gain && m.elevation_gain) {
+      checks.push(isWithin(row.elevation_gain, m.elevation_gain, 0.20));
+    } else { checks.push(null); }
+
+    const matchCount = checks.filter(c => c === true).length;
+    const conclusiveCount = checks.filter(c => c !== null).length;
+
+    // Need 2+ matches, or 1 match if only 1 metric is available
+    if (matchCount >= 2 || (conclusiveCount === 1 && matchCount === 1)) {
+      return m;
+    }
   }
-  return false;
+  return null;
 }
 
 Deno.serve(async (req) => {
@@ -187,7 +237,7 @@ Deno.serve(async (req) => {
         activities.push(...batch);
         page++;
       }
-      // Get existing strava_activity_ids and manual sessions for dedup
+      // Get existing strava_activity_ids for quick skip
       const existingIds = new Set<number>();
       const { data: existingRows } = await admin.from("workout_sessions")
         .select("strava_activity_id")
@@ -199,17 +249,60 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Fetch manual sessions for duplicate detection
-      const { data: manualSessions } = await admin.from("workout_sessions")
-        .select("type, date, duration_minutes, distance, elevation_gain")
+      // Fetch non-strava sessions for merge detection (manual + apple_health)
+      const { data: nonStravaSessions } = await admin.from("workout_sessions")
+        .select("id, type, date, duration_minutes, distance, elevation_gain, source_primary, apple_health_workout_id")
         .eq("user_id", userId)
         .is("strava_activity_id", null);
 
-      // Build rows, filter out duplicates of manual sessions
       const allRows = activities.map((a) => buildActivityRow(a, userId));
-      const rowsToUpsert = allRows.filter(r => !isDuplicate(r, manualSessions || []));
+
+      // Separate into: already synced (update), matched (merge), new (insert)
+      const rowsToUpsert: any[] = [];
+      const mergeUpdates: { id: string; strava_activity_id: number; source_primary: string; sync_status: string; source_history: any }[] = [];
+      let merged = 0;
+
+      for (const row of allRows) {
+        // Already synced via strava_activity_id — just upsert to update
+        if (existingIds.has(Number(row.strava_activity_id))) {
+          rowsToUpsert.push(row);
+          continue;
+        }
+
+        // Try to find a matching non-strava session to merge with
+        const match = findMatchingSession(row, nonStravaSessions || []);
+        if (match) {
+          // Merge: update existing session with strava link
+          mergeUpdates.push({
+            id: match.id,
+            strava_activity_id: row.strava_activity_id,
+            source_primary: 'strava',
+            sync_status: 'matched',
+            source_history: [
+              { source: match.source_primary || 'manual', linked_at: new Date().toISOString(), action: 'merged_with_strava' }
+            ],
+          });
+          // Remove from candidates so it can't match again
+          const idx = (nonStravaSessions || []).indexOf(match);
+          if (idx >= 0) nonStravaSessions!.splice(idx, 1);
+          merged++;
+        } else {
+          // No match — insert as new
+          rowsToUpsert.push(row);
+        }
+      }
+
+      // Execute merge updates
+      for (const upd of mergeUpdates) {
+        await admin.from("workout_sessions").update({
+          strava_activity_id: upd.strava_activity_id,
+          source_primary: upd.source_primary,
+          sync_status: upd.sync_status,
+          source_history: upd.source_history,
+        }).eq("id", upd.id);
+      }
+
       const newCount = rowsToUpsert.filter(r => !existingIds.has(Number(r.strava_activity_id))).length;
-      const skipped = allRows.length - rowsToUpsert.length;
 
       for (let i = 0; i < rowsToUpsert.length; i += 100) {
         const batch = rowsToUpsert.slice(i, i + 100);
@@ -218,7 +311,7 @@ Deno.serve(async (req) => {
           .select("id");
         if (error) { console.error("Upsert error:", error); return new Response(JSON.stringify({ error: "Failed to upsert activities" }), { status: 500, headers: corsHeaders }); }
       }
-      return new Response(JSON.stringify({ synced: newCount, total: activities.length, skipped }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ synced: newCount, merged, total: activities.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ===== SYNC-ALL =====
@@ -238,15 +331,63 @@ Deno.serve(async (req) => {
         page++;
       }
 
-      // Fetch manual sessions for duplicate detection
-      const { data: manualSessions } = await admin.from("workout_sessions")
-        .select("type, date, duration_minutes, distance, elevation_gain")
+      // Fetch non-strava sessions for merge detection
+      const { data: nonStravaSessions } = await admin.from("workout_sessions")
+        .select("id, type, date, duration_minutes, distance, elevation_gain, source_primary, apple_health_workout_id")
         .eq("user_id", userId)
         .is("strava_activity_id", null);
 
+      // Get existing strava IDs for quick skip
+      const existingStravaIds = new Set<number>();
+      const { data: stravaRows } = await admin.from("workout_sessions")
+        .select("strava_activity_id")
+        .eq("user_id", userId)
+        .not("strava_activity_id", "is", null);
+      if (stravaRows) {
+        for (const r of stravaRows) {
+          if (r.strava_activity_id) existingStravaIds.add(Number(r.strava_activity_id));
+        }
+      }
+
       const allRows = activities.map((a) => buildActivityRow(a, userId));
-      const rowsToUpsert = allRows.filter(r => !isDuplicate(r, manualSessions || []));
-      const skipped = allRows.length - rowsToUpsert.length;
+      const rowsToUpsert: any[] = [];
+      const mergeUpdates: any[] = [];
+      let merged = 0;
+      const remainingSessions = [...(nonStravaSessions || [])];
+
+      for (const row of allRows) {
+        if (existingStravaIds.has(Number(row.strava_activity_id))) {
+          rowsToUpsert.push(row);
+          continue;
+        }
+        const match = findMatchingSession(row, remainingSessions);
+        if (match) {
+          mergeUpdates.push({
+            id: match.id,
+            strava_activity_id: row.strava_activity_id,
+            source_primary: 'strava',
+            sync_status: 'matched',
+            source_history: [
+              { source: match.source_primary || 'manual', linked_at: new Date().toISOString(), action: 'merged_with_strava' }
+            ],
+          });
+          const idx = remainingSessions.indexOf(match);
+          if (idx >= 0) remainingSessions.splice(idx, 1);
+          merged++;
+        } else {
+          rowsToUpsert.push(row);
+        }
+      }
+
+      // Execute merge updates
+      for (const upd of mergeUpdates) {
+        await admin.from("workout_sessions").update({
+          strava_activity_id: upd.strava_activity_id,
+          source_primary: upd.source_primary,
+          sync_status: upd.sync_status,
+          source_history: upd.source_history,
+        }).eq("id", upd.id);
+      }
 
       let synced = 0;
       for (let i = 0; i < rowsToUpsert.length; i += 100) {
@@ -258,7 +399,7 @@ Deno.serve(async (req) => {
         synced += (upserted || []).length;
       }
 
-      return new Response(JSON.stringify({ synced, total: activities.length, skipped }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ synced, merged, total: activities.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ===== FETCH-STREAMS: get detailed streams for one activity =====

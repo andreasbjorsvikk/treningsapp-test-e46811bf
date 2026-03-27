@@ -990,6 +990,7 @@ const SettingsPage = () => {
         const result = await stravaService.sync();
         const parts: string[] = [];
         if (result.synced > 0) parts.push(`${result.synced} nye`);
+        if ((result as any).merged > 0) parts.push(`${(result as any).merged} koblet`);
         if ((result as any).updated > 0) parts.push(`${(result as any).updated} oppdatert`);
         if (parts.length > 0) {
            toast.success(`${parts.join(', ')} ${t('home.sessions')} Strava!`);
