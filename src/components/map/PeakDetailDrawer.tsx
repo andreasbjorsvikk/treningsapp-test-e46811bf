@@ -98,6 +98,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
   const [showChildCheckin, setShowChildCheckin] = useState(false);
   const [lastNewCheckinId, setLastNewCheckinId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('info');
+  const [calculatedElevGain, setCalculatedElevGain] = useState<number | null>(null);
   
   // Admin manual checkin state
   const [manualCheckinOpen, setManualCheckinOpen] = useState(false);
@@ -115,18 +116,6 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
   const [allCheckins, setAllCheckins] = useState<(CheckinWithProfile & { childProfile?: ChildProfile | null })[]>([]);
   const [loadingAllCheckins, setLoadingAllCheckins] = useState(false);
 
-  // Calculate elevation gain from route geojson
-  const routeElevationGain = useMemo(() => {
-    if (!peak?.route_geojson?.coordinates) return null;
-    const coords = peak.route_geojson.coordinates;
-    if (!coords.length || !coords[0]?.[2]) return null;
-    let gain = 0;
-    for (let i = 1; i < coords.length; i++) {
-      const diff = (coords[i][2] || 0) - (coords[i - 1][2] || 0);
-      if (diff > 0) gain += diff;
-    }
-    return Math.round(gain);
-  }, [peak?.route_geojson]);
 
   // Delete confirmation
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -478,13 +467,13 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="w-full grid grid-cols-3">
                 <TabsTrigger value="info" className="text-sm gap-1.5">
-                  <Info className="w-4 h-4" /> Info
+                  <Info className="w-4 h-4" /> <span className="text-xs">Info</span>
                 </TabsTrigger>
                 <TabsTrigger value="leaderboard" className="text-sm gap-1.5">
-                  <Trophy className="w-4 h-4" /> {language === 'no' ? 'Lederliste' : 'Leaderboard'}
+                  <Trophy className="w-4 h-4" /> <span className="text-xs">{language === 'no' ? 'Lederliste' : 'Leaderboard'}</span>
                 </TabsTrigger>
                 <TabsTrigger value="plan" className="text-sm gap-1.5">
-                  <MapIcon className="w-5 h-5" /> {language === 'no' ? 'Planlegg tur' : 'Plan trip'}
+                  <MapIcon className="w-6 h-6" /> <span className="text-xs">{language === 'no' ? 'Planlegg tur' : 'Plan trip'}</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -514,7 +503,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                      </div>
                      <div className="flex flex-col items-center gap-0.5 p-2 rounded-lg bg-muted/30 border border-border/30">
                        <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Stigning' : 'Elev. gain'}</p>
-                       <p className="text-sm font-semibold">{routeElevationGain != null ? `${routeElevationGain} m` : `${peak.heightMoh} m`}</p>
+                       <p className="text-sm font-semibold">{calculatedElevGain != null ? `${calculatedElevGain} m` : '...'}</p>
                      </div>
                      <div className="flex flex-col items-center gap-0.5 p-2 rounded-lg bg-muted/30 border border-border/30">
                        <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Estimert tid' : 'Est. time'}</p>
@@ -526,7 +515,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                  {/* Elevation chart */}
                 {peak.route_status === 'approved' && peak.route_geojson && (
                   <div className="bg-muted/10 p-3 rounded-xl border border-border/50">
-                    <RouteElevationChart geojson={peak.route_geojson} />
+                    <RouteElevationChart geojson={peak.route_geojson} onElevationGain={setCalculatedElevGain} />
                   </div>
                 )}
 

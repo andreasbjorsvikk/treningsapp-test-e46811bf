@@ -75,7 +75,7 @@ const WindArrow = (props: any) => {
         <polygon points="0,-6 -2.5,-2 2.5,-2" fill="hsl(var(--muted-foreground))" />
       </g>
       <text x={cx} y={topY + 22} textAnchor="middle" fontSize={7} fill="hsl(var(--muted-foreground))">
-        {speed}
+      <text x={cx} y={topY + 24} textAnchor="middle" fontSize={9} fontWeight={500} fill="hsl(var(--muted-foreground))">
       </text>
     </g>
   );
