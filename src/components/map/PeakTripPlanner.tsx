@@ -257,6 +257,14 @@ const PeakTripPlanner = React.forwardRef<HTMLDivElement, PeakTripPlannerProps>((
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-sm text-muted-foreground">
+        <p>{error}</p>
+      </div>
+    );
+  }
+
   if (!selected) return null;
 
   const CustomTooltip = ({ active, payload, label }: any) => {
