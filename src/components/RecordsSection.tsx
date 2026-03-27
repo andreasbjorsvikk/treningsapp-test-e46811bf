@@ -162,6 +162,15 @@ const RecordsSection = () => {
   const [friendToRemove, setFriendToRemove] = useState<string | null>(null);
   const [showSharedFriends, setShowSharedFriends] = useState(false);
 
+  // Pending hike share invitations received by the user
+  const [pendingInvitations, setPendingInvitations] = useState<{
+    id: string;
+    hikingRecordId: string;
+    hikeName: string;
+    fromUsername: string;
+    fromAvatarUrl?: string;
+  }[]>([]);
+
   // Entry detail view
   const [selectedEntry, setSelectedEntry] = useState<{ entry: HikingEntry; isShared: boolean } | null>(null);
   const [editingEntryTime, setEditingEntryTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
