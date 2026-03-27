@@ -583,6 +583,8 @@ const no: Record<string, string> = {
   'challenge.metricDistance': 'Distanse (km)',
   'challenge.metricDuration': 'Varighet (min)',
   'challenge.metricElevation': 'Høydemeter (m)',
+  'challenge.metricUnique_peaks': 'Unike fjelltopper',
+  'challenge.metricMost_checkins': 'Flest innsjekkinger',
   'challenge.daysLeft': 'dager igjen',
   'challenge.inviteLink': 'Invitasjonslenke kopiert!',
   'challenge.removedFromHome': 'Fjernet fra forsiden',
