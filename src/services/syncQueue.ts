@@ -206,8 +206,8 @@ async function executeOperation(op: SyncOperation): Promise<void> {
 
   switch (action) {
     case 'insert': {
-      // Remove the local temp id if present, let DB generate
-      const { localTempId, ...data } = payload as Record<string, unknown> & { localTempId?: string };
+      // Remove local-only fields before sending to DB
+      const { localTempId, _offline_temp_id, ...data } = payload as Record<string, unknown> & { localTempId?: string; _offline_temp_id?: string };
       const { error } = await supabase.from(table).insert(data as any);
       if (error) throw new Error(error.message);
       break;
