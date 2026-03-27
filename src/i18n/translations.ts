@@ -2179,9 +2179,8 @@ const en: Record<string, string> = {
   'suggestPeak.success': 'Suggestion submitted for approval',
   'suggestPeak.error': 'Could not submit suggestion. Please try again.',
 
-  // Peaks list
+  // Peaks list (legacy keys kept for compat)
   'peaksList.search': 'Search for peak...',
-  'peaksList.municipality': 'Search municipality...',
 
   // Global leaderboard
   'globalLeaderboard.global': 'Global',
