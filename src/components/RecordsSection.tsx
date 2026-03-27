@@ -749,6 +749,50 @@ const RecordsSection = () => {
             <Plus className="w-4 h-4 mr-2" /> {t('records.addHike')}
           </Button>
 
+          {/* Pending invitations received */}
+          {pendingInvitations.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
+                {language === 'no' ? 'Invitasjoner' : 'Invitations'}
+              </p>
+              {pendingInvitations.map(inv => (
+                <div key={inv.id} className="glass-card rounded-xl p-3 flex items-center gap-3">
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={inv.fromAvatarUrl} />
+                    <AvatarFallback className="text-[10px]">{(inv.fromUsername || '?')[0]}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate">{inv.hikeName}</p>
+                    <p className="text-xs text-muted-foreground">{language === 'no' ? `Fra ${inv.fromUsername}` : `From ${inv.fromUsername}`}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={async () => {
+                        await supabase.from('hiking_record_shares').update({ status: 'accepted' } as any).eq('id', inv.id);
+                        toast.success(language === 'no' ? 'Godkjent!' : 'Accepted!');
+                        await loadPendingInvitations();
+                        await loadHikingRecords();
+                      }}
+                      className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+                    >
+                      <Check className="w-3 h-3 inline mr-1" />{language === 'no' ? 'Godkjenn' : 'Accept'}
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await supabase.from('hiking_record_shares').delete().eq('id', inv.id) as any;
+                        toast.success(language === 'no' ? 'Avslått' : 'Declined');
+                        await loadPendingInvitations();
+                      }}
+                      className="px-3 py-1.5 rounded-md bg-secondary text-foreground text-xs font-medium hover:bg-secondary/80 transition-colors"
+                    >
+                      <X className="w-3 h-3 inline mr-1" />{language === 'no' ? 'Avslå' : 'Decline'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {hikingRecords.length === 0 ? (
             <p className="text-center py-8 text-muted-foreground text-sm">
               {t('records.noHikes')}
