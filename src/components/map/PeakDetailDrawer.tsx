@@ -129,6 +129,8 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
   }, [peak?.route_geojson]);
 
   // Delete confirmation
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (!searchQuery.trim()) { setSearchResults([]); return; }
