@@ -193,6 +193,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
       setLastNewCheckinId(newCheckin.id);
       setShowSuccessAnim(true);
       setShowChildCheckin(true);
+      hapticsService.notification('success');
       onCheckinSuccess();
     } catch (err: any) {
       if (err?.code === 1) toast.error('Lokasjonstilgang ble avslått. Aktiver GPS for å sjekke inn.');
