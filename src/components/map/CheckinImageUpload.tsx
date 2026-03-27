@@ -112,6 +112,7 @@ interface CheckinCropDialogProps {
 }
 
 const CheckinCropDialog = ({ open, imageUrl, rawFile, onConfirm, onCancel }: CheckinCropDialogProps) => {
+  const { t } = useTranslation();
   const [imgNatural, setImgNatural] = useState({ w: 0, h: 0 });
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
