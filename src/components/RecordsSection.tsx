@@ -5,7 +5,7 @@ import { formatDuration } from '@/utils/workoutUtils';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Trophy, ChevronRight, Plus, Trash2, Mountain, Pencil, UserPlus, X, ArrowLeft, Heart, Route, ArrowUpRight, Clock, Calendar, FileText } from 'lucide-react';
+import { Trophy, ChevronRight, Plus, Trash2, Mountain, Pencil, UserPlus, X, ArrowLeft, Heart, Route, ArrowUpRight, Clock, Calendar, FileText, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
