@@ -1,114 +1,136 @@
 
-Målet ditt er riktig prioritert. Jeg er enig i at fase 1 ikke er ferdig for ekte offline-bruk ennå.
 
-## Hva som faktisk er galt nå
-Jeg har gått gjennom koden, og problemet er reelt:
+# Fase 2: Native UX, varsler og feature scaffolding — Justert plan
 
-- `useAppData` er fortsatt ikke migrert til et ekte query/cache-lag. Den bruker `useState` + manuelle `reload()`-kall.
-- Offline fallback går til lokale tjenester som leser fra generelle `localStorage`-nøkler.
-- `workoutService` fyller inn `mockSessions` hvis ingen cache finnes, som forklarer test/demo-data offline.
-- Query-persisteringen i `queryPersister.ts` bruker én global IndexedDB-nøkkel, ikke bruker-scope.
-- Profildata (`username`, `avatar`) hentes direkte i `Index.tsx` og `SettingsPage.tsx`, så de er ikke del av offline-cachen.
-- `syncQueue` dropper operasjoner stille etter maks retry i stedet for å flytte dem til en feilet-kø.
+## Min vurdering av ChatGPTs plan
 
-## Plan for å fikse dette
+Planen er god i retning, men har noen deler som er overspesifisert for det som faktisk gir verdi nå. Her er min justerte versjon med det som faktisk bør gjøres, tonet ned der det er unødvendig.
 
-### 1) Innfør auth-ready bootstrap før datalasting
-- Utvide auth-laget med eksplisitt “auth ready / session restored”-tilstand.
-- App-data skal ikke laste før auth er ferdig initialisert.
-- Offline oppstart skal bruke sist gjenopprettede session fra auth-lagringen, ikke demo/local fallback.
+---
 
-### 2) Fullfør `useAppData`-migreringen til ekte query-lag
-Refaktorer `useAppData` bort fra manuell state og over til et sentralt, cachebart datalag for:
-- profil
-- workouts
-- goals
-- primary goals
-- health events
-- peak check-ins
-- evt. daily health metrics hvis brukt i statistikkvisninger
+## Del 1: Haptics — koble til actions (liten jobb)
 
-`useAppData` skal bli en aggregator over disse queryene + mutasjonene, slik at resten av appen fortsatt kan bruke samme context-API.
+Legg til `hapticsService`-kall på riktige steder i appen. Alt er no-op i web, men klar for native.
 
-### 3) Gjør all cache user-scoped
-Alle brukerdata må skilles per bruker:
-- query keys må inkludere `user.id`
-- persistering i IndexedDB må ha separat nøkkel per bruker eller rydde/isolere cache ved brukerbytte
-- lokale fallback-nøkler må enten namespaceres med `user.id` eller fases ut for innloggede brukere
+- Tab-bytte i `BottomNav` → `selectionChanged()`
+- Lagre økt / mål → `impact('medium')`
+- Mål nådd / badge / challenge ferdig / peak check-in → `notification('success')`
+- Segmented controls / sub-tab bytte → `selectionChanged()`
 
-Dette hindrer at feil brukerdata eller gammel testdata vises på delt enhet.
+Ingen nye filer. Bare import + kall i eksisterende komponenter.
 
-### 4) Fjern demo/test-fallback for innloggede brukere
-- `mockSessions` må aldri brukes for innlogget/offline bruker.
-- Dersom bruker er innlogget og ingen cache finnes, skal appen vise tydelig offline empty state.
-- Gjelder profil, mål, kalender, statistikk og økter.
+---
 
-### 5) Cache profil og header-data riktig
-Flytt profilhenting ut av direkte `supabase.from('profiles')`-kall i sider og inn i samme offline-klare datalag.
-Da vil:
-- riktig brukernavn
-- avatar
-- privacy-relatert profilinfo
-kunne vises fra cache offline.
+## Del 2: Notification preferences (moderat jobb)
 
-### 6) Oppdater visningene til å håndtere “offline uten cache”
-Legg inn tydelige empty/offline states i sentrale visninger:
-- forside
-- kalender
-- trening/statistikk
-- mål
-- profil/settings der relevant
+**Hva ChatGPT foreslår som er unødvendig nå:**
+- "Lokal scheduling-struktur" — rapportene trigges allerede on-app-open, ikke via timer
+- Skille mellom "local" og "push" i UI — forvirrer brukeren, ingen av dem fungerer ennå
 
-Regel:
-- Har vi cache → vis siste kjente brukerdata
-- Ingen cache + offline → vis forklarende tomtilstand
-- Aldri vis mock/demo som fallback
+**Hva jeg faktisk vil bygge:**
 
-### 7) Forbedre sync queue med dead-letter state
-Endre `syncQueue` slik at operasjoner etter maks retry:
-- ikke slettes
-- flyttes til en egen failed/dead-letter queue
-- beholder `lastError`, `retryCount`, payload og timestamp
+1. **DB-tabell `notification_preferences`** med kolonner per kategori:
+   - `friend_challenge` (boolean, default true)
+   - `challenge_complete` (boolean, default true)
+   - `goal_reached` (boolean, default true)
+   - `weekly_report` (boolean, default true)
+   - `monthly_report` (boolean, default true)
 
-Legg også grunnlag for:
-- manuell retry senere
-- UI-status i neste steg, uten å måtte bygge full admin/debug UI nå
+2. **UI i Innstillinger** — ny seksjon "Varsler" med toggles per kategori, enkel og tydelig
 
-### 8) Rydd i legacy localStorage-avhengigheter
-Det finnes fortsatt flere direkte `localStorage`-flyter i appen. I denne runden bør vi prioritere:
-- treningsdata
-- mål
-- primary goals
-- health events
-- profil-relatert pending/welcome-logikk som kan være global og ikke bruker-scope
+3. **Hook `useNotificationPreferences`** som leser/skriver til tabellen
 
-Vi trenger ikke rydde absolutt alt på én gang, men alt som påvirker feil brukerdata offline må inn i trygg struktur nå.
+4. Sjekk preferences før rapport-prompt vises og før community-varsler sendes
 
-## Foreslått implementeringsrekkefølge
-1. Auth-ready bootstrap
-2. User-scoped query/cache foundation
-3. Migrere `useAppData` datakilder
-4. Migrere profildata inn i samme lag
-5. Fjerne mock/demo fallback for innloggede brukere
-6. Legge inn offline empty states
-7. Dead-letter queue for sync failures
-8. Rydding av kritiske legacy localStorage-nøkler
+Ingen push-infrastruktur, ingen scheduling, ingen lokal notification API. Bare preferanser som styrer hva som vises i appen.
 
-## Hva dette vil løse
-Etter denne runden skal appen kunne:
-- starte offline med sist kjente innloggede bruker
-- vise riktig profil offline
-- vise riktige mål, økter, kalender og statistikk fra siste cache
-- aldri vise demo/testdata for innlogget bruker
-- holde feilede sync-operasjoner tilgjengelige for senere retry
+---
+
+## Del 3: Permissions onboarding polish (liten jobb)
+
+Scaffoldet finnes allerede i `PermissionsOnboarding.tsx`. Justeringer:
+
+- Legg til permission-status tracking i localStorage (`not_asked` / `granted` / `denied` / `unavailable`)
+- Vis status i Innstillinger under hver tillatelse (grønn = aktivert, grå = ikke spurt, rød = avslått)
+- Legg til "Åpne tillatelser" knapp i Innstillinger som viser onboarding-dialogen på nytt
+- Platform guards: skjul Apple Health på ikke-iOS, skjul native-spesifikke ting i web
+
+Alt er fortsatt scaffold — ingen ekte permission-requests.
+
+---
+
+## Del 4: Kamera-flyt polish (liten jobb)
+
+`cameraService.ts` og `CheckinImageUpload.tsx` finnes allerede og fungerer i web. Justeringer:
+
+- Oversett hardkodede norske strenger i `CheckinImageUpload` ("Juster bilde", "Komprimerer...", etc.)
+- Legg til bedre error-håndtering (toast ved feil)
+- Sørg for at `cameraService` brukes konsekvent (sjekk at avatar-upload også går via service)
+
+Ikke bygge ny UI-flyt. Det som finnes fungerer.
+
+---
+
+## Del 5: Sync/dead-letter visibility (moderat jobb)
+
+Sync-indikatoren finnes i hero-headeren. Utvid med:
+
+1. **Ny seksjon i Innstillinger** — "Synkronisering":
+   - Online/offline status
+   - Antall ventende operasjoner
+   - Antall feilede (dead-letter)
+   - "Prøv igjen"-knapp for dead-letter queue
+   - Sist synkronisert tidspunkt
+
+2. Brukervennlig språk, ikke teknisk. F.eks. "2 endringer venter på å bli lagret" og "1 endring kunne ikke lagres — prøv igjen".
+
+---
+
+## Del 6: Native guards audit (liten jobb)
+
+Gå gjennom alle `isNativePlatform()`-guards og sørg for:
+- Ingen feil i web når native funksjoner mangler
+- Ingen misvisende UI (f.eks. "Koble til Apple Health" skal ikke vises i web)
+- Tydelige TODO-kommentarer der Capacitor-plugin kreves senere
+- Apple Health-seksjonen i Innstillinger vises kun på iOS
+
+---
+
+## Del 7: Apple Health settings polish
+
+Allerede scaffoldet. Kun:
+- Sørg for at seksjonen er skjult i web/Android
+- Tydelig status-visning (tilkoblet / frakoblet / utilgjengelig)
+- Konsistent med resten av innstillingene
+- Ingen nye funksjoner
+
+---
+
+## Rekkefølge
+
+1. Notification preferences (DB + UI + hook) — størst funksjonell verdi
+2. Sync visibility i Innstillinger
+3. Haptics integration points
+4. Permissions status tracking + Innstillinger UI
+5. Kamera-flyt polish + oversettelse
+6. Native guards audit + Apple Health polish
+
+---
+
+## Hva som IKKE gjøres
+
+- Ingen Capacitor-installasjon
+- Ingen push-infrastruktur
+- Ingen lokal notification scheduling
+- Ingen HealthKit-integrasjon
+- Ingen Xcode-oppsett
+- Ingen widgets
 
 ## Tekniske detaljer
-- Behold `AppDataProvider` og `useAppDataContext` som offentlig API for resten av appen.
-- Innfør query-nøkler som inkluderer `user.id`, f.eks. `['app-data','sessions', user.id]`.
-- Ikke bruk generelle nøkler som `treningsapp_query_cache` alene for brukerdata uten scoping.
-- Fjern eller beskytt `mockSessions` bootstrap slik at den kun gjelder ekte anonym/demo-modus, ikke autentisert bruker.
-- Direkte sidekall til backend for profil (`Index`, `Settings`) bør erstattes med delt cached profil-query.
-- `syncQueue` bør få `failedQueue` + lesefunksjon for senere UI/debugging.
 
-## Min vurdering
-Ja — dette er riktig neste steg, og jeg er enig i alle fem punktene du listet. Problemet er ikke bare en liten bug; det er at offline-laget fortsatt er halvveis koblet. Planen over fullfører grunnmuren så appen faktisk oppfører seg som en ekte offline-first app for innloggede brukere.
+- Ny migrasjon: `notification_preferences` tabell med RLS (user_id = auth.uid())
+- Ny hook: `useNotificationPreferences.ts`
+- Endringer i ~10 eksisterende filer for haptics-kall
+- Ny seksjon i `SettingsPage.tsx` for sync-status og notification toggles
+- Oversettelsesnøkler i `translations.ts` for nye UI-elementer
+
