@@ -6,8 +6,9 @@ import ActivityIcon from '@/components/ActivityIcon';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAppDataContext } from '@/contexts/AppDataContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Route, Mountain, Clock, Ambulance, Cross } from 'lucide-react';
+import { Route, Mountain, Clock, Ambulance, Cross, Grid3X3 } from 'lucide-react';
 import DayDrawer from '@/components/DayDrawer';
+import HeatmapCalendar from '@/components/HeatmapCalendar';
 import HealthEventDialog from '@/components/HealthEventDialog';
 import { useTranslation } from '@/i18n/useTranslation';
 // Tooltips for health events use native DOM for reliability inside memoized renders
@@ -123,7 +124,7 @@ const CalendarPage = () => {
   const [, setRefresh] = useState(0);
   const [editHealthEvent, setEditHealthEvent] = useState<HealthEvent | undefined>();
   const [healthDialogOpen, setHealthDialogOpen] = useState(false);
-
+  const [heatmapOpen, setHeatmapOpen] = useState(false);
   const isDark = settings.darkMode;
 
   // Infinite scroll state: track range of months to render
