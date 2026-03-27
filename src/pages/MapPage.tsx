@@ -325,7 +325,7 @@ const MapPage = () => {
               showHeatmap={showHeatmap}
               heatmapPeriod={heatmapPeriod}
               showAreaStats={showAreaStats}
-              onlyReachedThisYear={onlyReachedThisYear}
+              areaStatsMode={areaStatsMode}
               suggestedPeaks={suggestedPeaks}
             />
             {activeRouteGeojson && !selectedPeak && activeRoutePeakId && (
