@@ -1173,6 +1173,18 @@ const no: Record<string, string> = {
   'syncStatus.failedDesc': 'Disse endringene feilet flere ganger. Prøv igjen.',
   'syncStatus.retry': 'Prøv igjen',
   'syncStatus.retriedCount': '{n} endringer lagt tilbake i kø for synkronisering',
+
+  // Checkin image upload
+  'checkinImage.tooLarge': 'Bildet er for stort (maks 10 MB)',
+  'checkinImage.onlyImages': 'Kun bildefiler er støttet',
+  'checkinImage.imageSelected': 'Bilde valgt',
+  'checkinImage.addPhoto': 'Legg til bilde (valgfritt)',
+  'checkinImage.takePhoto': 'Ta bilde',
+  'checkinImage.chooseFromGallery': 'Velg fra galleri',
+  'checkinImage.adjustImage': 'Juster bilde',
+  'checkinImage.dragZoomRotate': 'Dra, zoom og roter for å velge utsnitt',
+  'checkinImage.compressing': 'Komprimerer...',
+  'checkinImage.confirm': 'Bekreft',
 };
 
 const en: Record<string, string> = {
