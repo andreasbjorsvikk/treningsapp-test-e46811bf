@@ -53,16 +53,16 @@ const WeatherAnnotation = (props: any) => {
     <g>
       <image
         href={`${WEATHER_ICON_BASE}${symbol}.svg`}
-        width={18}
-        height={18}
-        x={cx - 9}
-        y={cy - 30}
+        width={22}
+        height={22}
+        x={cx - 11}
+        y={cy - 34}
       />
       <text
         x={cx}
-        y={cy - 12}
+        y={cy - 8}
         textAnchor="middle"
-        fontSize={8}
+        fontSize={9}
         fontWeight={600}
         fill="hsl(var(--foreground))"
       >
