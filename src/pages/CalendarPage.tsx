@@ -617,6 +617,22 @@ const CalendarPage = () => {
         {months.map(m => renderMonth(m))}
       </div>
 
+      {/* Heatmap button - bottom left */}
+      <button
+        onClick={() => setHeatmapOpen(true)}
+        className="fixed bottom-20 left-4 z-30 p-2.5 rounded-full bg-card border border-border shadow-lg hover:bg-muted transition-colors"
+        title={language === 'no' ? 'Årsvisning' : 'Year overview'}
+      >
+        <Grid3X3 className="w-5 h-5 text-muted-foreground" />
+      </button>
+
+      {/* Heatmap calendar drawer */}
+      <HeatmapCalendar
+        sessions={allSessions}
+        open={heatmapOpen}
+        onClose={() => setHeatmapOpen(false)}
+      />
+
       {/* Day drawer */}
       <DayDrawer
         dateKey={selectedDay}
