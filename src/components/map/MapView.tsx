@@ -15,6 +15,8 @@ import { getPeakIcon, getCheckedPeakIcon } from '@/utils/peakIcons';
 
 type HeatmapPeriod = 'year' | 'total';
 
+type AreaStatsMode = 'off' | 'kommune' | 'fylke';
+
 interface MapViewProps {
   peaks: Peak[];
   checkins: PeakCheckin[];
@@ -39,11 +41,12 @@ interface MapViewProps {
   showAreaStats?: boolean;
   onlyReachedThisYear?: boolean;
   suggestedPeaks?: PeakSuggestion[];
+  areaStatsMode?: AreaStatsMode;
 }
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
-const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, routeFocus, suppressInitialGeolocate, onClearRoute, onMapReady, previewWaypoints, onWaypointClick, onWaypointDrag, showHeatmap, heatmapPeriod, showAreaStats, onlyReachedThisYear, suggestedPeaks }: MapViewProps) => {
+const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, routeFocus, suppressInitialGeolocate, onClearRoute, onMapReady, previewWaypoints, onWaypointClick, onWaypointDrag, showHeatmap, heatmapPeriod, showAreaStats, onlyReachedThisYear, suggestedPeaks, areaStatsMode = 'off' }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
