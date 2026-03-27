@@ -224,10 +224,16 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
     if (!name.trim() || !lat || !lng) return;
     setSaving(true);
     try {
+      // Parse municipality and county from area field "Kommune, Fylke"
+      const areaParts = area.trim().split(',').map(s => s.trim());
+      const municipality = areaParts[0] || '';
+      const county = areaParts[1] || '';
       await onSave({
         name_no: name.trim(),
         elevation_moh: Number(elevation) || 0,
         area: area.trim(),
+        municipality,
+        county,
         description_no: description.trim(),
         latitude: Number(lat),
         longitude: Number(lng),
