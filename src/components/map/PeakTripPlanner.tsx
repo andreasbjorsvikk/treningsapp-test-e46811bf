@@ -377,6 +377,8 @@ const PeakTripPlanner = React.forwardRef<HTMLDivElement, PeakTripPlannerProps>((
       )}
     </div>
   );
-};
+});
+
+PeakTripPlanner.displayName = 'PeakTripPlanner';
 
 export default PeakTripPlanner;
