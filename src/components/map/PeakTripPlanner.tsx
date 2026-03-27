@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { format, addDays } from 'date-fns';
 import { nb, enUS } from 'date-fns/locale';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Bar, ComposedChart, Area } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Bar, ComposedChart, Area, ReferenceLine } from 'recharts';
 import { Sun, Sunrise, Sunset, Cloud, Snowflake, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -11,14 +11,58 @@ interface PeakTripPlannerProps {
   peakName: string;
 }
 
+interface HourlyData {
+  hour: string;
+  temp: number;
+  precip: number;
+  weatherCode: number;
+}
+
 interface DayForecast {
   date: string;
   label: string;
-  hourly: { hour: string; temp: number; precip: number }[];
+  hourly: HourlyData[];
   sunrise: string;
   sunset: string;
   snowDepth?: number;
 }
+
+const WEATHER_ICON_BASE = 'https://raw.githubusercontent.com/metno/weathericons/main/weather/svg/';
+
+const mapCodeToSymbol = (code: number): string => {
+  if ([0].includes(code)) return 'clearsky_day';
+  if ([1, 2].includes(code)) return 'fair_day';
+  if ([3].includes(code)) return 'cloudy';
+  if ([45, 48].includes(code)) return 'fog';
+  if ([51, 53, 55, 56, 57].includes(code)) return 'lightrain';
+  if ([61, 63, 65, 66, 67].includes(code)) return 'rain';
+  if ([71, 73, 75, 77].includes(code)) return 'snow';
+  if ([80, 81, 82].includes(code)) return 'rainshowers_day';
+  if ([85, 86].includes(code)) return 'snowshowers_day';
+  if ([95, 96, 99].includes(code)) return 'heavyrainandthunder';
+  return 'cloudy';
+};
+
+// Custom tick that renders weather icons at every 3rd hour
+const WeatherIconTick = ({ x, y, payload, data }: any) => {
+  if (!data || !payload) return null;
+  const hourIdx = parseInt(payload.value, 10);
+  if (isNaN(hourIdx) || hourIdx % 3 !== 0) return null;
+  const entry = data.find((d: HourlyData) => d.hour === payload.value);
+  if (!entry) return null;
+  const symbol = mapCodeToSymbol(entry.weatherCode);
+  return (
+    <g transform={`translate(${x},${y - 20})`}>
+      <image
+        href={`${WEATHER_ICON_BASE}${symbol}.svg`}
+        width={16}
+        height={16}
+        x={-8}
+        y={-8}
+      />
+    </g>
+  );
+};
 
 const PeakTripPlanner = ({ latitude, longitude, peakName }: PeakTripPlannerProps) => {
   const { t, language } = useTranslation();
@@ -32,7 +76,7 @@ const PeakTripPlanner = ({ latitude, longitude, peakName }: PeakTripPlannerProps
       setLoading(true);
       try {
         const res = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,precipitation,snow_depth&daily=sunrise,sunset&timezone=auto&forecast_days=10`
+          `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,precipitation,snow_depth,weather_code&daily=sunrise,sunset&timezone=auto&forecast_days=10`
         );
         const data = await res.json();
         
@@ -46,17 +90,18 @@ const PeakTripPlanner = ({ latitude, longitude, peakName }: PeakTripPlannerProps
               ? (language === 'no' ? 'I morgen' : 'Tomorrow')
               : format(dayDate, 'EEE d. MMM', { locale });
           
-          const hourly: { hour: string; temp: number; precip: number }[] = [];
+          const hourly: HourlyData[] = [];
           for (let h = 0; h < 24; h++) {
             const idx = d * 24 + h;
             hourly.push({
               hour: `${String(h).padStart(2, '0')}`,
-              temp: Math.round(data.hourly.temperature_2m[idx] * 10) / 10,
+              temp: Math.round(data.hourly.temperature_2m[idx]),
               precip: Math.round(data.hourly.precipitation[idx] * 10) / 10,
+              weatherCode: data.hourly.weather_code?.[idx] ?? 3,
             });
           }
 
-          const snowIdx = d * 24 + 12; // noon
+          const snowIdx = d * 24 + 12;
           const snowDepth = data.hourly.snow_depth?.[snowIdx];
 
           const sunriseTime = data.daily.sunrise[d];
@@ -81,6 +126,24 @@ const PeakTripPlanner = ({ latitude, longitude, peakName }: PeakTripPlannerProps
   }, [latitude, longitude, language]);
 
   const selected = forecasts[selectedDay];
+
+  // Compute integer Y-axis ticks
+  const tempDomain = useMemo(() => {
+    if (!selected) return [0, 10];
+    const temps = selected.hourly.map(h => h.temp);
+    const min = Math.floor(Math.min(...temps)) - 1;
+    const max = Math.ceil(Math.max(...temps)) + 1;
+    return [min, max];
+  }, [selected]);
+
+  const tempTicks = useMemo(() => {
+    const [min, max] = tempDomain;
+    const ticks: number[] = [];
+    for (let i = min; i <= max; i++) ticks.push(i);
+    // If too many ticks, step by 2
+    if (ticks.length > 10) return ticks.filter((_, idx) => idx % 2 === 0);
+    return ticks;
+  }, [tempDomain]);
 
   if (loading) {
     return (
@@ -111,7 +174,7 @@ const PeakTripPlanner = ({ latitude, longitude, peakName }: PeakTripPlannerProps
 
   return (
     <div className="space-y-3">
-      {/* Day selector - horizontal scroll */}
+      {/* Day selector */}
       <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
         {forecasts.map((day, i) => (
           <button
@@ -128,11 +191,11 @@ const PeakTripPlanner = ({ latitude, longitude, peakName }: PeakTripPlannerProps
         ))}
       </div>
 
-      {/* Weather chart */}
+      {/* Weather chart with icons */}
       <div className="rounded-xl border border-border/30 bg-card/50 p-3">
-        <div className="h-[180px]">
+        <div className="h-[200px]">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={selected.hourly} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+            <ComposedChart data={selected.hourly} margin={{ top: 24, right: 5, left: -15, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.3} vertical={false} />
               <XAxis 
                 dataKey="hour" 
@@ -141,12 +204,26 @@ const PeakTripPlanner = ({ latitude, longitude, peakName }: PeakTripPlannerProps
                 axisLine={false}
                 interval={2}
               />
+              {/* Weather icons along the top */}
+              <XAxis
+                dataKey="hour"
+                xAxisId="icons"
+                orientation="top"
+                tickLine={false}
+                axisLine={false}
+                tick={<WeatherIconTick data={selected.hourly} />}
+                interval={0}
+                height={24}
+              />
               <YAxis 
                 yAxisId="temp"
                 tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} 
                 tickLine={false} 
                 axisLine={false}
                 tickFormatter={(v) => `${v}°`}
+                domain={tempDomain}
+                ticks={tempTicks}
+                allowDecimals={false}
               />
               <YAxis 
                 yAxisId="precip"
@@ -196,21 +273,17 @@ const PeakTripPlanner = ({ latitude, longitude, peakName }: PeakTripPlannerProps
         </div>
       </div>
 
-      {/* Sunrise/sunset + snow */}
+      {/* Sunrise/sunset - centered */}
       <div className="grid grid-cols-2 gap-2">
-        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/30 border border-border/30">
+        <div className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-lg bg-muted/30 border border-border/30">
           <Sunrise className="w-4 h-4 text-amber-500" />
-          <div>
-            <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Soloppgang' : 'Sunrise'}</p>
-            <p className="text-sm font-semibold">{selected.sunrise}</p>
-          </div>
+          <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Soloppgang' : 'Sunrise'}</p>
+          <p className="text-sm font-semibold">{selected.sunrise}</p>
         </div>
-        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/30 border border-border/30">
+        <div className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-lg bg-muted/30 border border-border/30">
           <Sunset className="w-4 h-4 text-orange-500" />
-          <div>
-            <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Solnedgang' : 'Sunset'}</p>
-            <p className="text-sm font-semibold">{selected.sunset}</p>
-          </div>
+          <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Solnedgang' : 'Sunset'}</p>
+          <p className="text-sm font-semibold">{selected.sunset}</p>
         </div>
       </div>
 

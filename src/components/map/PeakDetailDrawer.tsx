@@ -74,19 +74,15 @@ const TodaySunTimes = ({ latitude, longitude }: { latitude: number; longitude: n
 
   return (
     <div className="grid grid-cols-2 gap-2">
-      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/30 border border-border/30">
+      <div className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-lg bg-muted/30 border border-border/30">
         <Sunrise className="w-4 h-4 text-amber-500" />
-        <div>
-          <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Soloppgang' : 'Sunrise'}</p>
-          <p className="text-sm font-semibold">{times.sunrise}</p>
-        </div>
+        <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Soloppgang' : 'Sunrise'}</p>
+        <p className="text-sm font-semibold">{times.sunrise}</p>
       </div>
-      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/30 border border-border/30">
+      <div className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-lg bg-muted/30 border border-border/30">
         <Sunset className="w-4 h-4 text-orange-500" />
-        <div>
-          <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Solnedgang' : 'Sunset'}</p>
-          <p className="text-sm font-semibold">{times.sunset}</p>
-        </div>
+        <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Solnedgang' : 'Sunset'}</p>
+        <p className="text-sm font-semibold">{times.sunset}</p>
       </div>
     </div>
   );
@@ -467,14 +463,14 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
             {/* Three tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="w-full grid grid-cols-3">
-                <TabsTrigger value="info" className="text-xs gap-1">
-                  <Info className="w-3.5 h-3.5" /> Info
+                <TabsTrigger value="info" className="text-sm gap-1.5">
+                  <Info className="w-4 h-4" /> Info
                 </TabsTrigger>
-                <TabsTrigger value="leaderboard" className="text-xs gap-1">
-                  <Trophy className="w-3.5 h-3.5" /> {language === 'no' ? 'Lederliste' : 'Leaderboard'}
+                <TabsTrigger value="leaderboard" className="text-sm gap-1.5">
+                  <Trophy className="w-4 h-4" /> {language === 'no' ? 'Lederliste' : 'Leaderboard'}
                 </TabsTrigger>
-                <TabsTrigger value="plan" className="text-xs gap-1">
-                  <MapIcon className="w-3.5 h-3.5" /> {language === 'no' ? 'Planlegg tur' : 'Plan trip'}
+                <TabsTrigger value="plan" className="text-sm gap-1.5">
+                  <MapIcon className="w-4 h-4" /> {language === 'no' ? 'Planlegg tur' : 'Plan trip'}
                 </TabsTrigger>
               </TabsList>
 

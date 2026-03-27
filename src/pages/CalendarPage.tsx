@@ -6,8 +6,9 @@ import ActivityIcon from '@/components/ActivityIcon';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAppDataContext } from '@/contexts/AppDataContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Route, Mountain, Clock, Ambulance, Cross } from 'lucide-react';
+import { Route, Mountain, Clock, Ambulance, Cross, Grid3X3 } from 'lucide-react';
 import DayDrawer from '@/components/DayDrawer';
+import HeatmapCalendar from '@/components/HeatmapCalendar';
 import HealthEventDialog from '@/components/HealthEventDialog';
 import { useTranslation } from '@/i18n/useTranslation';
 // Tooltips for health events use native DOM for reliability inside memoized renders
@@ -109,7 +110,7 @@ const SessionBadge = ({ session, size = 'md', isDark }: {
 
 const CalendarPage = () => {
   const { settings } = useSettings();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const isMobile = useIsMobile();
   const appData = useAppDataContext();
   const sundayStart = settings.firstDayOfWeek === 'sunday';
@@ -123,7 +124,7 @@ const CalendarPage = () => {
   const [, setRefresh] = useState(0);
   const [editHealthEvent, setEditHealthEvent] = useState<HealthEvent | undefined>();
   const [healthDialogOpen, setHealthDialogOpen] = useState(false);
-
+  const [heatmapOpen, setHeatmapOpen] = useState(false);
   const isDark = settings.darkMode;
 
   // Infinite scroll state: track range of months to render
@@ -615,6 +616,22 @@ const CalendarPage = () => {
       >
         {months.map(m => renderMonth(m))}
       </div>
+
+      {/* Heatmap button - bottom left */}
+      <button
+        onClick={() => setHeatmapOpen(true)}
+        className="fixed bottom-20 left-4 z-30 p-2.5 rounded-full bg-card border border-border shadow-lg hover:bg-muted transition-colors"
+        title={language === 'no' ? 'Årsvisning' : 'Year overview'}
+      >
+        <Grid3X3 className="w-5 h-5 text-muted-foreground" />
+      </button>
+
+      {/* Heatmap calendar drawer */}
+      <HeatmapCalendar
+        sessions={allSessions}
+        open={heatmapOpen}
+        onClose={() => setHeatmapOpen(false)}
+      />
 
       {/* Day drawer */}
       <DayDrawer
