@@ -95,7 +95,9 @@ const WeatherAnnotation = (props: any) => {
   );
 };
 
-const PeakTripPlanner = ({ latitude, longitude, peakName }: PeakTripPlannerProps) => {
+import React from 'react';
+
+const PeakTripPlanner = React.forwardRef<HTMLDivElement, PeakTripPlannerProps>(({ latitude, longitude, peakName }, ref) => {
   const { t, language } = useTranslation();
   const locale = language === 'no' ? nb : enUS;
   const [forecasts, setForecasts] = useState<DayForecast[]>([]);
@@ -232,7 +234,7 @@ const PeakTripPlanner = ({ latitude, longitude, peakName }: PeakTripPlannerProps
   };
 
   return (
-    <div className="space-y-3">
+    <div ref={ref} className="space-y-3">
       {/* Day selector */}
       <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
         {forecasts.map((day, i) => (
@@ -375,6 +377,8 @@ const PeakTripPlanner = ({ latitude, longitude, peakName }: PeakTripPlannerProps
       )}
     </div>
   );
-};
+});
+
+PeakTripPlanner.displayName = 'PeakTripPlanner';
 
 export default PeakTripPlanner;
