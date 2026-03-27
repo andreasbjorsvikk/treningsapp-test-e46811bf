@@ -5,6 +5,10 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
+import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
+import { useSyncQueue } from '@/hooks/useSyncQueue';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { peekDeadLetter, retryDeadLetter, deadLetterLength } from '@/services/syncQueue';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -17,7 +21,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { allSessionTypes, sessionTypeConfig } from '@/utils/workoutUtils';
 import ActivityIcon from '@/components/ActivityIcon';
 import { SessionType } from '@/types/workout';
-import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw, Loader2, Check, Pencil, Dumbbell, Lock, HelpCircle, Target, BarChart3, Calendar, Users, Zap, ShieldCheck, Download, Mountain, Heart, Footprints, Flame } from 'lucide-react';
+import { Moon, Globe, LogOut, LogIn, User, ChevronRight, ChevronLeft, Palette, Settings2, Shield, Camera, Trash2, RefreshCw, Loader2, Check, Pencil, Dumbbell, Lock, HelpCircle, Target, BarChart3, Calendar, Users, Zap, ShieldCheck, Download, Mountain, Heart, Footprints, Flame, Bell, Wifi, WifiOff, AlertTriangle, Cloud } from 'lucide-react';
 import { isNativePlatform, isIOS } from '@/utils/capacitor';
 import { appleHealthService, AppleHealthConnection } from '@/services/appleHealthService';
 import { getActivityColors, activityColorMap, saveActivityColors } from '@/utils/activityColors';
@@ -52,7 +56,7 @@ const COLOR_PRESETS = [
   { labelKey: 'color.lavender', light: { bg: 'rgb(220,215,250)', text: 'rgb(75,55,145)', badge: 'rgb(232,228,255)' }, dark: { bg: 'rgb(110,95,175)', text: '#ffffff', badge: '#2a1f55' } },
 ];
 
-type SettingsView = 'main' | 'appearance' | 'preferences' | 'training' | 'data' | 'account' | 'sync' | 'privacy' | 'profile' | 'profileSettings' | 'help' | 'privacyPolicy' | 'badges';
+type SettingsView = 'main' | 'appearance' | 'preferences' | 'training' | 'data' | 'account' | 'sync' | 'privacy' | 'profile' | 'profileSettings' | 'help' | 'privacyPolicy' | 'badges' | 'notifications' | 'syncStatus';
 
 const SettingsPage = () => {
   const { settings, updateSettings, appThemes, accentPresets, getTypeColor } = useSettings();
@@ -90,6 +94,18 @@ const SettingsPage = () => {
   const [helpOpenSections, setHelpOpenSections] = useState<Set<string>>(new Set());
   const [showSettingsTutorial, setShowSettingsTutorial] = useState(false);
   const [sessionTypesOpen, setSessionTypesOpen] = useState(false);
+  const [deadLetterCount, setDeadLetterCount] = useState(0);
+
+  // Notification preferences hook
+  const { preferences: notifPrefs, updatePreference: updateNotifPref } = useNotificationPreferences();
+  // Sync queue hooks
+  const { pendingCount, isFlushing, flush: flushSync } = useSyncQueue();
+  const { isOnline } = useNetworkStatus();
+
+  // Load dead letter count
+  useEffect(() => {
+    deadLetterLength().then(setDeadLetterCount).catch(() => {});
+  }, [pendingCount]);
 
   // Listen for full tutorial flow showing settings tutorial
   useEffect(() => {
@@ -951,6 +967,107 @@ const SettingsPage = () => {
     );
   }
 
+  // ========== NOTIFICATIONS VIEW ==========
+  if (view === 'notifications') {
+    const notifCategories: { key: keyof typeof notifPrefs; labelKey: string; descKey: string }[] = [
+      { key: 'friend_challenge', labelKey: 'notif.friendChallenge', descKey: 'notif.friendChallengeDesc' },
+      { key: 'challenge_complete', labelKey: 'notif.challengeComplete', descKey: 'notif.challengeCompleteDesc' },
+      { key: 'goal_reached', labelKey: 'notif.goalReached', descKey: 'notif.goalReachedDesc' },
+      { key: 'weekly_report', labelKey: 'notif.weeklyReport', descKey: 'notif.weeklyReportDesc' },
+      { key: 'monthly_report', labelKey: 'notif.monthlyReport', descKey: 'notif.monthlyReportDesc' },
+    ];
+
+    return (
+      <div className="space-y-4">
+        {backButton(t('notif.title'))}
+        <div className="glass-card rounded-xl p-4 space-y-1">
+          <p className="text-xs text-muted-foreground mb-3">{t('notif.description')}</p>
+          {notifCategories.map(cat => (
+            <div key={cat.key} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
+              <div className="min-w-0 flex-1 pr-4">
+                <p className="text-sm font-medium">{t(cat.labelKey)}</p>
+                <p className="text-xs text-muted-foreground">{t(cat.descKey)}</p>
+              </div>
+              <Switch
+                checked={notifPrefs[cat.key]}
+                onCheckedChange={(v) => updateNotifPref(cat.key, v)}
+              />
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground px-2">{t('notif.pushNote')}</p>
+      </div>
+    );
+  }
+
+  // ========== SYNC STATUS VIEW ==========
+  if (view === 'syncStatus') {
+    const handleRetryDeadLetter = async () => {
+      const count = await retryDeadLetter();
+      setDeadLetterCount(0);
+      if (count > 0) {
+        toast.success(t('syncStatus.retriedCount').replace('{n}', String(count)));
+        flushSync();
+      }
+    };
+
+    return (
+      <div className="space-y-4">
+        {backButton(t('syncStatus.title'))}
+        <div className="glass-card rounded-xl p-4 space-y-4">
+          {/* Online status */}
+          <div className="flex items-center gap-3">
+            {isOnline ? (
+              <Wifi className="w-5 h-5 text-green-500" />
+            ) : (
+              <WifiOff className="w-5 h-5 text-destructive" />
+            )}
+            <div>
+              <p className="text-sm font-medium">{isOnline ? t('syncStatus.online') : t('syncStatus.offline')}</p>
+              <p className="text-xs text-muted-foreground">{isOnline ? t('syncStatus.onlineDesc') : t('syncStatus.offlineDesc')}</p>
+            </div>
+          </div>
+
+          {/* Pending operations */}
+          <div className="flex items-center gap-3">
+            <Cloud className="w-5 h-5 text-muted-foreground" />
+            <div className="flex-1">
+              <p className="text-sm font-medium">
+                {pendingCount === 0
+                  ? t('syncStatus.allSynced')
+                  : t('syncStatus.pendingCount').replace('{n}', String(pendingCount))}
+              </p>
+              {pendingCount > 0 && (
+                <p className="text-xs text-muted-foreground">{t('syncStatus.pendingDesc')}</p>
+              )}
+            </div>
+            {pendingCount > 0 && isOnline && (
+              <Button size="sm" variant="outline" onClick={flushSync} disabled={isFlushing}>
+                {isFlushing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              </Button>
+            )}
+          </div>
+
+          {/* Dead letter / failed */}
+          {deadLetterCount > 0 && (
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-destructive">
+                  {t('syncStatus.failedCount').replace('{n}', String(deadLetterCount))}
+                </p>
+                <p className="text-xs text-muted-foreground">{t('syncStatus.failedDesc')}</p>
+              </div>
+              <Button size="sm" variant="outline" onClick={handleRetryDeadLetter}>
+                {t('syncStatus.retry')}
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   // ========== SYNC VIEW ==========
   if (view === 'sync') {
     const handleStravaConnect = async () => {
@@ -1704,8 +1821,16 @@ const SettingsPage = () => {
         {menuItem(t('settings.appearance'), <Palette className="w-4 h-4" />, () => setView('appearance'))}
         {menuItem(t('settings.preferences'), <Settings2 className="w-4 h-4" />, () => setView('preferences'))}
         {menuItem(t('settings.training'), <Dumbbell className="w-4 h-4" />, () => setView('training'))}
+        {menuItem(t('notif.title'), <Bell className="w-4 h-4" />, () => setView('notifications'))}
          {menuItem(t('privacy.title'), <Lock className="w-4 h-4" />, () => setView('privacy'))}
          {menuItem(t('settings.sync'), <RefreshCw className="w-4 h-4" />, () => setView('sync'))}
+         {menuItem(t('syncStatus.title'), <Cloud className="w-4 h-4" />, () => setView('syncStatus'),
+           (pendingCount > 0 || deadLetterCount > 0) ? (
+             <span className="text-xs px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-medium">
+               {pendingCount + deadLetterCount}
+             </span>
+           ) : undefined
+         )}
          {menuItem(t('help.title'), <HelpCircle className="w-4 h-4" />, () => setView('help'))}
         {menuItem(t('settings.gdpr'), <Shield className="w-4 h-4" />, () => setView('data'))}
       </div>

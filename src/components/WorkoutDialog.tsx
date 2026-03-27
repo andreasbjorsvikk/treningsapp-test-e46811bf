@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
+import { hapticsService } from '@/services/hapticsService';
 import { WorkoutSession, SessionType } from '@/types/workout';
 import { allSessionTypes } from '@/utils/workoutUtils';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -107,6 +108,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
       finalElevation = (type === 'trappemaskin' && elevationMode === 'floors') ? Math.round(val * 3) : Math.round(val);
     }
 
+    hapticsService.impact('medium');
     onSave({
       type,
       title: title.trim() || undefined,

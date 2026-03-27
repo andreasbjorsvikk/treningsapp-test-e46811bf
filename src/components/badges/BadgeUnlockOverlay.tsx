@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { UserBadge, getRarityColor, getRarityGlow, getHighPeakGlow } from '@/services/badgeService';
 import { useTranslation } from '@/i18n/useTranslation';
+import { hapticsService } from '@/services/hapticsService';
 
 interface BadgeUnlockOverlayProps {
   badges: UserBadge[];
@@ -23,6 +24,7 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
   useEffect(() => {
     if (!mainBadge) return;
     requestAnimationFrame(() => setVisible(true));
+    hapticsService.notification('success');
     const t1 = setTimeout(() => setShowContent(true), 200);
     const t2 = setTimeout(() => setPulseGlow(true), ANIM_DURATION);
     const shouldSpin = mainBadge.badge.subcategory === 'unique_peaks';

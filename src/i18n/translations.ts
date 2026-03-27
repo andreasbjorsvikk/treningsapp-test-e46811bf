@@ -1144,6 +1144,47 @@ const no: Record<string, string> = {
 
   // Report dialog UI
   'report.noSessionsInPeriod': 'Ingen økter registrert denne {period}.',
+
+  // Notification preferences
+  'notif.title': 'Varsler',
+  'notif.description': 'Velg hvilke varsler du vil motta i appen.',
+  'notif.friendChallenge': 'Utfordringer fra venner',
+  'notif.friendChallengeDesc': 'Når en venn utfordrer deg',
+  'notif.challengeComplete': 'Utfordring fullført',
+  'notif.challengeCompleteDesc': 'Når en utfordring er ferdig',
+  'notif.goalReached': 'Mål nådd',
+  'notif.goalReachedDesc': 'Når du når et treningsmål',
+  'notif.weeklyReport': 'Ukesrapport',
+  'notif.weeklyReportDesc': 'Oppsummering av uken din',
+  'notif.monthlyReport': 'Månedsrapport',
+  'notif.monthlyReportDesc': 'Oppsummering av måneden din',
+  'notif.pushNote': 'Push-varsler vil bli tilgjengelig i en fremtidig oppdatering.',
+
+  // Sync status
+  'syncStatus.title': 'Synkronisering',
+  'syncStatus.online': 'Tilkoblet',
+  'syncStatus.onlineDesc': 'Alle endringer synkroniseres automatisk.',
+  'syncStatus.offline': 'Frakoblet',
+  'syncStatus.offlineDesc': 'Endringer lagres lokalt og synkroniseres når du er tilkoblet igjen.',
+  'syncStatus.allSynced': 'Alt er synkronisert',
+  'syncStatus.pendingCount': '{n} endringer venter på å bli lagret',
+  'syncStatus.pendingDesc': 'Synkroniseres automatisk når du er tilkoblet.',
+  'syncStatus.failedCount': '{n} endringer kunne ikke lagres',
+  'syncStatus.failedDesc': 'Disse endringene feilet flere ganger. Prøv igjen.',
+  'syncStatus.retry': 'Prøv igjen',
+  'syncStatus.retriedCount': '{n} endringer lagt tilbake i kø for synkronisering',
+
+  // Checkin image upload
+  'checkinImage.tooLarge': 'Bildet er for stort (maks 10 MB)',
+  'checkinImage.onlyImages': 'Kun bildefiler er støttet',
+  'checkinImage.imageSelected': 'Bilde valgt',
+  'checkinImage.addPhoto': 'Legg til bilde (valgfritt)',
+  'checkinImage.takePhoto': 'Ta bilde',
+  'checkinImage.chooseFromGallery': 'Velg fra galleri',
+  'checkinImage.adjustImage': 'Juster bilde',
+  'checkinImage.dragZoomRotate': 'Dra, zoom og roter for å velge utsnitt',
+  'checkinImage.compressing': 'Komprimerer...',
+  'checkinImage.confirm': 'Bekreft',
 };
 
 const en: Record<string, string> = {
@@ -2290,6 +2331,47 @@ const en: Record<string, string> = {
 
   // Report dialog UI
   'report.noSessionsInPeriod': 'No workouts recorded this {period}.',
+
+  // Notification preferences
+  'notif.title': 'Notifications',
+  'notif.description': 'Choose which notifications you want to receive in the app.',
+  'notif.friendChallenge': 'Friend challenges',
+  'notif.friendChallengeDesc': 'When a friend challenges you',
+  'notif.challengeComplete': 'Challenge complete',
+  'notif.challengeCompleteDesc': 'When a challenge is finished',
+  'notif.goalReached': 'Goal reached',
+  'notif.goalReachedDesc': 'When you reach a training goal',
+  'notif.weeklyReport': 'Weekly report',
+  'notif.weeklyReportDesc': 'Summary of your week',
+  'notif.monthlyReport': 'Monthly report',
+  'notif.monthlyReportDesc': 'Summary of your month',
+  'notif.pushNote': 'Push notifications will be available in a future update.',
+
+  // Sync status
+  'syncStatus.title': 'Sync',
+  'syncStatus.online': 'Connected',
+  'syncStatus.onlineDesc': 'All changes are synced automatically.',
+  'syncStatus.offline': 'Offline',
+  'syncStatus.offlineDesc': 'Changes are saved locally and will sync when you reconnect.',
+  'syncStatus.allSynced': 'Everything is synced',
+  'syncStatus.pendingCount': '{n} changes waiting to be saved',
+  'syncStatus.pendingDesc': 'Will sync automatically when connected.',
+  'syncStatus.failedCount': '{n} changes could not be saved',
+  'syncStatus.failedDesc': 'These changes failed multiple times. Try again.',
+  'syncStatus.retry': 'Try again',
+  'syncStatus.retriedCount': '{n} changes re-queued for sync',
+
+  // Checkin image upload
+  'checkinImage.tooLarge': 'Image is too large (max 10 MB)',
+  'checkinImage.onlyImages': 'Only image files are supported',
+  'checkinImage.imageSelected': 'Image selected',
+  'checkinImage.addPhoto': 'Add photo (optional)',
+  'checkinImage.takePhoto': 'Take photo',
+  'checkinImage.chooseFromGallery': 'Choose from gallery',
+  'checkinImage.adjustImage': 'Adjust image',
+  'checkinImage.dragZoomRotate': 'Drag, zoom and rotate to choose crop',
+  'checkinImage.compressing': 'Compressing...',
+  'checkinImage.confirm': 'Confirm',
 };
 
 export const translations: Record<Language, Record<string, string>> = { no, en };

@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Mountain, MapPin, Check, Loader2, Pencil, Trash2, CalendarIcon, UserPlus, X, Search, List, Users, ImageIcon } from 'lucide-react';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
+import { hapticsService } from '@/services/hapticsService';
 import { RouteElevationChart } from '@/components/map/RouteElevationChart';
 import PeakWeather from '@/components/map/PeakWeather';
 import PeakLeaderboard from '@/components/map/PeakLeaderboard';
@@ -192,6 +193,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
       setLastNewCheckinId(newCheckin.id);
       setShowSuccessAnim(true);
       setShowChildCheckin(true);
+      hapticsService.notification('success');
       onCheckinSuccess();
     } catch (err: any) {
       if (err?.code === 1) toast.error('Lokasjonstilgang ble avslått. Aktiver GPS for å sjekke inn.');
