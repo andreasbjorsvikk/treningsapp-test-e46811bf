@@ -209,7 +209,7 @@ const PeakFeed = () => {
       if (validUuidPeakIds.length > 0) {
         const { data } = await supabase
           .from('peaks_db')
-          .select('id, name_no, elevation_moh, area')
+          .select('id, name_no, elevation_moh, area, latitude, longitude')
           .in('id', validUuidPeakIds);
         peaks = data || [];
       }
