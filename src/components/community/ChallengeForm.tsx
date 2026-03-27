@@ -262,6 +262,7 @@ const ChallengeForm = ({ open, onClose, preselectedUser, onCreated, editChalleng
               })}
             </div>
           </div>
+          )}
 
           <div className="flex gap-2">
             <div className="flex-1">
