@@ -39,9 +39,12 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
       (pos) => {
         const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setUserLocation(loc);
-        // Auto-select user's county
+        // Auto-select user's county only if peaks have county data
         const userCounty = findUserCounty(loc.lat, loc.lng);
-        if (userCounty) setSelectedCounty(userCounty);
+        if (userCounty) {
+          const hasPeaksInCounty = peaks.some(p => p.county === userCounty);
+          if (hasPeaksInCounty) setSelectedCounty(userCounty);
+        }
       },
       () => {},
       { enableHighAccuracy: false, timeout: 5000 }
