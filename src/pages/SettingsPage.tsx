@@ -1821,8 +1821,16 @@ const SettingsPage = () => {
         {menuItem(t('settings.appearance'), <Palette className="w-4 h-4" />, () => setView('appearance'))}
         {menuItem(t('settings.preferences'), <Settings2 className="w-4 h-4" />, () => setView('preferences'))}
         {menuItem(t('settings.training'), <Dumbbell className="w-4 h-4" />, () => setView('training'))}
+        {menuItem(t('notif.title'), <Bell className="w-4 h-4" />, () => setView('notifications'))}
          {menuItem(t('privacy.title'), <Lock className="w-4 h-4" />, () => setView('privacy'))}
          {menuItem(t('settings.sync'), <RefreshCw className="w-4 h-4" />, () => setView('sync'))}
+         {menuItem(t('syncStatus.title'), <Cloud className="w-4 h-4" />, () => setView('syncStatus'),
+           (pendingCount > 0 || deadLetterCount > 0) ? (
+             <span className="text-xs px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-medium">
+               {pendingCount + deadLetterCount}
+             </span>
+           ) : undefined
+         )}
          {menuItem(t('help.title'), <HelpCircle className="w-4 h-4" />, () => setView('help'))}
         {menuItem(t('settings.gdpr'), <Shield className="w-4 h-4" />, () => setView('data'))}
       </div>
