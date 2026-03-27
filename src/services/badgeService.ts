@@ -145,7 +145,7 @@ export const SUBCATEGORY_NAMES: Record<string, { no: string; en: string }> = {
   total_sessions: { no: 'Totalt antall økter', en: 'Total sessions' },
   monthly_sessions: { no: 'Økter på en måned', en: 'Monthly sessions' },
   monthly_elevation: { no: 'Høydemeter på en måned', en: 'Monthly elevation' },
-  monthly_sametype: { no: 'Samme type på en måned', en: 'Same type monthly' },
+  
   monthly_distance: { no: 'Distanse på en måned', en: 'Monthly distance' },
 };
 
@@ -413,9 +413,6 @@ export async function computeUserBadges(userId: string, isChild = false): Promis
     else if (badge.id === 'month_elev_3000') { repeatCount = countMonthsAchieved(sessions, 'elevation', 3000); progress = repeatCount > 0 ? 3000 : currentMonth.elev; }
     else if (badge.id === 'month_elev_5000') { repeatCount = countMonthsAchieved(sessions, 'elevation', 5000); progress = repeatCount > 0 ? 5000 : currentMonth.elev; }
     else if (badge.id === 'month_elev_10000') { repeatCount = countMonthsAchieved(sessions, 'elevation', 10000); progress = repeatCount > 0 ? 10000 : currentMonth.elev; }
-    else if (badge.id === 'month_same_5') { repeatCount = countMonthsAchieved(sessions, 'sameType', 5); progress = repeatCount > 0 ? 5 : currentMonth.maxSameType; }
-    else if (badge.id === 'month_same_10') { repeatCount = countMonthsAchieved(sessions, 'sameType', 10); progress = repeatCount > 0 ? 10 : currentMonth.maxSameType; }
-    else if (badge.id === 'month_same_15') { repeatCount = countMonthsAchieved(sessions, 'sameType', 15); progress = repeatCount > 0 ? 15 : currentMonth.maxSameType; }
     else if (badge.id === 'month_dist_50') { repeatCount = countMonthsAchieved(sessions, 'distance', 50); progress = repeatCount > 0 ? 50 : currentMonth.dist; }
     else if (badge.id === 'month_dist_100') { repeatCount = countMonthsAchieved(sessions, 'distance', 100); progress = repeatCount > 0 ? 100 : currentMonth.dist; }
     else if (badge.id === 'month_dist_150') { repeatCount = countMonthsAchieved(sessions, 'distance', 150); progress = repeatCount > 0 ? 150 : currentMonth.dist; }
