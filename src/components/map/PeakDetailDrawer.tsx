@@ -467,14 +467,14 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
             {/* Three tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="w-full grid grid-cols-3">
-                <TabsTrigger value="info" className="text-xs gap-1">
-                  <Info className="w-3.5 h-3.5" /> Info
+                <TabsTrigger value="info" className="text-sm gap-1.5">
+                  <Info className="w-4 h-4" /> Info
                 </TabsTrigger>
-                <TabsTrigger value="leaderboard" className="text-xs gap-1">
-                  <Trophy className="w-3.5 h-3.5" /> {language === 'no' ? 'Lederliste' : 'Leaderboard'}
+                <TabsTrigger value="leaderboard" className="text-sm gap-1.5">
+                  <Trophy className="w-4 h-4" /> {language === 'no' ? 'Lederliste' : 'Leaderboard'}
                 </TabsTrigger>
-                <TabsTrigger value="plan" className="text-xs gap-1">
-                  <MapIcon className="w-3.5 h-3.5" /> {language === 'no' ? 'Planlegg tur' : 'Plan trip'}
+                <TabsTrigger value="plan" className="text-sm gap-1.5">
+                  <MapIcon className="w-4 h-4" /> {language === 'no' ? 'Planlegg tur' : 'Plan trip'}
                 </TabsTrigger>
               </TabsList>
 
