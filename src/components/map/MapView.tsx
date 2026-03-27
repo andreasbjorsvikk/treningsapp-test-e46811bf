@@ -630,35 +630,33 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       const isTaken = checkedPeakIds.has(peak.id);
       const isUnpublished = peak.isPublished === false;
       const isYearFiltered = onlyReachedThisYear && !thisYearCheckedIds.has(peak.id);
+      // When year-filtered: show as normal unchecked marker (not green, not dimmed)
+      const effectivelyTaken = isTaken && !isYearFiltered;
 
       const el = document.createElement('div');
       const peakIcon = getPeakIcon(peak.heightMoh, peak.id);
-      const markerBackground = isYearFiltered
-        ? 'hsl(var(--background) / 0.42)'
-        : isTaken
+      const markerBackground = effectivelyTaken
           ? 'hsl(var(--success) / 0.88)'
           : isUnpublished
             ? 'hsl(var(--warning) / 0.26)'
             : 'hsl(0 0% 98% / 0.78)'; // Light color in both modes
-      const markerBorder = isYearFiltered
-        ? 'hsl(var(--border) / 0.55)'
-        : isTaken
+      const markerBorder = effectivelyTaken
           ? 'hsl(var(--success) / 0.85)'
           : isUnpublished
             ? 'hsl(var(--warning) / 0.45)'
             : 'hsl(0 0% 88% / 0.85)'; // Light border in both modes
       const markerShadow = isConstrainedDevice
-        ? isTaken && !isYearFiltered
+        ? effectivelyTaken
           ? '0 4px 10px hsl(var(--success) / 0.18)'
           : '0 3px 8px hsl(0 0% 0% / 0.12)'
-        : isTaken && !isYearFiltered
+        : effectivelyTaken
           ? '0 10px 24px hsl(var(--success) / 0.24), inset 0 1px 0 hsl(0 0% 100% / 0.18)'
           : '0 10px 24px hsl(0 0% 0% / 0.14)';
       const markerFilters = isConstrainedDevice
         ? ''
         : `
-         backdrop-filter: ${isTaken && !isYearFiltered ? 'blur(6px) saturate(1.04)' : 'blur(10px) saturate(1.12)'};
-         -webkit-backdrop-filter: ${isTaken && !isYearFiltered ? 'blur(6px) saturate(1.04)' : 'blur(10px) saturate(1.12)'};
+         backdrop-filter: ${effectivelyTaken ? 'blur(6px) saturate(1.04)' : 'blur(10px) saturate(1.12)'};
+         -webkit-backdrop-filter: ${effectivelyTaken ? 'blur(6px) saturate(1.04)' : 'blur(10px) saturate(1.12)'};
         `;
       
       el.style.cssText = `
@@ -670,14 +668,13 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
         box-shadow: ${markerShadow};
         ${markerFilters}
         ${isUnpublished ? 'opacity: 0.8;' : ''}
-        ${isYearFiltered ? 'opacity: 0.6;' : ''}
       `;
         const isHighTier = peak.heightMoh >= 650;
         const isTier3 = peak.heightMoh >= 650 && peak.heightMoh < 1000;
         const imgSize = isHighTier ? 28 : 24;
         const nudgeUp = isTier3 ? 'position: relative; top: -1.5px;' : '';
         
-        const imgOpacity = (!isTaken || isYearFiltered) ? 'opacity: 0.8;' : '';
+        const imgOpacity = !effectivelyTaken ? 'opacity: 0.8;' : '';
         el.innerHTML = `
           <img src="${peakIcon}" alt="" width="${imgSize}" height="${imgSize}" style="object-fit: contain; ${imgOpacity} ${nudgeUp}" draggable="false" />
         `;
@@ -1206,8 +1203,10 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
             const fillLayerId = `kommune-fill-${kommuneNr}`;
             const outlineLayerId = `kommune-outline-${kommuneNr}`;
             const pct = entry.total > 0 ? Math.round((entry.checked / entry.total) * 100) : 0;
+            // Use a hash that spreads adjacent kommune numbers to different colors
             const kommuneNum = parseInt(kommuneNr, 10) || 0;
-            const colorIdx = kommuneNum % colorPalette.length;
+            const hash = ((kommuneNum * 2654435761) >>> 0);
+            const colorIdx = hash % colorPalette.length;
             const fillColor = colorPalette[colorIdx].fill;
             const outlineColor = colorPalette[colorIdx].outline;
 

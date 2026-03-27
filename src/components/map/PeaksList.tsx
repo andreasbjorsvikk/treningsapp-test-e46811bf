@@ -295,7 +295,7 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
                   className="flex items-center gap-3 flex-1 min-w-0 text-left"
                 >
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                    isTaken ? 'bg-success/15' : isUnpublished ? 'bg-warning/15' : 'bg-muted'
+                    isTaken ? 'bg-success/30 ring-2 ring-success/40' : isUnpublished ? 'bg-warning/15' : 'bg-muted'
                   }`}>
                     <img
                       src={iconSrc}
