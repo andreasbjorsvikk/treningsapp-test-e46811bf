@@ -682,6 +682,9 @@ const PeakFeed = () => {
                         <img src={getPeakIcon(parentItem.peak_elevation)} alt="" className="w-5 h-5 object-contain shrink-0 self-center" style={{ verticalAlign: 'middle', position: 'relative', top: parentItem.peak_elevation >= 300 && parentItem.peak_elevation < 650 ? '-0.5px' : '0px' }} />
                         <span className="text-sm font-medium leading-5">{parentItem.peak_name}</span>
                         <span className="text-xs text-muted-foreground leading-5">{parentItem.peak_elevation} moh · {parentItem.peak_area}</span>
+                        <div className="ml-auto">
+                          <FeedWeatherBadge lat={parentItem.peak_lat} lng={parentItem.peak_lng} checkinDate={parentItem.checked_in_at} />
+                        </div>
                       </div>
 
                       {/* Image */}
