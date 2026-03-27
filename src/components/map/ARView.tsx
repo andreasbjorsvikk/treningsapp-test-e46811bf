@@ -452,15 +452,11 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
     const containerWidth = containerRef.current?.clientWidth || 400;
     const containerHeight = containerRef.current?.clientHeight || 700;
 
-    // Device pitch from beta (gyroscope):
-    // beta ~90 = phone upright (camera at horizon), beta decreases when tilting phone back (looking up)
-    // But on many devices the sign is inverted, so we use (tilt - 90) to get correct direction
-    // cameraPitchDeg > 0 = looking up, < 0 = looking down
-    const cameraPitchDeg = tilt - 90;
+    // Dampen tilt to reduce over-movement when tilting phone
+    const cameraPitchDeg = (tilt - 90) * 0.55;
 
-    // Use realistic phone camera vertical FOV (~50-55°) instead of aspect-ratio-derived value
-    // which would give ~105° and make tilt response feel too sluggish
-    const verticalFov = 55;
+    // Use wider vertical FOV to further reduce vertical sensitivity
+    const verticalFov = 70;
 
     for (const peak of peaks) {
       const dist = calcDistance(userPos.lat, userPos.lng, peak.latitude, peak.longitude);
@@ -475,12 +471,9 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
       const elevDiff = peak.heightMoh - userAlt;
       const elevAngle = toDeg(Math.atan2(elevDiff, dist * 1000));
 
-      // How far above/below the camera center is this peak?
       const angleFromCenter = elevAngle - cameraPitchDeg;
-      // Map to screen Y: positive angleFromCenter = above center = lower screenY
       const screenY = containerHeight / 2 - (angleFromCenter / (verticalFov / 2)) * (containerHeight / 2);
 
-      // Allow peaks to go off-screen, but filter out ones way too far out
       if (screenY < -100 || screenY > containerHeight + 100) continue;
 
       results.push({ peak, bearing, distance: dist, elevAngle, screenX, screenY, isTaken: checkedPeakIds.has(peak.id) });
@@ -489,6 +482,19 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
     results.sort((a, b) => b.distance - a.distance);
     return results;
   }, [userPos, heading, tilt, peaks, maxDist, checkedPeakIds, mode]);
+
+  // Check if a peak is likely obscured by closer terrain/peaks
+  const isObscured = useCallback((target: VisiblePeak, allPeaks: VisiblePeak[]): boolean => {
+    for (const other of allPeaks) {
+      if (other.peak.id === target.peak.id) continue;
+      if (other.distance >= target.distance) continue;
+      const bearingDiff = Math.abs(angleDiff(other.bearing, target.bearing));
+      if (bearingDiff > 4) continue;
+      // If a closer peak has equal or higher elevation angle, it blocks the view
+      if (other.elevAngle >= target.elevAngle - 0.5) return true;
+    }
+    return false;
+  }, []);
 
   // Compass direction label
   const compassDir = heading != null ? (
@@ -552,9 +558,12 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
       />
 
       {/* Peak labels overlay (camera mode only) */}
-      {mode === 'camera' && visiblePeaks.map(({ peak, distance, screenX, screenY, isTaken }) => {
+      {mode === 'camera' && visiblePeaks.map((vp) => {
+        const { peak, distance, screenX, screenY, isTaken } = vp;
         const icon = getPeakIcon(peak.heightMoh, peak.id);
-        const opacity = Math.max(0.5, 1 - distance / maxDist);
+        const obscured = isObscured(vp, visiblePeaks);
+        const baseOpacity = Math.max(0.5, 1 - distance / maxDist);
+        const opacity = obscured ? baseOpacity * 0.2 : baseOpacity;
         const scale = Math.max(0.6, 1 - (distance / maxDist) * 0.4);
 
         return (
@@ -567,6 +576,7 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
               transform: `translate(-50%, -100%) scale(${scale})`,
               opacity,
               zIndex: Math.round(1000 - distance),
+              filter: obscured ? 'blur(0.5px)' : undefined,
             }}
             onClick={() => onSelectPeak?.(peak)}
           >
