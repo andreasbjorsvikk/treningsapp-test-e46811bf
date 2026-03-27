@@ -270,6 +270,8 @@ const PeakFeed = () => {
           peak_name: peak?.name_no || 'Ukjent topp',
           peak_elevation: peak?.elevation_moh || 0,
           peak_area: peak?.area || '',
+          peak_lat: peak?.latitude || 0,
+          peak_lng: peak?.longitude || 0,
           image_url: c.image_url || null,
           is_child: !!child,
           child_parent_id: child?.parent_user_id || null,
