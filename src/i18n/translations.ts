@@ -2360,6 +2360,18 @@ const en: Record<string, string> = {
   'syncStatus.failedDesc': 'These changes failed multiple times. Try again.',
   'syncStatus.retry': 'Try again',
   'syncStatus.retriedCount': '{n} changes re-queued for sync',
+
+  // Checkin image upload
+  'checkinImage.tooLarge': 'Image is too large (max 10 MB)',
+  'checkinImage.onlyImages': 'Only image files are supported',
+  'checkinImage.imageSelected': 'Image selected',
+  'checkinImage.addPhoto': 'Add photo (optional)',
+  'checkinImage.takePhoto': 'Take photo',
+  'checkinImage.chooseFromGallery': 'Choose from gallery',
+  'checkinImage.adjustImage': 'Adjust image',
+  'checkinImage.dragZoomRotate': 'Drag, zoom and rotate to choose crop',
+  'checkinImage.compressing': 'Compressing...',
+  'checkinImage.confirm': 'Confirm',
 };
 
 export const translations: Record<Language, Record<string, string>> = { no, en };
