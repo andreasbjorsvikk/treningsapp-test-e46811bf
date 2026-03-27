@@ -55,6 +55,7 @@ import { HealthEvent } from '@/types/workout';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchPendingSuggestions } from '@/services/peakSuggestionService';
 import badgeShortcutImage from '@/assets/badges/badge_shortcut.png';
+import SyncStatusIndicator from '@/components/SyncStatusIndicator';
 
 const Index = () => {
   return (
