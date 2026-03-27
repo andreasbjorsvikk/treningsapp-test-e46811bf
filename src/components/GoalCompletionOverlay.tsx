@@ -7,6 +7,7 @@ import GoalProgressVisual from '@/components/GoalProgressVisual';
 import ActivityIcon from '@/components/ActivityIcon';
 import { getActivityColors } from '@/utils/activityColors';
 import { useSettings } from '@/contexts/SettingsContext';
+import { hapticsService } from '@/services/hapticsService';
 
 interface GoalCompletionOverlayProps {
   goal: ExtraGoal | null;

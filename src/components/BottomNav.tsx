@@ -1,6 +1,7 @@
 import { Home, CalendarDays, Map, Dumbbell, Users, Settings, ShieldCheck } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ReactNode } from 'react';
+import { hapticsService } from '@/services/hapticsService';
 
 export type TabId = 'hjem' | 'kalender' | 'kart' | 'trening' | 'fellesskap' | 'admin' | 'settings';
 export type TrainingSubTab = 'statistikk' | 'historikk' | 'mål' | 'rekorder';
@@ -40,7 +41,7 @@ const BottomNav = ({ active, onNavigate, notificationCount = 0, settingsDot, pro
           return (
             <button
               key={tab.id}
-              onClick={() => onNavigate(tab.id)}
+              onClick={() => { hapticsService.selectionChanged(); onNavigate(tab.id); }}
               className={`relative flex flex-col items-center gap-0.5 py-2 px-3 flex-1 transition-colors lg:flex-row lg:flex-initial lg:gap-2 lg:py-3 lg:px-4 lg:rounded-md ${
                 isActive ? 'text-primary lg:bg-primary/10' : 'text-muted-foreground hover:text-foreground'
               }`}
@@ -55,7 +56,7 @@ const BottomNav = ({ active, onNavigate, notificationCount = 0, settingsDot, pro
         })}
         <div className="hidden lg:flex lg:flex-1" />
         <button
-          onClick={() => onNavigate('settings')}
+          onClick={() => { hapticsService.selectionChanged(); onNavigate('settings'); }}
           className={`relative flex flex-col items-center gap-0.5 py-2 px-3 transition-colors lg:flex-row lg:gap-2 lg:py-3 lg:px-4 lg:rounded-md ${
             active === 'settings' ? 'text-primary lg:bg-primary/10' : 'text-muted-foreground hover:text-foreground'
           }`}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { UserBadge, getRarityColor, getRarityGlow, getHighPeakGlow } from '@/services/badgeService';
 import { useTranslation } from '@/i18n/useTranslation';
+import { hapticsService } from '@/services/hapticsService';
 
 interface BadgeUnlockOverlayProps {
   badges: UserBadge[];
