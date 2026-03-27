@@ -198,6 +198,20 @@ export function useAppData() {
     let newSession: WorkoutSession | undefined;
     if (isOnline && user) {
       newSession = await workoutServiceAsync.add(user.id, data);
+    } else if (user && !networkOnline) {
+      // Logged in but offline: save locally + queue for sync
+      newSession = workoutService.add(data);
+      await enqueue('workout_sessions', 'insert', {
+        user_id: user.id,
+        type: data.type,
+        date: data.date,
+        duration_minutes: data.durationMinutes,
+        distance: data.distance || null,
+        elevation_gain: data.elevationGain || null,
+        notes: data.notes || null,
+        title: data.title || null,
+        source_primary: (data as any).sourcePrimary || 'manual',
+      });
     } else {
       newSession = workoutService.add(data);
     }
