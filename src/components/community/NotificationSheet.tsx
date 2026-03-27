@@ -28,7 +28,7 @@ interface EnrichedNotification extends NotificationRow {
   alreadyResponded?: boolean;
 }
 
-const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge, onNavigateToProfile }: NotificationSheetProps) => {
+const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge, onNavigateToProfile, onNavigateToRecords }: NotificationSheetProps) => {
   const { t } = useTranslation();
   const [notifications, setNotifications] = useState<EnrichedNotification[]>([]);
   const [loading, setLoading] = useState(true);

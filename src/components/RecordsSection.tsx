@@ -1248,6 +1248,19 @@ const RecordsSection = () => {
                       </Avatar>
                       <span className="text-xs flex-1">{s.username}</span>
                       <span className="text-xs text-muted-foreground">{t('records.pending')}</span>
+                      <button
+                        onClick={async () => {
+                          await supabase.from('hiking_record_shares').delete().eq('id', s.id) as any;
+                          // Also remove the notification
+                          await supabase.from('community_notifications').delete().eq('challenge_id', s.id).eq('type', 'hike_share') as any;
+                          if (selectedHike) await loadShares(selectedHike.id);
+                          toast.success(language === 'no' ? 'Invitasjon trukket tilbake' : 'Invitation withdrawn');
+                        }}
+                        className="p-1 rounded hover:bg-destructive/10 transition-colors"
+                        title={language === 'no' ? 'Trekk tilbake' : 'Withdraw'}
+                      >
+                        <X className="w-3.5 h-3.5 text-destructive" />
+                      </button>
                     </div>
                   ))}
                 </div>
