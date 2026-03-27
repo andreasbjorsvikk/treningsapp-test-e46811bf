@@ -1,4 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+/**
+ * useAppData — Central data hook using React Query for offline-first caching.
+ * All query keys are user-scoped. Data persists to IndexedDB via queryPersister.
+ */
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { WorkoutSession, ExtraGoal, PrimaryGoalPeriod, HealthEvent } from '@/types/workout';
@@ -7,7 +12,7 @@ import { goalService, goalServiceAsync } from '@/services/goalService';
 import { primaryGoalService, primaryGoalServiceAsync } from '@/services/primaryGoalService';
 import { healthEventService, healthEventServiceAsync } from '@/services/healthEventService';
 import { enqueue } from '@/services/syncQueue';
-import { checkAllPRs, PRAlert } from '@/utils/prDetection';
+import { checkAllPRs } from '@/utils/prDetection';
 import { getSessionsInPeriod, computeProgress } from '@/utils/goalUtils';
 import { toast } from 'sonner';
 
@@ -15,135 +20,122 @@ export function useAppData() {
   const { user, loading: authLoading } = useAuth();
   const { isOnline: networkOnline } = useNetworkStatus();
   const isOnline = !!user && networkOnline;
+  const queryClient = useQueryClient();
+  const userId = user?.id;
 
-  const [sessions, setSessions] = useState<WorkoutSession[]>([]);
-  const [goals, setGoals] = useState<ExtraGoal[]>([]);
-  const [primaryGoals, setPrimaryGoals] = useState<PrimaryGoalPeriod[]>([]);
-  const [healthEvents, setHealthEvents] = useState<HealthEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [completedGoal, setCompletedGoal] = useState<ExtraGoal | null>(null);
-  const prevGoalStatesRef = useRef<Map<string, boolean>>(new Map());
-  // Refs to access current state inside reload without adding to deps
-  const goalsRef = useRef<ExtraGoal[]>([]);
-  const sessionsRef = useRef<WorkoutSession[]>([]);
-  goalsRef.current = goals;
-  sessionsRef.current = sessions;
+  // ===== React Query data sources (user-scoped, persisted via IDB) =====
 
-  // Migrate localStorage data to database on first login
-  const migrateLocalData = useCallback(async (userId: string) => {
+  const sessionsQuery = useQuery({
+    queryKey: ['app-data', 'sessions', userId],
+    queryFn: () => workoutServiceAsync.getAll(userId!),
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+    networkMode: 'offlineFirst',
+  });
+
+  const goalsQuery = useQuery({
+    queryKey: ['app-data', 'goals', userId],
+    queryFn: () => goalServiceAsync.getAll(userId!),
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+    networkMode: 'offlineFirst',
+  });
+
+  const primaryGoalsQuery = useQuery({
+    queryKey: ['app-data', 'primaryGoals', userId],
+    queryFn: () => primaryGoalServiceAsync.getAll(userId!),
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+    networkMode: 'offlineFirst',
+  });
+
+  const healthEventsQuery = useQuery({
+    queryKey: ['app-data', 'healthEvents', userId],
+    queryFn: () => healthEventServiceAsync.getAll(userId!),
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+    networkMode: 'offlineFirst',
+  });
+
+  const sessions = sessionsQuery.data ?? [];
+  const goals = goalsQuery.data ?? [];
+  const primaryGoals = primaryGoalsQuery.data ?? [];
+  const healthEvents = healthEventsQuery.data ?? [];
+
+  // Loading: auth not ready OR first fetch in progress with no cached data
+  const loading = authLoading || (!!userId && sessionsQuery.isPending && sessionsQuery.fetchStatus === 'fetching');
+
+  // ===== Invalidate queries after sync queue flush =====
+  useEffect(() => {
+    const handler = () => {
+      queryClient.invalidateQueries({ queryKey: ['app-data'] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    };
+    window.addEventListener('sync-queue-flushed', handler);
+    return () => window.removeEventListener('sync-queue-flushed', handler);
+  }, [queryClient]);
+
+  // ===== Migration from localStorage (runs once per user) =====
+  const migrateRef = useRef(false);
+  useEffect(() => {
+    if (!user || !isOnline || migrateRef.current) return;
     const MIGRATED_KEY = 'treningslogg_migrated';
-    if (localStorage.getItem(MIGRATED_KEY)) return;
+    if (localStorage.getItem(MIGRATED_KEY)) { migrateRef.current = true; return; }
+    migrateRef.current = true;
 
-    const localSessions = workoutService.getAll();
-    const localGoals = goalService.getAll();
-    const localPrimaryGoals = primaryGoalService.getAll();
-    const localHealthEvents = healthEventService.getAll();
-
-    // Check if there's any real local data (not just mock defaults with ids 1-25)
-    const hasRealLocalData = localSessions.some(s => !['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25'].includes(s.id));
-    
-    if (hasRealLocalData || localGoals.length > 0 || localPrimaryGoals.length > 0 || localHealthEvents.length > 0) {
-      console.log('Migrating localStorage data to database...');
+    (async () => {
       try {
-        // Migrate sessions (skip mock data)
-        const realSessions = localSessions.filter(s => !['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25'].includes(s.id));
-        for (const s of realSessions) {
-          const { id, ...data } = s;
-          await workoutServiceAsync.add(userId, data);
+        const localSessions = workoutService.getAll();
+        const localGoals = goalService.getAll();
+        const localPrimaryGoals = primaryGoalService.getAll();
+        const localHealthEvents = healthEventService.getAll();
+
+        const mockIds = new Set(['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25']);
+        const hasRealLocalData = localSessions.some(s => !mockIds.has(s.id));
+
+        if (hasRealLocalData || localGoals.length > 0 || localPrimaryGoals.length > 0 || localHealthEvents.length > 0) {
+          console.log('Migrating localStorage data to database...');
+          const realSessions = localSessions.filter(s => !mockIds.has(s.id));
+          for (const s of realSessions) {
+            const { id, ...data } = s;
+            await workoutServiceAsync.add(user.id, data);
+          }
+          for (const g of localGoals) {
+            const { id, createdAt, ...data } = g;
+            await goalServiceAsync.add(user.id, data);
+          }
+          for (const pg of localPrimaryGoals) {
+            const { id, createdAt, ...data } = pg;
+            await primaryGoalServiceAsync.add(user.id, data);
+          }
+          for (const he of localHealthEvents) {
+            const { id, ...data } = he;
+            await healthEventServiceAsync.add(user.id, data);
+          }
+          console.log('Migration complete!');
         }
-        for (const g of localGoals) {
-          const { id, createdAt, ...data } = g;
-          await goalServiceAsync.add(userId, data);
-        }
-        for (const pg of localPrimaryGoals) {
-          const { id, createdAt, ...data } = pg;
-          await primaryGoalServiceAsync.add(userId, data);
-        }
-        for (const he of localHealthEvents) {
-          const { id, ...data } = he;
-          await healthEventServiceAsync.add(userId, data);
-        }
-        console.log('Migration complete!');
+        localStorage.setItem(MIGRATED_KEY, 'true');
+        queryClient.invalidateQueries({ queryKey: ['app-data'] });
       } catch (err) {
         console.error('Migration failed:', err);
       }
-    }
+    })();
+  }, [user, isOnline, queryClient]);
 
-    localStorage.setItem(MIGRATED_KEY, 'true');
-  }, []);
+  // ===== Goal completion detection =====
+  const [completedGoal, setCompletedGoal] = useState<ExtraGoal | null>(null);
+  const prevGoalStatesRef = useRef<Map<string, boolean>>(new Map());
 
-  // Load data
-  const reload = useCallback(async (opts?: { checkGoals?: boolean }) => {
-    // Don't load anything until auth state is resolved
-    if (authLoading) return;
-
-    // Snapshot goal states before reload if requested (use refs to avoid dep cycle)
-    if (opts?.checkGoals && goalsRef.current.length > 0) {
-      const prevStates = new Map<string, boolean>();
-      for (const g of goalsRef.current.filter(g => !g.archived)) {
-        const periodSessions = getSessionsInPeriod(sessionsRef.current, g.period, g.activityType, g.customStart, g.customEnd);
-        const current = computeProgress(periodSessions, g.metric);
-        prevStates.set(g.id, current >= g.target);
-      }
-      prevGoalStatesRef.current = prevStates;
-    }
-
-    setLoading(true);
-    try {
-      if (user && networkOnline) {
-        // Online + logged in: fetch from database
-        await migrateLocalData(user.id);
-        
-        const [s, g, pg, he] = await Promise.all([
-          workoutServiceAsync.getAll(user.id),
-          goalServiceAsync.getAll(user.id),
-          primaryGoalServiceAsync.getAll(user.id),
-          healthEventServiceAsync.getAll(user.id),
-        ]);
-        setSessions(s);
-        setGoals(g);
-        setPrimaryGoals(pg);
-        setHealthEvents(he);
-        // Persist to localStorage as offline cache
-        try {
-          localStorage.setItem('treningslogg_sessions', JSON.stringify(s));
-          localStorage.setItem('treningslogg_goals', JSON.stringify(g));
-          localStorage.setItem('treningslogg_primary_goals', JSON.stringify(pg));
-          localStorage.setItem('treningslogg_health_events', JSON.stringify(he));
-        } catch { /* quota exceeded — non-critical */ }
-      } else {
-        // Offline or not logged in: use localStorage cache
-        setSessions(workoutService.getAll());
-        setGoals(goalService.getAll());
-        setPrimaryGoals(primaryGoalService.getAll());
-        setHealthEvents(healthEventService.getAll());
-      }
-    } catch (err) {
-      console.error('Failed to load data:', err);
-      // Fallback to localStorage on network error
-      setSessions(workoutService.getAll());
-      setGoals(goalService.getAll());
-      setPrimaryGoals(primaryGoalService.getAll());
-      setHealthEvents(healthEventService.getAll());
-    }
-    setLoading(false);
-  }, [user, networkOnline, authLoading, migrateLocalData]);
-
-  useEffect(() => { reload(); }, [reload]);
-
-  // Check for uncelebrated goal completions on login/load
   const initialCheckDone = useRef(false);
   useEffect(() => {
     if (loading || initialCheckDone.current || goals.length === 0 || sessions.length === 0) return;
     initialCheckDone.current = true;
-    
-    // Use sessionStorage to prevent re-showing on same browser session
+
     const sessionShownKey = 'treningslogg_goal_shown_this_session';
     const alreadyShownThisSession = new Set<string>(JSON.parse(sessionStorage.getItem(sessionShownKey) || '[]'));
-    
     const celebratedKey = 'treningslogg_celebrated_goals';
     const celebrated = new Set<string>(JSON.parse(localStorage.getItem(celebratedKey) || '[]'));
-    
+
     for (const g of goals.filter(g => !g.archived)) {
       if (celebrated.has(g.id)) continue;
       if (alreadyShownThisSession.has(g.id)) continue;
@@ -155,12 +147,11 @@ export function useAppData() {
         localStorage.setItem(celebratedKey, JSON.stringify([...celebrated]));
         alreadyShownThisSession.add(g.id);
         sessionStorage.setItem(sessionShownKey, JSON.stringify([...alreadyShownThisSession]));
-        return; // Show one at a time
+        return;
       }
     }
   }, [loading, goals, sessions]);
 
-  // Detect goal completions after sessions change (from addSession or reload with checkGoals)
   useEffect(() => {
     if (prevGoalStatesRef.current.size === 0) return;
     const prevStates = prevGoalStatesRef.current;
@@ -170,12 +161,10 @@ export function useAppData() {
         const periodSessions = getSessionsInPeriod(sessions, g.period, g.activityType, g.customStart, g.customEnd);
         const current = computeProgress(periodSessions, g.metric);
         if (current >= g.target) {
-          // Mark as celebrated
           const celebratedKey = 'treningslogg_celebrated_goals';
           const celebrated = new Set<string>(JSON.parse(localStorage.getItem(celebratedKey) || '[]'));
           celebrated.add(g.id);
           localStorage.setItem(celebratedKey, JSON.stringify([...celebrated]));
-          
           setCompletedGoal(g);
           prevGoalStatesRef.current = new Map();
           return;
@@ -185,22 +174,33 @@ export function useAppData() {
     prevGoalStatesRef.current = new Map();
   }, [sessions, goals]);
 
-  const addSession = useCallback(async (data: Omit<WorkoutSession, 'id'>) => {
-    // Snapshot goal completion states before adding session (use refs)
+  const snapshotGoalStates = useCallback(() => {
     const prevStates = new Map<string, boolean>();
-    for (const g of goalsRef.current.filter(g => !g.archived)) {
-      const periodSessions = getSessionsInPeriod(sessionsRef.current, g.period, g.activityType, g.customStart, g.customEnd);
+    for (const g of goals.filter(g => !g.archived)) {
+      const periodSessions = getSessionsInPeriod(sessions, g.period, g.activityType, g.customStart, g.customEnd);
       const current = computeProgress(periodSessions, g.metric);
       prevStates.set(g.id, current >= g.target);
     }
     prevGoalStatesRef.current = prevStates;
+  }, [goals, sessions]);
 
-    let newSession: WorkoutSession | undefined;
-    if (isOnline && user) {
+  // ===== Session mutations =====
+
+  const addSession = useCallback(async (data: Omit<WorkoutSession, 'id'>) => {
+    if (!user) return;
+    snapshotGoalStates();
+    const key = ['app-data', 'sessions', userId];
+
+    let newSession: WorkoutSession;
+    if (isOnline) {
       newSession = await workoutServiceAsync.add(user.id, data);
-    } else if (user && !networkOnline) {
-      // Logged in but offline: save locally + queue for sync
-      newSession = workoutService.add(data);
+      await queryClient.invalidateQueries({ queryKey: key });
+    } else {
+      const tempId = crypto.randomUUID();
+      newSession = { ...data, id: tempId } as WorkoutSession;
+      queryClient.setQueryData(key, (old: WorkoutSession[] | undefined) =>
+        [newSession, ...(old || [])].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      );
       await enqueue('workout_sessions', 'insert', {
         user_id: user.id,
         type: data.type,
@@ -212,28 +212,27 @@ export function useAppData() {
         title: data.title || null,
         source_primary: (data as any).sourcePrimary || 'manual',
       });
-    } else {
-      newSession = workoutService.add(data);
     }
-    await reload();
 
-    // PR detection after reload so sessions list is fresh
-    if (newSession) {
-      const otherSessions = sessionsRef.current.filter(s => s.id !== newSession!.id);
-      const prAlerts = checkAllPRs(newSession, otherSessions);
-      for (const pr of prAlerts) {
-        toast.success(`🏆 Ny personlig rekord! ${pr.benchmark}: ${pr.newTime}${pr.improvement ? ` (${pr.improvement})` : ''}`, {
-          duration: 6000,
-        });
-      }
+    // PR detection
+    const allSessions = queryClient.getQueryData<WorkoutSession[]>(key) || [];
+    const otherSessions = allSessions.filter(s => s.id !== newSession.id);
+    const prAlerts = checkAllPRs(newSession, otherSessions);
+    for (const pr of prAlerts) {
+      toast.success(`🏆 Ny personlig rekord! ${pr.benchmark}: ${pr.newTime}${pr.improvement ? ` (${pr.improvement})` : ''}`, { duration: 6000 });
     }
-  }, [isOnline, user, networkOnline, reload]);
+  }, [user, isOnline, queryClient, userId, snapshotGoalStates]);
 
   const updateSession = useCallback(async (id: string, data: Partial<Omit<WorkoutSession, 'id'>>) => {
-    if (isOnline && user) {
+    if (!user) return;
+    const key = ['app-data', 'sessions', userId];
+    if (isOnline) {
       await workoutServiceAsync.update(id, data);
-    } else if (user && !networkOnline) {
-      workoutService.update(id, data);
+      await queryClient.invalidateQueries({ queryKey: key });
+    } else {
+      queryClient.setQueryData(key, (old: WorkoutSession[] | undefined) =>
+        (old || []).map(s => s.id === id ? { ...s, ...data } : s)
+      );
       const dbData: Record<string, unknown> = { id };
       if (data.type !== undefined) dbData.type = data.type;
       if (data.durationMinutes !== undefined) dbData.duration_minutes = data.durationMinutes;
@@ -243,30 +242,34 @@ export function useAppData() {
       if (data.title !== undefined) dbData.title = data.title;
       if (data.date !== undefined) dbData.date = data.date;
       await enqueue('workout_sessions', 'update', dbData);
-    } else {
-      workoutService.update(id, data);
     }
-    await reload();
-  }, [isOnline, user, networkOnline, reload]);
+  }, [user, isOnline, queryClient, userId]);
 
   const deleteSession = useCallback(async (id: string) => {
-    if (isOnline && user) {
+    if (!user) return;
+    const key = ['app-data', 'sessions', userId];
+    if (isOnline) {
       await workoutServiceAsync.delete(id);
-    } else if (user && !networkOnline) {
-      workoutService.delete(id);
-      await enqueue('workout_sessions', 'delete', { id });
+      await queryClient.invalidateQueries({ queryKey: key });
     } else {
-      workoutService.delete(id);
+      queryClient.setQueryData(key, (old: WorkoutSession[] | undefined) =>
+        (old || []).filter(s => s.id !== id)
+      );
+      await enqueue('workout_sessions', 'delete', { id });
     }
-    await reload();
-  }, [isOnline, user, networkOnline, reload]);
+  }, [user, isOnline, queryClient, userId]);
 
-  // ===== Goal operations =====
+  // ===== Goal mutations =====
+
   const addGoal = useCallback(async (data: Omit<ExtraGoal, 'id' | 'createdAt'>) => {
-    if (isOnline && user) {
+    if (!user) return;
+    const key = ['app-data', 'goals', userId];
+    if (isOnline) {
       await goalServiceAsync.add(user.id, data);
-    } else if (user && !networkOnline) {
-      goalService.add(data);
+      await queryClient.invalidateQueries({ queryKey: key });
+    } else {
+      const tempGoal: ExtraGoal = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+      queryClient.setQueryData(key, (old: ExtraGoal[] | undefined) => [tempGoal, ...(old || [])]);
       await enqueue('goals', 'insert', {
         user_id: user.id,
         metric: data.metric,
@@ -278,17 +281,19 @@ export function useAppData() {
         custom_start: data.customStart || null,
         custom_end: data.customEnd || null,
       });
-    } else {
-      goalService.add(data);
     }
-    await reload();
-  }, [isOnline, user, networkOnline, reload]);
+  }, [user, isOnline, queryClient, userId]);
 
   const updateGoal = useCallback(async (id: string, data: Partial<Omit<ExtraGoal, 'id' | 'createdAt'>>) => {
-    if (isOnline && user) {
+    if (!user) return;
+    const key = ['app-data', 'goals', userId];
+    if (isOnline) {
       await goalServiceAsync.update(id, data);
-    } else if (user && !networkOnline) {
-      goalService.update(id, data);
+      await queryClient.invalidateQueries({ queryKey: key });
+    } else {
+      queryClient.setQueryData(key, (old: ExtraGoal[] | undefined) =>
+        (old || []).map(g => g.id === id ? { ...g, ...data } : g)
+      );
       const dbData: Record<string, unknown> = { id };
       if (data.archived !== undefined) dbData.archived = data.archived;
       if (data.showOnHome !== undefined) dbData.show_on_home = data.showOnHome;
@@ -297,112 +302,120 @@ export function useAppData() {
       if (data.period !== undefined) dbData.period = data.period;
       if (data.repeating !== undefined) dbData.repeating = data.repeating;
       await enqueue('goals', 'update', dbData);
-    } else {
-      goalService.update(id, data);
     }
-    await reload();
-  }, [isOnline, user, networkOnline, reload]);
+  }, [user, isOnline, queryClient, userId]);
 
   const deleteGoal = useCallback(async (id: string) => {
-    if (isOnline && user) {
+    if (!user) return;
+    const key = ['app-data', 'goals', userId];
+    if (isOnline) {
       await goalServiceAsync.delete(id);
-    } else if (user && !networkOnline) {
-      goalService.delete(id);
-      await enqueue('goals', 'delete', { id });
+      await queryClient.invalidateQueries({ queryKey: key });
     } else {
-      goalService.delete(id);
+      queryClient.setQueryData(key, (old: ExtraGoal[] | undefined) => (old || []).filter(g => g.id !== id));
+      await enqueue('goals', 'delete', { id });
     }
-    await reload();
-  }, [isOnline, user, networkOnline, reload]);
+  }, [user, isOnline, queryClient, userId]);
 
   const reorderGoals = useCallback(async (orderedIds: string[]) => {
-    if (isOnline && user) {
+    if (!user) return;
+    const key = ['app-data', 'goals', userId];
+    queryClient.setQueryData(key, (old: ExtraGoal[] | undefined) => {
+      if (!old) return old;
+      const map = new Map(old.map(g => [g.id, g]));
+      const reordered: ExtraGoal[] = [];
+      for (const id of orderedIds) { const g = map.get(id); if (g) reordered.push(g); }
+      old.forEach(g => { if (!orderedIds.includes(g.id)) reordered.push(g); });
+      return reordered;
+    });
+    if (isOnline) {
       await goalServiceAsync.reorder(user.id, orderedIds);
-    } else {
-      goalService.reorder(orderedIds);
-      // Note: reorder offline doesn't queue individual updates — will re-sync order on reconnect
     }
-    await reload();
-  }, [isOnline, user, networkOnline, reload]);
+  }, [user, isOnline, queryClient, userId]);
 
-  // ===== Primary goal operations =====
+  // ===== Primary goal mutations =====
+
   const addPrimaryGoal = useCallback(async (data: { inputPeriod: any; inputTarget: number; validFrom: string }) => {
-    if (isOnline && user) {
+    if (!user) return;
+    const key = ['app-data', 'primaryGoals', userId];
+    if (isOnline) {
       await primaryGoalServiceAsync.add(user.id, data);
-    } else if (user && !networkOnline) {
-      primaryGoalService.add(data);
+      await queryClient.invalidateQueries({ queryKey: key });
+    } else {
+      const temp: PrimaryGoalPeriod = {
+        id: crypto.randomUUID(),
+        inputPeriod: data.inputPeriod,
+        inputTarget: data.inputTarget,
+        validFrom: data.validFrom,
+        createdAt: new Date().toISOString(),
+      };
+      queryClient.setQueryData(key, (old: PrimaryGoalPeriod[] | undefined) =>
+        [...(old || []), temp].sort((a, b) => a.validFrom.localeCompare(b.validFrom))
+      );
       await enqueue('primary_goal_periods', 'insert', {
         user_id: user.id,
         input_period: data.inputPeriod,
         input_target: data.inputTarget,
         valid_from: data.validFrom,
       });
-    } else {
-      primaryGoalService.add(data);
     }
-    await reload();
-  }, [isOnline, user, networkOnline, reload]);
+  }, [user, isOnline, queryClient, userId]);
 
   const updatePrimaryGoal = useCallback(async (id: string, data: any) => {
-    if (isOnline && user) {
+    if (!user) return;
+    const key = ['app-data', 'primaryGoals', userId];
+    if (isOnline) {
       await primaryGoalServiceAsync.update(id, data);
-    } else if (user && !networkOnline) {
-      primaryGoalService.update(id, data);
+      await queryClient.invalidateQueries({ queryKey: key });
+    } else {
+      queryClient.setQueryData(key, (old: PrimaryGoalPeriod[] | undefined) =>
+        (old || []).map(p => p.id === id ? { ...p, ...data } : p)
+      );
       const dbData: Record<string, unknown> = { id };
       if (data.inputPeriod !== undefined) dbData.input_period = data.inputPeriod;
       if (data.inputTarget !== undefined) dbData.input_target = data.inputTarget;
       if (data.validFrom !== undefined) dbData.valid_from = data.validFrom;
       await enqueue('primary_goal_periods', 'update', dbData);
-    } else {
-      primaryGoalService.update(id, data);
     }
-    await reload();
-  }, [isOnline, user, networkOnline, reload]);
+  }, [user, isOnline, queryClient, userId]);
 
   const deletePrimaryGoal = useCallback(async (id: string) => {
-    if (isOnline && user) {
+    if (!user) return;
+    const key = ['app-data', 'primaryGoals', userId];
+    if (isOnline) {
       await primaryGoalServiceAsync.delete(id);
-    } else if (user && !networkOnline) {
-      primaryGoalService.delete(id);
-      await enqueue('primary_goal_periods', 'delete', { id });
+      await queryClient.invalidateQueries({ queryKey: key });
     } else {
-      primaryGoalService.delete(id);
+      queryClient.setQueryData(key, (old: PrimaryGoalPeriod[] | undefined) => (old || []).filter(p => p.id !== id));
+      await enqueue('primary_goal_periods', 'delete', { id });
     }
-    await reload();
-  }, [isOnline, user, networkOnline, reload]);
+  }, [user, isOnline, queryClient, userId]);
 
   const clearPrimaryGoals = useCallback(async () => {
-    if (isOnline && user) {
+    if (!user) return;
+    const key = ['app-data', 'primaryGoals', userId];
+    queryClient.setQueryData(key, []);
+    if (isOnline) {
       await primaryGoalServiceAsync.clear(user.id);
-    } else {
-      primaryGoalService.clear();
+      await queryClient.invalidateQueries({ queryKey: key });
     }
-    await reload();
-  }, [isOnline, user, reload]);
+  }, [user, isOnline, queryClient, userId]);
 
   const setPrimaryGoal = useCallback(async (data: { inputPeriod: any; inputTarget: number; startDate: string }) => {
-    if (isOnline && user) {
-      await primaryGoalServiceAsync.add(user.id, { inputPeriod: data.inputPeriod, inputTarget: data.inputTarget, validFrom: data.startDate });
-    } else if (user && !networkOnline) {
-      primaryGoalService.set(data);
-      await enqueue('primary_goal_periods', 'insert', {
-        user_id: user.id,
-        input_period: data.inputPeriod,
-        input_target: data.inputTarget,
-        valid_from: data.startDate,
-      });
-    } else {
-      primaryGoalService.set(data);
-    }
-    await reload();
-  }, [isOnline, user, networkOnline, reload]);
+    await addPrimaryGoal({ inputPeriod: data.inputPeriod, inputTarget: data.inputTarget, validFrom: data.startDate });
+  }, [addPrimaryGoal]);
 
-  // ===== Health event operations =====
+  // ===== Health event mutations =====
+
   const addHealthEvent = useCallback(async (data: Omit<HealthEvent, 'id'>) => {
-    if (isOnline && user) {
+    if (!user) return;
+    const key = ['app-data', 'healthEvents', userId];
+    if (isOnline) {
       await healthEventServiceAsync.add(user.id, data);
-    } else if (user && !networkOnline) {
-      healthEventService.add(data);
+      await queryClient.invalidateQueries({ queryKey: key });
+    } else {
+      const temp: HealthEvent = { ...data, id: crypto.randomUUID() };
+      queryClient.setQueryData(key, (old: HealthEvent[] | undefined) => [temp, ...(old || [])]);
       await enqueue('health_events', 'insert', {
         user_id: user.id,
         type: data.type,
@@ -410,85 +423,87 @@ export function useAppData() {
         date_to: data.dateTo || null,
         notes: data.notes || null,
       });
-    } else {
-      healthEventService.add(data);
     }
-    await reload();
-  }, [isOnline, user, networkOnline, reload]);
+  }, [user, isOnline, queryClient, userId]);
 
   const updateHealthEvent = useCallback(async (id: string, data: Partial<Omit<HealthEvent, 'id'>>) => {
-    if (isOnline && user) {
+    if (!user) return;
+    const key = ['app-data', 'healthEvents', userId];
+    if (isOnline) {
       await healthEventServiceAsync.update(id, data);
-    } else if (user && !networkOnline) {
-      healthEventService.update(id, data);
+      await queryClient.invalidateQueries({ queryKey: key });
+    } else {
+      queryClient.setQueryData(key, (old: HealthEvent[] | undefined) =>
+        (old || []).map(e => e.id === id ? { ...e, ...data } : e)
+      );
       const dbData: Record<string, unknown> = { id };
       if (data.type !== undefined) dbData.type = data.type;
       if (data.dateFrom !== undefined) dbData.date_from = data.dateFrom;
       if (data.dateTo !== undefined) dbData.date_to = data.dateTo;
       if (data.notes !== undefined) dbData.notes = data.notes;
       await enqueue('health_events', 'update', dbData);
-    } else {
-      healthEventService.update(id, data);
     }
-    await reload();
-  }, [isOnline, user, networkOnline, reload]);
+  }, [user, isOnline, queryClient, userId]);
 
   const deleteHealthEvent = useCallback(async (id: string) => {
-    if (isOnline && user) {
+    if (!user) return;
+    const key = ['app-data', 'healthEvents', userId];
+    if (isOnline) {
       await healthEventServiceAsync.delete(id);
-    } else if (user && !networkOnline) {
-      healthEventService.delete(id);
-      await enqueue('health_events', 'delete', { id });
+      await queryClient.invalidateQueries({ queryKey: key });
     } else {
-      healthEventService.delete(id);
+      queryClient.setQueryData(key, (old: HealthEvent[] | undefined) => (old || []).filter(e => e.id !== id));
+      await enqueue('health_events', 'delete', { id });
     }
-    await reload();
-  }, [isOnline, user, networkOnline, reload]);
+  }, [user, isOnline, queryClient, userId]);
 
-  // Computed stats
-  const { weekly: weekStats, monthly: monthStats } = computeStatsFromSessions(sessions);
+  // ===== Computed values =====
 
-  // Get current primary goal  
-  const currentPrimaryGoal = primaryGoals.length > 0
-    ? (() => {
-        const now = new Date().toISOString().slice(0, 10);
-        const sorted = [...primaryGoals].sort((a, b) => a.validFrom.localeCompare(b.validFrom));
-        let active: PrimaryGoalPeriod | null = null;
-        for (const p of sorted) {
-          if (p.validFrom <= now) active = p;
-          else break;
-        }
-        return active;
-      })()
-    : null;
+  const { weekly: weekStats, monthly: monthStats } = useMemo(
+    () => computeStatsFromSessions(sessions), [sessions]
+  );
 
-  // Archive goal (handles repeating goals)
+  const currentPrimaryGoal = useMemo(() => {
+    if (primaryGoals.length === 0) return null;
+    const now = new Date().toISOString().slice(0, 10);
+    const sorted = [...primaryGoals].sort((a, b) => a.validFrom.localeCompare(b.validFrom));
+    let active: PrimaryGoalPeriod | null = null;
+    for (const p of sorted) {
+      if (p.validFrom <= now) active = p;
+      else break;
+    }
+    return active;
+  }, [primaryGoals]);
+
+  // ===== Archive / dismiss goal =====
+
   const archiveGoal = useCallback(async (id: string) => {
     const goal = goals.find(g => g.id === id);
     if (!goal) return;
-    
-    if (goal.repeating) {
-      // For repeating goals, keep it active but note the period was completed
-      // The goal continues for the next period automatically
-      // We just dismiss the overlay
-    } else {
-      // Non-repeating: archive it
+    if (!goal.repeating) {
+      const key = ['app-data', 'goals', userId];
       if (isOnline && user) {
         await goalServiceAsync.update(id, { archived: true, showOnHome: false });
+        await queryClient.invalidateQueries({ queryKey: key });
       } else {
-        goalService.update(id, { archived: true, showOnHome: false });
+        queryClient.setQueryData(key, (old: ExtraGoal[] | undefined) =>
+          (old || []).map(g => g.id === id ? { ...g, archived: true, showOnHome: false } : g)
+        );
       }
-      await reload();
     }
     setCompletedGoal(null);
-  }, [goals, isOnline, user, reload]);
+  }, [goals, isOnline, user, queryClient, userId]);
 
-  const dismissCompletedGoal = useCallback(() => {
-    setCompletedGoal(null);
-  }, []);
+  const dismissCompletedGoal = useCallback(() => setCompletedGoal(null), []);
+
+  // ===== Reload (invalidate all app-data queries) =====
+
+  const reload = useCallback(async (opts?: { checkGoals?: boolean }) => {
+    if (opts?.checkGoals) snapshotGoalStates();
+    await queryClient.invalidateQueries({ queryKey: ['app-data'] });
+  }, [queryClient, snapshotGoalStates]);
 
   return {
-    // Data
     sessions,
     goals,
     primaryGoals,
@@ -499,35 +514,23 @@ export function useAppData() {
     loading,
     isOnline,
     completedGoal,
-
-    // Session ops
     addSession,
     updateSession,
     deleteSession,
-
-    // Goal ops
     addGoal,
     updateGoal,
     deleteGoal,
     reorderGoals,
-
-    // Primary goal ops
     addPrimaryGoal,
     updatePrimaryGoal,
     deletePrimaryGoal,
     clearPrimaryGoals,
     setPrimaryGoal,
-
-    // Health event ops
     addHealthEvent,
     updateHealthEvent,
     deleteHealthEvent,
-
-    // Goal completion
     archiveGoal,
     dismissCompletedGoal,
-
-    // Reload
     reload,
   };
 }

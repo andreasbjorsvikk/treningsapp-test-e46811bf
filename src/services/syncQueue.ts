@@ -7,6 +7,7 @@
  * Design:
  * - Each operation has a unique `id` for idempotency
  * - Failed ops stay in the queue with incremented retryCount
+ * - After max retries, ops move to a dead-letter queue (not dropped)
  * - Last-write-wins for user-editable data
  * - Server-derived data (badges, standings) is refreshed after sync
  */
@@ -48,10 +49,24 @@ async function saveQueue(ops: SyncOperation[]): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Dead-letter queue for permanently failed operations
+// ---------------------------------------------------------------------------
+
+const DEAD_LETTER_KEY = 'treningsapp_sync_dead_letter';
+
+async function loadDeadLetter(): Promise<SyncOperation[]> {
+  return (await get<SyncOperation[]>(DEAD_LETTER_KEY)) ?? [];
+}
+
+async function saveDeadLetter(ops: SyncOperation[]): Promise<void> {
+  await set(DEAD_LETTER_KEY, ops);
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
-/** Enqueue a new operation. Duplicate ids are silently ignored. */
+/** Enqueue a new operation. Duplicate payloads are silently ignored. */
 export async function enqueue(
   table: SyncTable,
   action: SyncAction,
@@ -111,6 +126,7 @@ const BACKOFF_BASE_MS = 1000;
 /**
  * Process all queued operations sequentially.
  * Returns the number of successfully processed operations.
+ * Operations that exceed MAX_RETRIES are moved to the dead-letter queue.
  */
 export async function flushQueue(): Promise<number> {
   const queue = await loadQueue();
@@ -118,6 +134,7 @@ export async function flushQueue(): Promise<number> {
 
   let processed = 0;
   const remaining: SyncOperation[] = [];
+  const deadLetterOps: SyncOperation[] = [];
 
   for (const op of queue) {
     try {
@@ -131,13 +148,21 @@ export async function flushQueue(): Promise<number> {
       if (op.retryCount < MAX_RETRIES) {
         remaining.push(op);
       } else {
-        // Drop after max retries — could be logged / reported
-        console.error(`[syncQueue] Dropping operation after ${MAX_RETRIES} retries:`, op);
+        // Move to dead-letter queue for later inspection/retry
+        console.error(`[syncQueue] Moving operation to dead-letter after ${MAX_RETRIES} retries:`, op);
+        deadLetterOps.push(op);
       }
     }
   }
 
   await saveQueue(remaining);
+
+  // Persist permanently failed operations to dead-letter queue
+  if (deadLetterOps.length > 0) {
+    const existing = await loadDeadLetter();
+    await saveDeadLetter([...existing, ...deadLetterOps]);
+  }
+
   return processed;
 }
 
@@ -207,4 +232,33 @@ async function executeOperation(op: SyncOperation): Promise<void> {
     default:
       throw new Error(`Unknown sync action: ${action}`);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Dead-letter queue public API
+// ---------------------------------------------------------------------------
+
+/** Return all permanently failed operations (read-only snapshot). */
+export async function peekDeadLetter(): Promise<SyncOperation[]> {
+  return [...(await loadDeadLetter())];
+}
+
+/** Move all dead-letter operations back to the main queue for retry (resets retryCount). */
+export async function retryDeadLetter(): Promise<number> {
+  const dead = await loadDeadLetter();
+  if (dead.length === 0) return 0;
+  const queue = await loadQueue();
+  for (const op of dead) {
+    op.retryCount = 0;
+    op.lastError = null;
+    queue.push(op);
+  }
+  await saveQueue(queue);
+  await saveDeadLetter([]);
+  return dead.length;
+}
+
+/** Return the number of permanently failed operations. */
+export async function deadLetterLength(): Promise<number> {
+  return (await loadDeadLetter()).length;
 }

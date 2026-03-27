@@ -4,6 +4,7 @@ import { WorkoutSession, ExtraGoal } from '@/types/workout';
 import { AppDataProvider, useAppDataContext } from '@/contexts/AppDataContext';
 import { computeMonthWheelData, computeYearWheelData } from '@/utils/goalWheelData';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 import { stravaService } from '@/services/stravaService';
 import { goalService } from '@/services/goalService';
 import { getChallenges, getChallengeParticipants, getChallengeProgress, getUnreadNotificationCount, ChallengeRow } from '@/services/communityService';
@@ -121,32 +122,30 @@ const IndexContent = () => {
   const [pendingWeekReport, setPendingWeekReport] = useState(false);
   const [pendingMonthReport, setPendingMonthReport] = useState(false);
 
-  // Profile info
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [username, setUsername] = useState('');
+  // Profile info (cached via React Query for offline use)
+  const { profile, updateProfile } = useProfile();
+  const avatarUrl = profile?.avatar_url ?? null;
+  const username = profile?.username ?? '';
 
+  // Handle pending username on first login
   useEffect(() => {
-    if (!user) return;
-    supabase.from('profiles').select('username, avatar_url').eq('id', user.id).single()
-      .then(({ data }) => {
-        if (data?.username) setUsername(data.username);
-        if (data?.avatar_url) setAvatarUrl(data.avatar_url);
-        // Check if first login (no username set yet) and apply pending username
-        const pendingName = localStorage.getItem('treningslogg_pending_username');
-        if (pendingName && !data?.username) {
-          supabase.from('profiles').update({ username: pendingName }).eq('id', user.id).then(() => {
-            setUsername(pendingName);
-            localStorage.removeItem('treningslogg_pending_username');
-          });
-        }
-        // Show welcome on first login
-        const welcomeShown = localStorage.getItem('treningslogg_welcome_shown');
-        if (!welcomeShown) {
-          setShowWelcome(true);
-          localStorage.setItem('treningslogg_welcome_shown', 'true');
-        }
-      });
-  }, [user]);
+    if (!user || !profile) return;
+    const pendingName = localStorage.getItem('treningslogg_pending_username');
+    if (pendingName && !profile.username) {
+      updateProfile({ username: pendingName });
+      localStorage.removeItem('treningslogg_pending_username');
+    }
+  }, [user, profile, updateProfile]);
+
+  // Show welcome on first login
+  useEffect(() => {
+    if (!user || profile === undefined) return;
+    const welcomeShown = localStorage.getItem('treningslogg_welcome_shown');
+    if (!welcomeShown) {
+      setShowWelcome(true);
+      localStorage.setItem('treningslogg_welcome_shown', 'true');
+    }
+  }, [user, profile]);
 
   // Initialize badge snapshot on load
   useEffect(() => {
