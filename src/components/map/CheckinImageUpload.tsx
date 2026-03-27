@@ -2,6 +2,8 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Camera, ImageIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useTranslation } from '@/i18n/useTranslation';
+import { toast } from 'sonner';
 
 interface CheckinImageUploadProps {
   onImageReady: (file: File | null) => void;
@@ -13,6 +15,7 @@ const CROP_W = 320;
 const CROP_H = 180; // 16:9
 
 const CheckinImageUpload = ({ onImageReady }: CheckinImageUploadProps) => {
+  const { t } = useTranslation();
   const [preview, setPreview] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,11 +28,11 @@ const CheckinImageUpload = ({ onImageReady }: CheckinImageUploadProps) => {
   const handleFile = useCallback((file: File) => {
     setError(null);
     if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-      setError(`Bildet er for stort (maks ${MAX_FILE_SIZE_MB} MB)`);
+      setError(t('checkinImage.tooLarge'));
       return;
     }
     if (!file.type.startsWith('image/')) {
-      setError('Kun bildefiler er støttet');
+      setError(t('checkinImage.onlyImages'));
       return;
     }
     setRawFile(file);
@@ -61,7 +64,7 @@ const CheckinImageUpload = ({ onImageReady }: CheckinImageUploadProps) => {
     return (
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-medium text-muted-foreground">✓ Bilde valgt</p>
+          <p className="text-xs font-medium text-muted-foreground">✓ {t('checkinImage.imageSelected')}</p>
           <button onClick={handleRemove} className="p-1 rounded hover:bg-muted transition-colors">
             <X className="w-4 h-4 text-muted-foreground" />
           </button>
@@ -72,13 +75,13 @@ const CheckinImageUpload = ({ onImageReady }: CheckinImageUploadProps) => {
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium text-muted-foreground">Legg til bilde (valgfritt)</p>
+      <p className="text-xs font-medium text-muted-foreground">{t('checkinImage.addPhoto')}</p>
       <div className="flex gap-2">
         <Button type="button" variant="outline" size="sm" className="flex-1 gap-2" onClick={() => cameraRef.current?.click()}>
-          <Camera className="w-4 h-4" />Ta bilde
+          <Camera className="w-4 h-4" />{t('checkinImage.takePhoto')}
         </Button>
         <Button type="button" variant="outline" size="sm" className="flex-1 gap-2" onClick={() => galleryRef.current?.click()}>
-          <ImageIcon className="w-4 h-4" />Velg fra galleri
+          <ImageIcon className="w-4 h-4" />{t('checkinImage.chooseFromGallery')}
         </Button>
       </div>
       {error && <p className="text-xs text-destructive">{error}</p>}
@@ -332,9 +335,9 @@ const CheckinCropDialog = ({ open, imageUrl, rawFile, onConfirm, onCancel }: Che
     <Dialog open={open} onOpenChange={(o) => { if (!o) onCancel(); }}>
       <DialogContent className="max-w-[min(calc(100vw-2rem),22rem)] p-4">
         <DialogHeader>
-          <DialogTitle className="text-base">Juster bilde</DialogTitle>
+          <DialogTitle className="text-base">{t('checkinImage.adjustImage')}</DialogTitle>
         </DialogHeader>
-        <p className="text-xs text-muted-foreground text-center mb-1">Dra, zoom og roter for å velge utsnitt</p>
+        <p className="text-xs text-muted-foreground text-center mb-1">{t('checkinImage.dragZoomRotate')}</p>
         <div className="flex justify-center">
           <div
             ref={containerRef}
@@ -379,9 +382,9 @@ const CheckinCropDialog = ({ open, imageUrl, rawFile, onConfirm, onCancel }: Che
           <span className="text-xs text-muted-foreground">+</span>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" className="flex-1" onClick={onCancel}>Avbryt</Button>
+          <Button variant="secondary" className="flex-1" onClick={onCancel}>{t('common.cancel')}</Button>
           <Button className="flex-1" onClick={handleConfirm} disabled={compressing}>
-            {compressing ? 'Komprimerer...' : 'Bekreft'}
+            {compressing ? t('checkinImage.compressing') : t('checkinImage.confirm')}
           </Button>
         </div>
       </DialogContent>
