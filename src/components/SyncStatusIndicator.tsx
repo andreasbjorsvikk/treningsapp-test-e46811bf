@@ -1,7 +1,6 @@
-import { Cloud, CloudOff } from 'lucide-react';
+import { Cloud, CloudOff, AlertTriangle } from 'lucide-react';
 import { useSyncQueue } from '@/hooks/useSyncQueue';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const SyncStatusIndicator = () => {
   const { hasPending, pendingCount, isFlushing } = useSyncQueue();
@@ -11,32 +10,39 @@ const SyncStatusIndicator = () => {
   if (isOnline && !hasPending) return null;
 
   const isOffline = !isOnline;
-  const label = isOffline
-    ? `Frakoblet – ${pendingCount} ventende endringer`
-    : isFlushing
-      ? 'Synkroniserer…'
-      : `${pendingCount} ventende endringer`;
 
+  // Offline with pending changes — most urgent
+  if (isOffline && hasPending) {
+    return (
+      <div className="flex items-center gap-1.5 bg-destructive/15 text-destructive px-2.5 py-1 rounded-full animate-in fade-in">
+        <CloudOff className="w-3.5 h-3.5" />
+        <span className="text-[11px] font-semibold tabular-nums">
+          {pendingCount} ventende
+        </span>
+      </div>
+    );
+  }
+
+  // Offline without pending changes
+  if (isOffline) {
+    return (
+      <div className="flex items-center gap-1.5 bg-muted px-2.5 py-1 rounded-full animate-in fade-in">
+        <CloudOff className="w-3.5 h-3.5 text-muted-foreground" />
+        <span className="text-[11px] font-medium text-muted-foreground">
+          Frakoblet
+        </span>
+      </div>
+    );
+  }
+
+  // Online but flushing / has pending
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <div className="flex items-center gap-1 text-muted-foreground">
-          {isOffline ? (
-            <CloudOff className="w-4 h-4" />
-          ) : (
-            <Cloud className="w-4 h-4" />
-          )}
-          {pendingCount > 0 && (
-            <span className="text-[10px] font-medium tabular-nums">
-              {pendingCount}
-            </span>
-          )}
-        </div>
-      </TooltipTrigger>
-      <TooltipContent side="bottom">
-        <p className="text-xs">{label}</p>
-      </TooltipContent>
-    </Tooltip>
+    <div className="flex items-center gap-1.5 bg-primary/10 text-primary px-2.5 py-1 rounded-full animate-in fade-in">
+      <Cloud className={`w-3.5 h-3.5 ${isFlushing ? 'animate-pulse' : ''}`} />
+      <span className="text-[11px] font-semibold tabular-nums">
+        {isFlushing ? 'Synkroniserer…' : `${pendingCount} ventende`}
+      </span>
+    </div>
   );
 };
 
