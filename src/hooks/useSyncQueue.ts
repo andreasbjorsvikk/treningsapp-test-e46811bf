@@ -1,6 +1,6 @@
 /**
  * useSyncQueue — React hook for monitoring and interacting with the offline sync queue.
- * Starts auto-flush on mount and exposes queue state.
+ * Starts auto-flush on mount, exposes queue state, and dispatches events after flush.
  */
 import { useState, useEffect, useCallback } from 'react';
 import { queueLength, flushQueue, startAutoFlush, peekQueue, type SyncOperation } from '@/services/syncQueue';
@@ -21,6 +21,7 @@ export function useSyncQueue() {
     const cleanup = startAutoFlush(async (count) => {
       console.log(`[syncQueue] Flushed ${count} operations`);
       await refreshCount();
+      window.dispatchEvent(new Event('sync-queue-flushed'));
     });
 
     // Initial count
@@ -36,6 +37,7 @@ export function useSyncQueue() {
       flushQueue().then(async () => {
         await refreshCount();
         setIsFlushing(false);
+        window.dispatchEvent(new Event('sync-queue-flushed'));
       });
     }
   }, [isOnline, pendingCount, refreshCount]);
@@ -46,6 +48,7 @@ export function useSyncQueue() {
     try {
       await flushQueue();
       await refreshCount();
+      window.dispatchEvent(new Event('sync-queue-flushed'));
     } finally {
       setIsFlushing(false);
     }

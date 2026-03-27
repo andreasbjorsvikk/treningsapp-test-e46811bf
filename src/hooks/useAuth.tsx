@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { del } from 'idb-keyval';
 import type { User, Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -51,6 +52,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    // Clear persisted query cache to prevent data leakage on shared devices
+    try { await del('treningsapp_query_cache'); } catch {}
   };
 
   const resetPassword = async (email: string) => {

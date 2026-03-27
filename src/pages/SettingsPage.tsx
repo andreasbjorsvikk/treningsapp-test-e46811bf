@@ -3,6 +3,7 @@ import SettingsTutorialDialog, { SETTINGS_TUTORIAL_KEY } from '@/components/Sett
 import { useSettings, AppColorTheme, AccentColor, PrivacyLevel } from '@/contexts/SettingsContext';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -58,6 +59,7 @@ const SettingsPage = () => {
   const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const { isAdmin, adminMode, setAdminMode } = useAdmin();
+  const { profile, updateProfile: updateProfileData } = useProfile();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -128,26 +130,23 @@ const SettingsPage = () => {
       appleHealthService.getConnection().then(c => setAhConnection(c)).catch(() => {});
     }
   }, [user]);
-  // Load profile
+  // Initialize form state from cached profile (offline-ready)
   useEffect(() => {
-    if (!user) return;
-    supabase.from('profiles').select('username, avatar_url, privacy_workouts, privacy_stats, privacy_goals, privacy_peak_checkins, privacy_workouts_friends, privacy_stats_friends, privacy_goals_friends, privacy_peak_checkins_friends').eq('id', user.id).single()
-      .then(({ data }) => {
-        if (data?.username) setUsername(data.username);
-        if (data?.avatar_url) setAvatarUrl(data.avatar_url);
-        // Load privacy settings from DB
-        const privacyPatch: Record<string, any> = {};
-        if (data?.privacy_workouts) privacyPatch.privacyWorkouts = data.privacy_workouts;
-        if (data?.privacy_stats) privacyPatch.privacyStats = data.privacy_stats;
-        if (data?.privacy_goals) privacyPatch.privacyGoals = data.privacy_goals;
-        if (data?.privacy_peak_checkins) privacyPatch.privacyPeakCheckins = data.privacy_peak_checkins;
-        if (data?.privacy_workouts_friends) privacyPatch.privacyWorkoutsFriends = data.privacy_workouts_friends;
-        if (data?.privacy_stats_friends) privacyPatch.privacyStatsFriends = data.privacy_stats_friends;
-        if (data?.privacy_goals_friends) privacyPatch.privacyGoalsFriends = data.privacy_goals_friends;
-        if (data?.privacy_peak_checkins_friends) privacyPatch.privacyPeakCheckinsFriends = data.privacy_peak_checkins_friends;
-        if (Object.keys(privacyPatch).length > 0) updateSettings(privacyPatch);
-      });
-  }, [user]);
+    if (!profile) return;
+    if (profile.username) setUsername(profile.username);
+    if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
+    // Load privacy settings from profile cache
+    const privacyPatch: Record<string, any> = {};
+    if (profile.privacy_workouts) privacyPatch.privacyWorkouts = profile.privacy_workouts;
+    if (profile.privacy_stats) privacyPatch.privacyStats = profile.privacy_stats;
+    if (profile.privacy_goals) privacyPatch.privacyGoals = profile.privacy_goals;
+    if (profile.privacy_peak_checkins) privacyPatch.privacyPeakCheckins = profile.privacy_peak_checkins;
+    if (profile.privacy_workouts_friends) privacyPatch.privacyWorkoutsFriends = profile.privacy_workouts_friends;
+    if (profile.privacy_stats_friends) privacyPatch.privacyStatsFriends = profile.privacy_stats_friends;
+    if (profile.privacy_goals_friends) privacyPatch.privacyGoalsFriends = profile.privacy_goals_friends;
+    if (profile.privacy_peak_checkins_friends) privacyPatch.privacyPeakCheckinsFriends = profile.privacy_peak_checkins_friends;
+    if (Object.keys(privacyPatch).length > 0) updateSettings(privacyPatch);
+  }, [profile]);
   
   // Load real friends for privacy settings
   useEffect(() => {
@@ -193,7 +192,7 @@ const SettingsPage = () => {
   const handleSaveUsername = async () => {
     if (!user) return;
     setUsernameLoading(true);
-    await supabase.from('profiles').update({ username }).eq('id', user.id);
+    await updateProfileData({ username });
     setUsernameLoading(false);
     setUsernameSaved(true);
     setTimeout(() => setUsernameSaved(false), 2000);
@@ -220,7 +219,7 @@ const SettingsPage = () => {
     if (!error) {
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
       const url = `${publicUrl}?t=${Date.now()}`;
-      await supabase.from('profiles').update({ avatar_url: url }).eq('id', user.id);
+      await updateProfileData({ avatar_url: url });
       setAvatarUrl(url);
     }
     setUploading(false);
