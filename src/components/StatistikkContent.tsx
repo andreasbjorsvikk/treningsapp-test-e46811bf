@@ -109,7 +109,7 @@ const StatistikkContent = ({
 
           <StatsTiles sessions={statSessions} />
           <div className={chartMetric === 'steps' ? 'opacity-40 pointer-events-none' : ''}>
-            <ActivityTypeFilter selected={selectedTypes} onToggle={handleToggleType} />
+            <ActivityTypeFilter selected={selectedTypes} onToggle={handleToggleType} chartType={chartType} />
           </div>
           <MetricSelector selected={chartMetric} onSelect={setChartMetric} />
 
