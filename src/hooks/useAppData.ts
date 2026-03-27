@@ -329,29 +329,47 @@ export function useAppData() {
   const addPrimaryGoal = useCallback(async (data: { inputPeriod: any; inputTarget: number; validFrom: string }) => {
     if (isOnline && user) {
       await primaryGoalServiceAsync.add(user.id, data);
+    } else if (user && !networkOnline) {
+      primaryGoalService.add(data);
+      await enqueue('primary_goal_periods', 'insert', {
+        user_id: user.id,
+        input_period: data.inputPeriod,
+        input_target: data.inputTarget,
+        valid_from: data.validFrom,
+      });
     } else {
       primaryGoalService.add(data);
     }
     await reload();
-  }, [isOnline, user, reload]);
+  }, [isOnline, user, networkOnline, reload]);
 
   const updatePrimaryGoal = useCallback(async (id: string, data: any) => {
     if (isOnline && user) {
       await primaryGoalServiceAsync.update(id, data);
+    } else if (user && !networkOnline) {
+      primaryGoalService.update(id, data);
+      const dbData: Record<string, unknown> = { id };
+      if (data.inputPeriod !== undefined) dbData.input_period = data.inputPeriod;
+      if (data.inputTarget !== undefined) dbData.input_target = data.inputTarget;
+      if (data.validFrom !== undefined) dbData.valid_from = data.validFrom;
+      await enqueue('primary_goal_periods', 'update', dbData);
     } else {
       primaryGoalService.update(id, data);
     }
     await reload();
-  }, [isOnline, user, reload]);
+  }, [isOnline, user, networkOnline, reload]);
 
   const deletePrimaryGoal = useCallback(async (id: string) => {
     if (isOnline && user) {
       await primaryGoalServiceAsync.delete(id);
+    } else if (user && !networkOnline) {
+      primaryGoalService.delete(id);
+      await enqueue('primary_goal_periods', 'delete', { id });
     } else {
       primaryGoalService.delete(id);
     }
     await reload();
-  }, [isOnline, user, reload]);
+  }, [isOnline, user, networkOnline, reload]);
 
   const clearPrimaryGoals = useCallback(async () => {
     if (isOnline && user) {
@@ -365,30 +383,55 @@ export function useAppData() {
   const setPrimaryGoal = useCallback(async (data: { inputPeriod: any; inputTarget: number; startDate: string }) => {
     if (isOnline && user) {
       await primaryGoalServiceAsync.add(user.id, { inputPeriod: data.inputPeriod, inputTarget: data.inputTarget, validFrom: data.startDate });
+    } else if (user && !networkOnline) {
+      primaryGoalService.set(data);
+      await enqueue('primary_goal_periods', 'insert', {
+        user_id: user.id,
+        input_period: data.inputPeriod,
+        input_target: data.inputTarget,
+        valid_from: data.startDate,
+      });
     } else {
       primaryGoalService.set(data);
     }
     await reload();
-  }, [isOnline, user, reload]);
+  }, [isOnline, user, networkOnline, reload]);
 
   // ===== Health event operations =====
   const addHealthEvent = useCallback(async (data: Omit<HealthEvent, 'id'>) => {
     if (isOnline && user) {
       await healthEventServiceAsync.add(user.id, data);
+    } else if (user && !networkOnline) {
+      healthEventService.add(data);
+      await enqueue('health_events', 'insert', {
+        user_id: user.id,
+        type: data.type,
+        date_from: data.dateFrom,
+        date_to: data.dateTo || null,
+        notes: data.notes || null,
+      });
     } else {
       healthEventService.add(data);
     }
     await reload();
-  }, [isOnline, user, reload]);
+  }, [isOnline, user, networkOnline, reload]);
 
   const updateHealthEvent = useCallback(async (id: string, data: Partial<Omit<HealthEvent, 'id'>>) => {
     if (isOnline && user) {
       await healthEventServiceAsync.update(id, data);
+    } else if (user && !networkOnline) {
+      healthEventService.update(id, data);
+      const dbData: Record<string, unknown> = { id };
+      if (data.type !== undefined) dbData.type = data.type;
+      if (data.dateFrom !== undefined) dbData.date_from = data.dateFrom;
+      if (data.dateTo !== undefined) dbData.date_to = data.dateTo;
+      if (data.notes !== undefined) dbData.notes = data.notes;
+      await enqueue('health_events', 'update', dbData);
     } else {
       healthEventService.update(id, data);
     }
     await reload();
-  }, [isOnline, user, reload]);
+  }, [isOnline, user, networkOnline, reload]);
 
   const deleteHealthEvent = useCallback(async (id: string) => {
     if (isOnline && user) {
