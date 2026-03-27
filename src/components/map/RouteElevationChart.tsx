@@ -23,9 +23,14 @@ export const RouteElevationChart = ({ geojson, onElevationGain }: RouteElevation
       setError(false);
       try {
         const coords = geojson.coordinates;
-        // Sample max 100 points to keep API request reasonable
-        const sampleRate = Math.max(1, Math.floor(coords.length / 100));
-        const sampledCoords = coords.filter((_: any, i: number) => i % sampleRate === 0);
+        // Sample max 100 points to keep API request reasonable (API limit is 100)
+        const maxPoints = 100;
+        const sampleRate = Math.max(1, Math.ceil(coords.length / maxPoints));
+        let sampledCoords = coords.filter((_: any, i: number) => i % sampleRate === 0);
+        // Ensure we never exceed 100 points
+        if (sampledCoords.length > maxPoints) {
+          sampledCoords = sampledCoords.slice(0, maxPoints);
+        }
         
         // Open-Meteo expects comma separated lats and lngs
         const lats = sampledCoords.map((c: [number, number]) => c[1].toFixed(5)).join(',');

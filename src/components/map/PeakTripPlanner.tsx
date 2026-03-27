@@ -132,19 +132,24 @@ const PeakTripPlanner = React.forwardRef<HTMLDivElement, PeakTripPlannerProps>((
         const hourlySource = data.hourly as Record<string, number[] | undefined> | undefined;
         const dailySource = data.daily as Record<string, string[] | undefined> | undefined;
 
-        const temperatureSeries = getWeatherSeries<number>(hourlySource, 'temperature_2m');
-        const precipitationSeries = getWeatherSeries<number>(hourlySource, 'precipitation');
+        // Use best_match for main forecast (full 10 days), metno_nordic only for snow depth
+        const getBestMatch = <T,>(source: Record<string, T[] | undefined> | undefined, key: string): T[] => {
+          if (!source) return [];
+          return (source[`${key}_best_match`] ?? source[key] ?? []) as T[];
+        };
+
+        const temperatureSeries = getBestMatch<number>(hourlySource, 'temperature_2m');
+        const precipitationSeries = getBestMatch<number>(hourlySource, 'precipitation');
+        const weatherCodeSeries = getBestMatch<number>(hourlySource, 'weather_code');
+        const windSpeedRawSeries = getBestMatch<number>(hourlySource, 'wind_speed_10m');
+        const windDirectionSeries = getBestMatch<number>(hourlySource, 'wind_direction_10m');
+        // Prefer metno_nordic for snow depth (better accuracy in Norway)
         const snowDepthSeries = getWeatherSeries<number>(hourlySource, 'snow_depth');
-        const weatherCodeSeries = getWeatherSeries<number>(hourlySource, 'weather_code');
-        const windSpeedRawSeries = getWeatherSeries<number>(hourlySource, 'wind_speed_10m');
-        const windDirectionSeries = getWeatherSeries<number>(hourlySource, 'wind_direction_10m');
-        const sunriseSeries = getWeatherSeries<string>(dailySource, 'sunrise');
-        const sunsetSeries = getWeatherSeries<string>(dailySource, 'sunset');
+        const sunriseSeries = (dailySource?.['sunrise'] ?? []) as string[];
+        const sunsetSeries = (dailySource?.['sunset'] ?? []) as string[];
 
         const hasMetNo = Array.isArray(data.hourly?.temperature_2m_metno_nordic) && data.hourly.temperature_2m_metno_nordic.length > 0;
-        const windUnitKey = hasMetNo
-          ? 'wind_speed_10m_metno_nordic'
-          : Array.isArray(data.hourly?.wind_speed_10m_best_match) && data.hourly.wind_speed_10m_best_match.length > 0
+        const windUnitKey = Array.isArray(data.hourly?.wind_speed_10m_best_match) && data.hourly.wind_speed_10m_best_match.length > 0
             ? 'wind_speed_10m_best_match'
             : 'wind_speed_10m';
         const windUnit = data.hourly_units?.[windUnitKey];
