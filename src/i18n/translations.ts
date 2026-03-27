@@ -2326,7 +2326,6 @@ const en: Record<string, string> = {
   'peaksList.searchMunicipality': 'Search municipality...',
   'peaksList.minElevation': 'Minimum elevation',
   'peaksList.noMin': 'None',
-  'peaksList.municipalityLabel': 'Municipality',
   'peaksList.resetFilters': 'Reset filters',
   'peaksList.unpublished': 'Unpublished',
   'peaksList.awayM': '{n} m away',
