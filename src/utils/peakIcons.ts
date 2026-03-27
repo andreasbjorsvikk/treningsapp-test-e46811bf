@@ -9,11 +9,12 @@ import peak700999b from '@/assets/icons/peak-700-999-b.png';
 import peak1000a from '@/assets/icons/peak-1000.png';
 import peak1000b from '@/assets/icons/peak-1000-b.png';
 
-// ── Icon Bank 2 (current PNGs – single icon per tier, unchecked) ──
-import tierLow from '@/assets/icons/peak-tier-low.png';
-import tierMedium from '@/assets/icons/peak-tier-medium.png';
-import tierHigh from '@/assets/icons/peak-tier-high.png';
-import tierVeryHigh from '@/assets/icons/peak-tier-veryhigh.png';
+// ── Icon Bank 2 (current SVGs – single icon per tier, unchecked) ──
+// Using SVG versions (~1KB each) so Vite inlines them as data URIs for offline use
+import tierLow from '@/assets/icons/peak-tier-low.svg';
+import tierMedium from '@/assets/icons/peak-tier-medium.svg';
+import tierHigh from '@/assets/icons/peak-tier-high.svg';
+import tierVeryHigh from '@/assets/icons/peak-tier-veryhigh.svg';
 
 // ── Checked-in SVG icons (white, no fill) ──
 import checkedLow from '@/assets/icons/peak-checked-low.svg';

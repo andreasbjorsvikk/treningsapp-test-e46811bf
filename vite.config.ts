@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    assetsInlineLimit: 0,
+    assetsInlineLimit: 8192,
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
