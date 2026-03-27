@@ -144,6 +144,10 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
         alreadyResponded = true;
       }
 
+      if (n.type === 'hike_share' && n.challenge_id && respondedHikeShares.has(n.challenge_id)) {
+        alreadyResponded = true;
+      }
+
       return {
         ...n,
         currentChallengeName: n.challenge_id ? challengeNameMap[n.challenge_id] : undefined,
