@@ -15,18 +15,21 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Mountain, MapPin, Check, Loader2, Pencil, Trash2, CalendarIcon, UserPlus, X, Search, List, Users, ImageIcon } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Mountain, MapPin, Check, Loader2, Pencil, Trash2, CalendarIcon, UserPlus, X, Search, List, Users, ImageIcon, Sunrise, Sunset, Info, Trophy, Map } from 'lucide-react';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { hapticsService } from '@/services/hapticsService';
 import { RouteElevationChart } from '@/components/map/RouteElevationChart';
 import PeakWeather from '@/components/map/PeakWeather';
 import PeakLeaderboard from '@/components/map/PeakLeaderboard';
+import PeakTripPlanner from '@/components/map/PeakTripPlanner';
 import CheckinSuccessAnimation from '@/components/map/CheckinSuccessAnimation';
 import CheckinImageUpload from '@/components/map/CheckinImageUpload';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface PeakDetailDrawerProps {
   peak: Peak | null;
@@ -45,17 +48,60 @@ interface PeakDetailDrawerProps {
 }
 
 const CHECKIN_RADIUS_METERS = 100;
-const CHECKIN_COOLDOWN_MS = 3 * 60 * 60 * 1000; // 3 hours
-const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
+const CHECKIN_COOLDOWN_MS = 3 * 60 * 60 * 1000;
+const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+// Sunrise/sunset component using Open-Meteo (same API as trip planner, but just today)
+const TodaySunTimes = ({ latitude, longitude }: { latitude: number; longitude: number }) => {
+  const { language } = useTranslation();
+  const [times, setTimes] = useState<{ sunrise: string; sunset: string } | null>(null);
+
+  useEffect(() => {
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=sunrise,sunset&timezone=auto&forecast_days=1`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.daily) {
+          setTimes({
+            sunrise: format(new Date(data.daily.sunrise[0]), 'HH:mm'),
+            sunset: format(new Date(data.daily.sunset[0]), 'HH:mm'),
+          });
+        }
+      })
+      .catch(() => {});
+  }, [latitude, longitude]);
+
+  if (!times) return null;
+
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/30 border border-border/30">
+        <Sunrise className="w-4 h-4 text-amber-500" />
+        <div>
+          <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Soloppgang' : 'Sunrise'}</p>
+          <p className="text-sm font-semibold">{times.sunrise}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/30 border border-border/30">
+        <Sunset className="w-4 h-4 text-orange-500" />
+        <div>
+          <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Solnedgang' : 'Sunset'}</p>
+          <p className="text-sm font-semibold">{times.sunset}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adminMode, onEdit, onDelete, onShowRoute, onHideRoute, isRouteShown, fromTopperTab, onShowOnMap }: PeakDetailDrawerProps) => {
   const { user } = useAuth();
+  const { t, language } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [showSuccessAnim, setShowSuccessAnim] = useState(false);
   const [savingImage, setSavingImage] = useState(false);
   const [pendingImage, setPendingImage] = useState<File | null>(null);
   const [showChildCheckin, setShowChildCheckin] = useState(false);
   const [lastNewCheckinId, setLastNewCheckinId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('info');
   
   // Admin manual checkin state
   const [manualCheckinOpen, setManualCheckinOpen] = useState(false);
@@ -82,7 +128,6 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
       setSearching(true);
       try {
         const profiles = await searchProfiles(searchQuery);
-        // Also search children
         const children = await getAllChildProfiles();
         const matchingChildren = children
           .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -94,7 +139,6 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Load children when a user is selected for admin checkin
   useEffect(() => {
     if (!selectedUser || selectedUser.isChild) {
       setAdminChildrenForUser([]);
@@ -111,15 +155,14 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
     })();
   }, [selectedUser?.id]);
 
-  // Reset pending image when drawer closes or peak changes
   useEffect(() => {
     if (!open) {
       setPendingImage(null);
       setUserDistanceToPeak(null);
+      setActiveTab('info');
     }
   }, [open, peak?.id]);
 
-  // Get user distance for fromTopperTab
   const [userDistanceToPeak, setUserDistanceToPeak] = useState<number | null>(null);
   useEffect(() => {
     if (!open || !peak || !fromTopperTab) return;
@@ -133,7 +176,6 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
     );
   }, [open, peak?.id, fromTopperTab]);
 
-  // Checkin stats for this peak
   const peakCheckins = useMemo(() => {
     if (!peak) return [];
     return checkins.filter(c => c.peak_id === peak.id).sort((a, b) => 
@@ -145,30 +187,24 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
   const lastCheckin = peakCheckins[0] || null;
   const isCheckedIn = checkinCount > 0;
 
-  // Check cooldown
   const canCheckin = useMemo(() => {
     if (!lastCheckin) return true;
     return Date.now() - new Date(lastCheckin.checked_in_at).getTime() > CHECKIN_COOLDOWN_MS;
   }, [lastCheckin]);
 
-  // Is within cooldown window (just checked in recently, can add image)
   const isInCooldownWindow = useMemo(() => {
     if (!lastCheckin) return false;
     const elapsed = Date.now() - new Date(lastCheckin.checked_in_at).getTime();
     return elapsed <= CHECKIN_COOLDOWN_MS;
   }, [lastCheckin]);
 
-  // Is within 24h edit window
   const isInEditWindow = useMemo(() => {
     if (!lastCheckin) return false;
     const elapsed = Date.now() - new Date(lastCheckin.checked_in_at).getTime();
     return elapsed <= EDIT_WINDOW_MS;
   }, [lastCheckin]);
 
-  // Check if last checkin already has an image
   const lastCheckinHasImage = lastCheckin && (lastCheckin as any).image_url;
-
-  // Should we show the check-in section?
   const showCheckinSection = !fromTopperTab || (userDistanceToPeak !== null && userDistanceToPeak <= CHECKIN_RADIUS_METERS);
 
   if (!peak) return null;
@@ -176,7 +212,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
   const handleCheckin = async () => {
     if (!user) return;
     if (!canCheckin) {
-      toast.error('Du har allerede sjekket inn på denne toppen nylig. Vent minst 3 timer.');
+      toast.error(t('map.alreadyCheckedIn'));
       return;
     }
     setLoading(true);
@@ -186,7 +222,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
       });
       const dist = getDistanceMeters(pos.coords.latitude, pos.coords.longitude, peak.latitude, peak.longitude);
       if (dist > CHECKIN_RADIUS_METERS) {
-        toast.error('Du må være innenfor 100 meter fra toppen for å sjekke inn.');
+        toast.error(t('map.tooFar'));
         setLoading(false);
         return;
       }
@@ -197,8 +233,8 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
       hapticsService.notification('success');
       onCheckinSuccess();
     } catch (err: any) {
-      if (err?.code === 1) toast.error('Lokasjonstilgang ble avslått. Aktiver GPS for å sjekke inn.');
-      else toast.error('Noe gikk galt med innsjekking. Prøv igjen.');
+      if (err?.code === 1) toast.error(t('map.locationDenied'));
+      else toast.error(t('map.checkinError'));
     } finally {
       setLoading(false);
     }
@@ -223,7 +259,6 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
     setSubmittingCheckin(true);
     try {
       await adminCheckinPeak(selectedUser.id, peak.id, checkinDate.toISOString());
-      // Also check in selected children
       for (const childId of adminSelectedChildIds) {
         await adminCheckinPeak(childId, peak.id, checkinDate.toISOString());
       }
@@ -239,8 +274,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
       setAdminSelectedChildIds(new Set());
       onCheckinSuccess();
     } catch (e: any) {
-      const msg = e?.message || 'Ukjent feil';
-      toast.error(`Kunne ikke registrere innsjekking: ${msg}`);
+      toast.error(`Kunne ikke registrere innsjekking: ${e?.message || 'Ukjent feil'}`);
     }
     setSubmittingCheckin(false);
   };
@@ -250,7 +284,6 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
     setLoadingAllCheckins(true);
     try {
       const checkinData = await getAllCheckinsForPeak(peak.id);
-      // Also fetch child profiles for user_ids not in profiles
       const userIdsWithoutProfile = checkinData.filter(c => !c.profiles).map(c => c.user_id);
       let childMap = new Map<string, ChildProfile>();
       if (userIdsWithoutProfile.length > 0) {
@@ -289,26 +322,18 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
     <>
       <CheckinSuccessAnimation show={showSuccessAnim} onDone={() => setShowSuccessAnim(false)} peakName={peak.name} />
 
-      {/* Delete confirmation dialog */}
       <AlertDialog open={!!deleteConfirmId} onOpenChange={(o) => !o && setDeleteConfirmId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Slett innsjekking</AlertDialogTitle>
-            <AlertDialogDescription>
-              Er du sikker på at du vil slette denne innsjekkingen? Dette kan ikke angres.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Er du sikker på at du vil slette denne innsjekkingen? Dette kan ikke angres.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Avbryt</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                if (deleteConfirmId === 'own') handleDeleteOwnCheckin();
-                else if (deleteConfirmId) handleDeleteCheckin(deleteConfirmId);
-              }}
-            >
-              Slett
-            </AlertDialogAction>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => {
+              if (deleteConfirmId === 'own') handleDeleteOwnCheckin();
+              else if (deleteConfirmId) handleDeleteCheckin(deleteConfirmId);
+            }}>Slett</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -334,48 +359,44 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
             </div>
           </DrawerHeader>
           <div className="px-4 pb-6 space-y-4 overflow-y-auto">
-            {/* Rotating 3D orbit map */}
+            {/* 3D orbit map */}
             <div className="rounded-xl overflow-hidden border border-border/50">
               <PeakOrbitMap latitude={peak.latitude} longitude={peak.longitude} heightMoh={peak.heightMoh} className="w-full h-[180px]" />
             </div>
 
-            {/* Weather */}
-            <PeakWeather latitude={peak.latitude} longitude={peak.longitude} />
-
             {/* Show on map button - only from Topper tab */}
             {fromTopperTab && onShowOnMap && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => onShowOnMap(peak)}
-              >
+              <Button variant="outline" size="sm" className="w-full" onClick={() => onShowOnMap(peak)}>
                 <MapPin className="w-4 h-4 mr-2" />
-                Vis på kart
+                {language === 'no' ? 'Vis på kart' : 'Show on map'}
               </Button>
             )}
 
-            {/* Check-in section - hidden in Topper tab unless within 100m */}
+            {/* Check-in section */}
             {showCheckinSection && (
               <>
-              {isCheckedIn ? (
+                {isCheckedIn ? (
                   <div className="p-3 rounded-xl bg-success/10 border border-success/20 space-y-2">
+                    {/* Checkin button */}
+                    <Button onClick={handleCheckin} disabled={loading || !canCheckin} variant="outline" size="sm" className="w-full">
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <MapPin className="w-4 h-4 mr-2" />}
+                      {canCheckin ? (language === 'no' ? 'Sjekk inn' : 'Check in') : (language === 'no' ? 'Du er sjekket inn' : 'Already checked in')}
+                    </Button>
+
+                    {/* Checkin count - below button */}
                     <div className="flex items-center justify-center gap-2 text-center">
                       <Check className="w-4 h-4 text-success shrink-0" />
                       <span className="text-sm font-medium text-success">
-                        {checkinCount} tidligere {checkinCount === 1 ? 'innsjekking' : 'innsjekkinger'}
+                        {checkinCount} {language === 'no' 
+                          ? (checkinCount === 1 ? 'tidligere innsjekking' : 'tidligere innsjekkinger')
+                          : (checkinCount === 1 ? 'previous check-in' : 'previous check-ins')}
                       </span>
                       {lastCheckin && (
                         <span className="text-xs text-muted-foreground">
-                          (sist {format(new Date(lastCheckin.checked_in_at), "d. MMMM yyyy", { locale: nb })})
+                          ({language === 'no' ? 'sist' : 'last'} {format(new Date(lastCheckin.checked_in_at), "d. MMMM yyyy", { locale: nb })})
                         </span>
                       )}
                     </div>
-                    {/* Allow re-checkin */}
-                    <Button onClick={handleCheckin} disabled={loading || !canCheckin} variant="outline" size="sm" className="w-full mt-2">
-                      {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <MapPin className="w-4 h-4 mr-2" />}
-                      {canCheckin ? 'Sjekk inn' : 'Du er sjekket inn'}
-                    </Button>
 
                     {/* Image upload/replace within 24h */}
                     {isInEditWindow && (
@@ -397,15 +418,13 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                               onClick={async () => {
                                 if (!lastCheckin) return;
                                 try {
-                                  const { supabase } = await import('@/integrations/supabase/client');
                                   await supabase.from('peak_checkins').update({ image_url: null }).eq('id', lastCheckin.id);
                                   toast.success('Bilde fjernet');
                                   onCheckinSuccess();
                                 } catch { toast.error('Kunne ikke fjerne bildet'); }
                               }}
                             >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Fjern bilde
+                              <Trash2 className="w-4 h-4 mr-2" />Fjern bilde
                             </Button>
                           </div>
                         ) : (
@@ -424,71 +443,90 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
 
                     {/* Delete own checkin */}
                     {isInEditWindow && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full mt-2 text-destructive hover:text-destructive"
-                        onClick={() => setDeleteConfirmId('own')}
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Slett innsjekking
+                      <Button variant="outline" size="sm" className="w-full mt-2 text-destructive hover:text-destructive" onClick={() => setDeleteConfirmId('own')}>
+                        <Trash2 className="w-4 h-4 mr-2" />Slett innsjekking
                       </Button>
                     )}
 
-                    {/* Child checkin button - shown during cooldown */}
+                    {/* Child checkin */}
                     {isInCooldownWindow && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full mt-2"
-                        onClick={() => setShowChildCheckin(true)}
-                      >
-                        <Users className="w-4 h-4 mr-2" />
-                        Sjekk inn barn
+                      <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => setShowChildCheckin(true)}>
+                        <Users className="w-4 h-4 mr-2" />Sjekk inn barn
                       </Button>
                     )}
                   </div>
                 ) : (
                   <Button onClick={handleCheckin} disabled={loading} className="w-full" size="lg">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <MapPin className="w-4 h-4 mr-2" />}
-                    Sjekk inn
+                    {language === 'no' ? 'Sjekk inn' : 'Check in'}
                   </Button>
                 )}
               </>
             )}
 
-            {/* Route info */}
-            <div className="flex flex-col gap-2">
-              {peak.route_status === 'approved' && onShowRoute && (
-                isRouteShown ? (
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => onHideRoute?.()}>
-                    <X className="w-4 h-4 mr-2" />Skjul rute
-                  </Button>
-                ) : (
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => onShowRoute(peak, fromTopperTab)}>
-                    Vis rute ({((peak.route_distance_m || 0) / 1000).toFixed(1)} km, {Math.round((peak.route_duration_s || 0) / 60)} min)
-                  </Button>
-                )
-              )}
-            </div>
+            {/* Three tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="w-full grid grid-cols-3">
+                <TabsTrigger value="info" className="text-xs gap-1">
+                  <Info className="w-3.5 h-3.5" /> Info
+                </TabsTrigger>
+                <TabsTrigger value="leaderboard" className="text-xs gap-1">
+                  <Trophy className="w-3.5 h-3.5" /> {language === 'no' ? 'Lederliste' : 'Leaderboard'}
+                </TabsTrigger>
+                <TabsTrigger value="plan" className="text-xs gap-1">
+                  <Map className="w-3.5 h-3.5" /> {language === 'no' ? 'Planlegg tur' : 'Plan trip'}
+                </TabsTrigger>
+              </TabsList>
 
-            {peak.route_status === 'approved' && peak.route_geojson && (
-              <div className="bg-muted/10 p-3 rounded-xl border border-border/50">
-                <RouteElevationChart geojson={peak.route_geojson} />
-              </div>
-            )}
+              {/* INFO TAB */}
+              <TabsContent value="info" className="space-y-4 mt-3">
+                {/* Route button */}
+                {peak.route_status === 'approved' && onShowRoute && (
+                  <div className="flex flex-col gap-2">
+                    {isRouteShown ? (
+                      <Button variant="outline" size="sm" className="w-full" onClick={() => onHideRoute?.()}>
+                        <X className="w-4 h-4 mr-2" />{language === 'no' ? 'Skjul rute' : 'Hide route'}
+                      </Button>
+                    ) : (
+                      <Button variant="outline" size="sm" className="w-full" onClick={() => onShowRoute(peak, fromTopperTab)}>
+                        {language === 'no' ? 'Vis rute' : 'Show route'} ({((peak.route_distance_m || 0) / 1000).toFixed(1)} km, {Math.round((peak.route_duration_s || 0) / 60)} min)
+                      </Button>
+                    )}
+                  </div>
+                )}
 
-            {peak.description && <p className="text-sm text-muted-foreground">{peak.description}</p>}
+                {/* Elevation chart */}
+                {peak.route_status === 'approved' && peak.route_geojson && (
+                  <div className="bg-muted/10 p-3 rounded-xl border border-border/50">
+                    <RouteElevationChart geojson={peak.route_geojson} />
+                  </div>
+                )}
 
-            {/* Only show image if it exists */}
-            {peak.imageUrl && (
-              <div className="rounded-xl overflow-hidden border border-border/50">
-                <img src={peak.imageUrl} alt={peak.name} className="w-full h-40 object-cover" />
-              </div>
-            )}
+                {/* Weather */}
+                <PeakWeather latitude={peak.latitude} longitude={peak.longitude} />
 
-            {/* Peak leaderboard */}
-            <PeakLeaderboard peakId={peak.id} />
+                {/* Sunrise/sunset today */}
+                <TodaySunTimes latitude={peak.latitude} longitude={peak.longitude} />
+
+                {peak.description && <p className="text-sm text-muted-foreground">{peak.description}</p>}
+
+                {peak.imageUrl && (
+                  <div className="rounded-xl overflow-hidden border border-border/50">
+                    <img src={peak.imageUrl} alt={peak.name} className="w-full h-40 object-cover" />
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* LEADERBOARD TAB */}
+              <TabsContent value="leaderboard" className="mt-3">
+                <PeakLeaderboard peakId={peak.id} />
+              </TabsContent>
+
+              {/* PLAN TRIP TAB */}
+              <TabsContent value="plan" className="mt-3">
+                <PeakTripPlanner latitude={peak.latitude} longitude={peak.longitude} peakName={peak.name} />
+              </TabsContent>
+            </Tabs>
 
             {/* Admin tools */}
             {adminMode && (
@@ -512,10 +550,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                             {searchResults.map((profile) => (
                               <button key={profile.id} onClick={() => { setSelectedUser(profile); setSearchQuery(''); setSearchResults([]); }} className="w-full flex items-center gap-3 p-2 hover:bg-muted transition-colors text-left">
                                 <Avatar className="w-8 h-8"><AvatarImage src={profile.avatar_url || undefined} /><AvatarFallback>{profile.isChild ? '👶' : (profile.username?.[0]?.toUpperCase() || '?')}</AvatarFallback></Avatar>
-                                <span className="text-sm font-medium">
-                                  {profile.username || 'Ukjent'}
-                                  {profile.isChild && <span className="text-xs text-muted-foreground ml-1">(barn)</span>}
-                                </span>
+                                <span className="text-sm font-medium">{profile.username || 'Ukjent'}{profile.isChild && <span className="text-xs text-muted-foreground ml-1">(barn)</span>}</span>
                               </button>
                             ))}
                           </div>
@@ -530,32 +565,22 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                           <button onClick={() => setSelectedUser(null)} className="p-1 rounded hover:bg-muted transition-colors"><X className="w-4 h-4 text-muted-foreground" /></button>
                         </div>
                       )}
-                      {/* Children of selected user */}
                       {selectedUser && !selectedUser.isChild && adminChildrenForUser.length > 0 && (
                         <div className="space-y-2">
                           <Label className="text-xs text-muted-foreground">Inkluder barn</Label>
                           {adminChildrenForUser.map(child => {
                             const isSelected = adminSelectedChildIds.has(child.id);
                             return (
-                              <button
-                                key={child.id}
-                                onClick={() => {
-                                  setAdminSelectedChildIds(prev => {
-                                    const next = new Set(prev);
-                                    if (next.has(child.id)) next.delete(child.id);
-                                    else next.add(child.id);
-                                    return next;
-                                  });
-                                }}
-                                className={`w-full flex items-center gap-2 p-2 rounded-lg border transition-colors ${
-                                  isSelected ? 'bg-primary/5 border-primary/30' : 'border-border/50 hover:border-border'
-                                }`}
-                              >
+                              <button key={child.id} onClick={() => {
+                                setAdminSelectedChildIds(prev => {
+                                  const next = new Set(prev);
+                                  if (next.has(child.id)) next.delete(child.id);
+                                  else next.add(child.id);
+                                  return next;
+                                });
+                              }} className={`w-full flex items-center gap-2 p-2 rounded-lg border transition-colors ${isSelected ? 'bg-primary/5 border-primary/30' : 'border-border/50 hover:border-border'}`}>
                                 <Checkbox checked={isSelected} className="pointer-events-none" />
-                                <Avatar className="w-6 h-6">
-                                  {child.avatar_url && <AvatarImage src={child.avatar_url} />}
-                                  <AvatarFallback className="text-[10px]">{child.emoji || '👶'}</AvatarFallback>
-                                </Avatar>
+                                <Avatar className="w-6 h-6">{child.avatar_url && <AvatarImage src={child.avatar_url} />}<AvatarFallback className="text-[10px]">{child.emoji || '👶'}</AvatarFallback></Avatar>
                                 <span className="text-sm">{child.name} {child.emoji}</span>
                               </button>
                             );
@@ -604,19 +629,13 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                             return (
                               <div key={checkin.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/50">
                                 <div className="flex items-center gap-3">
-                                  <Avatar className="w-10 h-10">
-                                    <AvatarImage src={displayAvatar} />
-                                    <AvatarFallback>{displayEmoji || displayName[0]?.toUpperCase() || '?'}</AvatarFallback>
-                                  </Avatar>
+                                  <Avatar className="w-10 h-10"><AvatarImage src={displayAvatar} /><AvatarFallback>{displayEmoji || displayName[0]?.toUpperCase() || '?'}</AvatarFallback></Avatar>
                                   <div>
-                                    <p className="font-medium text-sm">
-                                      {displayName}
-                                      {checkin.childProfile && <span className="text-xs text-muted-foreground ml-1">(barn)</span>}
-                                    </p>
+                                    <p className="font-medium text-sm">{displayName}{checkin.childProfile && <span className="text-xs text-muted-foreground ml-1">(barn)</span>}</p>
                                     <p className="text-xs text-muted-foreground">{format(new Date(checkin.checked_in_at), "d. MMM yyyy, HH:mm", { locale: nb })}</p>
                                   </div>
                                 </div>
-                                <button onClick={() => setDeleteConfirmId(checkin.id)} className="p-2 rounded-lg hover:bg-destructive/10 transition-colors text-destructive" title="Slett innsjekking"><Trash2 className="w-4 h-4" /></button>
+                                <button onClick={() => setDeleteConfirmId(checkin.id)} className="p-2 rounded-lg hover:bg-destructive/10 transition-colors text-destructive"><Trash2 className="w-4 h-4" /></button>
                               </div>
                             );
                           })}
