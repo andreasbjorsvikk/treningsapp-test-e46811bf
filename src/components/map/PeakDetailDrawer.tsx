@@ -542,7 +542,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
               </TabsContent>
 
               {/* PLAN TRIP TAB */}
-              <TabsContent value="plan" className="mt-3">
+              <TabsContent value="plan" className="mt-3" forceMount style={{ display: activeTab === 'plan' ? 'block' : 'none' }}>
                 <PeakTripPlanner latitude={peak.latitude} longitude={peak.longitude} peakName={peak.name} />
               </TabsContent>
             </Tabs>

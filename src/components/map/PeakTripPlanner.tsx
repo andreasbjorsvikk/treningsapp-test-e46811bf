@@ -116,11 +116,13 @@ const PeakTripPlanner = React.forwardRef<HTMLDivElement, PeakTripPlannerProps>((
   const locale = language === 'no' ? nb : enUS;
   const [forecasts, setForecasts] = useState<DayForecast[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState(0);
 
   useEffect(() => {
     const fetchForecast = async () => {
       setLoading(true);
+      setError(null);
       try {
         // Use MET Norway Nordic model (1km resolution) for better snow data in Norway
         // Falls back to best_match if metno_nordic doesn't cover the area
@@ -205,8 +207,9 @@ const PeakTripPlanner = React.forwardRef<HTMLDivElement, PeakTripPlannerProps>((
           });
         }
         setForecasts(days);
-      } catch {
-        // silent
+      } catch (e: any) {
+        console.error('PeakTripPlanner fetch error:', e);
+        setError(e?.message || 'Feil ved lasting av værdata');
       } finally {
         setLoading(false);
       }
@@ -250,6 +253,14 @@ const PeakTripPlanner = React.forwardRef<HTMLDivElement, PeakTripPlannerProps>((
     return (
       <div className="flex items-center justify-center py-8">
         <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-sm text-muted-foreground">
+        <p>{error}</p>
       </div>
     );
   }
