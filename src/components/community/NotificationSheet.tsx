@@ -351,7 +351,7 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
                           <X className="w-3 h-3" /> Avslå
                         </button>
                       </div>
-                    )
+                    )}
                     <p className="text-[10px] text-muted-foreground mt-1">{timeAgo}</p>
                   </div>
                 </div>
