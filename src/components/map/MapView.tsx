@@ -15,6 +15,8 @@ import { getPeakIcon, getCheckedPeakIcon } from '@/utils/peakIcons';
 
 type HeatmapPeriod = 'year' | 'total';
 
+type AreaStatsMode = 'off' | 'kommune' | 'fylke';
+
 interface MapViewProps {
   peaks: Peak[];
   checkins: PeakCheckin[];
@@ -39,11 +41,12 @@ interface MapViewProps {
   showAreaStats?: boolean;
   onlyReachedThisYear?: boolean;
   suggestedPeaks?: PeakSuggestion[];
+  areaStatsMode?: AreaStatsMode;
 }
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
-const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, routeFocus, suppressInitialGeolocate, onClearRoute, onMapReady, previewWaypoints, onWaypointClick, onWaypointDrag, showHeatmap, heatmapPeriod, showAreaStats, onlyReachedThisYear, suggestedPeaks }: MapViewProps) => {
+const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, routeFocus, suppressInitialGeolocate, onClearRoute, onMapReady, previewWaypoints, onWaypointClick, onWaypointDrag, showHeatmap, heatmapPeriod, showAreaStats, onlyReachedThisYear, suggestedPeaks, areaStatsMode = 'off' }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -1005,7 +1008,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     loadHeatmapData();
   }, [showHeatmap, heatmapPeriod, mapLoaded, user]);
 
-  // === AREA STATS: Show municipality boundaries + labels ===
+  // === AREA STATS: Show municipality or county boundaries + labels ===
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
     const m = map.current;
@@ -1013,9 +1016,8 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     // Cleanup
     areaMarkersRef.current.forEach(mk => mk.remove());
     areaMarkersRef.current = [];
-    // Remove old boundary layers/sources safely
     whenStyleReady(m, () => {
-      const existingSources = Object.keys((m.getStyle()?.sources) || {}).filter(s => s.startsWith('kommune-boundary-'));
+      const existingSources = Object.keys((m.getStyle()?.sources) || {}).filter(s => s.startsWith('kommune-boundary-') || s.startsWith('fylke-boundary-'));
       existingSources.forEach(sid => {
         const lid = sid.replace('boundary', 'fill');
         const lidOutline = sid.replace('boundary', 'outline');
@@ -1025,159 +1027,257 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       });
     });
 
-    if (!showAreaStats) return;
+    if (!showAreaStats || areaStatsMode === 'off') return;
 
     const checkedIds = new Set(checkins.map(c => c.peak_id));
 
-    // For each peak, reverse-geocode to get kommune number, then aggregate
-    const fetchBoundaries = async () => {
-      // Step 1: Resolve each unique area to a kommuneNr via reverse geocoding
-      const areaKommuneMap = new Map<string, { kommuneNr: string; kommuneNavn: string }>();
-      const uniqueAreas = new Map<string, Peak>(); // area -> sample peak
-      peaks.forEach(peak => {
-        const area = peak.area?.trim();
-        if (area && !uniqueAreas.has(area)) uniqueAreas.set(area, peak);
-      });
+    if (areaStatsMode === 'fylke') {
+      // === FYLKE MODE ===
+      const fetchFylkeBoundaries = async () => {
+        // Group peaks by county
+        const fylkeMap = new Map<string, { peaks: Peak[]; checked: number; total: number }>();
+        peaks.forEach(peak => {
+          const county = peak.county?.trim();
+          if (!county) return;
+          if (!fylkeMap.has(county)) fylkeMap.set(county, { peaks: [], checked: 0, total: 0 });
+          const entry = fylkeMap.get(county)!;
+          entry.peaks.push(peak);
+          entry.total++;
+          if (checkedIds.has(peak.id)) entry.checked++;
+        });
 
-      // Fetch kommune info for each unique area in parallel
-      await Promise.all(Array.from(uniqueAreas.entries()).map(async ([area, peak]) => {
+        // Map county names to fylkesnummer via API
+        const fylkeNumbers = new Map<string, string>();
         try {
-          const res = await fetch(
-            `https://ws.geonorge.no/kommuneinfo/v1/punkt?nord=${peak.latitude}&ost=${peak.longitude}&koordsys=4326`
-          );
-          if (!res.ok) return;
-          const data = await res.json();
-          if (data.kommunenummer) {
-            areaKommuneMap.set(area, { kommuneNr: data.kommunenummer, kommuneNavn: data.kommunenavn || area });
+          const res = await fetch('https://ws.geonorge.no/kommuneinfo/v1/fylker');
+          if (res.ok) {
+            const fylker = await res.json();
+            for (const f of fylker) {
+              fylkeNumbers.set(f.fylkesnavn, f.fylkesnummer);
+            }
           }
         } catch {}
-      }));
 
-      // Step 2: Aggregate peaks by kommuneNr
-      const kommuneMap = new Map<string, { kommuneNavn: string; peaks: Peak[]; checked: number; total: number }>();
-      peaks.forEach(peak => {
-        const area = peak.area?.trim();
-        if (!area) return;
-        const info = areaKommuneMap.get(area);
-        if (!info) return;
-        const { kommuneNr, kommuneNavn } = info;
-        if (!kommuneMap.has(kommuneNr)) kommuneMap.set(kommuneNr, { kommuneNavn, peaks: [], checked: 0, total: 0 });
-        const entry = kommuneMap.get(kommuneNr)!;
-        entry.peaks.push(peak);
-        entry.total++;
-        if (checkedIds.has(peak.id)) entry.checked++;
-      });
+        const colorPalette = [
+          { fill: 'hsla(152, 65%, 40%, 0.30)', outline: 'hsla(152, 65%, 35%, 0.75)' },
+          { fill: 'hsla(210, 70%, 50%, 0.25)', outline: 'hsla(210, 70%, 45%, 0.65)' },
+          { fill: 'hsla(280, 55%, 55%, 0.23)', outline: 'hsla(280, 55%, 50%, 0.55)' },
+          { fill: 'hsla(35, 80%, 50%, 0.25)', outline: 'hsla(35, 80%, 45%, 0.65)' },
+          { fill: 'hsla(340, 60%, 50%, 0.23)', outline: 'hsla(340, 60%, 45%, 0.55)' },
+        ];
 
-      // Step 3: Fetch boundaries and render
-      for (const [kommuneNr, entry] of kommuneMap.entries()) {
-        if (!map.current) return;
-        try {
-          const boundaryRes = await fetch(
-            `https://ws.geonorge.no/kommuneinfo/v1/kommuner/${kommuneNr}/omrade`
-          );
-          if (!boundaryRes.ok) continue;
-          const boundaryData = await boundaryRes.json();
-
+        let colorIdx = 0;
+        for (const [county, entry] of fylkeMap.entries()) {
           if (!map.current) return;
-          const sourceId = `kommune-boundary-${kommuneNr}`;
-          const fillLayerId = `kommune-fill-${kommuneNr}`;
-          const outlineLayerId = `kommune-outline-${kommuneNr}`;
+          const fylkeNr = fylkeNumbers.get(county);
+          if (!fylkeNr) continue;
 
-          const pct = entry.total > 0 ? Math.round((entry.checked / entry.total) * 100) : 0;
+          try {
+            const boundaryRes = await fetch(`https://ws.geonorge.no/kommuneinfo/v1/fylker/${fylkeNr}/omrade`);
+            if (!boundaryRes.ok) continue;
+            const boundaryData = await boundaryRes.json();
 
-          // Use a deterministic color index based on kommuneNr to avoid adjacent areas sharing colors
-          // We'll use 5 distinct hues and distribute based on the numeric kommune code
-          const kommuneNum = parseInt(kommuneNr, 10) || 0;
-          const colorPalette = [
-            { fill: 'hsla(152, 65%, 40%, 0.35)', outline: 'hsla(152, 65%, 35%, 0.85)' },  // green
-            { fill: 'hsla(210, 70%, 50%, 0.30)', outline: 'hsla(210, 70%, 45%, 0.75)' },  // blue
-            { fill: 'hsla(280, 55%, 55%, 0.28)', outline: 'hsla(280, 55%, 50%, 0.65)' },  // purple
-            { fill: 'hsla(35, 80%, 50%, 0.30)', outline: 'hsla(35, 80%, 45%, 0.75)' },    // orange
-            { fill: 'hsla(340, 60%, 50%, 0.28)', outline: 'hsla(340, 60%, 45%, 0.65)' },  // pink
-          ];
-          const colorIdx = kommuneNum % colorPalette.length;
-          const fillColor = colorPalette[colorIdx].fill;
-          const outlineColor = colorPalette[colorIdx].outline;
+            const sourceId = `fylke-boundary-${fylkeNr}`;
+            const fillLayerId = `fylke-fill-${fylkeNr}`;
+            const outlineLayerId = `fylke-outline-${fylkeNr}`;
+            const pct = entry.total > 0 ? Math.round((entry.checked / entry.total) * 100) : 0;
+            const colors = colorPalette[colorIdx % colorPalette.length];
+            colorIdx++;
 
-          whenStyleReady(m, () => {
-            if (!m.getSource(sourceId)) {
-              m.addSource(sourceId, { type: 'geojson', data: boundaryData.omrade as any });
-            }
-            if (!m.getLayer(fillLayerId)) {
-              m.addLayer({
-                id: fillLayerId,
-                type: 'fill',
-                source: sourceId,
-                paint: { 'fill-color': fillColor, 'fill-opacity': 1 },
-              });
-            }
-            if (!m.getLayer(outlineLayerId)) {
-              m.addLayer({
-                id: outlineLayerId,
-                type: 'line',
-                source: sourceId,
-                paint: { 'line-color': outlineColor, 'line-width': 3 },
-              });
+            whenStyleReady(m, () => {
+              if (!m.getSource(sourceId)) {
+                m.addSource(sourceId, { type: 'geojson', data: boundaryData.omrade as any });
+              }
+              if (!m.getLayer(fillLayerId)) {
+                m.addLayer({ id: fillLayerId, type: 'fill', source: sourceId, paint: { 'fill-color': colors.fill, 'fill-opacity': 1 } });
+              }
+              if (!m.getLayer(outlineLayerId)) {
+                m.addLayer({ id: outlineLayerId, type: 'line', source: sourceId, paint: { 'line-color': colors.outline, 'line-width': 3 } });
+              }
+            });
+
+            // Label marker - larger for fylke
+            const avgLat = entry.peaks.reduce((s, p) => s + p.latitude, 0) / entry.peaks.length;
+            const avgLng = entry.peaks.reduce((s, p) => s + p.longitude, 0) / entry.peaks.length;
+
+            const el = document.createElement('div');
+            el.className = 'area-stats-label';
+            el.style.cssText = 'pointer-events: none; text-align: center; white-space: nowrap; z-index: 5;';
+            el.innerHTML = `
+              <div style="
+                background: hsl(var(--background) / 0.92);
+                backdrop-filter: blur(8px);
+                border: 1.5px solid hsl(var(--border));
+                border-radius: 16px;
+                padding: 14px 22px;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+                transform-origin: center center;
+              ">
+                <div style="font-size: 20px; font-weight: 800; color: hsl(var(--foreground)); letter-spacing: -0.02em;">${county}</div>
+                <div style="font-size: 16px; color: hsl(var(--muted-foreground)); margin-top: 4px; font-weight: 500;">
+                  ${entry.checked} / ${entry.total} topper
+                </div>
+                <div style="font-size: 22px; font-weight: 800; margin-top: 3px; color: ${pct >= 50 ? 'hsl(152, 60%, 42%)' : 'hsl(var(--muted-foreground))'};">
+                  ${pct}%
+                </div>
+              </div>
+            `;
+
+            const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
+              .setLngLat([avgLng, avgLat])
+              .addTo(map.current!);
+            areaMarkersRef.current.push(marker);
+          } catch (e) {
+            console.error('Failed to load county boundary for', county, e);
+          }
+        }
+
+        // Zoom-based scaling
+        const updateScale = () => {
+          if (!map.current) return;
+          const zoom = map.current.getZoom();
+          const scale = Math.max(0.5, Math.min(1, (zoom - 5) / 5));
+          areaMarkersRef.current.forEach(mk => {
+            const el = mk.getElement();
+            const inner = el.querySelector('div > div') as HTMLElement;
+            if (inner) {
+              inner.style.transform = `scale(${scale})`;
+              inner.style.display = zoom < 5 ? 'none' : '';
             }
           });
-
-          // Add label marker
-          const avgLat = entry.peaks.reduce((s, p) => s + p.latitude, 0) / entry.peaks.length;
-          const avgLng = entry.peaks.reduce((s, p) => s + p.longitude, 0) / entry.peaks.length;
-
-          const el = document.createElement('div');
-          el.className = 'area-stats-label';
-          el.style.cssText = 'pointer-events: none; text-align: center; white-space: nowrap; z-index: 5;';
-          el.innerHTML = `
-            <div style="
-              background: hsl(var(--background) / 0.92);
-              backdrop-filter: blur(8px);
-              border: 1.5px solid hsl(var(--border));
-              border-radius: 14px;
-              padding: 10px 16px;
-              box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-              transform-origin: center center;
-            ">
-              <div style="font-size: 16px; font-weight: 800; color: hsl(var(--foreground)); letter-spacing: -0.02em;">${entry.kommuneNavn}</div>
-              <div style="font-size: 14px; color: hsl(var(--muted-foreground)); margin-top: 3px; font-weight: 500;">
-                ${entry.checked} / ${entry.total} topper
-              </div>
-              <div style="font-size: 18px; font-weight: 800; margin-top: 2px; color: ${pct >= 50 ? 'hsl(152, 60%, 42%)' : 'hsl(var(--muted-foreground))'};">
-                ${pct}%
-              </div>
-            </div>
-          `;
-
-          const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
-            .setLngLat([avgLng, avgLat])
-            .addTo(map.current!);
-          areaMarkersRef.current.push(marker);
-        } catch (e) {
-          console.error('Failed to load municipality boundary for', kommuneNr, e);
-        }
-      }
-
-      // Add zoom-based scaling for area stats labels — scale the INNER div, not the marker element
-      const updateScale = () => {
-        if (!map.current) return;
-        const zoom = map.current.getZoom();
-        // Scale from 1.0 at zoom 12+ down to 0.55 at zoom 7
-        const scale = Math.max(0.55, Math.min(1, (zoom - 7) / 5));
-        areaMarkersRef.current.forEach(mk => {
-          const el = mk.getElement();
-          const inner = el.querySelector('div > div') as HTMLElement;
-          if (inner) {
-            inner.style.transform = `scale(${scale})`;
-            inner.style.display = zoom < 7 ? 'none' : '';
-          }
-        });
+        };
+        map.current.on('zoom', updateScale);
+        updateScale();
       };
-      map.current.on('zoom', updateScale);
-      updateScale();
-    };
 
-    fetchBoundaries();
-  }, [showAreaStats, peaks, checkins, mapLoaded]);
+      fetchFylkeBoundaries();
+    } else {
+      // === KOMMUNE MODE (existing logic) ===
+      const fetchBoundaries = async () => {
+        const areaKommuneMap = new Map<string, { kommuneNr: string; kommuneNavn: string }>();
+        const uniqueAreas = new Map<string, Peak>();
+        peaks.forEach(peak => {
+          const area = peak.area?.trim();
+          if (area && !uniqueAreas.has(area)) uniqueAreas.set(area, peak);
+        });
+
+        await Promise.all(Array.from(uniqueAreas.entries()).map(async ([area, peak]) => {
+          try {
+            const res = await fetch(`https://ws.geonorge.no/kommuneinfo/v1/punkt?nord=${peak.latitude}&ost=${peak.longitude}&koordsys=4326`);
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data.kommunenummer) {
+              areaKommuneMap.set(area, { kommuneNr: data.kommunenummer, kommuneNavn: data.kommunenavn || area });
+            }
+          } catch {}
+        }));
+
+        const kommuneMap = new Map<string, { kommuneNavn: string; peaks: Peak[]; checked: number; total: number }>();
+        peaks.forEach(peak => {
+          const area = peak.area?.trim();
+          if (!area) return;
+          const info = areaKommuneMap.get(area);
+          if (!info) return;
+          const { kommuneNr, kommuneNavn } = info;
+          if (!kommuneMap.has(kommuneNr)) kommuneMap.set(kommuneNr, { kommuneNavn, peaks: [], checked: 0, total: 0 });
+          const entry = kommuneMap.get(kommuneNr)!;
+          entry.peaks.push(peak);
+          entry.total++;
+          if (checkedIds.has(peak.id)) entry.checked++;
+        });
+
+        const colorPalette = [
+          { fill: 'hsla(152, 65%, 40%, 0.35)', outline: 'hsla(152, 65%, 35%, 0.85)' },
+          { fill: 'hsla(210, 70%, 50%, 0.30)', outline: 'hsla(210, 70%, 45%, 0.75)' },
+          { fill: 'hsla(280, 55%, 55%, 0.28)', outline: 'hsla(280, 55%, 50%, 0.65)' },
+          { fill: 'hsla(35, 80%, 50%, 0.30)', outline: 'hsla(35, 80%, 45%, 0.75)' },
+          { fill: 'hsla(340, 60%, 50%, 0.28)', outline: 'hsla(340, 60%, 45%, 0.65)' },
+        ];
+
+        for (const [kommuneNr, entry] of kommuneMap.entries()) {
+          if (!map.current) return;
+          try {
+            const boundaryRes = await fetch(`https://ws.geonorge.no/kommuneinfo/v1/kommuner/${kommuneNr}/omrade`);
+            if (!boundaryRes.ok) continue;
+            const boundaryData = await boundaryRes.json();
+
+            if (!map.current) return;
+            const sourceId = `kommune-boundary-${kommuneNr}`;
+            const fillLayerId = `kommune-fill-${kommuneNr}`;
+            const outlineLayerId = `kommune-outline-${kommuneNr}`;
+            const pct = entry.total > 0 ? Math.round((entry.checked / entry.total) * 100) : 0;
+            const kommuneNum = parseInt(kommuneNr, 10) || 0;
+            const colorIdx = kommuneNum % colorPalette.length;
+            const fillColor = colorPalette[colorIdx].fill;
+            const outlineColor = colorPalette[colorIdx].outline;
+
+            whenStyleReady(m, () => {
+              if (!m.getSource(sourceId)) {
+                m.addSource(sourceId, { type: 'geojson', data: boundaryData.omrade as any });
+              }
+              if (!m.getLayer(fillLayerId)) {
+                m.addLayer({ id: fillLayerId, type: 'fill', source: sourceId, paint: { 'fill-color': fillColor, 'fill-opacity': 1 } });
+              }
+              if (!m.getLayer(outlineLayerId)) {
+                m.addLayer({ id: outlineLayerId, type: 'line', source: sourceId, paint: { 'line-color': outlineColor, 'line-width': 3 } });
+              }
+            });
+
+            const avgLat = entry.peaks.reduce((s, p) => s + p.latitude, 0) / entry.peaks.length;
+            const avgLng = entry.peaks.reduce((s, p) => s + p.longitude, 0) / entry.peaks.length;
+
+            const el = document.createElement('div');
+            el.className = 'area-stats-label';
+            el.style.cssText = 'pointer-events: none; text-align: center; white-space: nowrap; z-index: 5;';
+            el.innerHTML = `
+              <div style="
+                background: hsl(var(--background) / 0.92);
+                backdrop-filter: blur(8px);
+                border: 1.5px solid hsl(var(--border));
+                border-radius: 14px;
+                padding: 10px 16px;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+                transform-origin: center center;
+              ">
+                <div style="font-size: 16px; font-weight: 800; color: hsl(var(--foreground)); letter-spacing: -0.02em;">${entry.kommuneNavn}</div>
+                <div style="font-size: 14px; color: hsl(var(--muted-foreground)); margin-top: 3px; font-weight: 500;">
+                  ${entry.checked} / ${entry.total} topper
+                </div>
+                <div style="font-size: 18px; font-weight: 800; margin-top: 2px; color: ${pct >= 50 ? 'hsl(152, 60%, 42%)' : 'hsl(var(--muted-foreground))'};">
+                  ${pct}%
+                </div>
+              </div>
+            `;
+
+            const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
+              .setLngLat([avgLng, avgLat])
+              .addTo(map.current!);
+            areaMarkersRef.current.push(marker);
+          } catch (e) {
+            console.error('Failed to load municipality boundary for', kommuneNr, e);
+          }
+        }
+
+        const updateScale = () => {
+          if (!map.current) return;
+          const zoom = map.current.getZoom();
+          const scale = Math.max(0.55, Math.min(1, (zoom - 7) / 5));
+          areaMarkersRef.current.forEach(mk => {
+            const el = mk.getElement();
+            const inner = el.querySelector('div > div') as HTMLElement;
+            if (inner) {
+              inner.style.transform = `scale(${scale})`;
+              inner.style.display = zoom < 7 ? 'none' : '';
+            }
+          });
+        };
+        map.current.on('zoom', updateScale);
+        updateScale();
+      };
+
+      fetchBoundaries();
+    }
+  }, [showAreaStats, areaStatsMode, peaks, checkins, mapLoaded]);
 
   return (
     <div className={`relative w-full h-full ${is3D ? 'map-is-3d' : ''}`}>

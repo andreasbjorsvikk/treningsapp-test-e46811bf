@@ -41,13 +41,14 @@ interface PeakDetailDrawerProps {
   onHideRoute?: () => void;
   isRouteShown?: boolean;
   fromTopperTab?: boolean;
+  onShowOnMap?: (peak: Peak) => void;
 }
 
 const CHECKIN_RADIUS_METERS = 100;
 const CHECKIN_COOLDOWN_MS = 3 * 60 * 60 * 1000; // 3 hours
 const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adminMode, onEdit, onDelete, onShowRoute, onHideRoute, isRouteShown, fromTopperTab }: PeakDetailDrawerProps) => {
+const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adminMode, onEdit, onDelete, onShowRoute, onHideRoute, isRouteShown, fromTopperTab, onShowOnMap }: PeakDetailDrawerProps) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showSuccessAnim, setShowSuccessAnim] = useState(false);
@@ -341,22 +342,35 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
             {/* Weather */}
             <PeakWeather latitude={peak.latitude} longitude={peak.longitude} />
 
+            {/* Show on map button - only from Topper tab */}
+            {fromTopperTab && onShowOnMap && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => onShowOnMap(peak)}
+              >
+                <MapPin className="w-4 h-4 mr-2" />
+                Vis på kart
+              </Button>
+            )}
+
             {/* Check-in section - hidden in Topper tab unless within 100m */}
             {showCheckinSection && (
               <>
-                {isCheckedIn ? (
+              {isCheckedIn ? (
                   <div className="p-3 rounded-xl bg-success/10 border border-success/20 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Check className="w-5 h-5 text-success" />
+                    <div className="flex items-center justify-center gap-2 text-center">
+                      <Check className="w-4 h-4 text-success shrink-0" />
                       <span className="text-sm font-medium text-success">
-                        Du har sjekket inn på denne toppen {checkinCount} {checkinCount === 1 ? 'gang' : 'ganger'}
+                        {checkinCount} tidligere {checkinCount === 1 ? 'innsjekking' : 'innsjekkinger'}
                       </span>
+                      {lastCheckin && (
+                        <span className="text-xs text-muted-foreground">
+                          (sist {format(new Date(lastCheckin.checked_in_at), "d. MMMM yyyy", { locale: nb })})
+                        </span>
+                      )}
                     </div>
-                    {lastCheckin && (
-                      <p className="text-xs text-muted-foreground ml-7">
-                        Sist: {format(new Date(lastCheckin.checked_in_at), "d. MMMM yyyy", { locale: nb })}
-                      </p>
-                    )}
                     {/* Allow re-checkin */}
                     <Button onClick={handleCheckin} disabled={loading || !canCheckin} variant="outline" size="sm" className="w-full mt-2">
                       {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <MapPin className="w-4 h-4 mr-2" />}

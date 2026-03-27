@@ -16,6 +16,73 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { getPeakIcon } from '@/utils/peakIcons';
 
+
+const WEATHER_ICON_BASE = 'https://raw.githubusercontent.com/metno/weathericons/main/weather/svg/';
+
+const mapWmoToSymbol = (code: number): string => {
+  if (code === 0) return 'clearsky_day';
+  if ([1, 2].includes(code)) return 'fair_day';
+  if (code === 3) return 'cloudy';
+  if ([45, 48].includes(code)) return 'fog';
+  if ([51, 53, 55, 56, 57].includes(code)) return 'lightrain';
+  if ([61, 63, 65, 66, 67].includes(code)) return 'rain';
+  if ([71, 73, 75, 77].includes(code)) return 'snow';
+  if ([80, 81, 82].includes(code)) return 'rainshowers_day';
+  if ([85, 86].includes(code)) return 'snowshowers_day';
+  if ([95, 96, 99].includes(code)) return 'heavyrainandthunder';
+  return 'cloudy';
+};
+
+// Small weather badge for feed posts
+const FeedWeatherBadge = ({ lat, lng, checkinDate }: { lat: number; lng: number; checkinDate: string }) => {
+  const [weather, setWeather] = useState<{ temp: number; symbol: string } | null>(null);
+
+  useEffect(() => {
+    if (!lat || !lng) return;
+    let cancelled = false;
+    const d = new Date(checkinDate);
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const hour = d.getHours();
+    const isToday = dateStr === new Date().toISOString().slice(0, 10);
+    const isFuture = new Date(dateStr) > new Date();
+
+    const fetchWeather = async () => {
+      try {
+        let url: string;
+        if (isToday || isFuture) {
+          url = `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lng.toFixed(4)}&hourly=temperature_2m,weather_code&forecast_days=1`;
+        } else {
+          url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat.toFixed(4)}&longitude=${lng.toFixed(4)}&start_date=${dateStr}&end_date=${dateStr}&hourly=temperature_2m,weather_code`;
+        }
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+        const hourIdx = Math.min(hour, (data.hourly?.time?.length || 1) - 1);
+        const temp = Math.round(data.hourly?.temperature_2m?.[hourIdx] ?? 0);
+        const code = data.hourly?.weather_code?.[hourIdx] ?? 3;
+        if (!cancelled) setWeather({ temp, symbol: mapWmoToSymbol(code) });
+      } catch {}
+    };
+
+    fetchWeather();
+    return () => { cancelled = true; };
+  }, [lat, lng, checkinDate]);
+
+  if (!weather) return null;
+
+  return (
+    <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-muted/50 border border-border/30">
+      <img
+        src={`${WEATHER_ICON_BASE}${weather.symbol}.svg`}
+        alt=""
+        className="w-4 h-4"
+        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+      />
+      <span className="text-[11px] text-muted-foreground font-medium">{weather.temp}°</span>
+    </div>
+  );
+};
+
 type FeedFilter = 'alle' | 'friends' | 'mine' | 'global';
 
 interface FeedItem {
@@ -28,6 +95,8 @@ interface FeedItem {
   peak_name: string;
   peak_elevation: number;
   peak_area: string;
+  peak_lat: number;
+  peak_lng: number;
   image_url: string | null;
   is_child: boolean;
   child_parent_id: string | null;
@@ -207,7 +276,7 @@ const PeakFeed = () => {
       if (validUuidPeakIds.length > 0) {
         const { data } = await supabase
           .from('peaks_db')
-          .select('id, name_no, elevation_moh, area')
+          .select('id, name_no, elevation_moh, area, latitude, longitude')
           .in('id', validUuidPeakIds);
         peaks = data || [];
       }
@@ -268,6 +337,8 @@ const PeakFeed = () => {
           peak_name: peak?.name_no || 'Ukjent topp',
           peak_elevation: peak?.elevation_moh || 0,
           peak_area: peak?.area || '',
+          peak_lat: peak?.latitude || 0,
+          peak_lng: peak?.longitude || 0,
           image_url: c.image_url || null,
           is_child: !!child,
           child_parent_id: child?.parent_user_id || null,
@@ -611,6 +682,9 @@ const PeakFeed = () => {
                         <img src={getPeakIcon(parentItem.peak_elevation)} alt="" className="w-5 h-5 object-contain shrink-0 self-center" style={{ verticalAlign: 'middle', position: 'relative', top: parentItem.peak_elevation >= 300 && parentItem.peak_elevation < 650 ? '-0.5px' : '0px' }} />
                         <span className="text-sm font-medium leading-5">{parentItem.peak_name}</span>
                         <span className="text-xs text-muted-foreground leading-5">{parentItem.peak_elevation} moh · {parentItem.peak_area}</span>
+                        <div className="ml-auto">
+                          <FeedWeatherBadge lat={parentItem.peak_lat} lng={parentItem.peak_lng} checkinDate={parentItem.checked_in_at} />
+                        </div>
                       </div>
 
                       {/* Image */}
