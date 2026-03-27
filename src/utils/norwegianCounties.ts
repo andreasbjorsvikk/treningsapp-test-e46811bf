@@ -37,14 +37,14 @@ export function sortCountiesByProximity(counties: string[], userLat: number, use
 }
 
 export function findUserCounty(userLat: number, userLng: number): string | null {
-  let closest = NORWEGIAN_COUNTIES[0];
+  let closestName = NORWEGIAN_COUNTIES[0].name as string;
   let minDist = Infinity;
   for (const c of NORWEGIAN_COUNTIES) {
     const d = getDistanceKm(userLat, userLng, c.lat, c.lng);
     if (d < minDist) {
       minDist = d;
-      closest = c;
+      closestName = c.name;
     }
   }
-  return closest.name;
+  return closestName;
 }
