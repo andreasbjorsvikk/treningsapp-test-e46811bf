@@ -74,19 +74,15 @@ const TodaySunTimes = ({ latitude, longitude }: { latitude: number; longitude: n
 
   return (
     <div className="grid grid-cols-2 gap-2">
-      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/30 border border-border/30">
+      <div className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-lg bg-muted/30 border border-border/30">
         <Sunrise className="w-4 h-4 text-amber-500" />
-        <div>
-          <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Soloppgang' : 'Sunrise'}</p>
-          <p className="text-sm font-semibold">{times.sunrise}</p>
-        </div>
+        <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Soloppgang' : 'Sunrise'}</p>
+        <p className="text-sm font-semibold">{times.sunrise}</p>
       </div>
-      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/30 border border-border/30">
+      <div className="flex flex-col items-center justify-center gap-1 p-2.5 rounded-lg bg-muted/30 border border-border/30">
         <Sunset className="w-4 h-4 text-orange-500" />
-        <div>
-          <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Solnedgang' : 'Sunset'}</p>
-          <p className="text-sm font-semibold">{times.sunset}</p>
-        </div>
+        <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Solnedgang' : 'Sunset'}</p>
+        <p className="text-sm font-semibold">{times.sunset}</p>
       </div>
     </div>
   );
