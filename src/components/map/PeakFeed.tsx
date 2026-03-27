@@ -28,6 +28,8 @@ interface FeedItem {
   peak_name: string;
   peak_elevation: number;
   peak_area: string;
+  peak_lat: number;
+  peak_lng: number;
   image_url: string | null;
   is_child: boolean;
   child_parent_id: string | null;
