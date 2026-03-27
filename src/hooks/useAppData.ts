@@ -68,12 +68,20 @@ export function useAppData() {
   // ===== Invalidate queries after sync queue flush =====
   useEffect(() => {
     const handler = () => {
+      // Remove optimistic offline entries before refetch to prevent duplicates
+      if (userId) {
+        const sessKey = ['app-data', 'sessions', userId];
+        const cached = queryClient.getQueryData<WorkoutSession[]>(sessKey);
+        if (cached?.some(s => s.id.startsWith('offline_'))) {
+          queryClient.setQueryData(sessKey, cached.filter(s => !s.id.startsWith('offline_')));
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ['app-data'] });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
     };
     window.addEventListener('sync-queue-flushed', handler);
     return () => window.removeEventListener('sync-queue-flushed', handler);
-  }, [queryClient]);
+  }, [queryClient, userId]);
 
   // ===== Migration from localStorage (runs once per user) =====
   const migrateRef = useRef(false);
