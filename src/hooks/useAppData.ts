@@ -105,10 +105,12 @@ export function useAppData() {
         setPrimaryGoals(pg);
         setHealthEvents(he);
         // Persist to localStorage as offline cache
-        workoutService.saveAll(s);
-        goalService.saveAll(g);
-        primaryGoalService.saveAll(pg);
-        healthEventService.saveAll(he);
+        try {
+          localStorage.setItem('treningslogg_sessions', JSON.stringify(s));
+          localStorage.setItem('treningslogg_goals', JSON.stringify(g));
+          localStorage.setItem('treningslogg_primary_goals', JSON.stringify(pg));
+          localStorage.setItem('treningslogg_health_events', JSON.stringify(he));
+        } catch { /* quota exceeded — non-critical */ }
       } else {
         // Offline or not logged in: use localStorage cache
         setSessions(workoutService.getAll());
