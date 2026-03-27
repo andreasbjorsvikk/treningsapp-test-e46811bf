@@ -122,6 +122,7 @@ const PeakTripPlanner = React.forwardRef<HTMLDivElement, PeakTripPlannerProps>((
   useEffect(() => {
     const fetchForecast = async () => {
       setLoading(true);
+      setError(null);
       try {
         // Use MET Norway Nordic model (1km resolution) for better snow data in Norway
         // Falls back to best_match if metno_nordic doesn't cover the area
