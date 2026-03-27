@@ -1,13 +1,15 @@
 import { Peak } from '@/data/peaks';
 import { PeakCheckin, getDistanceMeters } from '@/services/peakCheckinService';
-import { Mountain, Pencil, Trash2, Search, SlidersHorizontal, X } from 'lucide-react';
+import { Pencil, Trash2, Search, SlidersHorizontal, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { getPeakIcon, getCheckedPeakIcon } from '@/utils/peakIcons';
+import { getPeakIcon } from '@/utils/peakIcons';
+import { sortCountiesByProximity, findUserCounty } from '@/utils/norwegianCounties';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type Filter = 'all' | 'not_taken' | 'taken';
 
@@ -21,17 +23,26 @@ interface PeaksListProps {
 }
 
 const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDeletePeak }: PeaksListProps) => {
+  const { t } = useTranslation();
   const [filter, setFilter] = useState<Filter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [minElevation, setMinElevation] = useState(0);
+  const [elevationRange, setElevationRange] = useState<[number, number]>([0, 2500]);
   const [municipalitySearch, setMunicipalitySearch] = useState('');
   const [selectedMunicipality, setSelectedMunicipality] = useState<string | null>(null);
+  const [selectedCounty, setSelectedCounty] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const countyScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     navigator.geolocation?.getCurrentPosition(
-      (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(loc);
+        // Auto-select user's county
+        const userCounty = findUserCounty(loc.lat, loc.lng);
+        if (userCounty) setSelectedCounty(userCounty);
+      },
       () => {},
       { enableHighAccuracy: false, timeout: 5000 }
     );
@@ -39,10 +50,24 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
 
   const checkedPeakIds = new Set(checkins.map(c => c.peak_id));
 
+  // Get unique counties from peaks
+  const counties = useMemo(() => {
+    const countySet = new Set(peaks.map(p => p.county).filter(Boolean));
+    const countyList = Array.from(countySet) as string[];
+    if (userLocation) {
+      return sortCountiesByProximity(countyList, userLocation.lat, userLocation.lng);
+    }
+    return countyList.sort();
+  }, [peaks, userLocation]);
+
+  // Get municipalities for selected county
   const municipalities = useMemo(() => {
-    const areas = new Set(peaks.map(p => p.area).filter(Boolean));
-    return Array.from(areas).sort();
-  }, [peaks]);
+    const filtered = selectedCounty
+      ? peaks.filter(p => p.county === selectedCounty)
+      : peaks;
+    const areas = new Set(filtered.map(p => p.municipality).filter(Boolean));
+    return Array.from(areas).sort() as string[];
+  }, [peaks, selectedCounty]);
 
   const filteredMunicipalities = useMemo(() => {
     if (!municipalitySearch.trim()) return municipalities.slice(0, 10);
@@ -58,6 +83,8 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
     }));
   }, [peaks, userLocation]);
 
+  const hasActiveElevation = elevationRange[0] > 0 || elevationRange[1] < 2500;
+
   const filtered = useMemo(() => {
     let result = peaksWithDistance.filter(p => {
       if (filter === 'taken') return checkedPeakIds.has(p.id);
@@ -70,12 +97,16 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
       result = result.filter(p => p.name.toLowerCase().includes(q));
     }
 
-    if (minElevation > 0) {
-      result = result.filter(p => p.heightMoh >= minElevation);
+    if (hasActiveElevation) {
+      result = result.filter(p => p.heightMoh >= elevationRange[0] && p.heightMoh <= elevationRange[1]);
+    }
+
+    if (selectedCounty) {
+      result = result.filter(p => p.county === selectedCounty);
     }
 
     if (selectedMunicipality) {
-      result = result.filter(p => p.area === selectedMunicipality);
+      result = result.filter(p => p.municipality === selectedMunicipality);
     }
 
     result.sort((a, b) => {
@@ -86,20 +117,20 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
     });
 
     return result;
-  }, [peaksWithDistance, filter, searchQuery, minElevation, selectedMunicipality, checkedPeakIds]);
+  }, [peaksWithDistance, filter, searchQuery, elevationRange, selectedCounty, selectedMunicipality, checkedPeakIds, hasActiveElevation]);
 
   const formatDistance = (meters: number) => {
-    if (meters < 1000) return `${Math.round(meters)} m unna`;
-    return `${(meters / 1000).toFixed(1).replace('.', ',')} km unna`;
+    if (meters < 1000) return `${Math.round(meters)} m`;
+    return `${(meters / 1000).toFixed(1).replace('.', ',')} km`;
   };
 
   const filters: { id: Filter; label: string }[] = [
-    { id: 'all', label: 'Alle' },
-    { id: 'taken', label: 'Nådd' },
-    { id: 'not_taken', label: 'Ikke nådd' },
+    { id: 'all', label: t('mapSettings.all') },
+    { id: 'taken', label: t('mapSettings.reached') },
+    { id: 'not_taken', label: t('mapSettings.notReached') },
   ];
 
-  const hasActiveFilters = minElevation > 0 || selectedMunicipality !== null;
+  const hasActiveFilters = hasActiveElevation || selectedMunicipality !== null || selectedCounty !== null;
 
   return (
     <div className="flex flex-col gap-3 p-4">
@@ -110,7 +141,7 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Søk etter topp..."
+            placeholder={t('peaksList.searchPlaceholder')}
             className="pl-9 h-9"
           />
         </div>
@@ -125,63 +156,97 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
               <span className="text-xs font-medium">Filter</span>
             </button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="max-h-[70vh]">
+          <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
             <SheetHeader>
-              <SheetTitle>Filtrer topper</SheetTitle>
+              <SheetTitle>{t('peaksList.filterTitle')}</SheetTitle>
             </SheetHeader>
             <div className="space-y-6 pt-4">
+              {/* Elevation range slider */}
               <div className="space-y-3">
-                <Label>Minimum høyde: {minElevation > 0 ? `${minElevation} moh` : 'Ingen'}</Label>
+                <Label>
+                  {t('peaksList.elevation')}: {elevationRange[0] > 0 || elevationRange[1] < 2500
+                    ? `${elevationRange[0]}–${elevationRange[1]} moh`
+                    : t('peaksList.noLimit')}
+                </Label>
                 <Slider
-                  value={[minElevation]}
-                  onValueChange={([v]) => setMinElevation(v)}
+                  value={elevationRange}
+                  onValueChange={(v) => setElevationRange(v as [number, number])}
                   min={0}
                   max={2500}
                   step={50}
+                  minStepsBetweenThumbs={1}
                 />
               </div>
+
+              {/* County selector - horizontal scroll */}
               <div className="space-y-3">
-                <Label>Kommune</Label>
-                {selectedMunicipality ? (
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-sm py-1 px-3 gap-1">
-                      {selectedMunicipality}
-                      <button onClick={() => setSelectedMunicipality(null)}>
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  </div>
-                ) : (
-                  <>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        value={municipalitySearch}
-                        onChange={(e) => setMunicipalitySearch(e.target.value)}
-                        placeholder="Søk kommune..."
-                        className="pl-9"
-                      />
-                    </div>
-                    <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-                      {filteredMunicipalities.map(m => (
-                        <button
-                          key={m}
-                          onClick={() => { setSelectedMunicipality(m); setMunicipalitySearch(''); }}
-                          className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
-                        >
-                          {m}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
+                <Label>{t('peaksList.county')}</Label>
+                <div ref={countyScrollRef} className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+                  {counties.map(c => (
+                    <button
+                      key={c}
+                      onClick={() => {
+                        setSelectedCounty(selectedCounty === c ? null : c);
+                        setSelectedMunicipality(null);
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
+                        selectedCounty === c
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80'
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              {/* Municipality filter (shown when county is selected) */}
+              {selectedCounty && (
+                <div className="space-y-3">
+                  <Label>{t('peaksList.municipality')}</Label>
+                  {selectedMunicipality ? (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-sm py-1 px-3 gap-1">
+                        {selectedMunicipality}
+                        <button onClick={() => setSelectedMunicipality(null)}>
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          value={municipalitySearch}
+                          onChange={(e) => setMunicipalitySearch(e.target.value)}
+                          placeholder={t('peaksList.searchMunicipality')}
+                          className="pl-9"
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                        {filteredMunicipalities.map(m => (
+                          <button
+                            key={m}
+                            onClick={() => { setSelectedMunicipality(m); setMunicipalitySearch(''); }}
+                            className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+                          >
+                            {m}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
               {hasActiveFilters && (
                 <button
-                  onClick={() => { setMinElevation(0); setSelectedMunicipality(null); }}
+                  onClick={() => { setElevationRange([0, 2500]); setSelectedMunicipality(null); setSelectedCounty(null); }}
                   className="text-sm text-destructive font-medium"
                 >
-                  Nullstill filtre
+                  {t('peaksList.resetFilters')}
                 </button>
               )}
             </div>
@@ -204,11 +269,13 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
             {f.label}
           </button>
         ))}
-        <span className="text-xs text-muted-foreground self-center ml-auto">{filtered.length} topper</span>
+        <span className="text-xs text-muted-foreground self-center ml-auto">
+          {filtered.length} {t('peaksList.peaks')}
+        </span>
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-muted-foreground text-sm text-center py-8">Ingen topper å vise.</p>
+        <p className="text-muted-foreground text-sm text-center py-8">{t('peaksList.noPeaks')}</p>
       ) : (
         <div className="flex flex-col gap-2">
           {filtered.map(peak => {
@@ -238,7 +305,7 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
                       <span className="font-display font-semibold text-sm truncate">{peak.name}</span>
                       {isUnpublished && (
                         <Badge variant="secondary" className="text-[10px] bg-warning/15 text-[hsl(var(--warning))] border-0 shrink-0">
-                          Upublisert
+                          {t('peaksList.unpublished')}
                         </Badge>
                       )}
                     </div>

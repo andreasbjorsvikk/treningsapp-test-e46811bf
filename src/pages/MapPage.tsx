@@ -60,6 +60,10 @@ const MapPage = () => {
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [heatmapPeriod, setHeatmapPeriod] = useState<HeatmapPeriod>('year');
   const [onlyReachedThisYear, setOnlyReachedThisYear] = useState(false);
+  const [defaultMapStyle, setDefaultMapStyle] = useState<'outdoors' | 'satellite' | 'streets' | 'topo'>(() => {
+    return (localStorage.getItem('treningslogg_default_map_style') as any) || 'outdoors';
+  });
+  const [areaStatsMode, setAreaStatsMode] = useState<'off' | 'kommune' | 'fylke'>('off');
 
   // Suggested peaks (pending, visible to all)
   const [suggestedPeaks, setSuggestedPeaks] = useState<PeakSuggestion[]>([]);
@@ -401,6 +405,13 @@ const MapPage = () => {
         onHeatmapPeriodChange={setHeatmapPeriod}
         onlyReachedThisYear={onlyReachedThisYear}
         onOnlyReachedThisYearChange={setOnlyReachedThisYear}
+        defaultMapStyle={defaultMapStyle}
+        onDefaultMapStyleChange={(s) => {
+          setDefaultMapStyle(s);
+          localStorage.setItem('treningslogg_default_map_style', s);
+        }}
+        areaStatsMode={areaStatsMode}
+        onAreaStatsModeChange={setAreaStatsMode}
       />
 
       {/* Peak detail drawer */}

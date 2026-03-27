@@ -5,6 +5,8 @@ export interface Peak {
   latitude: number;
   longitude: number;
   area: string;
+  municipality?: string;
+  county?: string;
   description: string;
   imageUrl?: string | null;
   isPublished?: boolean;

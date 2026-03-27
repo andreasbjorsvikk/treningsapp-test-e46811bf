@@ -126,10 +126,6 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: 'month_elev_5000', category: 'trening', subcategory: 'monthly_elevation', nameKey: 'badge.monthElev5000', descriptionKey: 'badge.monthElev5000Desc', requirementKey: 'badge.monthElev5000Req', threshold: 5000, rarity: 'rare', emoji: '🗻', image: badgeElev5000, sortOrder: 15, repeatable: true },
   { id: 'month_elev_10000', category: 'trening', subcategory: 'monthly_elevation', nameKey: 'badge.monthElev10000', descriptionKey: 'badge.monthElev10000Desc', requirementKey: 'badge.monthElev10000Req', threshold: 10000, rarity: 'epic', emoji: '🦅', image: badgeElev10000, sortOrder: 16, repeatable: true },
 
-  // ── Trening: Månedlig samme type ──
-  { id: 'month_same_5', category: 'trening', subcategory: 'monthly_sametype', nameKey: 'badge.monthSame5', descriptionKey: 'badge.monthSame5Desc', requirementKey: 'badge.monthSame5Req', threshold: 5, rarity: 'common', emoji: '🎯', sortOrder: 17, repeatable: true },
-  { id: 'month_same_10', category: 'trening', subcategory: 'monthly_sametype', nameKey: 'badge.monthSame10', descriptionKey: 'badge.monthSame10Desc', requirementKey: 'badge.monthSame10Req', threshold: 10, rarity: 'uncommon', emoji: '🎯', sortOrder: 18, repeatable: true },
-  { id: 'month_same_15', category: 'trening', subcategory: 'monthly_sametype', nameKey: 'badge.monthSame15', descriptionKey: 'badge.monthSame15Desc', requirementKey: 'badge.monthSame15Req', threshold: 15, rarity: 'rare', emoji: '🎯', sortOrder: 19, repeatable: true },
 
   // ── Trening: Månedlig distanse ──
   { id: 'month_dist_50', category: 'trening', subcategory: 'monthly_distance', nameKey: 'badge.monthDist50', descriptionKey: 'badge.monthDist50Desc', requirementKey: 'badge.monthDist50Req', threshold: 50, rarity: 'common', emoji: '🏃', image: badgeDist50, sortOrder: 20, repeatable: true },
@@ -145,7 +141,7 @@ export const SUBCATEGORY_NAMES: Record<string, { no: string; en: string }> = {
   total_sessions: { no: 'Totalt antall økter', en: 'Total sessions' },
   monthly_sessions: { no: 'Økter på en måned', en: 'Monthly sessions' },
   monthly_elevation: { no: 'Høydemeter på en måned', en: 'Monthly elevation' },
-  monthly_sametype: { no: 'Samme type på en måned', en: 'Same type monthly' },
+  
   monthly_distance: { no: 'Distanse på en måned', en: 'Monthly distance' },
 };
 
@@ -413,9 +409,6 @@ export async function computeUserBadges(userId: string, isChild = false): Promis
     else if (badge.id === 'month_elev_3000') { repeatCount = countMonthsAchieved(sessions, 'elevation', 3000); progress = repeatCount > 0 ? 3000 : currentMonth.elev; }
     else if (badge.id === 'month_elev_5000') { repeatCount = countMonthsAchieved(sessions, 'elevation', 5000); progress = repeatCount > 0 ? 5000 : currentMonth.elev; }
     else if (badge.id === 'month_elev_10000') { repeatCount = countMonthsAchieved(sessions, 'elevation', 10000); progress = repeatCount > 0 ? 10000 : currentMonth.elev; }
-    else if (badge.id === 'month_same_5') { repeatCount = countMonthsAchieved(sessions, 'sameType', 5); progress = repeatCount > 0 ? 5 : currentMonth.maxSameType; }
-    else if (badge.id === 'month_same_10') { repeatCount = countMonthsAchieved(sessions, 'sameType', 10); progress = repeatCount > 0 ? 10 : currentMonth.maxSameType; }
-    else if (badge.id === 'month_same_15') { repeatCount = countMonthsAchieved(sessions, 'sameType', 15); progress = repeatCount > 0 ? 15 : currentMonth.maxSameType; }
     else if (badge.id === 'month_dist_50') { repeatCount = countMonthsAchieved(sessions, 'distance', 50); progress = repeatCount > 0 ? 50 : currentMonth.dist; }
     else if (badge.id === 'month_dist_100') { repeatCount = countMonthsAchieved(sessions, 'distance', 100); progress = repeatCount > 0 ? 100 : currentMonth.dist; }
     else if (badge.id === 'month_dist_150') { repeatCount = countMonthsAchieved(sessions, 'distance', 150); progress = repeatCount > 0 ? 150 : currentMonth.dist; }

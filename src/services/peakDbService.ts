@@ -5,6 +5,8 @@ export interface DbPeak {
   name_no: string;
   elevation_moh: number;
   area: string;
+  municipality: string;
+  county: string;
   description_no: string;
   image_url: string | null;
   latitude: number;
@@ -31,6 +33,8 @@ export function dbPeakToLegacy(p: DbPeak) {
     latitude: p.latitude,
     longitude: p.longitude,
     area: p.area,
+    municipality: p.municipality || '',
+    county: p.county || '',
     description: p.description_no || '',
     imageUrl: p.image_url,
     isPublished: p.is_published,

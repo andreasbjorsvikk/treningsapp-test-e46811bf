@@ -360,39 +360,29 @@ const IndexContent = () => {
   const prevMonthCurrentRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!primaryGoal || monthData.target === 0) return;
+    if (!primaryGoal || monthData.target === 0 || appData.loading) return;
     const now = new Date();
     const monthKey = `treningslogg_month_goal_celebrated_${now.getFullYear()}_${now.getMonth()}`;
 
-    // If current dropped below target (e.g. deleted session), remove celebrated flag so it can retrigger
-    if (monthData.current < monthData.target) {
-      localStorage.removeItem(monthKey);
-      prevMonthCurrentRef.current = monthData.current;
-      return;
-    }
-
-    // Already celebrated this exact completion
+    // Already celebrated this month - never show again
     if (localStorage.getItem(monthKey)) {
       prevMonthCurrentRef.current = monthData.current;
       return;
     }
 
-    // Also check sessionStorage to avoid re-showing during same browser session
-    const sessionMonthKey = `treningslogg_month_goal_shown_session_${now.getFullYear()}_${now.getMonth()}`;
-    if (sessionStorage.getItem(sessionMonthKey)) {
+    if (monthData.current < monthData.target) {
       prevMonthCurrentRef.current = monthData.current;
       return;
     }
 
-    // Detect completion: either on first load or when crossing threshold
-    const wasBelow = prevMonthCurrentRef.current === null || prevMonthCurrentRef.current < monthData.target;
-    if (wasBelow && monthData.current >= monthData.target) {
+    // Only show when crossing the threshold (not on initial load when already above)
+    const wasBelow = prevMonthCurrentRef.current !== null && prevMonthCurrentRef.current < monthData.target;
+    if (wasBelow) {
       setMonthGoalCompleted(true);
       localStorage.setItem(monthKey, 'true');
-      sessionStorage.setItem(sessionMonthKey, 'true');
     }
     prevMonthCurrentRef.current = monthData.current;
-  }, [monthData.current, monthData.target, primaryGoal]);
+  }, [monthData.current, monthData.target, primaryGoal, appData.loading]);
 
   const homeGoals = appData.goals.filter(g => g.showOnHome);
   const [pinnedChallenges, setPinnedChallenges] = useState<ChallengeWithParticipants[]>([]);
