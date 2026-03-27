@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { format, addDays } from 'date-fns';
 import { nb, enUS } from 'date-fns/locale';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Bar, ComposedChart, Area, ReferenceLine } from 'recharts';
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Bar, ComposedChart, Area, Line, ReferenceDot } from 'recharts';
 import { Sun, Sunrise, Sunset, Cloud, Snowflake, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -13,6 +13,7 @@ interface PeakTripPlannerProps {
 
 interface HourlyData {
   hour: string;
+  hourNum: number;
   temp: number;
   precip: number;
   weatherCode: number;
@@ -43,23 +44,30 @@ const mapCodeToSymbol = (code: number): string => {
   return 'cloudy';
 };
 
-// Custom tick that renders weather icons at every 3rd hour
-const WeatherIconTick = ({ x, y, payload, data }: any) => {
-  if (!data || !payload) return null;
-  const hourIdx = parseInt(payload.value, 10);
-  if (isNaN(hourIdx) || hourIdx % 3 !== 0) return null;
-  const entry = data.find((d: HourlyData) => d.hour === payload.value);
-  if (!entry) return null;
-  const symbol = mapCodeToSymbol(entry.weatherCode);
+// Custom dot that renders weather icon + temp label every 3 hours, positioned at the temp value
+const WeatherAnnotation = (props: any) => {
+  const { cx, cy, payload } = props;
+  if (!payload || payload.hourNum % 3 !== 0) return null;
+  const symbol = mapCodeToSymbol(payload.weatherCode);
   return (
-    <g transform={`translate(${x},${y - 20})`}>
+    <g>
       <image
         href={`${WEATHER_ICON_BASE}${symbol}.svg`}
-        width={16}
-        height={16}
-        x={-8}
-        y={-8}
+        width={18}
+        height={18}
+        x={cx - 9}
+        y={cy - 30}
       />
+      <text
+        x={cx}
+        y={cy - 12}
+        textAnchor="middle"
+        fontSize={8}
+        fontWeight={600}
+        fill="hsl(var(--foreground))"
+      >
+        {payload.temp}°
+      </text>
     </g>
   );
 };
@@ -95,6 +103,7 @@ const PeakTripPlanner = ({ latitude, longitude, peakName }: PeakTripPlannerProps
             const idx = d * 24 + h;
             hourly.push({
               hour: `${String(h).padStart(2, '0')}`,
+              hourNum: h,
               temp: Math.round(data.hourly.temperature_2m[idx]),
               precip: Math.round(data.hourly.precipitation[idx] * 10) / 10,
               weatherCode: data.hourly.weather_code?.[idx] ?? 3,
@@ -127,12 +136,12 @@ const PeakTripPlanner = ({ latitude, longitude, peakName }: PeakTripPlannerProps
 
   const selected = forecasts[selectedDay];
 
-  // Compute integer Y-axis ticks
+  // Compute integer Y-axis ticks for temperature
   const tempDomain = useMemo(() => {
     if (!selected) return [0, 10];
     const temps = selected.hourly.map(h => h.temp);
-    const min = Math.floor(Math.min(...temps)) - 1;
-    const max = Math.ceil(Math.max(...temps)) + 1;
+    const min = Math.floor(Math.min(...temps)) - 2;
+    const max = Math.ceil(Math.max(...temps)) + 3; // extra room for icons above line
     return [min, max];
   }, [selected]);
 
@@ -140,10 +149,24 @@ const PeakTripPlanner = ({ latitude, longitude, peakName }: PeakTripPlannerProps
     const [min, max] = tempDomain;
     const ticks: number[] = [];
     for (let i = min; i <= max; i++) ticks.push(i);
-    // If too many ticks, step by 2
     if (ticks.length > 10) return ticks.filter((_, idx) => idx % 2 === 0);
     return ticks;
   }, [tempDomain]);
+
+  // Compute integer Y-axis ticks for precipitation
+  const precipDomain = useMemo(() => {
+    if (!selected) return [0, 5];
+    const maxPrecip = Math.max(...selected.hourly.map(h => h.precip), 1);
+    return [0, Math.ceil(maxPrecip)];
+  }, [selected]);
+
+  const precipTicks = useMemo(() => {
+    const [, max] = precipDomain;
+    const ticks: number[] = [];
+    for (let i = 0; i <= max; i++) ticks.push(i);
+    if (ticks.length > 8) return ticks.filter((_, idx) => idx % 2 === 0);
+    return ticks;
+  }, [precipDomain]);
 
   if (loading) {
     return (
@@ -191,11 +214,11 @@ const PeakTripPlanner = ({ latitude, longitude, peakName }: PeakTripPlannerProps
         ))}
       </div>
 
-      {/* Weather chart with icons */}
+      {/* Weather chart with icons positioned at temp line */}
       <div className="rounded-xl border border-border/30 bg-card/50 p-3">
-        <div className="h-[200px]">
+        <div className="h-[220px]">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={selected.hourly} margin={{ top: 24, right: 5, left: -15, bottom: 0 }}>
+            <ComposedChart data={selected.hourly} margin={{ top: 32, right: 10, left: -15, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.3} vertical={false} />
               <XAxis 
                 dataKey="hour" 
@@ -203,17 +226,6 @@ const PeakTripPlanner = ({ latitude, longitude, peakName }: PeakTripPlannerProps
                 tickLine={false} 
                 axisLine={false}
                 interval={2}
-              />
-              {/* Weather icons along the top */}
-              <XAxis
-                dataKey="hour"
-                xAxisId="icons"
-                orientation="top"
-                tickLine={false}
-                axisLine={false}
-                tick={<WeatherIconTick data={selected.hourly} />}
-                interval={0}
-                height={24}
               />
               <YAxis 
                 yAxisId="temp"
@@ -231,8 +243,12 @@ const PeakTripPlanner = ({ latitude, longitude, peakName }: PeakTripPlannerProps
                 tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} 
                 tickLine={false} 
                 axisLine={false}
-                tickFormatter={(v) => `${v}mm`}
-                hide
+                tickFormatter={(v) => `${v}`}
+                domain={precipDomain}
+                ticks={precipTicks}
+                allowDecimals={false}
+                width={25}
+                label={{ value: 'mm', position: 'insideTopRight', offset: -20, fontSize: 8, fill: 'hsl(var(--muted-foreground))' }}
               />
               <Tooltip content={<CustomTooltip />} />
               <Area
@@ -257,7 +273,8 @@ const PeakTripPlanner = ({ latitude, longitude, peakName }: PeakTripPlannerProps
                 dataKey="temp"
                 stroke="hsl(var(--primary))"
                 strokeWidth={2}
-                dot={false}
+                dot={<WeatherAnnotation />}
+                activeDot={{ r: 4, strokeWidth: 2, fill: 'hsl(var(--background))' }}
                 type="monotone"
               />
             </ComposedChart>
@@ -289,17 +306,15 @@ const PeakTripPlanner = ({ latitude, longitude, peakName }: PeakTripPlannerProps
 
       {/* Snow conditions */}
       {selected.snowDepth != null && selected.snowDepth > 0 && (
-        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200/30 dark:border-blue-800/30">
-          <Snowflake className="w-4 h-4 text-blue-400" />
-          <div>
-            <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Snødybde (estimert)' : 'Snow depth (estimated)'}</p>
-            <p className="text-sm font-semibold">{selected.snowDepth > 100 ? `${(selected.snowDepth / 100).toFixed(1)} m` : `${Math.round(selected.snowDepth)} cm`}</p>
-          </div>
+        <div className="flex flex-col items-center justify-center gap-1 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200/30 dark:border-blue-800/30">
+          <Snowflake className="w-5 h-5 text-blue-400" />
+          <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Snødybde (estimert)' : 'Snow depth (estimated)'}</p>
+          <p className="text-sm font-semibold">{selected.snowDepth > 100 ? `${(selected.snowDepth / 100).toFixed(1)} m` : `${Math.round(selected.snowDepth)} cm`}</p>
         </div>
       )}
       {selected.snowDepth != null && selected.snowDepth === 0 && (
-        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/20 border border-border/30">
-          <Sun className="w-4 h-4 text-green-500" />
+        <div className="flex flex-col items-center justify-center gap-1 p-3 rounded-lg bg-muted/20 border border-border/30">
+          <Sun className="w-5 h-5 text-green-500" />
           <p className="text-xs text-muted-foreground">{language === 'no' ? 'Ingen snø meldt' : 'No snow reported'}</p>
         </div>
       )}
