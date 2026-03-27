@@ -55,6 +55,7 @@ import { HealthEvent } from '@/types/workout';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchPendingSuggestions } from '@/services/peakSuggestionService';
 import badgeShortcutImage from '@/assets/badges/badge_shortcut.png';
+import SyncStatusIndicator from '@/components/SyncStatusIndicator';
 
 const Index = () => {
   return (
@@ -869,6 +870,7 @@ const IndexContent = () => {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 pl-1">
+                  <SyncStatusIndicator />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button size="icon" variant="ghost" className="rounded-full h-10 w-10">
