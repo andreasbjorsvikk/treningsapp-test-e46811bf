@@ -38,13 +38,16 @@ export function useNotificationPreferences() {
         .maybeSingle();
       if (error) throw error;
       if (!data) {
-        // Create default row
+        // Try to create default row, but don't fail if RLS blocks it
         const { data: created, error: insertError } = await supabase
           .from('notification_preferences')
           .insert({ user_id: user.id })
           .select()
           .single();
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.warn('[notification_preferences] Insert failed, using defaults:', insertError.message);
+          return DEFAULTS;
+        }
         return {
           friend_challenge: created.friend_challenge,
           challenge_complete: created.challenge_complete,
@@ -63,6 +66,7 @@ export function useNotificationPreferences() {
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
 
   const mutation = useMutation({
