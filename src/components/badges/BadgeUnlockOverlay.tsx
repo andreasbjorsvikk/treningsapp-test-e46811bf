@@ -24,6 +24,7 @@ const BadgeUnlockOverlay = ({ badges, onDismiss, onViewBadge }: BadgeUnlockOverl
   useEffect(() => {
     if (!mainBadge) return;
     requestAnimationFrame(() => setVisible(true));
+    hapticsService.notification('success');
     const t1 = setTimeout(() => setShowContent(true), 200);
     const t2 = setTimeout(() => setPulseGlow(true), ANIM_DURATION);
     const shouldSpin = mainBadge.badge.subcategory === 'unique_peaks';

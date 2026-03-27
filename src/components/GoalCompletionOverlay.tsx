@@ -64,6 +64,7 @@ const GoalCompletionOverlay = ({ goal, sessions, onArchive, onDismiss }: GoalCom
       requestAnimationFrame(() => {
         setVisible(true);
         setParticlesVisible(true);
+        hapticsService.notification('success');
       });
     } else {
       setVisible(false);
