@@ -33,6 +33,20 @@ interface DayForecast {
 
 const WEATHER_ICON_BASE = 'https://raw.githubusercontent.com/metno/weathericons/main/weather/svg/';
 
+const getWeatherSeries = <T,>(
+  source: Record<string, T[] | undefined> | undefined,
+  key: string
+): T[] => {
+  if (!source) return [];
+
+  return (
+    source[`${key}_metno_nordic`] ??
+    source[`${key}_best_match`] ??
+    source[key] ??
+    []
+  ) as T[];
+};
+
 const mapCodeToSymbol = (code: number): string => {
   if ([0].includes(code)) return 'clearsky_day';
   if ([1, 2].includes(code)) return 'fair_day';
@@ -115,12 +129,42 @@ const PeakTripPlanner = React.forwardRef<HTMLDivElement, PeakTripPlannerProps>((
         );
         const data = await res.json();
 
-        // Determine which model provided data
-        const hasMetNo = !!data.hourly?.temperature_2m;
+        const hourlySource = data.hourly as Record<string, number[] | undefined> | undefined;
+        const dailySource = data.daily as Record<string, string[] | undefined> | undefined;
+
+        const temperatureSeries = getWeatherSeries<number>(hourlySource, 'temperature_2m');
+        const precipitationSeries = getWeatherSeries<number>(hourlySource, 'precipitation');
+        const snowDepthSeries = getWeatherSeries<number>(hourlySource, 'snow_depth');
+        const weatherCodeSeries = getWeatherSeries<number>(hourlySource, 'weather_code');
+        const windSpeedRawSeries = getWeatherSeries<number>(hourlySource, 'wind_speed_10m');
+        const windDirectionSeries = getWeatherSeries<number>(hourlySource, 'wind_direction_10m');
+        const sunriseSeries = getWeatherSeries<string>(dailySource, 'sunrise');
+        const sunsetSeries = getWeatherSeries<string>(dailySource, 'sunset');
+
+        const hasMetNo = Array.isArray(data.hourly?.temperature_2m_metno_nordic) && data.hourly.temperature_2m_metno_nordic.length > 0;
+        const windUnitKey = hasMetNo
+          ? 'wind_speed_10m_metno_nordic'
+          : Array.isArray(data.hourly?.wind_speed_10m_best_match) && data.hourly.wind_speed_10m_best_match.length > 0
+            ? 'wind_speed_10m_best_match'
+            : 'wind_speed_10m';
+        const windUnit = data.hourly_units?.[windUnitKey];
+        const windSpeedSeries = windUnit === 'km/h'
+          ? windSpeedRawSeries.map((value) => value / 3.6)
+          : windSpeedRawSeries;
+
+        if (!temperatureSeries.length || !sunriseSeries.length || !sunsetSeries.length || !Array.isArray(data.daily?.time)) {
+          setForecasts([]);
+          return;
+        }
         
         const days: DayForecast[] = [];
         for (let d = 0; d < 10; d++) {
           const date = data.daily.time[d];
+          const sunriseTime = sunriseSeries[d];
+          const sunsetTime = sunsetSeries[d];
+
+          if (!date || !sunriseTime || !sunsetTime) continue;
+
           const dayDate = addDays(new Date(), d);
           const label = d === 0 
             ? (language === 'no' ? 'I dag' : 'Today')
@@ -134,19 +178,16 @@ const PeakTripPlanner = React.forwardRef<HTMLDivElement, PeakTripPlannerProps>((
             hourly.push({
               hour: `${String(h).padStart(2, '0')}`,
               hourNum: h,
-              temp: Math.round(data.hourly.temperature_2m[idx]),
-              precip: Math.round(data.hourly.precipitation[idx] * 10) / 10,
-              weatherCode: data.hourly.weather_code?.[idx] ?? 3,
-              windSpeed: data.hourly.wind_speed_10m?.[idx] ?? 0,
-              windDir: data.hourly.wind_direction_10m?.[idx] ?? 0,
+              temp: Math.round(temperatureSeries[idx] ?? 0),
+              precip: Math.round((precipitationSeries[idx] ?? 0) * 10) / 10,
+              weatherCode: weatherCodeSeries[idx] ?? 3,
+              windSpeed: windSpeedSeries[idx] ?? 0,
+              windDir: windDirectionSeries[idx] ?? 0,
             });
           }
 
           const snowIdx = d * 24 + 12;
-          const snowDepth = data.hourly.snow_depth?.[snowIdx];
-
-          const sunriseTime = data.daily.sunrise[d];
-          const sunsetTime = data.daily.sunset[d];
+          const snowDepth = snowDepthSeries[snowIdx];
 
           days.push({
             date,
@@ -161,8 +202,9 @@ const PeakTripPlanner = React.forwardRef<HTMLDivElement, PeakTripPlannerProps>((
         setForecasts(days);
       } catch {
         // silent
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetchForecast();
   }, [latitude, longitude, language]);
