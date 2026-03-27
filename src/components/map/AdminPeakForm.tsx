@@ -54,18 +54,15 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!initial?.area && lat && lng && !area) {
+    if (lat && lng) {
       const fetchArea = async () => {
         try {
-          const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=place,locality,region&access_token=${MAPBOX_TOKEN}`);
+          const res = await fetch(`https://api.kartverket.no/kommuneinfo/v1/punkt?nord=${lat}&ost=${lng}&koordsys=4258`);
           const data = await res.json();
-          if (data.features && data.features.length > 0) {
-            const place = data.features.find((f: any) => f.place_type.includes('place') || f.place_type.includes('locality'));
-            if (place) {
-              setArea(place.text);
-            } else {
-              setArea(data.features[0].text);
-            }
+          const municipality = data.kommunenavn || '';
+          const county = data.fylkesnavn || '';
+          if (municipality && county) {
+            setArea(`${municipality}, ${county}`);
           }
         } catch (e) {
           // ignore
@@ -74,7 +71,7 @@ const AdminPeakForm = ({ open, onClose, onSave, initial, title, peakId, onPickRo
       const t = setTimeout(fetchArea, 600);
       return () => clearTimeout(t);
     }
-  }, [lat, lng, initial?.area, area]);
+  }, [lat, lng]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
