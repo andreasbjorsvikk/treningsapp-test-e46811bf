@@ -474,7 +474,7 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                   <Trophy className="w-3.5 h-3.5" /> {language === 'no' ? 'Lederliste' : 'Leaderboard'}
                 </TabsTrigger>
                 <TabsTrigger value="plan" className="text-xs gap-1">
-                  <Map className="w-3.5 h-3.5" /> {language === 'no' ? 'Planlegg tur' : 'Plan trip'}
+                  <MapIcon className="w-3.5 h-3.5" /> {language === 'no' ? 'Planlegg tur' : 'Plan trip'}
                 </TabsTrigger>
               </TabsList>
 
