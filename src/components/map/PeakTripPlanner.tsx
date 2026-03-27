@@ -116,6 +116,7 @@ const PeakTripPlanner = React.forwardRef<HTMLDivElement, PeakTripPlannerProps>((
   const locale = language === 'no' ? nb : enUS;
   const [forecasts, setForecasts] = useState<DayForecast[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState(0);
 
   useEffect(() => {
