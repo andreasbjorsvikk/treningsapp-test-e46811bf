@@ -869,6 +869,7 @@ const IndexContent = () => {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 pl-1">
+                  <SyncStatusIndicator />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button size="icon" variant="ghost" className="rounded-full h-10 w-10">
