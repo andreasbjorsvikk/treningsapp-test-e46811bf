@@ -90,8 +90,8 @@ export function useAppData() {
 
     setLoading(true);
     try {
-      if (isOnline && user) {
-        // Check if migration needed
+      if (user && networkOnline) {
+        // Online + logged in: fetch from database
         await migrateLocalData(user.id);
         
         const [s, g, pg, he] = await Promise.all([
@@ -104,7 +104,13 @@ export function useAppData() {
         setGoals(g);
         setPrimaryGoals(pg);
         setHealthEvents(he);
+        // Persist to localStorage as offline cache
+        workoutService.saveAll(s);
+        goalService.saveAll(g);
+        primaryGoalService.saveAll(pg);
+        healthEventService.saveAll(he);
       } else {
+        // Offline or not logged in: use localStorage cache
         setSessions(workoutService.getAll());
         setGoals(goalService.getAll());
         setPrimaryGoals(primaryGoalService.getAll());
@@ -112,15 +118,14 @@ export function useAppData() {
       }
     } catch (err) {
       console.error('Failed to load data:', err);
-      if (!isOnline) {
-        setSessions(workoutService.getAll());
-        setGoals(goalService.getAll());
-        setPrimaryGoals(primaryGoalService.getAll());
-        setHealthEvents(healthEventService.getAll());
-      }
+      // Fallback to localStorage on network error
+      setSessions(workoutService.getAll());
+      setGoals(goalService.getAll());
+      setPrimaryGoals(primaryGoalService.getAll());
+      setHealthEvents(healthEventService.getAll());
     }
     setLoading(false);
-  }, [isOnline, user, authLoading, migrateLocalData]);
+  }, [user, networkOnline, authLoading, migrateLocalData]);
 
   useEffect(() => { reload(); }, [reload]);
 
