@@ -126,10 +126,6 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: 'month_elev_5000', category: 'trening', subcategory: 'monthly_elevation', nameKey: 'badge.monthElev5000', descriptionKey: 'badge.monthElev5000Desc', requirementKey: 'badge.monthElev5000Req', threshold: 5000, rarity: 'rare', emoji: '🗻', image: badgeElev5000, sortOrder: 15, repeatable: true },
   { id: 'month_elev_10000', category: 'trening', subcategory: 'monthly_elevation', nameKey: 'badge.monthElev10000', descriptionKey: 'badge.monthElev10000Desc', requirementKey: 'badge.monthElev10000Req', threshold: 10000, rarity: 'epic', emoji: '🦅', image: badgeElev10000, sortOrder: 16, repeatable: true },
 
-  // ── Trening: Månedlig samme type ──
-  { id: 'month_same_5', category: 'trening', subcategory: 'monthly_sametype', nameKey: 'badge.monthSame5', descriptionKey: 'badge.monthSame5Desc', requirementKey: 'badge.monthSame5Req', threshold: 5, rarity: 'common', emoji: '🎯', sortOrder: 17, repeatable: true },
-  { id: 'month_same_10', category: 'trening', subcategory: 'monthly_sametype', nameKey: 'badge.monthSame10', descriptionKey: 'badge.monthSame10Desc', requirementKey: 'badge.monthSame10Req', threshold: 10, rarity: 'uncommon', emoji: '🎯', sortOrder: 18, repeatable: true },
-  { id: 'month_same_15', category: 'trening', subcategory: 'monthly_sametype', nameKey: 'badge.monthSame15', descriptionKey: 'badge.monthSame15Desc', requirementKey: 'badge.monthSame15Req', threshold: 15, rarity: 'rare', emoji: '🎯', sortOrder: 19, repeatable: true },
 
   // ── Trening: Månedlig distanse ──
   { id: 'month_dist_50', category: 'trening', subcategory: 'monthly_distance', nameKey: 'badge.monthDist50', descriptionKey: 'badge.monthDist50Desc', requirementKey: 'badge.monthDist50Req', threshold: 50, rarity: 'common', emoji: '🏃', image: badgeDist50, sortOrder: 20, repeatable: true },

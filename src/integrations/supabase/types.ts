@@ -560,6 +560,7 @@ export type Database = {
       peaks_db: {
         Row: {
           area: string
+          county: string | null
           created_at: string
           created_by: string | null
           description_no: string | null
@@ -569,6 +570,7 @@ export type Database = {
           is_published: boolean
           latitude: number
           longitude: number
+          municipality: string | null
           name_no: string
           route_distance_m: number | null
           route_duration_s: number | null
@@ -583,6 +585,7 @@ export type Database = {
         }
         Insert: {
           area?: string
+          county?: string | null
           created_at?: string
           created_by?: string | null
           description_no?: string | null
@@ -592,6 +595,7 @@ export type Database = {
           is_published?: boolean
           latitude: number
           longitude: number
+          municipality?: string | null
           name_no: string
           route_distance_m?: number | null
           route_duration_s?: number | null
@@ -606,6 +610,7 @@ export type Database = {
         }
         Update: {
           area?: string
+          county?: string | null
           created_at?: string
           created_by?: string | null
           description_no?: string | null
@@ -615,6 +620,7 @@ export type Database = {
           is_published?: boolean
           latitude?: number
           longitude?: number
+          municipality?: string | null
           name_no?: string
           route_distance_m?: number | null
           route_duration_s?: number | null
