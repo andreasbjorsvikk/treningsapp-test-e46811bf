@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
+import { hapticsService } from '@/services/hapticsService';
 import { WorkoutSession, SessionType } from '@/types/workout';
 import { allSessionTypes } from '@/utils/workoutUtils';
 import { useSettings } from '@/contexts/SettingsContext';
