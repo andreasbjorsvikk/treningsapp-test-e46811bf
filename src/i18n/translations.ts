@@ -1133,7 +1133,6 @@ const no: Record<string, string> = {
   'peaksList.searchMunicipality': 'Søk kommune...',
   'peaksList.minElevation': 'Minimum høyde',
   'peaksList.noMin': 'Ingen',
-  'peaksList.municipalityLabel': 'Kommune',
   'peaksList.resetFilters': 'Nullstill filtre',
   'peaksList.unpublished': 'Upublisert',
   'peaksList.awayM': '{n} m unna',
