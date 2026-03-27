@@ -114,7 +114,7 @@ const StatistikkContent = ({
           <MetricSelector selected={chartMetric} onSelect={setChartMetric} />
 
           <div className="h-[280px] lg:h-[360px]">
-            <TrendChart sessions={statSessions} period={period} month={statMonth} year={statYear} metric={chartMetric} chartType={chartType} />
+            <TrendChart sessions={statSessions} period={period} month={statMonth} year={statYear} metric={chartMetric} chartType={chartType} selectedTypes={selectedTypes} />
           </div>
 
           {/* Chart type toggle */}
