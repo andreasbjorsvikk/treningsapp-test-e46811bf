@@ -1,3 +1,5 @@
+import { useTranslation } from '@/i18n/useTranslation';
+
 export type MapSubTab = 'kart' | 'topper' | 'feed' | 'lederliste' | 'ar';
 
 interface MapSubTabsProps {
@@ -5,15 +7,16 @@ interface MapSubTabsProps {
   onChange: (tab: MapSubTab) => void;
 }
 
-const baseTabs: { id: MapSubTab; label: string }[] = [
-  { id: 'kart', label: 'Kart' },
-  { id: 'topper', label: 'Topper' },
-  { id: 'feed', label: 'Feed' },
-  { id: 'lederliste', label: 'Lederliste' },
-  { id: 'ar', label: 'AR' },
-];
-
 const MapSubTabs = ({ active, onChange }: MapSubTabsProps) => {
+  const { t } = useTranslation();
+  const baseTabs: { id: MapSubTab; label: string }[] = [
+    { id: 'kart', label: t('mapSub.map') },
+    { id: 'topper', label: t('mapSub.peaks') },
+    { id: 'feed', label: t('mapSub.feed') },
+    { id: 'lederliste', label: t('mapSub.leaderboard') },
+    { id: 'ar', label: t('mapSub.ar') },
+  ];
+
   return (
     <div className="flex bg-muted rounded-lg p-1 gap-1">
       {baseTabs.map(tab => (
