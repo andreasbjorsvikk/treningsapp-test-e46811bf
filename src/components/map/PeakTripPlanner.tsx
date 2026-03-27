@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { format, addDays } from 'date-fns';
 import { nb, enUS } from 'date-fns/locale';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Bar, ComposedChart, Area, Line } from 'recharts';
