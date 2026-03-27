@@ -29,6 +29,18 @@ function mapStravaType(sportType: string): string {
   return map[sportType] || "annet";
 }
 
+function getActivityGroup(type: string): string {
+  const groups: Record<string, string> = {
+    løping: 'running', tredemølle: 'running',
+    sykling: 'cycling', fjelltur: 'hiking', gå: 'walking',
+    svømming: 'swimming', styrke: 'strength',
+    yoga: 'yoga', tennis: 'tennis', fotball: 'football',
+    roing: 'rowing', kajakk: 'kayaking',
+    trappemaskin: 'stairclimber', annet: 'other',
+  };
+  return groups[type] || 'other';
+}
+
 async function ensureFreshToken(connection: any) {
   const admin = adminClient();
   const expiresAt = new Date(connection.expires_at);
