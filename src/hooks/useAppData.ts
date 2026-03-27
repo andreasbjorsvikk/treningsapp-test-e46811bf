@@ -87,9 +87,12 @@ export function useAppData() {
   const migrateRef = useRef(false);
   useEffect(() => {
     if (!user || !isOnline || migrateRef.current) return;
-    const MIGRATED_KEY = 'treningslogg_migrated';
-    if (localStorage.getItem(MIGRATED_KEY)) { migrateRef.current = true; return; }
+    // User-scoped migration key to prevent re-runs
+    const MIGRATED_KEY = `treningslogg_migrated_${user.id}`;
+    if (localStorage.getItem(MIGRATED_KEY) || localStorage.getItem('treningslogg_migrated')) { migrateRef.current = true; return; }
     migrateRef.current = true;
+    // Set flag immediately BEFORE migration to prevent concurrent runs
+    localStorage.setItem(MIGRATED_KEY, 'true');
 
     (async () => {
       try {

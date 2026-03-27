@@ -623,10 +623,10 @@ const SettingsPage = () => {
         {/* Child privacy - only if user has children */}
         {hasChildren && (
           <div className="glass-card rounded-xl p-4 space-y-1">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Barn</h4>
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t('privacy.children')}</h4>
             {[
-              { key: 'privacy_child_profile', label: childrenCount > 1 ? 'Mine barns profiler' : 'Mitt barns profil', value: childPrivacyProfile, setter: setChildPrivacyProfile },
-              { key: 'privacy_child_checkins', label: childrenCount > 1 ? 'Mine barns fjelltopp-innsjekkinger' : 'Mitt barns fjelltopp-innsjekkinger', value: childPrivacyCheckins, setter: setChildPrivacyCheckins },
+              { key: 'privacy_child_profile', label: childrenCount > 1 ? t('privacy.childrenProfiles') : t('privacy.childProfile'), value: childPrivacyProfile, setter: setChildPrivacyProfile },
+              { key: 'privacy_child_checkins', label: childrenCount > 1 ? t('privacy.childrenCheckins') : t('privacy.childCheckins'), value: childPrivacyCheckins, setter: setChildPrivacyCheckins },
             ].map(opt => (
               <div key={opt.key} className="py-3 border-b border-border/50 last:border-0">
                 <div className="flex items-center justify-between">
@@ -846,7 +846,7 @@ const SettingsPage = () => {
       <div className="space-y-4">
         {backButton(t('settings.gdpr'))}
         <div className="glass-card rounded-xl overflow-hidden divide-y divide-border">
-          {menuItem('Personvernerklæring', <Shield className="w-4 h-4" />, () => setView('privacyPolicy'))}
+          {menuItem(t('privacy.policyTitle'), <Shield className="w-4 h-4" />, () => setView('privacyPolicy'))}
           {menuItem(t('gdpr.deleteData'), <Trash2 className="w-4 h-4" />, () => setGdprSubView('deleteData'))}
           {menuItem(t('gdpr.deleteAccount'), <Trash2 className="w-4 h-4" />, () => setGdprSubView('deleteAccount'))}
           {menuItem(t('gdpr.requestData'), <Download className="w-4 h-4" />, () => setGdprSubView('downloadData'))}
@@ -864,87 +864,87 @@ const SettingsPage = () => {
           className="flex items-center gap-2 mb-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
-          <span className="font-medium">Personvernerklæring</span>
+          <span className="font-medium">{t('privacy.policyTitle')}</span>
         </button>
 
         <div className="glass-card rounded-xl p-5 space-y-5 text-sm text-muted-foreground leading-relaxed">
           <div>
-            <h2 className="font-display font-bold text-lg text-foreground mb-1">Personvernerklæring for Treningsappen</h2>
-            <p className="text-xs">Sist oppdatert: {new Date().toLocaleDateString('nb-NO', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <h2 className="font-display font-bold text-lg text-foreground mb-1">{t('privacy.policyHeading')}</h2>
+            <p className="text-xs">{t('privacy.policyUpdated')}: {new Date().toLocaleDateString(settings.language === 'en' ? 'en-GB' : 'nb-NO', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
           </div>
 
           <div className="space-y-2">
-            <h3 className="font-semibold text-foreground">1. Hvem er vi?</h3>
-            <p>Treningsappen er en trenings- og aktivitetslogg som lar deg registrere, synkronisere og analysere treningsøkter. Appen er utviklet og driftet av Treningsappen.</p>
+            <h3 className="font-semibold text-foreground">{t('privacy.section1Title')}</h3>
+            <p>{t('privacy.section1Body')}</p>
           </div>
 
           <div className="space-y-2">
-            <h3 className="font-semibold text-foreground">2. Hvilke data samler vi inn?</h3>
+            <h3 className="font-semibold text-foreground">{t('privacy.section2Title')}</h3>
             <ul className="list-disc pl-5 space-y-1">
-              <li><strong>Kontoinformasjon:</strong> E-postadresse og visningsnavn ved registrering.</li>
-              <li><strong>Treningsdata:</strong> Treningsøkter du registrerer manuelt (type, varighet, distanse, høydemeter, notater).</li>
-              <li><strong>Strava-data:</strong> Hvis du kobler Strava-kontoen din, synkroniserer vi treningsøkter, GPS-ruter, pulsdata og høydedata fra Strava. Denne dataen brukes kun for å vise deg din egen treningshistorikk.</li>
-              <li><strong>Profildata:</strong> Profilbilde, brukernavn og personverninnstillinger.</li>
-              <li><strong>Fjelltopp-innsjekkinger:</strong> Posisjonsdata og bilder ved innsjekking på fjelltopper.</li>
-              <li><strong>Mål og statistikk:</strong> Treningsmål du oppretter og beregnet statistikk.</li>
+              <li dangerouslySetInnerHTML={{ __html: t('privacy.section2Item1') }} />
+              <li dangerouslySetInnerHTML={{ __html: t('privacy.section2Item2') }} />
+              <li dangerouslySetInnerHTML={{ __html: t('privacy.section2Item3') }} />
+              <li dangerouslySetInnerHTML={{ __html: t('privacy.section2Item4') }} />
+              <li dangerouslySetInnerHTML={{ __html: t('privacy.section2Item5') }} />
+              <li dangerouslySetInnerHTML={{ __html: t('privacy.section2Item6') }} />
             </ul>
           </div>
 
           <div className="space-y-2">
-            <h3 className="font-semibold text-foreground">3. Hvordan bruker vi dataen?</h3>
+            <h3 className="font-semibold text-foreground">{t('privacy.section3Title')}</h3>
             <ul className="list-disc pl-5 space-y-1">
-              <li>Vise deg din treningshistorikk, statistikk og fremgang mot mål.</li>
-              <li>Synkronisere treningsøkter fra Strava (kun din egen data).</li>
-              <li>Vise fjelltopp-innsjekkinger og rangeringer.</li>
-              <li>Gjøre det mulig å delta i utfordringer med venner.</li>
+              <li>{t('privacy.section3Item1')}</li>
+              <li>{t('privacy.section3Item2')}</li>
+              <li>{t('privacy.section3Item3')}</li>
+              <li>{t('privacy.section3Item4')}</li>
             </ul>
           </div>
 
           <div className="space-y-2">
-            <h3 className="font-semibold text-foreground">4. Strava-integrasjon</h3>
-            <p>Vi bruker Strava sin API for å synkronisere treningsdata. I henhold til Stravas retningslinjer:</p>
+            <h3 className="font-semibold text-foreground">{t('privacy.section4Title')}</h3>
+            <p>{t('privacy.section4Intro')}</p>
             <ul className="list-disc pl-5 space-y-1">
-              <li>Din Strava-data vises kun til deg selv.</li>
-              <li>Vi deler aldri din Strava-data med andre brukere.</li>
-              <li>Du kan når som helst koble fra Strava og slette all importert data under Innstillinger → Synkronisering.</li>
-              <li>Alle synkroniserte økter lenker tilbake til den originale aktiviteten på Strava.</li>
+              <li>{t('privacy.section4Item1')}</li>
+              <li>{t('privacy.section4Item2')}</li>
+              <li>{t('privacy.section4Item3')}</li>
+              <li>{t('privacy.section4Item4')}</li>
             </ul>
           </div>
 
           <div className="space-y-2">
-            <h3 className="font-semibold text-foreground">5. Deling av data</h3>
-            <p>Vi selger aldri dataen din. Du kontrollerer selv hvem som kan se din informasjon gjennom personverninnstillingene:</p>
+            <h3 className="font-semibold text-foreground">{t('privacy.section5Title')}</h3>
+            <p>{t('privacy.section5Intro')}</p>
             <ul className="list-disc pl-5 space-y-1">
-              <li><strong>Bare meg:</strong> Kun du kan se dataen.</li>
-              <li><strong>Venner:</strong> Kun godkjente venner kan se dataen.</li>
-              <li><strong>Alle:</strong> Alle brukere av appen kan se dataen.</li>
+              <li dangerouslySetInnerHTML={{ __html: t('privacy.section5Item1') }} />
+              <li dangerouslySetInnerHTML={{ __html: t('privacy.section5Item2') }} />
+              <li dangerouslySetInnerHTML={{ __html: t('privacy.section5Item3') }} />
             </ul>
           </div>
 
           <div className="space-y-2">
-            <h3 className="font-semibold text-foreground">6. Lagring og sikkerhet</h3>
-            <p>All data lagres sikkert i skyen med kryptering. Tilgang til data er beskyttet med autentisering og radnivå-sikkerhet (RLS) i databasen. Kun du har tilgang til din egen data med mindre du eksplisitt deler den.</p>
+            <h3 className="font-semibold text-foreground">{t('privacy.section6Title')}</h3>
+            <p>{t('privacy.section6Body')}</p>
           </div>
 
           <div className="space-y-2">
-            <h3 className="font-semibold text-foreground">7. Dine rettigheter</h3>
-            <p>I henhold til GDPR og norsk personvernlovgivning har du rett til å:</p>
+            <h3 className="font-semibold text-foreground">{t('privacy.section7Title')}</h3>
+            <p>{t('privacy.section7Intro')}</p>
             <ul className="list-disc pl-5 space-y-1">
-              <li><strong>Se dataen din:</strong> Last ned all data som JSON under Innstillinger → Personvern og data.</li>
-              <li><strong>Slette dataen din:</strong> Slett alle treningsøkter, mål og innsjekkinger.</li>
-              <li><strong>Slette kontoen din:</strong> Fjern alt inkludert profil og konto permanent.</li>
-              <li><strong>Koble fra tjenester:</strong> Koble fra Strava og slett importert data når som helst.</li>
+              <li dangerouslySetInnerHTML={{ __html: t('privacy.section7Item1') }} />
+              <li dangerouslySetInnerHTML={{ __html: t('privacy.section7Item2') }} />
+              <li dangerouslySetInnerHTML={{ __html: t('privacy.section7Item3') }} />
+              <li dangerouslySetInnerHTML={{ __html: t('privacy.section7Item4') }} />
             </ul>
           </div>
 
           <div className="space-y-2">
-            <h3 className="font-semibold text-foreground">8. Informasjonskapsler og lokal lagring</h3>
-            <p>Vi bruker lokal lagring (localStorage) for å huske dine innstillinger som mørk modus, språk og rekkefølge på seksjoner. Ingen tredjeparts sporingskapsler benyttes.</p>
+            <h3 className="font-semibold text-foreground">{t('privacy.section8Title')}</h3>
+            <p>{t('privacy.section8Body')}</p>
           </div>
 
           <div className="space-y-2">
-            <h3 className="font-semibold text-foreground">9. Kontakt</h3>
-            <p>Har du spørsmål om personvern, ta kontakt via e-post: <span className="text-foreground font-medium">kontakt@treningsappen.no</span></p>
+            <h3 className="font-semibold text-foreground">{t('privacy.section9Title')}</h3>
+            <p>{t('privacy.section9Body')} <span className="text-foreground font-medium">kontakt@treningsappen.no</span></p>
           </div>
         </div>
       </div>
@@ -1571,12 +1571,12 @@ const SettingsPage = () => {
         ))}
 
         {/* Fjelltopp-kart */}
-        {helpSection('map', <Mountain className="w-5 h-5 text-[hsl(var(--success))]" />, 'bg-success/10', 'Fjelltopp-kart', (
+        {helpSection('map', <Mountain className="w-5 h-5 text-[hsl(var(--success))]" />, 'bg-success/10', t('help.peakMap'), (
           <div className="text-sm text-muted-foreground space-y-2">
-            <p>Sjekk inn på fjelltopper du bestiger. Du kan sjekke inn flere ganger på hver topp for å øke scoren din.</p>
-            <p>Bytt mellom <strong>2D og 3D-visning</strong>, og ulike kartvisninger som standard, terreng, topografisk og satellitt.</p>
-            <p>For å <strong>foreslå en ny topp</strong>, trykk og hold inne på kartet der toppen befinner seg. Om du er i nærheten vil du bli sjekket inn automatisk når toppen godkjennes.</p>
-            <p>Under <strong>Topper</strong>-fanen finner du alle tilgjengelige topper, og under <strong>Feed</strong> ser du de siste innsjekkingene.</p>
+            <p dangerouslySetInnerHTML={{ __html: t('help.peakMapP1') }} />
+            <p dangerouslySetInnerHTML={{ __html: t('help.peakMapP2') }} />
+            <p dangerouslySetInnerHTML={{ __html: t('help.peakMapP3') }} />
+            <p dangerouslySetInnerHTML={{ __html: t('help.peakMapP4') }} />
           </div>
         ))}
 
