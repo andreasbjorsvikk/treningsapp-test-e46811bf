@@ -1,4 +1,5 @@
 import { Activity } from 'lucide-react';
+import SyncStatusIndicator from '@/components/SyncStatusIndicator';
 
 interface AppHeaderProps {
   className?: string;
@@ -16,9 +17,12 @@ const AppHeader = ({ className }: AppHeaderProps) => {
             Trenings<span className="text-gradient-energy">appen</span>
           </h1>
         </div>
-        <p className="text-xs text-muted-foreground hidden sm:block">
-          Din personlige treningsdagbok
-        </p>
+        <div className="flex items-center gap-3">
+          <SyncStatusIndicator />
+          <p className="text-xs text-muted-foreground hidden sm:block">
+            Din personlige treningsdagbok
+          </p>
+        </div>
       </div>
     </header>
   );

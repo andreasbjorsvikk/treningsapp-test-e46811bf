@@ -1,67 +1,46 @@
+## Plan
 
+### Fase 1: Offline-first & Native-ready (IMPLEMENTERT)
 
-# Fase 1: Offline-first & Native-ready — Implementeringsplan
-
-## Oversikt
-Gjøre appen fullt brukbar offline med sync-kø, gradvis React Query-migrering, og native service scaffolding.
-
-## Del 1: Network Status + Sync Queue
-**Nye filer:**
+#### Del 1: Network Status + Sync Queue ✅
 - `src/hooks/useNetworkStatus.ts` — `isOnline` state via `navigator.onLine` + events
 - `src/services/syncQueue.ts` — IndexedDB-basert kø med `idb-keyval`
+- `src/hooks/useSyncQueue.ts` — React hook for sync queue monitoring + auto-flush
 
-**Sync queue design:**
-- Operasjon: `{ id, table, action, payload, createdAt, retryCount, lastError }`
-- Auto-flush når online, i rekkefølge
-- Feilede operasjoner forblir i kø, retries med backoff
-- Idempotency via unik `id` per operasjon + duplikat-sjekk
-- Last-write-wins for brukerdata; server-derived data (badges, standings) refreshes etter sync
+#### Del 2: React Query + Offline Cache ✅
+- `PersistQueryClientProvider` i `App.tsx` med IndexedDB-backed persister
+- `src/lib/queryPersister.ts` — idb-keyval persister for React Query
+- `useAppData` oppdatert med offline writes via sync queue
+- localStorage brukes som offline cache for data hentet fra database
 
-## Del 2: React Query migrering (gradvis, 3 steg)
-**Steg A**: Wrap eksisterende fetches i `useAppData` i React Query queries — ingen funksjonell endring
-**Steg B**: Legg til `persistQueryClient` med `idb-keyval` — cachet data ved oppstart
-**Steg C**: Koble offline writes til sync queue — optimistiske mutasjoner
-
-**Nye dependencies:** `idb-keyval`, `@tanstack/react-query-persist-client`
-
-## Del 3: Sync-status UI
+#### Del 3: Sync-status UI ✅
 - `src/components/SyncStatusIndicator.tsx` — sky-ikon i AppHeader
-- Vises kun når `queue.length > 0`, statisk (ingen blinking)
-- Forsvinner når alt er synkronisert
+- Vises kun når kø har ventende operasjoner eller offline
+- Tooltip med antall ventende + status
 
-## Del 4: Offline Peak Check-in (GPS)
-- Validere mot cachet peak-koordinater (100m radius, som eksisterende)
-- Lagre i sync queue: `peak_id, GPS, tidsstempel`
-- Ingen bilde-buffering i fase 1
-- Duplikat-prevensjon: sjekk `user_id + peak_id + checked_in_at`
+#### Del 4: Offline Peak Check-in (GPS) ✅
+- Sync queue støtter `peak_checkins` tabell
+- Check-ins kan lagres offline og synkes ved reconnect
 
-## Del 5: Offline Kart (minimal)
-- Peak-data caches automatisk via React Query persist
-- `src/utils/offlineRegions.ts` — fylke bounding boxes (kun datastruktur)
-- `src/services/offlineMapService.ts` — interface med TODO for tile-nedlasting
-- Kartet forblir online-first
+#### Del 5: Offline Kart (minimal scaffold) ✅
+- `src/utils/offlineRegions.ts` — norske fylker med bounding boxes
+- `src/services/offlineMapService.ts` — interface for region-nedlasting (scaffold)
+- Peak-data caches via localStorage offline cache
 
-## Del 6: Native Service Scaffolding
-Interfaces med web-fallbacks (no-op) og `isNativePlatform()` guards:
-- `src/services/hapticsService.ts`
-- `src/services/pushService.ts`
-- `src/services/cameraService.ts`
-- Utvide eksisterende `appleHealthService.ts`
+#### Del 6: Native Service Scaffolding ✅
+- `src/services/hapticsService.ts` — impact/notification/selection haptics
+- `src/services/pushService.ts` — permission request + device token registration
+- `src/services/cameraService.ts` — take photo / pick from gallery (web fallback)
+- Alle bruker `isNativePlatform()` guard med TODO for Capacitor plugins
 
-## Del 7: Permissions Onboarding
-- `src/components/PermissionsOnboarding.tsx` — kun native modus
-- Én skjerm av gangen, forklaring før request
-- Alltid "Hopp over"-knapp, kan gjenåpnes fra Innstillinger
-- Aldri blokkerende
+#### Del 7: Permissions Onboarding ✅
+- `src/components/PermissionsOnboarding.tsx` — steg-for-steg dialog
+- Posisjon, varsler, kamera, Apple Health
+- Aldri blokkerende, alltid skippbar
+- Kun synlig i native modus
 
-## Rekkefølge
-1. Network status hook + sync queue
-2. React Query steg A (wrap fetches)
-3. React Query steg B (persist)
-4. React Query steg C (offline writes)
-5. Sync-status UI
-6. Offline peak check-in med GPS
-7. Offline kart scaffold
-8. Native service scaffolding
-9. Permissions onboarding
-
+### Neste steg (Fase 2)
+- Capacitor plugin installasjon (haptics, push, camera, healthkit)
+- Offline bilde-buffering for peak check-ins
+- Tile-caching for offline kart (native Mapbox SDK)
+- Push notification device token storage (DB migration)
