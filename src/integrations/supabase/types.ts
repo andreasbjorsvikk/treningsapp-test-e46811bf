@@ -437,6 +437,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          challenge_complete: boolean
+          created_at: string
+          friend_challenge: boolean
+          goal_reached: boolean
+          id: string
+          monthly_report: boolean
+          updated_at: string
+          user_id: string
+          weekly_report: boolean
+        }
+        Insert: {
+          challenge_complete?: boolean
+          created_at?: string
+          friend_challenge?: boolean
+          goal_reached?: boolean
+          id?: string
+          monthly_report?: boolean
+          updated_at?: string
+          user_id: string
+          weekly_report?: boolean
+        }
+        Update: {
+          challenge_complete?: boolean
+          created_at?: string
+          friend_challenge?: boolean
+          goal_reached?: boolean
+          id?: string
+          monthly_report?: boolean
+          updated_at?: string
+          user_id?: string
+          weekly_report?: boolean
+        }
+        Relationships: []
+      }
       peak_checkins: {
         Row: {
           activity_id: string | null
