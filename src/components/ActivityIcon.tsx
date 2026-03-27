@@ -31,9 +31,46 @@ const iconMap: Record<string, string> = {
   tredemølle: tredemolleIcon,
 };
 
+// Pre-computed CSS filters for each activity type's light-mode text color.
+// Generated from the activityColors text values to avoid mask-image issues on mobile Safari.
+// Format: sepia + saturate + hue-rotate + brightness approximation
+const colorFilterMap: Record<string, string> = {
+  // fjelltur: rgb(47,107,69) — dark green
+  fjelltur: 'brightness(0) saturate(100%) invert(35%) sepia(30%) saturate(600%) hue-rotate(100deg) brightness(90%)',
+  // sykling: rgb(122,15,15) — dark red
+  sykling: 'brightness(0) saturate(100%) invert(15%) sepia(80%) saturate(2000%) hue-rotate(350deg) brightness(80%)',
+  // løping: rgb(42,93,168) — blue
+  løping: 'brightness(0) saturate(100%) invert(30%) sepia(60%) saturate(800%) hue-rotate(195deg) brightness(90%)',
+  // gå: rgb(75,46,31) — brown
+  gå: 'brightness(0) saturate(100%) invert(20%) sepia(40%) saturate(800%) hue-rotate(10deg) brightness(80%)',
+  // svømming: #3f6fa8 — steel blue
+  svømming: 'brightness(0) saturate(100%) invert(35%) sepia(50%) saturate(600%) hue-rotate(190deg) brightness(85%)',
+  // styrke: #000000 — black
+  styrke: 'brightness(0)',
+  // tennis: #734402 — dark orange
+  tennis: 'brightness(0) saturate(100%) invert(25%) sepia(70%) saturate(1200%) hue-rotate(25deg) brightness(80%)',
+  // yoga: rgb(121,11,150) — purple
+  yoga: 'brightness(0) saturate(100%) invert(15%) sepia(80%) saturate(2000%) hue-rotate(270deg) brightness(80%)',
+  // fotball: rgb(55,100,40) — green
+  fotball: 'brightness(0) saturate(100%) invert(30%) sepia(40%) saturate(700%) hue-rotate(85deg) brightness(85%)',
+  // trappemaskin: rgb(140,75,5) — dark amber
+  trappemaskin: 'brightness(0) saturate(100%) invert(30%) sepia(70%) saturate(1000%) hue-rotate(20deg) brightness(80%)',
+  // roing: rgb(10,100,160) — teal blue
+  roing: 'brightness(0) saturate(100%) invert(30%) sepia(60%) saturate(900%) hue-rotate(185deg) brightness(85%)',
+  // kajakk: rgb(8,100,120) — dark cyan
+  kajakk: 'brightness(0) saturate(100%) invert(30%) sepia(60%) saturate(800%) hue-rotate(165deg) brightness(80%)',
+  // tredemølle: rgb(90,30,170) — purple
+  tredemølle: 'brightness(0) saturate(100%) invert(20%) sepia(70%) saturate(1500%) hue-rotate(255deg) brightness(80%)',
+};
+
 interface ActivityIconProps {
   type: SessionType;
   className?: string;
+  /** 
+   * Color mode hint: 'white' for white icons (dark bg), 'colored' for activity-colored icons (light bg).
+   * If a raw color string is passed, 'white'-ish colors render white, others render colored.
+   * Default: white icon.
+   */
   colorOverride?: string;
   style?: React.CSSProperties;
 }
@@ -51,13 +88,15 @@ const ActivityIcon = ({ type, className = 'w-4 h-4', colorOverride, style: style
     return <CircleDot className={className} style={{ color: colorOverride || '#fff', ...style }} />;
   }
 
-  // Always use <img> — more reliable cross-browser than mask-image
-  // White icon: brightness(0) makes black, invert(1) flips to white
-  // Dark icon: brightness(0) makes black
-  const isWhiteish = !colorOverride || isLightColor(colorOverride);
-  const filter = isWhiteish
-    ? 'brightness(0) invert(1)'
-    : 'brightness(0)';
+  // Determine filter based on colorOverride
+  let filter: string;
+  if (!colorOverride || colorOverride === '#ffffff' || colorOverride === '#fff' || colorOverride === 'white') {
+    // White icon for dark backgrounds
+    filter = 'brightness(0) invert(1)';
+  } else {
+    // Use pre-computed color filter for the activity type, or fall back to the generic colored approach
+    filter = colorFilterMap[type] || 'brightness(0)';
+  }
 
   return (
     <img
@@ -69,29 +108,5 @@ const ActivityIcon = ({ type, className = 'w-4 h-4', colorOverride, style: style
     />
   );
 };
-
-/** Quick check if a color string is "light" (should render white icon on it) */
-function isLightColor(color: string): boolean {
-  // For common cases: white, light colors
-  if (!color) return true;
-  const c = color.toLowerCase().trim();
-  if (c === '#fff' || c === '#ffffff' || c === 'white') return true;
-  // rgb/rgba - check average brightness
-  const rgbMatch = c.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-  if (rgbMatch) {
-    const [, r, g, b] = rgbMatch.map(Number);
-    return (r + g + b) / 3 > 180;
-  }
-  // hex
-  const hexMatch = c.match(/^#([0-9a-f]{6})$/);
-  if (hexMatch) {
-    const hex = hexMatch[1];
-    const r = parseInt(hex.slice(0, 2), 16);
-    const g = parseInt(hex.slice(2, 4), 16);
-    const b = parseInt(hex.slice(4, 6), 16);
-    return (r + g + b) / 3 > 180;
-  }
-  return true; // default to white icon
-}
 
 export default ActivityIcon;

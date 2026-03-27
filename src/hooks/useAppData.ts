@@ -196,7 +196,8 @@ export function useAppData() {
       newSession = await workoutServiceAsync.add(user.id, data);
       await queryClient.invalidateQueries({ queryKey: key });
     } else {
-      const tempId = crypto.randomUUID();
+      // Use a deterministic temp id prefixed so we can identify offline-created entries
+      const tempId = `offline_${crypto.randomUUID()}`;
       newSession = { ...data, id: tempId } as WorkoutSession;
       queryClient.setQueryData(key, (old: WorkoutSession[] | undefined) =>
         [newSession, ...(old || [])].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -211,6 +212,7 @@ export function useAppData() {
         notes: data.notes || null,
         title: data.title || null,
         source_primary: (data as any).sourcePrimary || 'manual',
+        _offline_temp_id: tempId,
       });
     }
 
