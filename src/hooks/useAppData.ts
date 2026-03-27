@@ -125,7 +125,7 @@ export function useAppData() {
           }
           console.log('Migration complete!');
         }
-        localStorage.setItem(MIGRATED_KEY, 'true');
+        // Flag already set before migration started
         queryClient.invalidateQueries({ queryKey: ['app-data'] });
       } catch (err) {
         console.error('Migration failed:', err);
