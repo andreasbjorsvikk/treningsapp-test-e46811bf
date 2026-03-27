@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, ChevronRight, Trophy, Users, Home, Swords } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ActivityIcon from '@/components/ActivityIcon';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const TUTORIAL_KEY = 'treningslogg_community_tutorial_done';
 
@@ -12,7 +13,7 @@ interface TutorialStep {
   customContent?: React.ReactNode;
 }
 
-const ChallengeExamples = () => {
+const ChallengeExamples = ({ t }: { t: (key: string) => string }) => {
   const isDark = document.documentElement.classList.contains('dark');
   
   const getColors = (type: string) => {
@@ -48,52 +49,52 @@ const ChallengeExamples = () => {
 
   return (
     <div className="space-y-2 py-1">
-      <p className="text-xs font-semibold text-muted-foreground text-center">Eksempler:</p>
-      {renderExample('løping', 'Flest km løpt i mars', 'Løping · 1. – 31. mars')}
-      {renderExample('styrke', 'Flest styrkeøkter i 2026', 'Styrke · Hele året')}
-      {renderExample('fjelltur', 'Flest høydemeter i sommer', 'Fjelltur · Jun – Aug')}
+      <p className="text-xs font-semibold text-muted-foreground text-center">{t('tutorial.examples')}</p>
+      {renderExample('løping', t('communityTutorial.example1'), t('communityTutorial.example1Sub'))}
+      {renderExample('styrke', t('communityTutorial.example2'), t('communityTutorial.example2Sub'))}
+      {renderExample('fjelltur', t('communityTutorial.example3'), t('communityTutorial.example3Sub'))}
     </div>
   );
 };
 
-const HomePinDemo = () => (
+const HomePinDemo = ({ t }: { t: (key: string) => string }) => (
   <div className="flex items-center justify-center gap-2 py-2">
     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary">
       <Home className="w-3.5 h-3.5" />
-      <span>Vis på forsiden</span>
+      <span>{t('communityTutorial.showOnHome')}</span>
     </div>
   </div>
 );
 
-const steps: TutorialStep[] = [
-  {
-    title: 'Fellesskap',
-    text: 'Her kan du utfordre venner på ulike måter – velg aktivitetstype, metrikk og tidsperiode fritt. Stillingen oppdateres fortløpende!',
-    icon: <Swords className="w-8 h-8" />,
-    customContent: <ChallengeExamples />,
-  },
-  {
-    title: 'Utfordringer på forsiden',
-    text: 'Utfordringer du vil følge med på kan festes til forsiden, slik at du alltid ser stillingen uten å gå inn hit.',
-    icon: <Trophy className="w-8 h-8" />,
-    customContent: <HomePinDemo />,
-  },
-  {
-    title: 'Ledertavle & Venner',
-    text: 'Under «Ledertavle» kan du sammenligne deg med vennene dine på økter, distanse, tid og høydemeter – per uke, måned eller år. Under «Venner» kan du søke etter og legge til venner, se deres profil og invitere dem til utfordringer.',
-    icon: <Users className="w-8 h-8" />,
-  },
-];
-
 const CommunityTutorial = () => {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState(0);
+
+  const steps: TutorialStep[] = [
+    {
+      title: t('communityTutorial.title'),
+      text: t('communityTutorial.desc'),
+      icon: <Swords className="w-8 h-8" />,
+      customContent: <ChallengeExamples t={t} />,
+    },
+    {
+      title: t('communityTutorial.homePin'),
+      text: t('communityTutorial.homePinDesc'),
+      icon: <Trophy className="w-8 h-8" />,
+      customContent: <HomePinDemo t={t} />,
+    },
+    {
+      title: t('communityTutorial.leaderboard'),
+      text: t('communityTutorial.leaderboardDesc'),
+      icon: <Users className="w-8 h-8" />,
+    },
+  ];
 
   useEffect(() => {
     const done = localStorage.getItem(TUTORIAL_KEY);
     if (!done) setVisible(true);
 
-    // Listen for full tutorial flow trigger
     const handler = () => setVisible(true);
     window.addEventListener('show-community-tutorial', handler);
     return () => window.removeEventListener('show-community-tutorial', handler);
@@ -152,14 +153,14 @@ const CommunityTutorial = () => {
             <div className="flex gap-2">
               {step < steps.length - 1 && (
                 <Button variant="ghost" size="sm" onClick={dismiss} className="text-muted-foreground">
-                  Hopp over
+                  {t('tutorial.skip')}
                 </Button>
               )}
               <Button size="sm" onClick={next} className="gap-1">
                 {step < steps.length - 1 ? (
-                  <>Neste <ChevronRight className="w-3.5 h-3.5" /></>
+                  <>{t('tutorial.next')} <ChevronRight className="w-3.5 h-3.5" /></>
                 ) : (
-                  'Forstått!'
+                  t('tutorial.understood')
                 )}
               </Button>
             </div>

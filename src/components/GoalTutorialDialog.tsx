@@ -4,42 +4,41 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import GoalProgressVisual from '@/components/GoalProgressVisual';
 import GoalWheelsPreview from '@/components/tutorial/GoalWheelsPreview';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface GoalTutorialDialogProps {
   open: boolean;
   onClose: () => void;
 }
 
-const GoalExamples = () => (
+const GoalExamples = ({ t }: { t: (key: string) => string }) => (
   <div className="space-y-1">
-    <p className="text-xs font-semibold text-muted-foreground text-center">Eksempler:</p>
+    <p className="text-xs font-semibold text-muted-foreground text-center">{t('tutorial.examples')}</p>
     <div className="grid grid-cols-3 gap-3 py-2">
-      {/* 40 km løping */}
       <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/50 border border-border/40">
         <div className="w-16 h-16">
           <GoalProgressVisual metric="distance" activityType="løping" percent={65} current={26} target={40} />
         </div>
-        <p className="text-[11px] text-muted-foreground text-center leading-tight font-medium">40 km løping<br/>denne uken</p>
+        <p className="text-[11px] text-muted-foreground text-center leading-tight font-medium">{t('goalTutorial.example1')}</p>
       </div>
-      {/* 10 styrkeøkter */}
       <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/50 border border-border/40">
         <div className="w-16 h-16">
           <GoalProgressVisual metric="sessions" activityType="styrke" percent={40} current={4} target={10} />
         </div>
-        <p className="text-[11px] text-muted-foreground text-center leading-tight font-medium">10 styrkeøkter<br/>denne mnd</p>
+        <p className="text-[11px] text-muted-foreground text-center leading-tight font-medium">{t('goalTutorial.example2')}</p>
       </div>
-      {/* 5000 hm fjelltur */}
       <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/50 border border-border/40">
         <div className="w-16 h-16">
           <GoalProgressVisual metric="elevation" activityType="fjelltur" percent={55} current={2750} target={5000} />
         </div>
-        <p className="text-[11px] text-muted-foreground text-center leading-tight font-medium">Flest høydemeter<br/>jun–aug</p>
+        <p className="text-[11px] text-muted-foreground text-center leading-tight font-medium">{t('goalTutorial.example3')}</p>
       </div>
     </div>
   </div>
 );
 
 const GoalTutorialDialog = ({ open, onClose }: GoalTutorialDialogProps) => {
+  const { t } = useTranslation();
   const [step, setStep] = useState(0);
 
   const next = () => {
@@ -68,10 +67,8 @@ const GoalTutorialDialog = ({ open, onClose }: GoalTutorialDialogProps) => {
                 <Target className="w-8 h-8" />
               </div>
               <div className="text-center space-y-2">
-                <h3 className="font-display font-bold text-lg text-foreground">Treningsmål</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Her kan du sette et generelt treningsmål på hvor mange treningsøkter du vil ha som mål hver uke, måned, eller år. Fremdriftshjulene vil vise deg hvordan du ligger an dag for dag. Du kan når som helst justere målet senere om du ønsker det.
-                </p>
+                <h3 className="font-display font-bold text-lg text-foreground">{t('goalTutorial.title')}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t('goalTutorial.desc')}</p>
               </div>
               <GoalWheelsPreview />
             </>
@@ -81,42 +78,34 @@ const GoalTutorialDialog = ({ open, onClose }: GoalTutorialDialogProps) => {
                 <Sparkles className="w-8 h-8" />
               </div>
               <div className="text-center space-y-2">
-                <h3 className="font-display font-bold text-lg text-foreground">Andre mål</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Du kan også sette mer spesifikke mål, med valgfri tidsperiode.
-                </p>
+                <h3 className="font-display font-bold text-lg text-foreground">{t('goalTutorial.otherGoals')}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{t('goalTutorial.otherGoalsDesc')}</p>
               </div>
-              <GoalExamples />
+              <GoalExamples t={t} />
               <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-                <span>Disse kan vises på forsiden ved å trykke på</span>
+                <span>{t('goalTutorial.showOnHome')}</span>
                 <Home className="w-3.5 h-3.5 text-primary inline" />
               </div>
             </>
           )}
 
-          {/* Progress dots + buttons */}
           <div className="flex items-center justify-between pt-2">
             <div className="flex gap-1.5">
               {[0, 1].map(i => (
-                <div
-                  key={i}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    i === step ? 'bg-primary' : 'bg-muted'
-                  }`}
-                />
+                <div key={i} className={`w-2 h-2 rounded-full transition-colors ${i === step ? 'bg-primary' : 'bg-muted'}`} />
               ))}
             </div>
             <div className="flex gap-2">
               {step === 0 && (
                 <Button variant="ghost" size="sm" onClick={() => { onClose(); setStep(0); }} className="text-muted-foreground">
-                  Hopp over
+                  {t('tutorial.skip')}
                 </Button>
               )}
               <Button size="sm" onClick={next} className="gap-1">
                 {step === 0 ? (
-                  <>Neste <ChevronRight className="w-3.5 h-3.5" /></>
+                  <>{t('tutorial.next')} <ChevronRight className="w-3.5 h-3.5" /></>
                 ) : (
-                  'Forstått!'
+                  t('tutorial.understood')
                 )}
               </Button>
             </div>

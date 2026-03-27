@@ -4,8 +4,8 @@ import CalendarTutorialDialog from '@/components/CalendarTutorialDialog';
 import TrainingTutorialDialog from '@/components/TrainingTutorialDialog';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from '@/i18n/useTranslation';
 
-// Order: welcome → calendar → map → training → community → settings
 type TutorialPhase = 'welcome' | 'calendar' | 'map' | 'training' | 'community' | 'settings' | 'done';
 
 const PHASE_ORDER: TutorialPhase[] = ['welcome', 'calendar', 'map', 'training', 'community', 'settings'];
@@ -17,6 +17,7 @@ interface FullTutorialFlowProps {
 }
 
 const FullTutorialFlow = ({ open, onClose, onNavigateTab }: FullTutorialFlowProps) => {
+  const { t } = useTranslation();
   const [phase, setPhase] = useState<TutorialPhase>('welcome');
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
@@ -127,17 +128,23 @@ const FullTutorialFlow = ({ open, onClose, onNavigateTab }: FullTutorialFlowProp
       {phase === 'training' && (
         <TrainingTutorialDialog open={true} onClose={advanceToNext} onRequestExit={handleRequestClose} />
       )}
-      {/* Map, Community and Settings tutorials are self-rendering, triggered via events */}
 
-      {/* Exit confirmation dialog */}
       <Dialog open={showExitConfirm} onOpenChange={(v) => { if (!v) cancelExit(); }}>
         <DialogContent className="max-w-xs p-0 gap-0 border-0 bg-transparent shadow-none [&>button]:hidden">
           <div className="bg-card border border-border rounded-2xl shadow-2xl p-6 space-y-4 text-center">
-            <h3 className="font-display font-bold text-lg text-foreground">Vil du avslutte tutorial?</h3>
-            <p className="text-sm text-muted-foreground">Du kan starte den igjen fra hjelp-seksjonen i innstillinger.</p>
+            <h3 className="font-display font-bold text-lg text-foreground">
+              {t('language') === 'en' ? 'Exit tutorial?' : 'Vil du avslutte tutorial?'}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {t('language') === 'en' ? 'You can restart it from the help section in settings.' : 'Du kan starte den igjen fra hjelp-seksjonen i innstillinger.'}
+            </p>
             <div className="flex gap-3 justify-center pt-2">
-              <Button variant="outline" size="sm" onClick={cancelExit}>Fortsett</Button>
-              <Button variant="destructive" size="sm" onClick={confirmExit}>Avslutt</Button>
+              <Button variant="outline" size="sm" onClick={cancelExit}>
+                {t('language') === 'en' ? 'Continue' : 'Fortsett'}
+              </Button>
+              <Button variant="destructive" size="sm" onClick={confirmExit}>
+                {t('language') === 'en' ? 'Exit' : 'Avslutt'}
+              </Button>
             </div>
           </div>
         </DialogContent>
