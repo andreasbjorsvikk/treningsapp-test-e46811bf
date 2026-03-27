@@ -15,6 +15,7 @@ interface TrendChartProps {
   year: number;
   metric: ChartMetric;
   chartType?: 'bar' | 'line';
+  selectedTypes?: SessionType[];
 }
 
 const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Des'];
@@ -45,11 +46,15 @@ const metricUnitLabel: Record<ChartMetric, string> = {
   steps: 'Skritt',
 };
 
-const TrendChart = ({ sessions, period, month, year, metric, chartType = 'bar' }: TrendChartProps) => {
+const TrendChart = ({ sessions, period, month, year, metric, chartType = 'bar', selectedTypes }: TrendChartProps) => {
   const { getTypeColor, settings } = useSettings();
   const isMobile = useIsMobile();
   const isDark = settings.darkMode;
   const suffix = metricSuffix[metric];
+
+  const disabledTypes = settings.disabledSessionTypes || [];
+  const enabledTypes = allSessionTypes.filter(t => !disabledTypes.includes(t));
+  const isAllSelected = selectedTypes ? enabledTypes.every(t => selectedTypes.includes(t)) : true;
 
   const typeOrder = useMemo(() => {
     const totals: { type: SessionType; total: number }[] = allSessionTypes.map(type => ({
@@ -117,11 +122,12 @@ const TrendChart = ({ sessions, period, month, year, metric, chartType = 'bar' }
       <div className="bg-card/95 backdrop-blur-md border border-border/40 rounded-2xl p-3.5 text-xs shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
         <p className="font-display font-bold text-foreground mb-2 text-sm">{label}</p>
         {items.map((item: any) => {
-          const color = typeColors[item.dataKey] || getTypeColor(item.dataKey as SessionType);
+          const isTotal = item.dataKey === '_total';
+          const color = isTotal ? 'hsl(var(--foreground))' : (typeColors[item.dataKey] || getTypeColor(item.dataKey as SessionType));
           return (
             <div key={item.dataKey} className="flex items-center gap-2.5 py-0.5">
               <span className="w-3 h-3 rounded-md" style={{ backgroundColor: color }} />
-              <span className="text-muted-foreground">{sessionTypeConfig[item.dataKey as SessionType]?.label}</span>
+              <span className="text-muted-foreground">{isTotal ? 'Totalt' : sessionTypeConfig[item.dataKey as SessionType]?.label}</span>
               <span className="font-bold ml-auto text-foreground">{metric === 'minutes' ? `${Math.round(item.value / 60 * 10) / 10}` : item.value}{suffix}</span>
             </div>
           );
@@ -135,8 +141,8 @@ const TrendChart = ({ sessions, period, month, year, metric, chartType = 'bar' }
     return [{ label: '' }];
   }, [data]);
 
-  // For line chart mode, get the dominant type color
-  const dominantColor = typeOrder.length > 0 ? typeColors[typeOrder[0]] : 'hsl(var(--primary))';
+  // Foreground color for "all" combined line
+  const foregroundColor = isDark ? 'hsl(0, 0%, 95%)' : 'hsl(0, 0%, 10%)';
 
   return (
     <div className="rounded-2xl p-4 flex flex-col h-full relative overflow-hidden bg-gradient-to-br from-card/90 to-card/60 backdrop-blur-xl border border-border/30 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
@@ -146,50 +152,86 @@ const TrendChart = ({ sessions, period, month, year, metric, chartType = 'bar' }
       <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           {chartType === 'line' ? (
-            <AreaChart
-              data={hasData ? data : safeData}
-              margin={{ top: 20, right: 4, left: isMobile ? 4 : 6, bottom: 0 }}
-            >
-              <defs>
-                {typeOrder.map(type => (
-                  <linearGradient key={type} id={`gradient-${type}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={typeColors[type]} stopOpacity={0.4} />
-                    <stop offset="100%" stopColor={typeColors[type]} stopOpacity={0.05} />
+            // LINE CHART MODE
+            isAllSelected ? (
+              // All selected: single combined line in foreground color
+              <AreaChart
+                data={hasData ? data : safeData}
+                margin={{ top: 20, right: 4, left: isMobile ? 4 : 6, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="gradient-all" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={foregroundColor} stopOpacity={0.15} />
+                    <stop offset="100%" stopColor={foregroundColor} stopOpacity={0.02} />
                   </linearGradient>
-                ))}
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.25} horizontal={true} vertical={false} />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: isMobile ? 9 : 11, fill: 'hsl(var(--muted-foreground))', fontWeight: 500 }}
-                interval={isMobile && period === 'month' ? 4 : 0}
-                tickLine={false}
-                axisLine={false}
-                height={25}
-              />
-              <YAxis
-                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontWeight: 500 }}
-                tickLine={false}
-                axisLine={false}
-                width={isMobile ? 32 : 42}
-                tickFormatter={(v) => metric === 'minutes' ? `${Math.round(v / 60 * 10) / 10}` : `${v}`}
-              />
-              {hasData && <Tooltip content={<CustomTooltip />} />}
-              {hasData && typeOrder.map((type) => (
-                <Area
-                  key={type}
-                  dataKey={type}
-                  stackId="stack"
-                  type="monotone"
-                  stroke={typeColors[type]}
-                  strokeWidth={2}
-                  fill={`url(#gradient-${type})`}
-                  dot={false}
-                  activeDot={{ r: 4, strokeWidth: 2, fill: 'hsl(var(--background))' }}
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.25} horizontal={true} vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: isMobile ? 9 : 11, fill: 'hsl(var(--muted-foreground))', fontWeight: 500 }}
+                  interval={isMobile && period === 'month' ? 4 : 0}
+                  tickLine={false}
+                  axisLine={false}
+                  height={25}
                 />
-              ))}
-            </AreaChart>
+                <YAxis
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontWeight: 500 }}
+                  tickLine={false}
+                  axisLine={false}
+                  width={isMobile ? 32 : 42}
+                  tickFormatter={(v) => metric === 'minutes' ? `${Math.round(v / 60 * 10) / 10}` : `${v}`}
+                />
+                {hasData && <Tooltip content={<CustomTooltip />} />}
+                {hasData && (
+                  <Area
+                    dataKey="_total"
+                    type="monotone"
+                    stroke={foregroundColor}
+                    strokeWidth={2}
+                    fill="url(#gradient-all)"
+                    dot={false}
+                    activeDot={{ r: 4, strokeWidth: 2, fill: 'hsl(var(--background))' }}
+                  />
+                )}
+              </AreaChart>
+            ) : (
+              // Individual types: non-stacked lines
+              <LineChart
+                data={hasData ? data : safeData}
+                margin={{ top: 20, right: 4, left: isMobile ? 4 : 6, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.25} horizontal={true} vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: isMobile ? 9 : 11, fill: 'hsl(var(--muted-foreground))', fontWeight: 500 }}
+                  interval={isMobile && period === 'month' ? 4 : 0}
+                  tickLine={false}
+                  axisLine={false}
+                  height={25}
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontWeight: 500 }}
+                  tickLine={false}
+                  axisLine={false}
+                  width={isMobile ? 32 : 42}
+                  tickFormatter={(v) => metric === 'minutes' ? `${Math.round(v / 60 * 10) / 10}` : `${v}`}
+                />
+                {hasData && <Tooltip content={<CustomTooltip />} />}
+                {hasData && typeOrder.map((type) => (
+                  <Line
+                    key={type}
+                    dataKey={type}
+                    type="monotone"
+                    stroke={typeColors[type]}
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 4, strokeWidth: 2, fill: 'hsl(var(--background))' }}
+                  />
+                ))}
+              </LineChart>
+            )
           ) : (
+            // BAR CHART MODE (unchanged stacked behavior)
             <BarChart
               data={hasData ? data : safeData}
               barCategoryGap={isMobile ? '12%' : '20%'}
