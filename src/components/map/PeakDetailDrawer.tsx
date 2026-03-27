@@ -160,6 +160,8 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
       setUserDistanceToPeak(null);
       setActiveTab('info');
     }
+    // Reset calculated elevation gain when peak changes
+    setCalculatedElevGain(null);
   }, [open, peak?.id]);
 
   const [userDistanceToPeak, setUserDistanceToPeak] = useState<number | null>(null);

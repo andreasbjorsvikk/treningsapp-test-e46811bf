@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { getNotifications, markAllNotificationsRead, respondToChallenge, NotificationRow } from '@/services/communityService';
 import { supabase } from '@/integrations/supabase/client';
-import { Mail, Settings, Trophy, UserPlus, Loader2, Check, X, Eye, Baby } from 'lucide-react';
+import { Mail, Settings, Trophy, UserPlus, Loader2, Check, X, Eye, Baby, Mountain } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toast } from 'sonner';
 
@@ -12,6 +12,7 @@ interface NotificationSheetProps {
   onNavigateToFriends?: () => void;
   onViewChallenge?: (challengeId: string) => void;
   onNavigateToProfile?: () => void;
+  onNavigateToRecords?: () => void;
 }
 const iconMap: Record<string, typeof Mail> = {
   invite: Mail,
@@ -19,6 +20,7 @@ const iconMap: Record<string, typeof Mail> = {
   challenge_ended: Trophy,
   friend_request: UserPlus,
   child_share: Baby,
+  hike_share: Mountain,
 };
 
 interface EnrichedNotification extends NotificationRow {
@@ -26,7 +28,7 @@ interface EnrichedNotification extends NotificationRow {
   alreadyResponded?: boolean;
 }
 
-const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge, onNavigateToProfile }: NotificationSheetProps) => {
+const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge, onNavigateToProfile, onNavigateToRecords }: NotificationSheetProps) => {
   const { t } = useTranslation();
   const [notifications, setNotifications] = useState<EnrichedNotification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,6 +107,19 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
       }
     }
 
+    // Pre-fetch hike share statuses
+    const hikeShareIds = raw.filter(n => n.type === 'hike_share' && n.challenge_id).map(n => n.challenge_id!);
+    const respondedHikeShares = new Set<string>();
+    if (hikeShareIds.length > 0) {
+      const { data: hikeShares } = await supabase
+        .from('hiking_record_shares')
+        .select('id, status')
+        .in('id', hikeShareIds);
+      for (const s of hikeShares || []) {
+        if ((s as any).status !== 'pending') respondedHikeShares.add((s as any).id);
+      }
+    }
+
     const enriched = raw.map(n => {
       let alreadyResponded = false;
 
@@ -126,6 +141,10 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
       }
 
       if (n.type === 'child_share' && n.challenge_id && respondedChildShares.has(n.challenge_id)) {
+        alreadyResponded = true;
+      }
+
+      if (n.type === 'hike_share' && n.challenge_id && respondedHikeShares.has(n.challenge_id)) {
         alreadyResponded = true;
       }
 
@@ -302,6 +321,35 @@ const NotificationSheet = ({ open, onClose, onNavigateToFriends, onViewChallenge
                             <X className="w-3 h-3" /> Avvis
                           </button>
                         </div>
+                      </div>
+                    )}
+                    {n.type === 'hike_share' && n.challenge_id && !n.alreadyResponded && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          onClick={() => {
+                            handleClose();
+                            setTimeout(() => onNavigateToRecords?.(), 150);
+                          }}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+                        >
+                          <Eye className="w-3 h-3" /> Se invitasjon
+                        </button>
+                        <button
+                          onClick={async () => {
+                            setRespondingTo(n.challenge_id);
+                            try {
+                              await supabase.from('hiking_record_shares').delete().eq('id', n.challenge_id);
+                              toast.success('Avslått');
+                              const updated = await enrichNotifications();
+                              setNotifications(updated);
+                            } catch { toast.error('Kunne ikke avslå'); }
+                            setRespondingTo(null);
+                          }}
+                          disabled={respondingTo === n.challenge_id}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-secondary text-foreground text-xs font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50"
+                        >
+                          <X className="w-3 h-3" /> Avslå
+                        </button>
                       </div>
                     )}
                     <p className="text-[10px] text-muted-foreground mt-1">{timeAgo}</p>

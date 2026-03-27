@@ -5,7 +5,7 @@ import { formatDuration } from '@/utils/workoutUtils';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Trophy, ChevronRight, Plus, Trash2, Mountain, Pencil, UserPlus, X, ArrowLeft, Heart, Route, ArrowUpRight, Clock, Calendar, FileText } from 'lucide-react';
+import { Trophy, ChevronRight, Plus, Trash2, Mountain, Pencil, UserPlus, X, ArrowLeft, Heart, Route, ArrowUpRight, Clock, Calendar, FileText, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -162,6 +162,15 @@ const RecordsSection = () => {
   const [friendToRemove, setFriendToRemove] = useState<string | null>(null);
   const [showSharedFriends, setShowSharedFriends] = useState(false);
 
+  // Pending hike share invitations received by the user
+  const [pendingInvitations, setPendingInvitations] = useState<{
+    id: string;
+    hikingRecordId: string;
+    hikeName: string;
+    fromUsername: string;
+    fromAvatarUrl?: string;
+  }[]>([]);
+
   // Entry detail view
   const [selectedEntry, setSelectedEntry] = useState<{ entry: HikingEntry; isShared: boolean } | null>(null);
   const [editingEntryTime, setEditingEntryTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
@@ -203,6 +212,38 @@ const RecordsSection = () => {
   }, [user]);
 
   useEffect(() => { loadHikingRecords(); }, [loadHikingRecords]);
+
+  // Load pending hike share invitations received by user
+  const loadPendingInvitations = useCallback(async () => {
+    if (!user) return;
+    const { data: pendingShares } = await supabase
+      .from('hiking_record_shares')
+      .select('id, hiking_record_id, owner_id, status')
+      .eq('shared_with_user_id', user.id)
+      .eq('status', 'pending') as any;
+    if (!pendingShares || pendingShares.length === 0) { setPendingInvitations([]); return; }
+    
+    const recordIds = [...new Set(pendingShares.map((s: any) => s.hiking_record_id))] as string[];
+    const ownerIds = [...new Set(pendingShares.map((s: any) => s.owner_id))] as string[];
+    
+    const [{ data: records }, { data: profiles }] = await Promise.all([
+      supabase.from('hiking_records').select('id, name').in('id', recordIds),
+      supabase.from('profiles').select('id, username, avatar_url').in('id', ownerIds),
+    ]);
+    
+    const recordMap = new Map((records || []).map((r: any) => [r.id, r.name]));
+    const profileMap = new Map((profiles || []).map((p: any) => [p.id, { username: p.username, avatar_url: p.avatar_url }]));
+    
+    setPendingInvitations(pendingShares.map((s: any) => ({
+      id: s.id,
+      hikingRecordId: s.hiking_record_id,
+      hikeName: recordMap.get(s.hiking_record_id) || 'Ukjent',
+      fromUsername: profileMap.get(s.owner_id)?.username || 'Ukjent',
+      fromAvatarUrl: profileMap.get(s.owner_id)?.avatar_url,
+    })));
+  }, [user]);
+
+  useEffect(() => { loadPendingInvitations(); }, [loadPendingInvitations]);
 
   // Migrate localStorage hiking records to DB on first load
   useEffect(() => {
@@ -557,14 +598,14 @@ const RecordsSection = () => {
   // Invite friend to share hike
   const handleInviteFriend = async (friendId: string) => {
     if (!selectedHike || !user) return;
-    await supabase.from('hiking_record_shares').insert({
+    const { data: shareRow } = await supabase.from('hiking_record_shares').insert({
       hiking_record_id: selectedHike.id,
       owner_id: user.id,
       shared_with_user_id: friendId,
       status: 'pending',
-    } as any);
+    } as any).select().single();
     
-    // Send notification
+    // Send notification with share ID stored in challenge_id field
     await supabase.from('community_notifications').insert({
       user_id: friendId,
       from_user_id: user.id,
@@ -573,6 +614,7 @@ const RecordsSection = () => {
       message: language === 'no' 
         ? `har invitert deg til å dele fjellturen "${selectedHike.name}"`
         : `invited you to share the hike "${selectedHike.name}"`,
+      challenge_id: (shareRow as any)?.id || null,
     });
     
     toast.success(t('records.inviteSent'));
@@ -706,6 +748,50 @@ const RecordsSection = () => {
           >
             <Plus className="w-4 h-4 mr-2" /> {t('records.addHike')}
           </Button>
+
+          {/* Pending invitations received */}
+          {pendingInvitations.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
+                {language === 'no' ? 'Invitasjoner' : 'Invitations'}
+              </p>
+              {pendingInvitations.map(inv => (
+                <div key={inv.id} className="glass-card rounded-xl p-3 flex items-center gap-3">
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={inv.fromAvatarUrl} />
+                    <AvatarFallback className="text-[10px]">{(inv.fromUsername || '?')[0]}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate">{inv.hikeName}</p>
+                    <p className="text-xs text-muted-foreground">{language === 'no' ? `Fra ${inv.fromUsername}` : `From ${inv.fromUsername}`}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={async () => {
+                        await supabase.from('hiking_record_shares').update({ status: 'accepted' } as any).eq('id', inv.id);
+                        toast.success(language === 'no' ? 'Godkjent!' : 'Accepted!');
+                        await loadPendingInvitations();
+                        await loadHikingRecords();
+                      }}
+                      className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+                    >
+                      <Check className="w-3 h-3 inline mr-1" />{language === 'no' ? 'Godkjenn' : 'Accept'}
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await supabase.from('hiking_record_shares').delete().eq('id', inv.id) as any;
+                        toast.success(language === 'no' ? 'Avslått' : 'Declined');
+                        await loadPendingInvitations();
+                      }}
+                      className="px-3 py-1.5 rounded-md bg-secondary text-foreground text-xs font-medium hover:bg-secondary/80 transition-colors"
+                    >
+                      <X className="w-3 h-3 inline mr-1" />{language === 'no' ? 'Avslå' : 'Decline'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {hikingRecords.length === 0 ? (
             <p className="text-center py-8 text-muted-foreground text-sm">
@@ -1247,6 +1333,19 @@ const RecordsSection = () => {
                       </Avatar>
                       <span className="text-xs flex-1">{s.username}</span>
                       <span className="text-xs text-muted-foreground">{t('records.pending')}</span>
+                      <button
+                        onClick={async () => {
+                          await supabase.from('hiking_record_shares').delete().eq('id', s.id) as any;
+                          // Also remove the notification
+                          await supabase.from('community_notifications').delete().eq('challenge_id', s.id).eq('type', 'hike_share') as any;
+                          if (selectedHike) await loadShares(selectedHike.id);
+                          toast.success(language === 'no' ? 'Invitasjon trukket tilbake' : 'Invitation withdrawn');
+                        }}
+                        className="p-1 rounded hover:bg-destructive/10 transition-colors"
+                        title={language === 'no' ? 'Trekk tilbake' : 'Withdraw'}
+                      >
+                        <X className="w-3.5 h-3.5 text-destructive" />
+                      </button>
                     </div>
                   ))}
                 </div>
