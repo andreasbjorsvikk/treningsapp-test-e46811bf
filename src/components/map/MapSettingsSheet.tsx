@@ -2,6 +2,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Settings2 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type PeakFilter = 'all' | 'taken' | 'not_taken';
 type HeatmapPeriod = 'year' | 'total';
@@ -21,17 +22,6 @@ interface MapSettingsSheetProps {
   onOnlyReachedThisYearChange: (v: boolean) => void;
 }
 
-const peakFilters: { id: PeakFilter; label: string }[] = [
-  { id: 'all', label: 'Alle' },
-  { id: 'taken', label: 'Nådd' },
-  { id: 'not_taken', label: 'Ikke nådd' },
-];
-
-const heatmapPeriods: { id: HeatmapPeriod; label: string }[] = [
-  { id: 'year', label: 'I år' },
-  { id: 'total', label: 'Totalt' },
-];
-
 const MapSettingsSheet = ({
   open, onOpenChange,
   peakFilter, onPeakFilterChange,
@@ -40,74 +30,66 @@ const MapSettingsSheet = ({
   heatmapPeriod, onHeatmapPeriodChange,
   onlyReachedThisYear, onOnlyReachedThisYearChange,
 }: MapSettingsSheetProps) => {
+  const { t } = useTranslation();
+
+  const peakFilters: { id: PeakFilter; label: string }[] = [
+    { id: 'all', label: t('mapSettings.all') },
+    { id: 'taken', label: t('mapSettings.reached') },
+    { id: 'not_taken', label: t('mapSettings.notReached') },
+  ];
+
+  const heatmapPeriods: { id: HeatmapPeriod; label: string }[] = [
+    { id: 'year', label: t('mapSettings.thisYear') },
+    { id: 'total', label: t('mapSettings.total') },
+  ];
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="max-h-[75vh] rounded-t-2xl">
         <SheetHeader className="pb-2">
-          <SheetTitle className="text-left">Kartinnstillinger</SheetTitle>
+          <SheetTitle className="text-left">{t('mapSettings.title')}</SheetTitle>
         </SheetHeader>
         <div className="space-y-6 pt-2 pb-4">
-          {/* Peak visibility filter */}
           <div className="space-y-3">
-            <Label className="text-sm font-semibold">Vis topper</Label>
+            <Label className="text-sm font-semibold">{t('mapSettings.showPeaks')}</Label>
             <div className="flex gap-2">
               {peakFilters.map(f => (
-                <button
-                  key={f.id}
-                  onClick={() => onPeakFilterChange(f.id)}
+                <button key={f.id} onClick={() => onPeakFilterChange(f.id)}
                   className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    peakFilter === f.id
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {f.label}
-                </button>
+                    peakFilter === f.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
+                  }`}>{f.label}</button>
               ))}
             </div>
           </div>
-
-          {/* Only reached this year toggle */}
           <div className="flex items-center justify-between">
             <div>
-              <Label className="text-sm font-semibold">Vis kun topper nådd i år</Label>
-              <p className="text-xs text-muted-foreground mt-0.5">Vis fjellkartet basert kun på inneværende år</p>
+              <Label className="text-sm font-semibold">{t('mapSettings.onlyThisYear')}</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('mapSettings.onlyThisYearDesc')}</p>
             </div>
             <Switch checked={onlyReachedThisYear} onCheckedChange={onOnlyReachedThisYearChange} />
           </div>
-
-          {/* Area stats toggle */}
           <div className="flex items-center justify-between">
             <div>
-              <Label className="text-sm font-semibold">Vis område-statistikk</Label>
-              <p className="text-xs text-muted-foreground mt-0.5">Kommuner med topper og din progresjon</p>
+              <Label className="text-sm font-semibold">{t('mapSettings.areaStats')}</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('mapSettings.areaStatsDesc')}</p>
             </div>
             <Switch checked={showAreaStats} onCheckedChange={onShowAreaStatsChange} />
           </div>
-
-          {/* Heatmap toggle */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-sm font-semibold">Vis heatmap av mine turer</Label>
-                <p className="text-xs text-muted-foreground mt-0.5">GPS-løyper fra dine økter</p>
+                <Label className="text-sm font-semibold">{t('mapSettings.heatmap')}</Label>
+                <p className="text-xs text-muted-foreground mt-0.5">{t('mapSettings.heatmapDesc')}</p>
               </div>
               <Switch checked={showHeatmap} onCheckedChange={onShowHeatmapChange} />
             </div>
             {showHeatmap && (
               <div className="flex gap-2">
                 {heatmapPeriods.map(p => (
-                  <button
-                    key={p.id}
-                    onClick={() => onHeatmapPeriodChange(p.id)}
+                  <button key={p.id} onClick={() => onHeatmapPeriodChange(p.id)}
                     className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      heatmapPeriod === p.id
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {p.label}
-                  </button>
+                      heatmapPeriod === p.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
+                    }`}>{p.label}</button>
                 ))}
               </div>
             )}

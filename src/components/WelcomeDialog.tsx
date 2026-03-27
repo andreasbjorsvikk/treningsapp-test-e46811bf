@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, ChevronRight, Home, CalendarDays, Map, Dumbbell, Users, Settings, Sparkles, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useTranslation } from '@/i18n/useTranslation';
 import connectWithStravaImg from '@/assets/strava/connect-with-strava.png';
 
 interface WelcomeDialogProps {
@@ -12,19 +13,20 @@ interface WelcomeDialogProps {
   onRequestExit?: () => void;
 }
 
-const tabs = [
-  { icon: Home, label: 'Hjem', desc: 'Oversikt, mål og siste økter' },
-  { icon: CalendarDays, label: 'Kalender', desc: 'Se og legg til økter dag for dag' },
-  { icon: Map, label: 'Kart', desc: 'Sjekk inn på fjelltopper' },
-  { icon: Dumbbell, label: 'Trening', desc: 'Statistikk, mål og historikk' },
-  { icon: Users, label: 'Fellesskap', desc: 'Utfordringer og venner' },
-  { icon: Settings, label: 'Innstillinger', desc: 'Tilpass appen etter dine ønsker' },
-];
-
 const TOTAL_STEPS = 3;
 
 const WelcomeDialog = ({ open, onClose, username, onNavigateToStrava, onRequestExit }: WelcomeDialogProps) => {
   const [step, setStep] = useState(0);
+  const { t } = useTranslation();
+
+  const tabs = [
+    { icon: Home, label: t('welcome.tab.home'), desc: t('welcome.tab.homeDesc') },
+    { icon: CalendarDays, label: t('welcome.tab.calendar'), desc: t('welcome.tab.calendarDesc') },
+    { icon: Map, label: t('welcome.tab.map'), desc: t('welcome.tab.mapDesc') },
+    { icon: Dumbbell, label: t('welcome.tab.training'), desc: t('welcome.tab.trainingDesc') },
+    { icon: Users, label: t('welcome.tab.community'), desc: t('welcome.tab.communityDesc') },
+    { icon: Settings, label: t('welcome.tab.settings'), desc: t('welcome.tab.settingsDesc') },
+  ];
 
   const handleOpenChange = (v: boolean) => {
     if (!v) { onClose(); setStep(0); }
@@ -53,18 +55,18 @@ const WelcomeDialog = ({ open, onClose, username, onNavigateToStrava, onRequestE
               </div>
               <div className="text-center space-y-2">
                 <h3 className="font-display font-bold text-xl text-foreground">
-                  Velkommen{username ? `, ${username}` : ''}!
+                  {t('welcome.title')}{username ? `, ${username}` : ''}!
                 </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  La oss ta en rask titt på hva du kan gjøre i appen.
+                  {t('welcome.subtitle')}
                 </p>
               </div>
             </>
           ) : step === 1 ? (
             <>
               <div className="text-center space-y-1">
-                <h3 className="font-display font-bold text-lg text-foreground">Utforsk fanene</h3>
-                <p className="text-xs text-muted-foreground">Trykk på fanene for å utforske</p>
+                <h3 className="font-display font-bold text-lg text-foreground">{t('welcome.exploreTabs')}</h3>
+                <p className="text-xs text-muted-foreground">{t('welcome.exploreTabsDesc')}</p>
               </div>
               <div className="space-y-2">
                 {tabs.map(({ icon: Icon, label, desc }) => (
@@ -86,9 +88,9 @@ const WelcomeDialog = ({ open, onClose, username, onNavigateToStrava, onRequestE
                 <RefreshCw className="w-8 h-8" />
               </div>
               <div className="text-center space-y-2">
-                <h3 className="font-display font-bold text-lg text-foreground">Tips: Strava-synkronisering</h3>
+                <h3 className="font-display font-bold text-lg text-foreground">{t('welcome.stravaTip')}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Koble til Strava i innstillinger for å få dine Strava-økter automatisk inn i appen. Du kan også der velge å importere alle tidligere Strava-økter for å få alt med på statistikken.
+                  {t('welcome.stravaDesc')}
                 </p>
               </div>
               <div className="flex justify-center pt-1">
@@ -113,7 +115,7 @@ const WelcomeDialog = ({ open, onClose, username, onNavigateToStrava, onRequestE
               ))}
             </div>
             <Button size="sm" onClick={next} className="gap-1">
-              {step < TOTAL_STEPS - 1 ? <>Neste <ChevronRight className="w-3.5 h-3.5" /></> : 'La oss begynne!'}
+              {step < TOTAL_STEPS - 1 ? <>{t('tutorial.next')} <ChevronRight className="w-3.5 h-3.5" /></> : t('tutorial.letsBegin')}
             </Button>
           </div>
         </div>

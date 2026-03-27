@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BarChart3, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ReportPromptProps {
   open: boolean;
@@ -12,6 +13,7 @@ interface ReportPromptProps {
 }
 
 const ReportPrompt = ({ open, type, onView, onLater, onDismiss }: ReportPromptProps) => {
+  const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onDismiss(); }}>
       <DialogContent className="max-w-xs p-0 gap-0 border-0 bg-transparent shadow-none [&>button]:hidden">
@@ -23,17 +25,17 @@ const ReportPrompt = ({ open, type, onView, onLater, onDismiss }: ReportPromptPr
           </div>
           <div className="space-y-1">
             <h3 className="font-display font-bold text-lg text-foreground">
-              {type === 'week' ? 'Din ukesrapport er klar' : 'Din månedsrapport er klar'}
+              {type === 'week' ? t('reportPrompt.weekReady') : t('reportPrompt.monthReady')}
             </h3>
             <p className="text-sm text-muted-foreground">
-              Se en oppsummering av {type === 'week' ? 'uken' : 'måneden'} din.
+              {type === 'week' ? t('reportPrompt.seeWeekSummary') : t('reportPrompt.seeMonthSummary')}
             </p>
           </div>
           <div className="flex flex-col gap-2 pt-2">
-            <Button onClick={onView} className="w-full">Se rapport</Button>
-            <Button variant="outline" onClick={onLater} className="w-full">Se senere</Button>
+            <Button onClick={onView} className="w-full">{t('reportPrompt.viewReport')}</Button>
+            <Button variant="outline" onClick={onLater} className="w-full">{t('reportPrompt.later')}</Button>
             <button onClick={onDismiss} className="text-xs text-muted-foreground hover:text-foreground transition-colors py-1">
-              Nei takk
+              {t('reportPrompt.noThanks')}
             </button>
           </div>
         </div>
