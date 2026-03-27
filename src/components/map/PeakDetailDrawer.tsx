@@ -115,8 +115,22 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
   const [allCheckins, setAllCheckins] = useState<(CheckinWithProfile & { childProfile?: ChildProfile | null })[]>([]);
   const [loadingAllCheckins, setLoadingAllCheckins] = useState(false);
 
+  // Calculate elevation gain from route geojson
+  const routeElevationGain = useMemo(() => {
+    if (!peak?.route_geojson?.coordinates) return null;
+    const coords = peak.route_geojson.coordinates;
+    if (!coords.length || !coords[0]?.[2]) return null;
+    let gain = 0;
+    for (let i = 1; i < coords.length; i++) {
+      const diff = (coords[i][2] || 0) - (coords[i - 1][2] || 0);
+      if (diff > 0) gain += diff;
+    }
+    return Math.round(gain);
+  }, [peak?.route_geojson]);
+
   // Delete confirmation
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (!searchQuery.trim()) { setSearchResults([]); return; }
@@ -499,8 +513,8 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                        <p className="text-sm font-semibold">{((peak.route_distance_m || 0) / 1000).toFixed(1)} km</p>
                      </div>
                      <div className="flex flex-col items-center gap-0.5 p-2 rounded-lg bg-muted/30 border border-border/30">
-                       <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Høydemeter' : 'Elevation'}</p>
-                       <p className="text-sm font-semibold">{peak.heightMoh} m</p>
+                       <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Stigning' : 'Elev. gain'}</p>
+                       <p className="text-sm font-semibold">{routeElevationGain != null ? `${routeElevationGain} m` : `${peak.heightMoh} m`}</p>
                      </div>
                      <div className="flex flex-col items-center gap-0.5 p-2 rounded-lg bg-muted/30 border border-border/30">
                        <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Estimert tid' : 'Est. time'}</p>
