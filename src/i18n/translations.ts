@@ -987,9 +987,8 @@ const no: Record<string, string> = {
   'suggestPeak.success': 'Forslag sendt til godkjenning',
   'suggestPeak.error': 'Kunne ikke sende forslag. Prøv igjen.',
 
-  // Peaks list
+  // Peaks list (legacy keys kept for compat)
   'peaksList.search': 'Søk etter topp...',
-  'peaksList.municipality': 'Søk kommune...',
 
   // Global leaderboard
   'globalLeaderboard.global': 'Global',
