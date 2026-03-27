@@ -4,9 +4,10 @@ import { Loader2 } from 'lucide-react';
 
 interface RouteElevationChartProps {
   geojson: any;
+  onElevationGain?: (gain: number) => void;
 }
 
-export const RouteElevationChart = ({ geojson }: RouteElevationChartProps) => {
+export const RouteElevationChart = ({ geojson, onElevationGain }: RouteElevationChartProps) => {
   const [data, setData] = useState<{ distance: number; elevation: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -37,6 +38,14 @@ export const RouteElevationChart = ({ geojson }: RouteElevationChartProps) => {
         const elevations = json.elevation;
 
         if (elevations && elevations.length > 0) {
+          // Calculate elevation gain
+          let totalGain = 0;
+          for (let i = 1; i < elevations.length; i++) {
+            const diff = elevations[i] - elevations[i - 1];
+            if (diff > 0) totalGain += diff;
+          }
+          onElevationGain?.(Math.round(totalGain));
+
           // Calculate distance along the path for X-axis
           let currentDist = 0;
           const chartData = elevations.map((elev: number, idx: number) => {
