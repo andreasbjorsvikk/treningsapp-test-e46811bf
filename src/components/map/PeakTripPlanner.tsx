@@ -95,7 +95,9 @@ const WeatherAnnotation = (props: any) => {
   );
 };
 
-const PeakTripPlanner = ({ latitude, longitude, peakName }: PeakTripPlannerProps) => {
+import React from 'react';
+
+const PeakTripPlanner = React.forwardRef<HTMLDivElement, PeakTripPlannerProps>(({ latitude, longitude, peakName }, ref) => {
   const { t, language } = useTranslation();
   const locale = language === 'no' ? nb : enUS;
   const [forecasts, setForecasts] = useState<DayForecast[]>([]);
