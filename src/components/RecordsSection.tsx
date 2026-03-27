@@ -223,8 +223,8 @@ const RecordsSection = () => {
       .eq('status', 'pending') as any;
     if (!pendingShares || pendingShares.length === 0) { setPendingInvitations([]); return; }
     
-    const recordIds = [...new Set(pendingShares.map((s: any) => s.hiking_record_id))];
-    const ownerIds = [...new Set(pendingShares.map((s: any) => s.owner_id))];
+    const recordIds = [...new Set(pendingShares.map((s: any) => s.hiking_record_id))] as string[];
+    const ownerIds = [...new Set(pendingShares.map((s: any) => s.owner_id))] as string[];
     
     const [{ data: records }, { data: profiles }] = await Promise.all([
       supabase.from('hiking_records').select('id, name').in('id', recordIds),
