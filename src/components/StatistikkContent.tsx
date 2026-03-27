@@ -109,12 +109,12 @@ const StatistikkContent = ({
 
           <StatsTiles sessions={statSessions} />
           <div className={chartMetric === 'steps' ? 'opacity-40 pointer-events-none' : ''}>
-            <ActivityTypeFilter selected={selectedTypes} onToggle={handleToggleType} />
+            <ActivityTypeFilter selected={selectedTypes} onToggle={handleToggleType} chartType={chartType} />
           </div>
           <MetricSelector selected={chartMetric} onSelect={setChartMetric} />
 
           <div className="h-[280px] lg:h-[360px]">
-            <TrendChart sessions={statSessions} period={period} month={statMonth} year={statYear} metric={chartMetric} chartType={chartType} />
+            <TrendChart sessions={statSessions} period={period} month={statMonth} year={statYear} metric={chartMetric} chartType={chartType} selectedTypes={selectedTypes} />
           </div>
 
           {/* Chart type toggle */}

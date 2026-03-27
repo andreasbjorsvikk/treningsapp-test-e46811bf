@@ -484,14 +484,32 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                         <X className="w-4 h-4 mr-2" />{language === 'no' ? 'Skjul rute' : 'Hide route'}
                       </Button>
                     ) : (
-                      <Button variant="outline" size="sm" className="w-full" onClick={() => onShowRoute(peak, fromTopperTab)}>
-                        {language === 'no' ? 'Vis rute' : 'Show route'} ({((peak.route_distance_m || 0) / 1000).toFixed(1)} km, {Math.round((peak.route_duration_s || 0) / 60)} min)
-                      </Button>
-                    )}
-                  </div>
-                )}
+                     <Button variant="outline" size="sm" className="w-full" onClick={() => onShowRoute(peak, fromTopperTab)}>
+                         {language === 'no' ? 'Vis rute' : 'Show route'}
+                       </Button>
+                     )}
+                   </div>
+                 )}
 
-                {/* Elevation chart */}
+                 {/* Route stats boxes */}
+                 {peak.route_status === 'approved' && (peak.route_distance_m || peak.route_duration_s) && (
+                   <div className="grid grid-cols-3 gap-2">
+                     <div className="flex flex-col items-center gap-0.5 p-2 rounded-lg bg-muted/30 border border-border/30">
+                       <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Distanse' : 'Distance'}</p>
+                       <p className="text-sm font-semibold">{((peak.route_distance_m || 0) / 1000).toFixed(1)} km</p>
+                     </div>
+                     <div className="flex flex-col items-center gap-0.5 p-2 rounded-lg bg-muted/30 border border-border/30">
+                       <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Høydemeter' : 'Elevation'}</p>
+                       <p className="text-sm font-semibold">{peak.heightMoh} m</p>
+                     </div>
+                     <div className="flex flex-col items-center gap-0.5 p-2 rounded-lg bg-muted/30 border border-border/30">
+                       <p className="text-[10px] text-muted-foreground">{language === 'no' ? 'Estimert tid' : 'Est. time'}</p>
+                       <p className="text-sm font-semibold">{Math.round((peak.route_duration_s || 0) / 60)} min</p>
+                     </div>
+                   </div>
+                 )}
+
+                 {/* Elevation chart */}
                 {peak.route_status === 'approved' && peak.route_geojson && (
                   <div className="bg-muted/10 p-3 rounded-xl border border-border/50">
                     <RouteElevationChart geojson={peak.route_geojson} />

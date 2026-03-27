@@ -453,7 +453,7 @@ const ARView = ({ peaks, checkins, onSelectPeak }: ARViewProps) => {
     const containerHeight = containerRef.current?.clientHeight || 700;
 
     // Dampen tilt to reduce over-movement when tilting phone
-    const cameraPitchDeg = (tilt - 90) * 0.55;
+    const cameraPitchDeg = (tilt - 90) * 0.7;
 
     // Use wider vertical FOV to further reduce vertical sensitivity
     const verticalFov = 70;

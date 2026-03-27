@@ -668,7 +668,7 @@ const IndexContent = () => {
     switch (id) {
       case 'trainingGoals':
         return (
-          <div className="grid grid-cols-2 gap-2">
+           <div className="grid grid-cols-2 gap-1.5">
             <div className="relative min-w-0">
               <ProgressWheel
                 percent={monthData.percent} current={monthData.current} target={monthData.target}
