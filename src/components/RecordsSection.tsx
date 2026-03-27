@@ -213,6 +213,38 @@ const RecordsSection = () => {
 
   useEffect(() => { loadHikingRecords(); }, [loadHikingRecords]);
 
+  // Load pending hike share invitations received by user
+  const loadPendingInvitations = useCallback(async () => {
+    if (!user) return;
+    const { data: pendingShares } = await supabase
+      .from('hiking_record_shares')
+      .select('id, hiking_record_id, owner_id, status')
+      .eq('shared_with_user_id', user.id)
+      .eq('status', 'pending') as any;
+    if (!pendingShares || pendingShares.length === 0) { setPendingInvitations([]); return; }
+    
+    const recordIds = [...new Set(pendingShares.map((s: any) => s.hiking_record_id))];
+    const ownerIds = [...new Set(pendingShares.map((s: any) => s.owner_id))];
+    
+    const [{ data: records }, { data: profiles }] = await Promise.all([
+      supabase.from('hiking_records').select('id, name').in('id', recordIds),
+      supabase.from('profiles').select('id, username, avatar_url').in('id', ownerIds),
+    ]);
+    
+    const recordMap = new Map((records || []).map((r: any) => [r.id, r.name]));
+    const profileMap = new Map((profiles || []).map((p: any) => [p.id, { username: p.username, avatar_url: p.avatar_url }]));
+    
+    setPendingInvitations(pendingShares.map((s: any) => ({
+      id: s.id,
+      hikingRecordId: s.hiking_record_id,
+      hikeName: recordMap.get(s.hiking_record_id) || 'Ukjent',
+      fromUsername: profileMap.get(s.owner_id)?.username || 'Ukjent',
+      fromAvatarUrl: profileMap.get(s.owner_id)?.avatar_url,
+    })));
+  }, [user]);
+
+  useEffect(() => { loadPendingInvitations(); }, [loadPendingInvitations]);
+
   // Migrate localStorage hiking records to DB on first load
   useEffect(() => {
     if (!user) return;
