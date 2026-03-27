@@ -557,14 +557,14 @@ const RecordsSection = () => {
   // Invite friend to share hike
   const handleInviteFriend = async (friendId: string) => {
     if (!selectedHike || !user) return;
-    await supabase.from('hiking_record_shares').insert({
+    const { data: shareRow } = await supabase.from('hiking_record_shares').insert({
       hiking_record_id: selectedHike.id,
       owner_id: user.id,
       shared_with_user_id: friendId,
       status: 'pending',
-    } as any);
+    } as any).select().single();
     
-    // Send notification
+    // Send notification with share ID stored in challenge_id field
     await supabase.from('community_notifications').insert({
       user_id: friendId,
       from_user_id: user.id,
@@ -573,6 +573,7 @@ const RecordsSection = () => {
       message: language === 'no' 
         ? `har invitert deg til å dele fjellturen "${selectedHike.name}"`
         : `invited you to share the hike "${selectedHike.name}"`,
+      challenge_id: (shareRow as any)?.id || null,
     });
     
     toast.success(t('records.inviteSent'));
