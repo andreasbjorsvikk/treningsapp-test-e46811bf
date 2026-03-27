@@ -27,6 +27,7 @@ const MapPage = () => {
   const { user } = useAuth();
   const { adminMode } = useAdmin();
   const [subTab, setSubTab] = useState<MapSubTab>('kart');
+  const [returnToTopperPeak, setReturnToTopperPeak] = useState<Peak | null>(null);
   const [checkins, setCheckins] = useState<PeakCheckin[]>([]);
   const [selectedPeak, setSelectedPeak] = useState<Peak | null>(null);
   const [peaks, setPeaks] = useState<Peak[]>([]);
@@ -428,6 +429,16 @@ const MapPage = () => {
         onHideRoute={handleHideRoute}
         isRouteShown={!!activeRoutePeakId && activeRoutePeakId === selectedPeak?.id}
         fromTopperTab={subTab === 'topper'}
+        onShowOnMap={(peak) => {
+          setReturnToTopperPeak(peak);
+          setSelectedPeak(null);
+          primeMapForRoute(peak);
+          setSubTab('kart');
+          // Focus map on this peak after switching
+          setTimeout(() => {
+            setRouteFocus({ latitude: peak.latitude, longitude: peak.longitude, requestId: Date.now() });
+          }, 300);
+        }}
       />
 
       {/* Admin: Add new peak form */}
