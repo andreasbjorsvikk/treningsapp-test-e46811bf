@@ -223,6 +223,10 @@ const CommunityPage = () => {
           setShowNotifications(false);
           window.dispatchEvent(new CustomEvent('navigate-to-settings'));
         }}
+        onNavigateToRecords={() => {
+          setShowNotifications(false);
+          window.dispatchEvent(new CustomEvent('navigate-to-training', { detail: { tab: 'records', subTab: 'hiking' } }));
+        }}
       />
       <UserProfileDrawer
         user={profileUser}
