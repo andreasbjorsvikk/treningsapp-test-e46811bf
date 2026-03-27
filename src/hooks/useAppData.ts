@@ -227,62 +227,103 @@ export function useAppData() {
         });
       }
     }
-  }, [isOnline, user, reload]);
+  }, [isOnline, user, networkOnline, reload]);
 
   const updateSession = useCallback(async (id: string, data: Partial<Omit<WorkoutSession, 'id'>>) => {
     if (isOnline && user) {
       await workoutServiceAsync.update(id, data);
+    } else if (user && !networkOnline) {
+      workoutService.update(id, data);
+      const dbData: Record<string, unknown> = { id };
+      if (data.type !== undefined) dbData.type = data.type;
+      if (data.durationMinutes !== undefined) dbData.duration_minutes = data.durationMinutes;
+      if (data.distance !== undefined) dbData.distance = data.distance;
+      if (data.elevationGain !== undefined) dbData.elevation_gain = data.elevationGain;
+      if (data.notes !== undefined) dbData.notes = data.notes;
+      if (data.title !== undefined) dbData.title = data.title;
+      if (data.date !== undefined) dbData.date = data.date;
+      await enqueue('workout_sessions', 'update', dbData);
     } else {
       workoutService.update(id, data);
     }
     await reload();
-  }, [isOnline, user, reload]);
+  }, [isOnline, user, networkOnline, reload]);
 
   const deleteSession = useCallback(async (id: string) => {
     if (isOnline && user) {
       await workoutServiceAsync.delete(id);
+    } else if (user && !networkOnline) {
+      workoutService.delete(id);
+      await enqueue('workout_sessions', 'delete', { id });
     } else {
       workoutService.delete(id);
     }
     await reload();
-  }, [isOnline, user, reload]);
+  }, [isOnline, user, networkOnline, reload]);
 
   // ===== Goal operations =====
   const addGoal = useCallback(async (data: Omit<ExtraGoal, 'id' | 'createdAt'>) => {
     if (isOnline && user) {
       await goalServiceAsync.add(user.id, data);
+    } else if (user && !networkOnline) {
+      goalService.add(data);
+      await enqueue('goals', 'insert', {
+        user_id: user.id,
+        metric: data.metric,
+        period: data.period,
+        target: data.target,
+        activity_type: data.activityType || 'all',
+        show_on_home: data.showOnHome || false,
+        repeating: data.repeating || false,
+        custom_start: data.customStart || null,
+        custom_end: data.customEnd || null,
+      });
     } else {
       goalService.add(data);
     }
     await reload();
-  }, [isOnline, user, reload]);
+  }, [isOnline, user, networkOnline, reload]);
 
   const updateGoal = useCallback(async (id: string, data: Partial<Omit<ExtraGoal, 'id' | 'createdAt'>>) => {
     if (isOnline && user) {
       await goalServiceAsync.update(id, data);
+    } else if (user && !networkOnline) {
+      goalService.update(id, data);
+      const dbData: Record<string, unknown> = { id };
+      if (data.archived !== undefined) dbData.archived = data.archived;
+      if (data.showOnHome !== undefined) dbData.show_on_home = data.showOnHome;
+      if (data.target !== undefined) dbData.target = data.target;
+      if (data.metric !== undefined) dbData.metric = data.metric;
+      if (data.period !== undefined) dbData.period = data.period;
+      if (data.repeating !== undefined) dbData.repeating = data.repeating;
+      await enqueue('goals', 'update', dbData);
     } else {
       goalService.update(id, data);
     }
     await reload();
-  }, [isOnline, user, reload]);
+  }, [isOnline, user, networkOnline, reload]);
 
   const deleteGoal = useCallback(async (id: string) => {
     if (isOnline && user) {
       await goalServiceAsync.delete(id);
+    } else if (user && !networkOnline) {
+      goalService.delete(id);
+      await enqueue('goals', 'delete', { id });
     } else {
       goalService.delete(id);
     }
     await reload();
-  }, [isOnline, user, reload]);
+  }, [isOnline, user, networkOnline, reload]);
 
   const reorderGoals = useCallback(async (orderedIds: string[]) => {
     if (isOnline && user) {
       await goalServiceAsync.reorder(user.id, orderedIds);
     } else {
       goalService.reorder(orderedIds);
+      // Note: reorder offline doesn't queue individual updates — will re-sync order on reconnect
     }
     await reload();
-  }, [isOnline, user, reload]);
+  }, [isOnline, user, networkOnline, reload]);
 
   // ===== Primary goal operations =====
   const addPrimaryGoal = useCallback(async (data: { inputPeriod: any; inputTarget: number; validFrom: string }) => {
