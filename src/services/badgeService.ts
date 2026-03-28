@@ -359,7 +359,8 @@ export async function computeUserBadges(userId: string, isChild = false): Promis
       .from('workout_sessions')
       .select('date, type, distance, elevation_gain, exclude_from_count')
       .eq('user_id', userId)
-      .gte('date', signupDate);
+      .gte('date', signupDate)
+      .limit(10000);
     sessions = sessionData || [];
     totalSessionsSinceSignup = sessions.filter(s => !s.exclude_from_count).length;
   }
