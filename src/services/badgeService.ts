@@ -81,6 +81,7 @@ type SessionRow = {
   type: string;
   distance: number | null;
   elevation_gain: number | null;
+  exclude_from_count?: boolean;
 };
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -356,11 +357,11 @@ export async function computeUserBadges(userId: string, isChild = false): Promis
     const signupDate = profile?.created_at?.slice(0, 10) || '2020-01-01';
     const { data: sessionData } = await supabase
       .from('workout_sessions')
-      .select('date, type, distance, elevation_gain')
+      .select('date, type, distance, elevation_gain, exclude_from_count')
       .eq('user_id', userId)
       .gte('date', signupDate);
     sessions = sessionData || [];
-    totalSessionsSinceSignup = sessions.length;
+    totalSessionsSinceSignup = sessions.filter(s => !s.exclude_from_count).length;
   }
 
   const currentMonth = getCurrentMonthData(sessions);

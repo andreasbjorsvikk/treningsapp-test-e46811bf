@@ -9,7 +9,7 @@ interface StatsTilesProps {
 
 const StatsTiles = ({ sessions }: StatsTilesProps) => {
   const { t } = useTranslation();
-  const totalSessions = sessions.length;
+  const totalSessions = sessions.filter(s => !s.excludeFromCount).length;
   const totalMinutes = sessions.reduce((sum, s) => sum + s.durationMinutes, 0);
   const totalDistance = sessions.reduce((sum, s) => sum + (s.distance || 0), 0);
   const totalElevation = sessions.reduce((sum, s) => sum + (s.elevationGain || 0), 0);
