@@ -21,9 +21,9 @@ function saveLocalSessions(sessions: WorkoutSession[]): void {
 function computeStats(subset: WorkoutSession[]): WeeklyStats {
   const sessionsByType = {} as Record<SessionType, number>;
   allSessionTypes.forEach(t => { sessionsByType[t] = 0; });
-  subset.forEach(s => { sessionsByType[s.type]++; });
+  subset.forEach(s => { if (!s.excludeFromCount) sessionsByType[s.type]++; });
   return {
-    totalSessions: subset.length,
+    totalSessions: subset.filter(s => !s.excludeFromCount).length,
     totalMinutes: subset.reduce((sum, s) => sum + s.durationMinutes, 0),
     totalDistance: subset.reduce((sum, s) => sum + (s.distance || 0), 0),
     totalElevation: subset.reduce((sum, s) => sum + (s.elevationGain || 0), 0),
