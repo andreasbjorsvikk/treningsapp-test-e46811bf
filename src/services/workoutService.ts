@@ -47,6 +47,8 @@ function rowToSession(row: any): WorkoutSession {
     maxHeartrate: row.max_heartrate || undefined,
     summaryPolyline: row.summary_polyline || undefined,
     stravaActivityId: row.strava_activity_id || undefined,
+    userModified: row.user_modified || false,
+    excludeFromCount: row.exclude_from_count || false,
   };
 }
 
@@ -90,6 +92,8 @@ export const workoutServiceAsync = {
     if (data.distance !== undefined) updateObj.distance = data.distance || null;
     if (data.elevationGain !== undefined) updateObj.elevation_gain = data.elevationGain || null;
     if (data.notes !== undefined) updateObj.notes = data.notes || null;
+    if (data.excludeFromCount !== undefined) updateObj.exclude_from_count = data.excludeFromCount;
+    if (data.userModified !== undefined) updateObj.user_modified = data.userModified;
     const { error } = await supabase
       .from('workout_sessions')
       .update(updateObj)

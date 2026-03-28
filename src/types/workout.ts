@@ -34,6 +34,8 @@ export interface WorkoutSession {
   syncStatus?: string;
   importedAt?: string;
   sourceHistory?: Record<string, any>[];
+  userModified?: boolean;
+  excludeFromCount?: boolean;
 }
 
 export interface WorkoutStreams {
