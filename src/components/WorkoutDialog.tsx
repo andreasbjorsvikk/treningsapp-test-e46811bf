@@ -16,7 +16,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Clock } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { CalendarIcon, Clock, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DurationPicker from '@/components/DurationPicker';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -77,6 +79,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
   const [notes, setNotes] = useState('');
   const [durationPickerOpen, setDurationPickerOpen] = useState(false);
   const [elevationMode, setElevationMode] = useState<'meters' | 'floors'>('meters');
+  const [excludeFromCount, setExcludeFromCount] = useState(false);
   
   const showSeconds = type === 'løping';
 
@@ -93,7 +96,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
       setDistance(session?.distance?.toString() || '');
       setElevationGain(session?.elevationGain?.toString() || '');
       setNotes(session?.notes || '');
-    }
+      setExcludeFromCount(session?.excludeFromCount || false);
   }, [open, session, defaultDate, settings.defaultSessionType]);
 
   const fields = getVisibleFields(type);
@@ -109,6 +112,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
     }
 
     hapticsService.impact('medium');
+    const isStravaEdit = session?.stravaActivityId != null;
     onSave({
       type,
       title: title.trim() || undefined,
@@ -117,6 +121,8 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
       distance: fields.distance && distance ? parseFloat(distance) : undefined,
       elevationGain: finalElevation,
       notes: notes.trim() || undefined,
+      excludeFromCount,
+      ...(isStravaEdit && session ? { userModified: true } : {}),
     });
     onClose();
   };
@@ -301,7 +307,27 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
               <Label>{t('workout.notes')}</Label>
               <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('workout.notesPlaceholder')} rows={2} />
             </div>
-          </div>
+
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="excludeFromCount"
+                checked={excludeFromCount}
+                onCheckedChange={(checked) => setExcludeFromCount(checked === true)}
+              />
+              <Label htmlFor="excludeFromCount" className="text-sm font-normal cursor-pointer">
+                {t('workout.excludeFromCount')}
+              </Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[250px] text-xs">
+                    {t('workout.excludeFromCountTooltip')}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={onClose}>{t('workout.cancel')}</Button>
