@@ -57,6 +57,21 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
     return () => window.removeEventListener('navigate-to-history', handler);
   }, []);
 
+  // Listen for navigation to records tab (hiking)
+  useEffect(() => {
+    const handler = () => setSubTab('rekorder');
+    window.addEventListener('navigate-to-records', handler);
+    return () => window.removeEventListener('navigate-to-records', handler);
+  }, []);
+
+  useEffect(() => {
+    const pending = (window as any).__navigateToRecords;
+    if (pending) {
+      setSubTab('rekorder');
+      delete (window as any).__navigateToRecords;
+    }
+  }, []);
+
   useEffect(() => {
     const pending = (window as any).__navigateToHistory;
     if (pending) {
