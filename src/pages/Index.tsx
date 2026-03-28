@@ -401,6 +401,21 @@ const IndexContent = () => {
     return () => window.removeEventListener('navigate-to-settings', handler);
   }, []);
 
+  // Listen for navigate-to-training events (e.g. from community notifications)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      setActiveTab('trening');
+      window.scrollTo({ top: 0 });
+      if (detail?.subTab === 'hiking' || detail?.tab === 'records') {
+        (window as any).__navigateToRecords = true;
+        setTimeout(() => window.dispatchEvent(new CustomEvent('navigate-to-records')), 50);
+      }
+    };
+    window.addEventListener('navigate-to-training', handler);
+    return () => window.removeEventListener('navigate-to-training', handler);
+  }, []);
+
   // Listen for open-workout-detail from records
   useEffect(() => {
     const handler = (e: CustomEvent) => {

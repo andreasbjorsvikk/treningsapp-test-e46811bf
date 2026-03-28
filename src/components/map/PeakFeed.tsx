@@ -679,17 +679,19 @@ const PeakFeed = () => {
 
                       {/* Peak info */}
                       <div className="flex items-center gap-2 px-1">
-                        <img src={getPeakIcon(parentItem.peak_elevation)} alt="" className="w-5 h-5 object-contain shrink-0 self-center" style={{ verticalAlign: 'middle', position: 'relative', top: parentItem.peak_elevation >= 300 && parentItem.peak_elevation < 650 ? '-0.5px' : '0px' }} />
-                        <span className="text-sm font-medium leading-5">{parentItem.peak_name}</span>
-                        <span className="text-xs text-muted-foreground leading-5">{parentItem.peak_elevation} moh · {parentItem.peak_area}</span>
-                        <div className="ml-auto">
+                        <img src={getPeakIcon(parentItem.peak_elevation)} alt="" className="w-5 h-5 object-contain shrink-0 self-start mt-0.5" style={{ position: 'relative', top: parentItem.peak_elevation >= 300 && parentItem.peak_elevation < 650 ? '-0.5px' : '0px' }} />
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-medium leading-5 block">{parentItem.peak_name}</span>
+                          <span className="text-xs text-muted-foreground leading-4">{parentItem.peak_elevation} moh · {parentItem.peak_area}</span>
+                        </div>
+                        <div className="ml-auto shrink-0">
                           <FeedWeatherBadge lat={parentItem.peak_lat} lng={parentItem.peak_lng} checkinDate={parentItem.checked_in_at} />
                         </div>
                       </div>
 
                       {/* Image */}
                       {parentItem.image_url && (
-                        <button onClick={() => setExpandedImage(parentItem.image_url)} className="w-full">
+                        <button onClick={() => setExpandedImage(parentItem.image_url)} className="w-full lg:w-[40%]">
                           <img src={parentItem.image_url} alt="" className="w-full h-40 object-cover rounded-lg" />
                         </button>
                       )}
