@@ -147,8 +147,8 @@ const PeakTripPlanner = React.forwardRef<HTMLDivElement, PeakTripPlannerProps>((
         const windDirectionSeries = getBestMatch<number>(hourlySource, 'wind_direction_10m');
         // Prefer metno_nordic for snow depth (better accuracy in Norway)
         const snowDepthSeries = getWeatherSeries<number>(hourlySource, 'snow_depth');
-        const sunriseSeries = (dailySource?.['sunrise'] ?? []) as string[];
-        const sunsetSeries = (dailySource?.['sunset'] ?? []) as string[];
+        const sunriseSeries = getWeatherSeries<string>(dailySource, 'sunrise');
+        const sunsetSeries = getWeatherSeries<string>(dailySource, 'sunset');
 
         const hasMetNo = Array.isArray(data.hourly?.temperature_2m_metno_nordic) && data.hourly.temperature_2m_metno_nordic.length > 0;
         const windUnitKey = Array.isArray(data.hourly?.wind_speed_10m_best_match) && data.hourly.wind_speed_10m_best_match.length > 0
@@ -161,6 +161,7 @@ const PeakTripPlanner = React.forwardRef<HTMLDivElement, PeakTripPlannerProps>((
 
         if (!temperatureSeries.length || !sunriseSeries.length || !sunsetSeries.length || !Array.isArray(data.daily?.time)) {
           setForecasts([]);
+          setError(language === 'no' ? 'Kunne ikke laste værdata akkurat nå' : 'Could not load weather data right now');
           return;
         }
         
