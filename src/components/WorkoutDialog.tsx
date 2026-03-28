@@ -329,6 +329,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
                 </Tooltip>
               </TooltipProvider>
             </div>
+          </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={onClose}>{t('workout.cancel')}</Button>
