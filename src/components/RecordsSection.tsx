@@ -185,24 +185,50 @@ const RecordsSection = () => {
   const loadHikingRecords = useCallback(async () => {
     if (user) {
       try {
-        const { data, error } = await supabase
+        // Load own records
+        const { data: ownData, error: ownError } = await supabase
           .from('hiking_records')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: true });
-        if (!error && data) {
-          const records: HikingRecord[] = data.map((r: any) => ({
-            id: r.id,
-            name: r.name,
-            elevation: r.elevation || undefined,
-            distance: r.distance || undefined,
-            elevationGain: r.elevation_gain || undefined,
-            routeDescription: r.route_description || undefined,
-            entries: (r.entries as HikingEntry[]) || [],
-          }));
-          setHikingRecords(records);
-          return;
+        
+        // Load shared records (accepted shares)
+        const { data: sharedAccess } = await supabase
+          .from('hiking_record_shares')
+          .select('hiking_record_id')
+          .eq('shared_with_user_id', user.id)
+          .eq('status', 'accepted') as any;
+        
+        let sharedRecords: any[] = [];
+        if (sharedAccess && sharedAccess.length > 0) {
+          const sharedIds = sharedAccess.map((s: any) => s.hiking_record_id);
+          const { data } = await supabase
+            .from('hiking_records')
+            .select('*')
+            .in('id', sharedIds);
+          sharedRecords = data || [];
         }
+        
+        const allData = [...(ownData || []), ...sharedRecords];
+        // Deduplicate by ID
+        const seen = new Set<string>();
+        const deduped = allData.filter(r => {
+          if (seen.has(r.id)) return false;
+          seen.add(r.id);
+          return true;
+        });
+        
+        const records: HikingRecord[] = deduped.map((r: any) => ({
+          id: r.id,
+          name: r.name,
+          elevation: r.elevation || undefined,
+          distance: r.distance || undefined,
+          elevationGain: r.elevation_gain || undefined,
+          routeDescription: r.route_description || undefined,
+          entries: (r.entries as HikingEntry[]) || [],
+        }));
+        setHikingRecords(records);
+        return;
       } catch {}
     }
     try {
