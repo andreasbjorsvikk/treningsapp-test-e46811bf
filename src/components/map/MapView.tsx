@@ -1189,7 +1189,41 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           { fill: 'hsla(280, 55%, 55%, 0.28)', outline: 'hsla(280, 55%, 50%, 0.65)' },
           { fill: 'hsla(35, 80%, 50%, 0.30)', outline: 'hsla(35, 80%, 45%, 0.75)' },
           { fill: 'hsla(340, 60%, 50%, 0.28)', outline: 'hsla(340, 60%, 45%, 0.65)' },
+          { fill: 'hsla(180, 60%, 40%, 0.30)', outline: 'hsla(180, 60%, 35%, 0.75)' },
+          { fill: 'hsla(60, 70%, 45%, 0.30)', outline: 'hsla(60, 70%, 40%, 0.75)' },
+          { fill: 'hsla(120, 50%, 45%, 0.28)', outline: 'hsla(120, 50%, 40%, 0.65)' },
         ];
+
+        // Greedy graph coloring: assign colors so no two adjacent municipalities share the same color
+        const kommuneNrs = Array.from(kommuneMap.keys());
+        const colorAssignment = new Map<string, number>();
+        
+        // Sort by kommune number for deterministic results
+        kommuneNrs.sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0));
+        
+        for (const nr of kommuneNrs) {
+          // Find colors used by neighboring municipalities (within ~30km proximity)
+          const entry = kommuneMap.get(nr)!;
+          const avgLat = entry.peaks.reduce((s, p) => s + p.latitude, 0) / entry.peaks.length;
+          const avgLng = entry.peaks.reduce((s, p) => s + p.longitude, 0) / entry.peaks.length;
+          
+          const usedColors = new Set<number>();
+          for (const otherNr of kommuneNrs) {
+            if (otherNr === nr || !colorAssignment.has(otherNr)) continue;
+            const otherEntry = kommuneMap.get(otherNr)!;
+            const oLat = otherEntry.peaks.reduce((s, p) => s + p.latitude, 0) / otherEntry.peaks.length;
+            const oLng = otherEntry.peaks.reduce((s, p) => s + p.longitude, 0) / otherEntry.peaks.length;
+            const dLat = (avgLat - oLat) * 111;
+            const dLng = (avgLng - oLng) * 111 * Math.cos(avgLat * Math.PI / 180);
+            if (Math.sqrt(dLat * dLat + dLng * dLng) < 50) {
+              usedColors.add(colorAssignment.get(otherNr)!);
+            }
+          }
+          
+          let colorIdx = 0;
+          while (usedColors.has(colorIdx)) colorIdx++;
+          colorAssignment.set(nr, colorIdx % colorPalette.length);
+        }
 
         for (const [kommuneNr, entry] of kommuneMap.entries()) {
           if (!map.current) return;
@@ -1203,10 +1237,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
             const fillLayerId = `kommune-fill-${kommuneNr}`;
             const outlineLayerId = `kommune-outline-${kommuneNr}`;
             const pct = entry.total > 0 ? Math.round((entry.checked / entry.total) * 100) : 0;
-            // Use a hash that spreads adjacent kommune numbers to different colors
-            const kommuneNum = parseInt(kommuneNr, 10) || 0;
-            const hash = ((kommuneNum * 2654435761) >>> 0);
-            const colorIdx = hash % colorPalette.length;
+            const colorIdx = colorAssignment.get(kommuneNr) || 0;
             const fillColor = colorPalette[colorIdx].fill;
             const outlineColor = colorPalette[colorIdx].outline;
 
