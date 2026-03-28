@@ -349,17 +349,10 @@ export async function computeUserBadges(userId: string, isChild = false): Promis
   let sessions: SessionRow[] = [];
   let totalSessionsSinceSignup = 0;
   if (!isChild) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('created_at')
-      .eq('id', userId)
-      .single();
-    const signupDate = profile?.created_at?.slice(0, 10) || '2020-01-01';
     const { data: sessionData } = await supabase
       .from('workout_sessions')
       .select('date, type, distance, elevation_gain, exclude_from_count')
       .eq('user_id', userId)
-      .gte('date', signupDate)
       .limit(10000);
     sessions = sessionData || [];
     totalSessionsSinceSignup = sessions.filter(s => !s.exclude_from_count).length;
