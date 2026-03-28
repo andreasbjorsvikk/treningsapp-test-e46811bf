@@ -415,7 +415,7 @@ export async function getLeaderboard(period: 'week' | 'month' | 'all' = 'month',
 
 export async function getChallengeProgress(challenge: ChallengeRow, participantUserIds: string[]) {
   let query = supabase.from('workout_sessions')
-    .select('user_id, duration_minutes, distance, elevation_gain')
+    .select('user_id, duration_minutes, distance, elevation_gain, exclude_from_count')
     .in('user_id', participantUserIds)
     .gte('date', challenge.period_start)
     .lte('date', challenge.period_end);
@@ -436,7 +436,7 @@ export async function getChallengeProgress(challenge: ChallengeRow, participantU
   for (const s of sessions || []) {
     switch (challenge.metric) {
       case 'sessions':
-        progress[s.user_id] = (progress[s.user_id] || 0) + 1;
+        if (!s.exclude_from_count) progress[s.user_id] = (progress[s.user_id] || 0) + 1;
         break;
       case 'distance':
         progress[s.user_id] = (progress[s.user_id] || 0) + (s.distance || 0);

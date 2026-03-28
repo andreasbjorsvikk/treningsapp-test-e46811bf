@@ -122,7 +122,7 @@ function computeBasicStats(sessions: WorkoutSession[]) {
     sessionsByType[s.type] = (sessionsByType[s.type] || 0) + 1;
   });
   return {
-    totalSessions: sessions.length,
+    totalSessions: sessions.filter(s => !s.excludeFromCount).length,
     totalMinutes: sessions.reduce((sum, s) => sum + s.durationMinutes, 0),
     totalDistance: sessions.reduce((sum, s) => sum + (s.distance || 0), 0),
     totalElevation: sessions.reduce((sum, s) => sum + (s.elevationGain || 0), 0),

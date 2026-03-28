@@ -21,6 +21,7 @@ export function computeMonthWheelData(
   if (goalStart) goalStart.setHours(0, 0, 0, 0);
 
   const current = sessions.filter(s => {
+    if (s.excludeFromCount) return false;
     const d = new Date(s.date);
     if (d.getMonth() !== month || d.getFullYear() !== year) return false;
     // Only count sessions from goal start date onwards
@@ -66,6 +67,7 @@ export function computeYearWheelData(
 ) {
   const earliestStart = getEarliestStart(periods);
   const current = sessions.filter(s => {
+    if (s.excludeFromCount) return false;
     const d = new Date(s.date);
     if (d.getFullYear() !== year) return false;
     // Only count sessions from the earliest goal start date onwards
