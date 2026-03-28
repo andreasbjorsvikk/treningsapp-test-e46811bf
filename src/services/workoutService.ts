@@ -59,7 +59,8 @@ export const workoutServiceAsync = {
       .from('workout_sessions')
       .select('*')
       .eq('user_id', userId)
-      .order('date', { ascending: false });
+      .order('date', { ascending: false })
+      .limit(10000);
     if (error) throw error;
     return (data || []).map(rowToSession);
   },
