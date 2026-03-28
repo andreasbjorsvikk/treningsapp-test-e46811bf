@@ -15,7 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Mountain, MapPin, Check, Loader2, Pencil, Trash2, CalendarIcon, UserPlus, X, Search, List, Users, ImageIcon, Sunrise, Sunset, Info, Trophy, Map as MapIcon } from 'lucide-react';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
@@ -480,7 +480,8 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
               </TabsList>
 
               {/* INFO TAB */}
-              <TabsContent value="info" className="space-y-4 mt-3">
+              {activeTab === 'info' && (
+              <div className="space-y-4 mt-3" role="tabpanel" aria-label="Info">
                 {/* Route button */}
                 {peak.route_status === 'approved' && onShowRoute && (
                   <div className="flex flex-col gap-2">
@@ -534,17 +535,22 @@ const PeakDetailDrawer = ({ peak, open, onClose, checkins, onCheckinSuccess, adm
                     <img src={peak.imageUrl} alt={peak.name} className="w-full h-40 object-cover" />
                   </div>
                 )}
-              </TabsContent>
+              </div>
+              )}
 
               {/* LEADERBOARD TAB */}
-              <TabsContent value="leaderboard" className="mt-3">
+              {activeTab === 'leaderboard' && (
+              <div className="mt-3" role="tabpanel" aria-label="Lederliste">
                 <PeakLeaderboard peakId={peak.id} />
-              </TabsContent>
+              </div>
+              )}
 
               {/* PLAN TRIP TAB */}
-              <TabsContent value="plan" className="mt-3" forceMount style={{ display: activeTab === 'plan' ? 'block' : 'none' }}>
+              {activeTab === 'plan' && (
+              <div className="mt-3" role="tabpanel" aria-label="Planlegg tur">
                 <PeakTripPlanner latitude={peak.latitude} longitude={peak.longitude} peakName={peak.name} />
-              </TabsContent>
+              </div>
+              )}
             </Tabs>
 
             {/* Admin tools */}
