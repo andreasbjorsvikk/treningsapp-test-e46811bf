@@ -97,6 +97,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
       setElevationGain(session?.elevationGain?.toString() || '');
       setNotes(session?.notes || '');
       setExcludeFromCount(session?.excludeFromCount || false);
+    }
   }, [open, session, defaultDate, settings.defaultSessionType]);
 
   const fields = getVisibleFields(type);
