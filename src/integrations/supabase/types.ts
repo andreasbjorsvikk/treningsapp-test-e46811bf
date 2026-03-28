@@ -820,6 +820,7 @@ export type Database = {
           distance: number | null
           duration_minutes: number
           elevation_gain: number | null
+          exclude_from_count: boolean
           id: string
           imported_at: string | null
           max_heartrate: number | null
@@ -833,6 +834,7 @@ export type Database = {
           type: string
           updated_at: string
           user_id: string
+          user_modified: boolean
         }
         Insert: {
           apple_health_workout_id?: string | null
@@ -842,6 +844,7 @@ export type Database = {
           distance?: number | null
           duration_minutes: number
           elevation_gain?: number | null
+          exclude_from_count?: boolean
           id?: string
           imported_at?: string | null
           max_heartrate?: number | null
@@ -855,6 +858,7 @@ export type Database = {
           type: string
           updated_at?: string
           user_id: string
+          user_modified?: boolean
         }
         Update: {
           apple_health_workout_id?: string | null
@@ -864,6 +868,7 @@ export type Database = {
           distance?: number | null
           duration_minutes?: number
           elevation_gain?: number | null
+          exclude_from_count?: boolean
           id?: string
           imported_at?: string | null
           max_heartrate?: number | null
@@ -877,6 +882,7 @@ export type Database = {
           type?: string
           updated_at?: string
           user_id?: string
+          user_modified?: boolean
         }
         Relationships: []
       }
