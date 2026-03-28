@@ -223,21 +223,42 @@ const RecordsSection = () => {
       .eq('status', 'pending') as any;
     if (!pendingShares || pendingShares.length === 0) { setPendingInvitations([]); return; }
     
-    const recordIds = [...new Set(pendingShares.map((s: any) => s.hiking_record_id))] as string[];
     const ownerIds = [...new Set(pendingShares.map((s: any) => s.owner_id))] as string[];
+    const recordIds = [...new Set(pendingShares.map((s: any) => s.hiking_record_id))] as string[];
     
-    const [{ data: records }, { data: profiles }] = await Promise.all([
-      supabase.from('hiking_records').select('id, name').in('id', recordIds),
+    const [{ data: profiles }, { data: notifications }] = await Promise.all([
       supabase.from('profiles').select('id, username, avatar_url').in('id', ownerIds),
+      supabase.from('community_notifications')
+        .select('challenge_id, message')
+        .eq('user_id', user.id)
+        .eq('type', 'hike_share')
+        .in('challenge_id', pendingShares.map((s: any) => s.id)),
     ]);
     
-    const recordMap = new Map((records || []).map((r: any) => [r.id, r.name]));
+    // Extract hike names from notification messages as fallback
+    const nameFromNotification = new Map<string, string>();
+    for (const n of (notifications || [])) {
+      const match = (n as any).message?.match(/[«"](.+?)[»"]/);
+      if (match && (n as any).challenge_id) {
+        nameFromNotification.set((n as any).challenge_id, match[1]);
+      }
+    }
+    
+    // Try to fetch hiking record names (may fail due to RLS for pending shares)
+    let recordNameMap = new Map<string, string>();
+    if (recordIds.length > 0) {
+      const { data: records } = await supabase.from('hiking_records').select('id, name').in('id', recordIds);
+      if (records) {
+        recordNameMap = new Map(records.map((r: any) => [r.id, r.name]));
+      }
+    }
+    
     const profileMap = new Map((profiles || []).map((p: any) => [p.id, { username: p.username, avatar_url: p.avatar_url }]));
     
     setPendingInvitations(pendingShares.map((s: any) => ({
       id: s.id,
       hikingRecordId: s.hiking_record_id,
-      hikeName: recordMap.get(s.hiking_record_id) || 'Ukjent',
+      hikeName: recordNameMap.get(s.hiking_record_id) || nameFromNotification.get(s.id) || 'Fjelltur',
       fromUsername: profileMap.get(s.owner_id)?.username || 'Ukjent',
       fromAvatarUrl: profileMap.get(s.owner_id)?.avatar_url,
     })));
