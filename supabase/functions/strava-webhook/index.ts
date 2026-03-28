@@ -137,6 +137,20 @@ Deno.serve(async (req) => {
 
       // Handle CREATE and UPDATE — fetch the activity from Strava API
       if (aspect_type === "create" || aspect_type === "update") {
+        // For UPDATE: check if user has modified this session — if so, skip overwrite
+        if (aspect_type === "update") {
+          const { data: existingSession } = await admin
+            .from("workout_sessions")
+            .select("id, user_modified")
+            .eq("user_id", userId)
+            .eq("strava_activity_id", object_id)
+            .single();
+          if (existingSession?.user_modified) {
+            console.log(`Skipping update for user-modified activity ${object_id}`);
+            return new Response("OK", { status: 200, headers: corsHeaders });
+          }
+        }
+
         const accessToken = await ensureFreshToken(conn);
 
         const activityRes = await fetch(
