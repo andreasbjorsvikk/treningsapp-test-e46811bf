@@ -254,6 +254,8 @@ export function useAppData() {
       if (data.notes !== undefined) dbData.notes = data.notes;
       if (data.title !== undefined) dbData.title = data.title;
       if (data.date !== undefined) dbData.date = data.date;
+      if (data.excludeFromCount !== undefined) dbData.exclude_from_count = data.excludeFromCount;
+      if (data.userModified !== undefined) dbData.user_modified = data.userModified;
       await enqueue('workout_sessions', 'update', dbData);
     }
   }, [user, isOnline, queryClient, userId]);

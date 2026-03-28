@@ -237,15 +237,19 @@ Deno.serve(async (req) => {
         activities.push(...batch);
         page++;
       }
-      // Get existing strava_activity_ids for quick skip
+      // Get existing strava_activity_ids + user_modified flag for skip logic
       const existingIds = new Set<number>();
+      const userModifiedIds = new Set<number>();
       const { data: existingRows } = await admin.from("workout_sessions")
-        .select("strava_activity_id")
+        .select("strava_activity_id, user_modified")
         .eq("user_id", userId)
         .not("strava_activity_id", "is", null);
       if (existingRows) {
         for (const r of existingRows) {
-          if (r.strava_activity_id) existingIds.add(Number(r.strava_activity_id));
+          if (r.strava_activity_id) {
+            existingIds.add(Number(r.strava_activity_id));
+            if (r.user_modified) userModifiedIds.add(Number(r.strava_activity_id));
+          }
         }
       }
 
@@ -263,8 +267,9 @@ Deno.serve(async (req) => {
       let merged = 0;
 
       for (const row of allRows) {
-        // Already synced via strava_activity_id — just upsert to update
+        // Already synced — skip if user has modified, otherwise upsert to update
         if (existingIds.has(Number(row.strava_activity_id))) {
+          if (userModifiedIds.has(Number(row.strava_activity_id))) continue; // user edited, don't overwrite
           rowsToUpsert.push(row);
           continue;
         }
@@ -337,15 +342,19 @@ Deno.serve(async (req) => {
         .eq("user_id", userId)
         .is("strava_activity_id", null);
 
-      // Get existing strava IDs for quick skip
+      // Get existing strava IDs + user_modified for skip logic
       const existingStravaIds = new Set<number>();
+      const userModifiedIds = new Set<number>();
       const { data: stravaRows } = await admin.from("workout_sessions")
-        .select("strava_activity_id")
+        .select("strava_activity_id, user_modified")
         .eq("user_id", userId)
         .not("strava_activity_id", "is", null);
       if (stravaRows) {
         for (const r of stravaRows) {
-          if (r.strava_activity_id) existingStravaIds.add(Number(r.strava_activity_id));
+          if (r.strava_activity_id) {
+            existingStravaIds.add(Number(r.strava_activity_id));
+            if (r.user_modified) userModifiedIds.add(Number(r.strava_activity_id));
+          }
         }
       }
 
@@ -357,6 +366,7 @@ Deno.serve(async (req) => {
 
       for (const row of allRows) {
         if (existingStravaIds.has(Number(row.strava_activity_id))) {
+          if (userModifiedIds.has(Number(row.strava_activity_id))) continue; // user edited, skip
           rowsToUpsert.push(row);
           continue;
         }

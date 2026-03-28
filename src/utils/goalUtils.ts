@@ -50,7 +50,7 @@ export function getSessionsInPeriod(
 
 export function computeProgress(sessions: WorkoutSession[], metric: GoalMetric): number {
   switch (metric) {
-    case 'sessions': return sessions.length;
+    case 'sessions': return sessions.filter(s => !s.excludeFromCount).length;
     case 'minutes': return sessions.reduce((s, w) => s + w.durationMinutes / 60, 0);
     case 'distance': return sessions.reduce((s, w) => s + (w.distance || 0), 0);
     case 'elevation': return sessions.reduce((s, w) => s + (w.elevationGain || 0), 0);
