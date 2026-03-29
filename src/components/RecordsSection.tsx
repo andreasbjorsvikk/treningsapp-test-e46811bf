@@ -450,6 +450,7 @@ const RecordsSection = () => {
     } else {
       const record: HikingRecord = {
         id: `h${Date.now()}`,
+        userId: '',
         name: newHikeName.trim(),
         elevation: newHikeElevation ? Number(newHikeElevation) : undefined,
         distance: newHikeDistance ? Number(newHikeDistance) : undefined,
