@@ -1070,8 +1070,8 @@ const RecordsSection = () => {
                   </Button>
 
                   {selectedHike && (() => {
-                    if (viewMode === 'all' && hasAcceptedShares) {
-                      const allEntries = getAllEntries();
+                    if (hasAcceptedShares) {
+                      const allEntries = viewMode === 'all' ? getAllEntries() : getAllEntries().filter(e => e.userId === user?.id);
                       return allEntries.length === 0 ? (
                         <p className="text-center py-6 text-muted-foreground text-sm">
                           {t('records.noTimes')}
@@ -1079,11 +1079,13 @@ const RecordsSection = () => {
                       ) : (
                         <div className="glass-card rounded-xl overflow-hidden divide-y divide-border/50">
                           {allEntries.map((e, i) => {
-                            const profile = e.userId === user?.id
-                              ? { username: language === 'no' ? 'Deg' : 'You', avatar_url: undefined }
-                              : profileCache.get(e.userId) || { username: 'Ukjent' };
+                            const profile = profileCache.get(e.userId) || { username: e.userId === user?.id ? (language === 'no' ? 'Deg' : 'You') : 'Ukjent' };
                             return (
-                              <div key={e.id} className="flex items-center gap-2.5 px-4 py-3">
+                              <button
+                                key={e.id}
+                                onClick={() => openEntryDetail({ id: e.id, time: e.time, date: e.date, avgHeartrate: e.avgHeartrate, maxHeartrate: e.maxHeartrate, notes: e.notes }, e.isShared)}
+                                className="flex items-center gap-2.5 px-4 py-3 w-full text-left hover:bg-secondary/30 transition-colors"
+                              >
                                 <span className={`text-xs font-bold w-6 text-center ${
                                   i === 0 ? 'text-warning' : 'text-muted-foreground'
                                 }`}>
@@ -1100,14 +1102,15 @@ const RecordsSection = () => {
                                 <span className="text-xs text-muted-foreground">
                                   {new Date(e.date).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}
                                 </span>
-                              </div>
+                                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                              </button>
                             );
                           })}
                         </div>
                       );
                     }
 
-                    // "Mine" view (default) - only show time and date, click to see details
+                    // No shares - simple view without avatars
                     const sorted = [...selectedHike.entries].sort((a, b) =>
                       parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time)
                     );
