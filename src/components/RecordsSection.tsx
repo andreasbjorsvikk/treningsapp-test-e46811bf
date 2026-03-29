@@ -87,6 +87,7 @@ function estimateBestTime(sessions: WorkoutSession[], benchmarkKm: number): Best
 // Hiking record types
 export interface HikingRecord {
   id: string;
+  userId: string;
   name: string;
   elevation?: number;
   distance?: number;
@@ -220,6 +221,7 @@ const RecordsSection = () => {
         
         const records: HikingRecord[] = deduped.map((r: any) => ({
           id: r.id,
+          userId: r.user_id,
           name: r.name,
           elevation: r.elevation || undefined,
           distance: r.distance || undefined,
@@ -391,7 +393,25 @@ const RecordsSection = () => {
     if (selectedHike && user) {
       loadShares(selectedHike.id);
       loadSharedEntries(selectedHike.id);
-      setViewMode('mine');
+      setViewMode('all');
+      // Load own profile + owner profile into cache
+      (async () => {
+        const idsToLoad = [user.id];
+        if (selectedHike.userId && selectedHike.userId !== user.id) {
+          idsToLoad.push(selectedHike.userId);
+        }
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .in('id', idsToLoad);
+        if (profiles) {
+          setProfileCache(prev => {
+            const next = new Map(prev);
+            profiles.forEach((p: any) => next.set(p.id, { username: p.username || 'Ukjent', avatar_url: p.avatar_url }));
+            return next;
+          });
+        }
+      })();
     }
   }, [selectedHike?.id, user]);
 
@@ -448,6 +468,7 @@ const RecordsSection = () => {
     } else {
       const record: HikingRecord = {
         id: `h${Date.now()}`,
+        userId: '',
         name: newHikeName.trim(),
         elevation: newHikeElevation ? Number(newHikeElevation) : undefined,
         distance: newHikeDistance ? Number(newHikeDistance) : undefined,
@@ -471,7 +492,7 @@ const RecordsSection = () => {
       ? `${newEntryHours}:${String(newEntryMinutes).padStart(2, '0')}:${String(newEntrySeconds).padStart(2, '0')}`
       : `${newEntryMinutes}:${String(newEntrySeconds).padStart(2, '0')}`;
     
-    const hikeOwnedByUser = hikingRecords.some(h => h.id === selectedHike.id);
+    const hikeOwnedByUser = selectedHike.userId === user?.id;
     
     if (user && !hikeOwnedByUser) {
       await supabase.from('shared_hiking_entries').insert({
@@ -728,6 +749,7 @@ const RecordsSection = () => {
   // Combine own entries and shared entries for "all" view
   const getAllEntries = () => {
     if (!selectedHike) return [];
+    const ownerId = selectedHike.userId || user?.id || '';
     const ownEntries = selectedHike.entries.map(e => ({
       id: e.id,
       time: e.time,
@@ -735,7 +757,7 @@ const RecordsSection = () => {
       avgHeartrate: e.avgHeartrate,
       maxHeartrate: e.maxHeartrate,
       notes: e.notes,
-      userId: user?.id || '',
+      userId: ownerId,
       isShared: false,
     }));
     const friendEntries = sharedEntries
@@ -1048,8 +1070,8 @@ const RecordsSection = () => {
                   </Button>
 
                   {selectedHike && (() => {
-                    if (viewMode === 'all' && hasAcceptedShares) {
-                      const allEntries = getAllEntries();
+                    if (hasAcceptedShares) {
+                      const allEntries = viewMode === 'all' ? getAllEntries() : getAllEntries().filter(e => e.userId === user?.id);
                       return allEntries.length === 0 ? (
                         <p className="text-center py-6 text-muted-foreground text-sm">
                           {t('records.noTimes')}
@@ -1057,11 +1079,13 @@ const RecordsSection = () => {
                       ) : (
                         <div className="glass-card rounded-xl overflow-hidden divide-y divide-border/50">
                           {allEntries.map((e, i) => {
-                            const profile = e.userId === user?.id
-                              ? { username: language === 'no' ? 'Deg' : 'You', avatar_url: undefined }
-                              : profileCache.get(e.userId) || { username: 'Ukjent' };
+                            const profile = profileCache.get(e.userId) || { username: e.userId === user?.id ? (language === 'no' ? 'Deg' : 'You') : 'Ukjent' };
                             return (
-                              <div key={e.id} className="flex items-center gap-2.5 px-4 py-3">
+                              <button
+                                key={e.id}
+                                onClick={() => openEntryDetail({ id: e.id, time: e.time, date: e.date, avgHeartrate: e.avgHeartrate, maxHeartrate: e.maxHeartrate, notes: e.notes }, e.isShared)}
+                                className="flex items-center gap-2.5 px-4 py-3 w-full text-left hover:bg-secondary/30 transition-colors"
+                              >
                                 <span className={`text-xs font-bold w-6 text-center ${
                                   i === 0 ? 'text-warning' : 'text-muted-foreground'
                                 }`}>
@@ -1078,14 +1102,15 @@ const RecordsSection = () => {
                                 <span className="text-xs text-muted-foreground">
                                   {new Date(e.date).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}
                                 </span>
-                              </div>
+                                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                              </button>
                             );
                           })}
                         </div>
                       );
                     }
 
-                    // "Mine" view (default) - only show time and date, click to see details
+                    // No shares - simple view without avatars
                     const sorted = [...selectedHike.entries].sort((a, b) =>
                       parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time)
                     );
