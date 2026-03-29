@@ -393,7 +393,25 @@ const RecordsSection = () => {
     if (selectedHike && user) {
       loadShares(selectedHike.id);
       loadSharedEntries(selectedHike.id);
-      setViewMode('mine');
+      setViewMode('all');
+      // Load own profile + owner profile into cache
+      (async () => {
+        const idsToLoad = [user.id];
+        if (selectedHike.userId && selectedHike.userId !== user.id) {
+          idsToLoad.push(selectedHike.userId);
+        }
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, username, avatar_url')
+          .in('id', idsToLoad);
+        if (profiles) {
+          setProfileCache(prev => {
+            const next = new Map(prev);
+            profiles.forEach((p: any) => next.set(p.id, { username: p.username || 'Ukjent', avatar_url: p.avatar_url }));
+            return next;
+          });
+        }
+      })();
     }
   }, [selectedHike?.id, user]);
 
