@@ -749,6 +749,7 @@ const RecordsSection = () => {
   // Combine own entries and shared entries for "all" view
   const getAllEntries = () => {
     if (!selectedHike) return [];
+    const ownerId = selectedHike.userId || user?.id || '';
     const ownEntries = selectedHike.entries.map(e => ({
       id: e.id,
       time: e.time,
@@ -756,7 +757,7 @@ const RecordsSection = () => {
       avgHeartrate: e.avgHeartrate,
       maxHeartrate: e.maxHeartrate,
       notes: e.notes,
-      userId: user?.id || '',
+      userId: ownerId,
       isShared: false,
     }));
     const friendEntries = sharedEntries
