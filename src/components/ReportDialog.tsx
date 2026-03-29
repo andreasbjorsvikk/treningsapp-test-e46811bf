@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, ChevronRight, ChevronLeft, Trophy, Award, Check, RefreshCw } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Trophy, Award, Check, RefreshCw, Mountain, Route, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ReportData } from '@/utils/reportUtils';
