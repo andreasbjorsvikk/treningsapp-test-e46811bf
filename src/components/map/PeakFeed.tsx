@@ -784,7 +784,13 @@ const PeakFeed = () => {
 
       {/* Expanded image overlay */}
       {expandedImage && (
-        <div className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4" onClick={() => setExpandedImage(null)}>
+        <div
+          className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setExpandedImage(null)}
+          onKeyDown={(e) => { if (e.key === 'Escape') setExpandedImage(null); }}
+          tabIndex={0}
+          ref={(el) => el?.focus()}
+        >
           <img src={expandedImage} alt="" className="max-w-full max-h-full object-contain rounded-lg" />
         </div>
       )}

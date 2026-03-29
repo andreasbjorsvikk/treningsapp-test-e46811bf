@@ -128,20 +128,28 @@ const ReportDialog = ({ open, onClose, data, onRepeatGoal }: ReportDialogProps) 
               })}
           </div>
 
-          {/* Custom graphic stats */}
+          {/* Stats boxes */}
           <div className="grid grid-cols-3 gap-2">
             {data.totalDistance > 0 && (
-              <div className="animate-fade-in">
-                <DistanceGraphic value={data.totalDistance.toFixed(1)} />
+              <div className="animate-fade-in rounded-xl bg-muted/40 border border-border/30 p-3 text-center space-y-1">
+                <Route className="w-4 h-4 mx-auto text-primary/70" />
+                <p className="text-lg font-extrabold text-foreground leading-none">{data.totalDistance.toFixed(1)}</p>
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">km</p>
               </div>
             )}
             {data.totalElevation > 0 && (
-              <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
-                <MountainGraphic value={data.totalElevation.toLocaleString()} />
+              <div className="animate-fade-in rounded-xl bg-muted/40 border border-border/30 p-3 text-center space-y-1" style={{ animationDelay: '0.1s' }}>
+                <Mountain className="w-4 h-4 mx-auto text-primary/70" />
+                <p className="text-lg font-extrabold text-foreground leading-none">{data.totalElevation.toLocaleString()}</p>
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">hm</p>
               </div>
             )}
-            <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-              <ClockGraphic value={data.totalMinutes >= 60 ? `${Math.floor(data.totalMinutes / 60)}t ${data.totalMinutes % 60}m` : `${data.totalMinutes}m`} />
+            <div className="animate-fade-in rounded-xl bg-muted/40 border border-border/30 p-3 text-center space-y-1" style={{ animationDelay: '0.2s' }}>
+              <Clock className="w-4 h-4 mx-auto text-primary/70" />
+              <p className="text-lg font-extrabold text-foreground leading-none">
+                {data.totalMinutes >= 60 ? `${Math.floor(data.totalMinutes / 60)}t ${data.totalMinutes % 60}m` : `${data.totalMinutes}m`}
+              </p>
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">tid</p>
             </div>
           </div>
 
