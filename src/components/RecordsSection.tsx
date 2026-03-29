@@ -87,6 +87,7 @@ function estimateBestTime(sessions: WorkoutSession[], benchmarkKm: number): Best
 // Hiking record types
 export interface HikingRecord {
   id: string;
+  userId: string;
   name: string;
   elevation?: number;
   distance?: number;
@@ -220,6 +221,7 @@ const RecordsSection = () => {
         
         const records: HikingRecord[] = deduped.map((r: any) => ({
           id: r.id,
+          userId: r.user_id,
           name: r.name,
           elevation: r.elevation || undefined,
           distance: r.distance || undefined,
@@ -471,7 +473,7 @@ const RecordsSection = () => {
       ? `${newEntryHours}:${String(newEntryMinutes).padStart(2, '0')}:${String(newEntrySeconds).padStart(2, '0')}`
       : `${newEntryMinutes}:${String(newEntrySeconds).padStart(2, '0')}`;
     
-    const hikeOwnedByUser = hikingRecords.some(h => h.id === selectedHike.id);
+    const hikeOwnedByUser = selectedHike.userId === user?.id;
     
     if (user && !hikeOwnedByUser) {
       await supabase.from('shared_hiking_entries').insert({
