@@ -324,16 +324,14 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
       const elapsed = now - startTimeRef.current;
       const rawProgress = Math.min(elapsed / replayDuration, 1);
 
-      // Smooth cubic ease-in-out
-      let eased: number;
-      if (rawProgress < 0.5) {
-        eased = 4 * rawProgress * rawProgress * rawProgress;
-      } else {
-        eased = 1 - Math.pow(-2 * rawProgress + 2, 3) / 2;
-      }
+      // Linear progress — the GPS point density already encodes pace
+      // Points sampled at regular time intervals by the watch mean:
+      // dense points = slow pace, sparse points = fast pace
+      // Using distance-proportional progress preserves this naturally
+      const progress = rawProgress;
 
       // Use original points for marker position (accurate GPS)
-      const currentDist = eased * totalDist;
+      const currentDist = progress * totalDist;
       const pos = sampleAtDistance(routePoints, cumDist, currentDist);
 
       const lngLat: [number, number] = [pos.lng, pos.lat];
@@ -341,7 +339,7 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
       glowMarkerRef.current?.setLngLat(lngLat);
 
       // Use smoothed points for the drawn line
-      const smoothedTargetDist = eased * smoothedTotalDist;
+      const smoothedTargetDist = progress * smoothedTotalDist;
       const smoothPos = sampleAtDistance(smoothed, smoothedCumDist, smoothedTargetDist);
       const progressCoords: [number, number][] = [];
       for (let i = 0; i <= smoothPos.segIdx; i++) {
