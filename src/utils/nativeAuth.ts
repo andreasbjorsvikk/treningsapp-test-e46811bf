@@ -19,7 +19,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { isNativePlatform } from '@/utils/capacitor';
 
 // Must match the URL scheme registered in Info.plist / capacitor.config.ts
-const NATIVE_REDIRECT = 'app.lovable.b76d427e030c484ab51c8b1ec9d0841b://callback';
+const APP_SCHEME = 'com.andreasbjorsvik.treningsappen';
+const NATIVE_REDIRECT = `${APP_SCHEME}://callback`;
 
 /**
  * Start native OAuth for a given provider.
