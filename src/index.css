@@ -393,3 +393,9 @@
   z-index: 2;
   transition: all 0.4s ease;
 }
+
+/* Hide Mapbox attribution/logo globally */
+.mapboxgl-ctrl-attrib,
+.mapboxgl-ctrl-logo {
+  display: none !important;
+}
