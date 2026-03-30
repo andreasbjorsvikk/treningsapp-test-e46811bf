@@ -357,8 +357,8 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
         }
       } catch {}
 
-      // Stats — query terrain elevation at current marker position
-      const distKm = eased * reportedDist;
+      // Stats
+      const distKm = progress * reportedDist;
       let altitude = 0;
       try {
         const terrainElev = map.queryTerrainElevation([pos.lng, pos.lat]);
