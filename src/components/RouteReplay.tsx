@@ -9,6 +9,7 @@ interface RouteReplayProps {
   totalElevation?: number; // m
   averageHeartrate?: number | null;
   maxHeartrate?: number | null;
+  durationMinutes?: number; // actual workout duration in minutes
 }
 
 function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {

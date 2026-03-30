@@ -94,6 +94,7 @@ function FullscreenMap({
         bearing: -20,
         antialias: false,
         fadeDuration: 0,
+        attributionControl: false,
       });
 
       // All interactions enabled by default — no portal, no vaul interference
