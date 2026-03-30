@@ -184,6 +184,59 @@ const CalendarPage = () => {
 
   const selectedSessions = selectedDay ? (sessionsByDate.get(selectedDay) || []) : [];
 
+  // Handle day click: if exactly 1 session and no health events, open detail directly
+  const handleDayClick = useCallback((dateKey: string) => {
+    const daySessions = sessionsByDate.get(dateKey) || [];
+    const dayHealth = healthEventDates.get(dateKey) || [];
+    if (daySessions.length === 1 && dayHealth.length === 0) {
+      setDirectDetailSession(daySessions[0]);
+      setDirectDetailDateKey(dateKey);
+    } else {
+      setSelectedDay(dateKey);
+    }
+  }, [sessionsByDate, healthEventDates]);
+
+  const handleDirectDetailClose = useCallback(() => {
+    setDirectDetailSession(null);
+    setDirectDetailDateKey(null);
+  }, []);
+
+  const handleDirectEdit = useCallback((session: WorkoutSession) => {
+    setDirectDetailSession(null);
+    setEditSession(session);
+    setWorkoutDialogOpen(true);
+  }, []);
+
+  const handleDirectDelete = useCallback(async (id: string) => {
+    await appData.deleteSession(id);
+    setDirectDetailSession(null);
+    setDirectDetailDateKey(null);
+    triggerRefresh();
+  }, [appData, triggerRefresh]);
+
+  const handleDirectAddNew = useCallback(() => {
+    setDirectDetailSession(null);
+    setEditSession(undefined);
+    setWorkoutDialogOpen(true);
+  }, []);
+
+  const handleDirectNewHealthEvent = useCallback(() => {
+    setDirectDetailSession(null);
+    setEditHealthEvent(undefined);
+    setHealthDialogOpen(true);
+  }, []);
+
+  const handleWorkoutSave = useCallback(async (data: Omit<WorkoutSession, 'id'>) => {
+    if (editSession) {
+      await appData.updateSession(editSession.id, data);
+    } else {
+      await appData.addSession(data);
+    }
+    setEditSession(undefined);
+    setWorkoutDialogOpen(false);
+    triggerRefresh();
+  }, [editSession, appData, triggerRefresh]);
+
   // Scroll to current month on first render
   // iOS Safari: layout of large DOM is async, so we retry multiple times.
   // KEY FIX: We scroll on EVERY timeout (not just the first success) because
