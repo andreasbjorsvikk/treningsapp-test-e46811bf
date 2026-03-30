@@ -71,7 +71,7 @@ export function setupNativeAuthListener() {
       } catch { /* browser may already be closed */ }
 
       // Extract the auth code from the URL
-      const urlObj = new URL(url.replace('app.lovable.b76d427e030c484ab51c8b1ec9d0841b://', 'https://placeholder/'));
+      const urlObj = new URL(url.replace(`${APP_SCHEME}://`, 'https://placeholder/'));
       const code = urlObj.searchParams.get('code');
 
       if (code) {
