@@ -11,8 +11,9 @@ import { AdminProvider } from "@/hooks/useAdmin";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
-import NotFound from "./pages/NotFound";
 import SupportPage from "./pages/SupportPage";
+import AuthCallbackPage from "./pages/AuthCallbackPage";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,6 +51,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<RequireAuth><Index /></RequireAuth>} />
               <Route path="/login" element={<RedirectIfAuth><LoginPage /></RedirectIfAuth>} />
+              <Route path="/auth/callback" element={<AuthCallbackPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/support" element={<SupportPage />} />
               <Route path="*" element={<NotFound />} />
