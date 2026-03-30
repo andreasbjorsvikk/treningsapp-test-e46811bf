@@ -38,6 +38,7 @@ interface Props {
   onClose: () => void;
   onEdit?: (session: WorkoutSession) => void;
   onDelete?: (id: string) => void;
+  extraFooter?: React.ReactNode;
 }
 
 /**
@@ -189,7 +190,7 @@ function FullscreenMap({
   );
 }
 
-const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props) => {
+const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete, extraFooter }: Props) => {
   const { settings } = useSettings();
   const { t } = useTranslation();
   const isDark = settings.darkMode;
@@ -266,7 +267,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
               <MapboxRouteMap
                 routePoints={routePoints}
                 lineColor={getActivityColors(session.type, false).text}
-                height={192}
+                height={280}
                 isDark={isDark}
                 onFullscreenChange={setMapFullscreen}
               />
@@ -397,6 +398,9 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
                 </a>
               </div>
             )}
+
+            {/* Extra footer (e.g. add session buttons from calendar) */}
+            {extraFooter}
 
             {/* Footer actions */}
             <DrawerFooter className="flex-row gap-2 pt-2">

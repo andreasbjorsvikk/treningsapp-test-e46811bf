@@ -6,10 +6,13 @@ import ActivityIcon from '@/components/ActivityIcon';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAppDataContext } from '@/contexts/AppDataContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Route, Mountain, Clock, Ambulance, Cross, Grid3X3 } from 'lucide-react';
+import { Route, Mountain, Clock, Ambulance, Cross, Grid3X3, Plus } from 'lucide-react';
 import DayDrawer from '@/components/DayDrawer';
+import WorkoutDetailDrawer from '@/components/WorkoutDetailDrawer';
+import WorkoutDialog from '@/components/WorkoutDialog';
 import HeatmapCalendar from '@/components/HeatmapCalendar';
 import HealthEventDialog from '@/components/HealthEventDialog';
+import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/i18n/useTranslation';
 // Tooltips for health events use native DOM for reliability inside memoized renders
 
@@ -127,6 +130,12 @@ const CalendarPage = () => {
   const [heatmapOpen, setHeatmapOpen] = useState(false);
   const isDark = settings.darkMode;
 
+  // Single-session direct detail view
+  const [directDetailSession, setDirectDetailSession] = useState<WorkoutSession | null>(null);
+  const [directDetailDateKey, setDirectDetailDateKey] = useState<string | null>(null);
+  const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
+  const [workoutDialogOpen, setWorkoutDialogOpen] = useState(false);
+
   // Infinite scroll state: track range of months to render
   const [rangeStart, setRangeStart] = useState({ year: now.getFullYear() - 1, month: now.getMonth() });
   const [rangeEnd, setRangeEnd] = useState({ year: now.getFullYear() + 1, month: now.getMonth() });
@@ -174,6 +183,59 @@ const CalendarPage = () => {
   const triggerRefresh = useCallback(() => setRefresh(r => r + 1), []);
 
   const selectedSessions = selectedDay ? (sessionsByDate.get(selectedDay) || []) : [];
+
+  // Handle day click: if exactly 1 session and no health events, open detail directly
+  const handleDayClick = useCallback((dateKey: string) => {
+    const daySessions = sessionsByDate.get(dateKey) || [];
+    const dayHealth = healthEventDates.get(dateKey) || [];
+    if (daySessions.length === 1 && dayHealth.length === 0) {
+      setDirectDetailSession(daySessions[0]);
+      setDirectDetailDateKey(dateKey);
+    } else {
+      setSelectedDay(dateKey);
+    }
+  }, [sessionsByDate, healthEventDates]);
+
+  const handleDirectDetailClose = useCallback(() => {
+    setDirectDetailSession(null);
+    setDirectDetailDateKey(null);
+  }, []);
+
+  const handleDirectEdit = useCallback((session: WorkoutSession) => {
+    setDirectDetailSession(null);
+    setEditSession(session);
+    setWorkoutDialogOpen(true);
+  }, []);
+
+  const handleDirectDelete = useCallback(async (id: string) => {
+    await appData.deleteSession(id);
+    setDirectDetailSession(null);
+    setDirectDetailDateKey(null);
+    triggerRefresh();
+  }, [appData, triggerRefresh]);
+
+  const handleDirectAddNew = useCallback(() => {
+    setDirectDetailSession(null);
+    setEditSession(undefined);
+    setWorkoutDialogOpen(true);
+  }, []);
+
+  const handleDirectNewHealthEvent = useCallback(() => {
+    setDirectDetailSession(null);
+    setEditHealthEvent(undefined);
+    setHealthDialogOpen(true);
+  }, []);
+
+  const handleWorkoutSave = useCallback(async (data: Omit<WorkoutSession, 'id'>) => {
+    if (editSession) {
+      await appData.updateSession(editSession.id, data);
+    } else {
+      await appData.addSession(data);
+    }
+    setEditSession(undefined);
+    setWorkoutDialogOpen(false);
+    triggerRefresh();
+  }, [editSession, appData, triggerRefresh]);
 
   // Scroll to current month on first render
   // iOS Safari: layout of large DOM is async, so we retry multiple times.
@@ -469,7 +531,7 @@ const CalendarPage = () => {
                 key={i}
                 role="button"
                 tabIndex={0}
-                onClick={() => setSelectedDay(dateKey)}
+                onClick={() => handleDayClick(dateKey)}
                 className={`
                   relative flex flex-col rounded-lg overflow-hidden transition-all duration-150 cursor-pointer
                   ${isMobile ? 'min-h-[56px]' : 'min-h-[80px] lg:min-h-[100px]'}
@@ -633,7 +695,7 @@ const CalendarPage = () => {
         onClose={() => setHeatmapOpen(false)}
       />
 
-      {/* Day drawer */}
+      {/* Day drawer — only for 0 or 2+ sessions */}
       <DayDrawer
         dateKey={selectedDay}
         sessions={selectedSessions}
@@ -643,6 +705,34 @@ const CalendarPage = () => {
         onNavigateToCalendar={() => setSelectedDay(null)}
       />
 
+      {/* Single-session direct detail drawer */}
+      <WorkoutDetailDrawer
+        session={directDetailSession}
+        open={!!directDetailSession}
+        onClose={handleDirectDetailClose}
+        onEdit={handleDirectEdit}
+        onDelete={handleDirectDelete}
+        extraFooter={
+          <div className="flex gap-2 px-4 pb-3">
+            <Button onClick={handleDirectAddNew} className="flex-1" variant="outline" size="sm">
+              <Plus className="w-4 h-4 mr-2" /> {t('common.addSession')}
+            </Button>
+            <Button onClick={handleDirectNewHealthEvent} variant="outline" className="flex-1" size="sm">
+              <Ambulance className="w-4 h-4 mr-2" /> {t('health.newEvent')}
+            </Button>
+          </div>
+        }
+      />
+
+      {/* Workout dialog for add/edit from single-session view */}
+      <WorkoutDialog
+        open={workoutDialogOpen}
+        onClose={() => { setWorkoutDialogOpen(false); setEditSession(undefined); }}
+        onSave={handleWorkoutSave}
+        session={editSession}
+        defaultDate={directDetailDateKey || undefined}
+      />
+
       {/* Health event edit dialog */}
       <HealthEventDialog
         open={healthDialogOpen}
@@ -650,6 +740,8 @@ const CalendarPage = () => {
         onSave={async (data) => {
           if (editHealthEvent) {
             await appData.updateHealthEvent(editHealthEvent.id, data);
+          } else {
+            await appData.addHealthEvent(data);
           }
           triggerRefresh();
         }}

@@ -30,14 +30,24 @@ export function computeWeeklyReport(
   allTimeSessionsForRecords: WorkoutSession[]
 ): ReportData {
   const now = new Date();
-  // Get sessions for this past week (Mon-Sun)
-  const day = now.getDay();
-  const mondayOffset = day === 0 ? 6 : day - 1;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - mondayOffset);
+  // Always show the PREVIOUS completed week (Mon-Sun).
+  // On Sunday evening we still show the week ending that Sunday.
+  // On Monday we show the week that just ended (previous Mon-Sun).
+  const dayOfWeek = now.getDay(); // 0=Sun
+  // Calculate the Sunday that ends the target week
+  let targetSunday: Date;
+  if (dayOfWeek === 0) {
+    // It's Sunday — target is today
+    targetSunday = new Date(now);
+  } else {
+    // Mon-Sat — target is previous Sunday
+    targetSunday = new Date(now);
+    targetSunday.setDate(now.getDate() - dayOfWeek);
+  }
+  const monday = new Date(targetSunday);
+  monday.setDate(targetSunday.getDate() - 6);
   monday.setHours(0, 0, 0, 0);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
+  const sunday = new Date(targetSunday);
   sunday.setHours(23, 59, 59, 999);
 
   const weekSessions = allSessions.filter(s => {
@@ -60,7 +70,7 @@ export function computeWeeklyReport(
 
   return {
     period: 'week',
-    periodLabel: `Uke ${getWeekNumber(now)} (${weekLabel})`,
+    periodLabel: `Uke ${getWeekNumber(targetSunday)} (${weekLabel})`,
     sessions: weekSessions,
     ...stats,
     funFacts,
@@ -249,7 +259,16 @@ export function shouldShowMonthlyReport(): boolean {
 export function getReportDismissKey(type: 'week' | 'month'): string {
   const now = new Date();
   if (type === 'week') {
-    return `treningslogg_report_week_${now.getFullYear()}_W${getWeekNumber(now)}`;
+    // Use the same target week logic as computeWeeklyReport
+    const dayOfWeek = now.getDay();
+    let targetSunday: Date;
+    if (dayOfWeek === 0) {
+      targetSunday = new Date(now);
+    } else {
+      targetSunday = new Date(now);
+      targetSunday.setDate(now.getDate() - dayOfWeek);
+    }
+    return `treningslogg_report_week_${targetSunday.getFullYear()}_W${getWeekNumber(targetSunday)}`;
   }
   return `treningslogg_report_month_${now.getFullYear()}_${now.getMonth()}`;
 }
