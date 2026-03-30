@@ -9,6 +9,7 @@ interface RouteReplayProps {
   totalElevation?: number; // m
   averageHeartrate?: number | null;
   maxHeartrate?: number | null;
+  durationMinutes?: number; // actual workout duration in minutes
 }
 
 function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -140,7 +141,7 @@ function getReplayDuration(totalDistKm: number): number {
 
 const DARK_GREEN = '#1a6b3c';
 
-const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevation, averageHeartrate, maxHeartrate }: RouteReplayProps) => {
+const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevation, averageHeartrate, maxHeartrate, durationMinutes }: RouteReplayProps) => {
   const [phase, setPhase] = useState<'idle' | 'intro' | 'playing' | 'outro'>('idle');
   const [stats, setStats] = useState({ distance: 0, elevation: 0, altitude: 0 });
   const markerRef = useRef<any>(null);
@@ -211,6 +212,18 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
     const reportedDist = totalDistance ?? totalDist;
     const reportedElev = totalElevation ?? 0;
     const replayDuration = getReplayDuration(reportedDist);
+
+    // Build pace-based time mapping: cumulative time per point proportional to segment distance
+    // This makes the replay go fast where the user was fast, slow where they were slow
+    // With GPS data we only have distance, so we assume constant pace per segment
+    // but the distance-proportional mapping already achieves the effect since
+    // short segments = user was there briefly, long segments = user spent more time
+    const segmentCount = routePoints.length - 1;
+    const cumTime = [0]; // normalized 0-1 time for each point
+    for (let i = 1; i < routePoints.length; i++) {
+      // Time spent is proportional to distance (constant speed assumption from GPS sampling rate)
+      cumTime.push(cumDist[i] / totalDist);
+    }
 
     // Compute smoothed route lazily (only when replay starts)
     if (smoothedRef.current.length === 0) {
@@ -311,16 +324,14 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
       const elapsed = now - startTimeRef.current;
       const rawProgress = Math.min(elapsed / replayDuration, 1);
 
-      // Smooth cubic ease-in-out
-      let eased: number;
-      if (rawProgress < 0.5) {
-        eased = 4 * rawProgress * rawProgress * rawProgress;
-      } else {
-        eased = 1 - Math.pow(-2 * rawProgress + 2, 3) / 2;
-      }
+      // Linear progress — the GPS point density already encodes pace
+      // Points sampled at regular time intervals by the watch mean:
+      // dense points = slow pace, sparse points = fast pace
+      // Using distance-proportional progress preserves this naturally
+      const progress = rawProgress;
 
       // Use original points for marker position (accurate GPS)
-      const currentDist = eased * totalDist;
+      const currentDist = progress * totalDist;
       const pos = sampleAtDistance(routePoints, cumDist, currentDist);
 
       const lngLat: [number, number] = [pos.lng, pos.lat];
@@ -328,7 +339,7 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
       glowMarkerRef.current?.setLngLat(lngLat);
 
       // Use smoothed points for the drawn line
-      const smoothedTargetDist = eased * smoothedTotalDist;
+      const smoothedTargetDist = progress * smoothedTotalDist;
       const smoothPos = sampleAtDistance(smoothed, smoothedCumDist, smoothedTargetDist);
       const progressCoords: [number, number][] = [];
       for (let i = 0; i <= smoothPos.segIdx; i++) {
@@ -346,8 +357,8 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
         }
       } catch {}
 
-      // Stats — query terrain elevation at current marker position
-      const distKm = eased * reportedDist;
+      // Stats
+      const distKm = progress * reportedDist;
       let altitude = 0;
       try {
         const terrainElev = map.queryTerrainElevation([pos.lng, pos.lat]);

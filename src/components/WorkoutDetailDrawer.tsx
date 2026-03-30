@@ -53,6 +53,7 @@ function FullscreenMap({
   totalElevation,
   averageHeartrate,
   maxHeartrate,
+  durationMinutes,
 }: {
   routePoints: [number, number][];
   lineColor: string;
@@ -61,6 +62,7 @@ function FullscreenMap({
   totalElevation?: number;
   averageHeartrate?: number | null;
   maxHeartrate?: number | null;
+  durationMinutes?: number;
 }) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -94,6 +96,7 @@ function FullscreenMap({
         bearing: -20,
         antialias: false,
         fadeDuration: 0,
+        attributionControl: false,
       });
 
       // All interactions enabled by default — no portal, no vaul interference
@@ -162,6 +165,15 @@ function FullscreenMap({
     };
   }, [routePoints, simplifiedRoute, lineColor]);
 
+  // ESC to close fullscreen map
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   return (
     <div className="fixed inset-0 z-[9999] bg-background flex flex-col">
       <button
@@ -184,6 +196,7 @@ function FullscreenMap({
           totalElevation={totalElevation}
           averageHeartrate={averageHeartrate}
           maxHeartrate={maxHeartrate}
+          durationMinutes={durationMinutes}
         />
       )}
     </div>
@@ -399,9 +412,6 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete, extraFo
               </div>
             )}
 
-            {/* Extra footer (e.g. add session buttons from calendar) */}
-            {extraFooter}
-
             {/* Footer actions */}
             <DrawerFooter className="flex-row gap-2 pt-2">
               {onEdit && (
@@ -421,6 +431,9 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete, extraFo
                 </button>
               )}
             </DrawerFooter>
+
+            {/* Extra footer (e.g. add session buttons from calendar) */}
+            {extraFooter}
           </div>
         </DrawerContent>
       </Drawer>
@@ -435,6 +448,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete, extraFo
           totalElevation={session.elevationGain}
           averageHeartrate={session.averageHeartrate}
           maxHeartrate={session.maxHeartrate}
+          durationMinutes={session.durationMinutes}
         />
       )}
 
