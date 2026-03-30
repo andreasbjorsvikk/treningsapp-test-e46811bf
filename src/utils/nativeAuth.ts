@@ -62,7 +62,7 @@ export function setupNativeAuthListener() {
   import('@capacitor/app').then(({ App }) => {
     App.addListener('appUrlOpen', async ({ url }) => {
       // Only handle our auth callback scheme
-      if (!url.startsWith('app.lovable.b76d427e030c484ab51c8b1ec9d0841b://callback')) return;
+      if (!url.startsWith(`${APP_SCHEME}://callback`)) return;
 
       try {
         // Close the system browser tab
