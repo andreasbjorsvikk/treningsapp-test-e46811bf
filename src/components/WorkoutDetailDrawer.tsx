@@ -187,6 +187,7 @@ function FullscreenMap({
           totalElevation={totalElevation}
           averageHeartrate={averageHeartrate}
           maxHeartrate={maxHeartrate}
+          durationMinutes={durationMinutes}
         />
       )}
     </div>
