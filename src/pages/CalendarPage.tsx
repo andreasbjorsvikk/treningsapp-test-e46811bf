@@ -695,7 +695,7 @@ const CalendarPage = () => {
         onClose={() => setHeatmapOpen(false)}
       />
 
-      {/* Day drawer */}
+      {/* Day drawer — only for 0 or 2+ sessions */}
       <DayDrawer
         dateKey={selectedDay}
         sessions={selectedSessions}
@@ -705,6 +705,34 @@ const CalendarPage = () => {
         onNavigateToCalendar={() => setSelectedDay(null)}
       />
 
+      {/* Single-session direct detail drawer */}
+      <WorkoutDetailDrawer
+        session={directDetailSession}
+        open={!!directDetailSession}
+        onClose={handleDirectDetailClose}
+        onEdit={handleDirectEdit}
+        onDelete={handleDirectDelete}
+        extraFooter={
+          <div className="flex gap-2 px-4 pb-3">
+            <Button onClick={handleDirectAddNew} className="flex-1" variant="outline" size="sm">
+              <Plus className="w-4 h-4 mr-2" /> {t('common.addSession')}
+            </Button>
+            <Button onClick={handleDirectNewHealthEvent} variant="outline" className="flex-1" size="sm">
+              <Ambulance className="w-4 h-4 mr-2" /> {t('health.newEvent')}
+            </Button>
+          </div>
+        }
+      />
+
+      {/* Workout dialog for add/edit from single-session view */}
+      <WorkoutDialog
+        open={workoutDialogOpen}
+        onClose={() => { setWorkoutDialogOpen(false); setEditSession(undefined); }}
+        onSave={handleWorkoutSave}
+        session={editSession}
+        defaultDate={directDetailDateKey || undefined}
+      />
+
       {/* Health event edit dialog */}
       <HealthEventDialog
         open={healthDialogOpen}
@@ -712,6 +740,8 @@ const CalendarPage = () => {
         onSave={async (data) => {
           if (editHealthEvent) {
             await appData.updateHealthEvent(editHealthEvent.id, data);
+          } else {
+            await appData.addHealthEvent(data);
           }
           triggerRefresh();
         }}
