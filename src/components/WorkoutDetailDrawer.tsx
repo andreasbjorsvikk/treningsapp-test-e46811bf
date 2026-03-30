@@ -53,6 +53,7 @@ function FullscreenMap({
   totalElevation,
   averageHeartrate,
   maxHeartrate,
+  durationMinutes,
 }: {
   routePoints: [number, number][];
   lineColor: string;
@@ -61,6 +62,7 @@ function FullscreenMap({
   totalElevation?: number;
   averageHeartrate?: number | null;
   maxHeartrate?: number | null;
+  durationMinutes?: number;
 }) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
