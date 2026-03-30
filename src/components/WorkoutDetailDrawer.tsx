@@ -38,6 +38,7 @@ interface Props {
   onClose: () => void;
   onEdit?: (session: WorkoutSession) => void;
   onDelete?: (id: string) => void;
+  extraFooter?: React.ReactNode;
 }
 
 /**
