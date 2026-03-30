@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Signing in…</title>
+  <style>
+    body { font-family: -apple-system, system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #111; color: #fff; }
+    .container { text-align: center; padding: 2rem; }
+    .spinner { width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    a { color: #4ade80; margin-top: 1rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="spinner"></div>
+    <p>Signing you in…</p>
+    <p id="fallback" style="display:none">
+      <a id="open-app" href="#">Open Treningsappen</a>
+    </p>
+  </div>
+  <script>
+    // This page is the OAuth callback landing page.
+    // It forwards the auth code to the native app via deep link.
+    (function() {
+      var params = window.location.search;
+      // Also check hash for implicit flow
+      if (!params && window.location.hash) {
+        params = '?' + window.location.hash.substring(1);
+      }
+      var deepLink = 'com.andreasbjorsvik.treningsappen://callback' + params;
+
+      // Try to open the deep link immediately
+      window.location.href = deepLink;
+
+      // Show fallback link after a short delay in case redirect didn't work
+      setTimeout(function() {
+        var fallback = document.getElementById('fallback');
+        var link = document.getElementById('open-app');
+        if (fallback && link) {
+          link.href = deepLink;
+          fallback.style.display = 'block';
+        }
+      }, 2000);
+    })();
+  </script>
+</body>
+</html>
