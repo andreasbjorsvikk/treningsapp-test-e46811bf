@@ -259,7 +259,16 @@ export function shouldShowMonthlyReport(): boolean {
 export function getReportDismissKey(type: 'week' | 'month'): string {
   const now = new Date();
   if (type === 'week') {
-    return `treningslogg_report_week_${now.getFullYear()}_W${getWeekNumber(now)}`;
+    // Use the same target week logic as computeWeeklyReport
+    const dayOfWeek = now.getDay();
+    let targetSunday: Date;
+    if (dayOfWeek === 0) {
+      targetSunday = new Date(now);
+    } else {
+      targetSunday = new Date(now);
+      targetSunday.setDate(now.getDate() - dayOfWeek);
+    }
+    return `treningslogg_report_week_${targetSunday.getFullYear()}_W${getWeekNumber(targetSunday)}`;
   }
   return `treningslogg_report_month_${now.getFullYear()}_${now.getMonth()}`;
 }
