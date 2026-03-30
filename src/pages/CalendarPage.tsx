@@ -130,6 +130,12 @@ const CalendarPage = () => {
   const [heatmapOpen, setHeatmapOpen] = useState(false);
   const isDark = settings.darkMode;
 
+  // Single-session direct detail view
+  const [directDetailSession, setDirectDetailSession] = useState<WorkoutSession | null>(null);
+  const [directDetailDateKey, setDirectDetailDateKey] = useState<string | null>(null);
+  const [editSession, setEditSession] = useState<WorkoutSession | undefined>();
+  const [workoutDialogOpen, setWorkoutDialogOpen] = useState(false);
+
   // Infinite scroll state: track range of months to render
   const [rangeStart, setRangeStart] = useState({ year: now.getFullYear() - 1, month: now.getMonth() });
   const [rangeEnd, setRangeEnd] = useState({ year: now.getFullYear() + 1, month: now.getMonth() });
