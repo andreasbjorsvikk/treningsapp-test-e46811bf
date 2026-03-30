@@ -19,7 +19,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { isNativePlatform } from '@/utils/capacitor';
 
 // Must match the URL scheme registered in Info.plist / capacitor.config.ts
-const NATIVE_REDIRECT = 'app.lovable.b76d427e030c484ab51c8b1ec9d0841b://callback';
+const APP_SCHEME = 'com.andreasbjorsvik.treningsappen';
+const NATIVE_REDIRECT = `${APP_SCHEME}://callback`;
 
 /**
  * Start native OAuth for a given provider.
@@ -61,7 +62,7 @@ export function setupNativeAuthListener() {
   import('@capacitor/app').then(({ App }) => {
     App.addListener('appUrlOpen', async ({ url }) => {
       // Only handle our auth callback scheme
-      if (!url.startsWith('app.lovable.b76d427e030c484ab51c8b1ec9d0841b://callback')) return;
+      if (!url.startsWith(`${APP_SCHEME}://callback`)) return;
 
       try {
         // Close the system browser tab
@@ -70,7 +71,7 @@ export function setupNativeAuthListener() {
       } catch { /* browser may already be closed */ }
 
       // Extract the auth code from the URL
-      const urlObj = new URL(url.replace('app.lovable.b76d427e030c484ab51c8b1ec9d0841b://', 'https://placeholder/'));
+      const urlObj = new URL(url.replace(`${APP_SCHEME}://`, 'https://placeholder/'));
       const code = urlObj.searchParams.get('code');
 
       if (code) {
