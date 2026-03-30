@@ -190,7 +190,7 @@ function FullscreenMap({
   );
 }
 
-const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props) => {
+const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete, extraFooter }: Props) => {
   const { settings } = useSettings();
   const { t } = useTranslation();
   const isDark = settings.darkMode;
