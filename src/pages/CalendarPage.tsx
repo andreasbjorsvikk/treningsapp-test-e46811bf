@@ -6,10 +6,13 @@ import ActivityIcon from '@/components/ActivityIcon';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useAppDataContext } from '@/contexts/AppDataContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Route, Mountain, Clock, Ambulance, Cross, Grid3X3 } from 'lucide-react';
+import { Route, Mountain, Clock, Ambulance, Cross, Grid3X3, Plus } from 'lucide-react';
 import DayDrawer from '@/components/DayDrawer';
+import WorkoutDetailDrawer from '@/components/WorkoutDetailDrawer';
+import WorkoutDialog from '@/components/WorkoutDialog';
 import HeatmapCalendar from '@/components/HeatmapCalendar';
 import HealthEventDialog from '@/components/HealthEventDialog';
+import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/i18n/useTranslation';
 // Tooltips for health events use native DOM for reliability inside memoized renders
 
