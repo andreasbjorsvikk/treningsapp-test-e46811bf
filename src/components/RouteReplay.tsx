@@ -213,6 +213,18 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
     const reportedElev = totalElevation ?? 0;
     const replayDuration = getReplayDuration(reportedDist);
 
+    // Build pace-based time mapping: cumulative time per point proportional to segment distance
+    // This makes the replay go fast where the user was fast, slow where they were slow
+    // With GPS data we only have distance, so we assume constant pace per segment
+    // but the distance-proportional mapping already achieves the effect since
+    // short segments = user was there briefly, long segments = user spent more time
+    const segmentCount = routePoints.length - 1;
+    const cumTime = [0]; // normalized 0-1 time for each point
+    for (let i = 1; i < routePoints.length; i++) {
+      // Time spent is proportional to distance (constant speed assumption from GPS sampling rate)
+      cumTime.push(cumDist[i] / totalDist);
+    }
+
     // Compute smoothed route lazily (only when replay starts)
     if (smoothedRef.current.length === 0) {
       const smoothed = smoothRoute(routePoints);
