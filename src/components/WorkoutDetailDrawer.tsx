@@ -266,7 +266,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete }: Props
               <MapboxRouteMap
                 routePoints={routePoints}
                 lineColor={getActivityColors(session.type, false).text}
-                height={192}
+                height={280}
                 isDark={isDark}
                 onFullscreenChange={setMapFullscreen}
               />

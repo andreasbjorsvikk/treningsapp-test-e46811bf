@@ -70,7 +70,7 @@ export function computeWeeklyReport(
 
   return {
     period: 'week',
-    periodLabel: `Uke ${getWeekNumber(now)} (${weekLabel})`,
+    periodLabel: `Uke ${getWeekNumber(targetSunday)} (${weekLabel})`,
     sessions: weekSessions,
     ...stats,
     funFacts,
