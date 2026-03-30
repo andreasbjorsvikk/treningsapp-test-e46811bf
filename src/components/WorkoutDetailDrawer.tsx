@@ -439,6 +439,7 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete, extraFo
           totalElevation={session.elevationGain}
           averageHeartrate={session.averageHeartrate}
           maxHeartrate={session.maxHeartrate}
+          durationMinutes={session.durationMinutes}
         />
       )}
 
