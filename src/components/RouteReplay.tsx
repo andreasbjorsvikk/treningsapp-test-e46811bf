@@ -141,7 +141,7 @@ function getReplayDuration(totalDistKm: number): number {
 
 const DARK_GREEN = '#1a6b3c';
 
-const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevation, averageHeartrate, maxHeartrate }: RouteReplayProps) => {
+const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevation, averageHeartrate, maxHeartrate, durationMinutes }: RouteReplayProps) => {
   const [phase, setPhase] = useState<'idle' | 'intro' | 'playing' | 'outro'>('idle');
   const [stats, setStats] = useState({ distance: 0, elevation: 0, altitude: 0 });
   const markerRef = useRef<any>(null);
