@@ -399,9 +399,6 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete, extraFo
               </div>
             )}
 
-            {/* Extra footer (e.g. add session buttons from calendar) */}
-            {extraFooter}
-
             {/* Footer actions */}
             <DrawerFooter className="flex-row gap-2 pt-2">
               {onEdit && (
@@ -421,6 +418,9 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete, extraFo
                 </button>
               )}
             </DrawerFooter>
+
+            {/* Extra footer (e.g. add session buttons from calendar) */}
+            {extraFooter}
           </div>
         </DrawerContent>
       </Drawer>
