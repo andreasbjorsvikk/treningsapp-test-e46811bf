@@ -165,6 +165,15 @@ function FullscreenMap({
     };
   }, [routePoints, simplifiedRoute, lineColor]);
 
+  // ESC to close fullscreen map
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   return (
     <div className="fixed inset-0 z-[9999] bg-background flex flex-col">
       <button
