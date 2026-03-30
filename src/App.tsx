@@ -11,8 +11,9 @@ import { AdminProvider } from "@/hooks/useAdmin";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
-import NotFound from "./pages/NotFound";
 import SupportPage from "./pages/SupportPage";
+import AuthCallbackPage from "./pages/AuthCallbackPage";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
   defaultOptions: {
