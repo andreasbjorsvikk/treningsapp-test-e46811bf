@@ -103,7 +103,12 @@ export const RouteElevationChart = ({ geojson, onElevationGain }: RouteElevation
 
   const minElev = Math.min(...data.map(d => d.elevation));
   const maxElev = Math.max(...data.map(d => d.elevation));
-  const yDomain = [Math.max(0, Math.floor(minElev / 100) * 100), Math.ceil(maxElev / 100) * 100];
+  const yMin = Math.floor(minElev / 100) * 100;
+  const yMax = Math.ceil(maxElev / 100) * 100;
+  const yDomain = [Math.max(0, yMin), yMax];
+  const step = yMax - yMin <= 400 ? 100 : 200;
+  const yTicks: number[] = [];
+  for (let v = yDomain[0]; v <= yDomain[1]; v += step) yTicks.push(v);
 
   return (
     <div className="h-32 w-full mt-3">
@@ -127,16 +132,18 @@ export const RouteElevationChart = ({ geojson, onElevationGain }: RouteElevation
           />
           <YAxis 
             domain={yDomain}
+            ticks={yTicks}
             tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
             axisLine={false}
             tickLine={false}
             tickFormatter={(val) => `${val}m`}
           />
           <Tooltip 
+            position={{ y: 10 }}
             content={({ active, payload }) => {
               if (active && payload && payload.length) {
                 return (
-                  <div className="bg-background/95 backdrop-blur-sm border border-border p-2 rounded-lg shadow-sm text-xs">
+                  <div className="bg-popover/95 backdrop-blur-sm border border-border p-2 rounded-lg shadow-md text-xs pointer-events-none">
                     <p className="font-semibold text-foreground">{payload[0].payload.elevation} moh</p>
                     <p className="text-muted-foreground">{payload[0].payload.distance.toFixed(2)} km</p>
                   </div>

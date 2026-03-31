@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, X } from 'lucide-react';
+import { Play, X, Mountain, Satellite } from 'lucide-react';
 
 interface RouteReplayProps {
   map: any;
@@ -128,8 +128,7 @@ function perpendicularDist(point: [number, number], start: [number, number], end
 }
 
 function smoothRoute(points: [number, number][]): [number, number][] {
-  // Simplify to remove GPS jitter, then spline-interpolate for smooth curves
-  const simplified = rdpSimplify(points, 0.00003); // ~3m tolerance
+  const simplified = rdpSimplify(points, 0.00003);
   return catmullRomSpline(simplified, 4);
 }
 
@@ -144,6 +143,7 @@ const DARK_GREEN = '#1a6b3c';
 const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevation, averageHeartrate, maxHeartrate, durationMinutes }: RouteReplayProps) => {
   const [phase, setPhase] = useState<'idle' | 'intro' | 'playing' | 'outro'>('idle');
   const [stats, setStats] = useState({ distance: 0, elevation: 0, altitude: 0 });
+  const [mapStyle, setMapStyle] = useState<'terrain' | 'satellite'>('terrain');
   const markerRef = useRef<any>(null);
   const glowMarkerRef = useRef<any>(null);
   const rafRef = useRef<number>(0);
@@ -154,12 +154,18 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
   const smoothedCumDistRef = useRef<number[]>([]);
   const stoppedRef = useRef(false);
   const routeHiddenRef = useRef(false);
+  // Camera follow state
+  const cameraFollowRef = useRef(true);
+  const userInteractedRef = useRef(false);
+  const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastPosRef = useRef<{ lat: number; lng: number } | null>(null);
+  // Cumulative elevation tracking
+  const elevGainRef = useRef(0);
+  const lastElevRef = useRef<number | null>(null);
 
-  // Only compute cumulative distances eagerly (lightweight)
   useEffect(() => {
     cumDistRef.current = buildCumulativeDistances(routePoints);
     totalDistRef.current = cumDistRef.current[cumDistRef.current.length - 1];
-    // Clear smoothed data — will be computed lazily when replay starts
     smoothedRef.current = [];
     smoothedCumDistRef.current = [];
   }, [routePoints]);
@@ -167,13 +173,13 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
   const cleanup = useCallback(() => {
     stoppedRef.current = true;
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
     if (markerRef.current) { markerRef.current.remove(); markerRef.current = null; }
     if (glowMarkerRef.current) { glowMarkerRef.current.remove(); glowMarkerRef.current = null; }
     try {
       if (map.getLayer('replay-progress')) map.removeLayer('replay-progress');
       if (map.getSource('replay-progress')) map.removeSource('replay-progress');
     } catch {}
-    // Restore original route visibility
     if (routeHiddenRef.current) {
       try {
         if (map.getLayer('route-line')) {
@@ -182,7 +188,44 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
       } catch {}
       routeHiddenRef.current = false;
     }
+    // Remove user interaction listeners
+    try {
+      map.off('mousedown', handleUserInteraction);
+      map.off('touchstart', handleUserInteraction);
+    } catch {}
   }, [map]);
+
+  const handleUserInteraction = useCallback(() => {
+    if (phase !== 'playing' || stoppedRef.current) return;
+    cameraFollowRef.current = false;
+    userInteractedRef.current = true;
+    // Clear any existing resume timer
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    // Resume camera follow after 3s of no interaction
+    resumeTimerRef.current = setTimeout(() => {
+      if (!stoppedRef.current) {
+        cameraFollowRef.current = true;
+        userInteractedRef.current = false;
+      }
+    }, 3000);
+  }, [phase]);
+
+  // Listen for moveend to reset the resume timer when user stops interacting
+  useEffect(() => {
+    if (phase !== 'playing') return;
+    const onMoveEnd = () => {
+      if (!userInteractedRef.current || stoppedRef.current) return;
+      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+      resumeTimerRef.current = setTimeout(() => {
+        if (!stoppedRef.current) {
+          cameraFollowRef.current = true;
+          userInteractedRef.current = false;
+        }
+      }, 3000);
+    };
+    map.on('moveend', onMoveEnd);
+    return () => { map.off('moveend', onMoveEnd); };
+  }, [map, phase]);
 
   const resetCamera = useCallback(() => {
     const lats = routePoints.map(p => p[0]);
@@ -199,10 +242,52 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
     resetCamera();
   }, [cleanup, resetCamera]);
 
+  // Toggle map style
+  const toggleStyle = useCallback(() => {
+    const newStyle = mapStyle === 'terrain' ? 'satellite' : 'terrain';
+    setMapStyle(newStyle);
+    
+    if (newStyle === 'satellite') {
+      map.setStyle('mapbox://styles/mapbox/satellite-streets-v12');
+    } else {
+      map.setStyle('mapbox://styles/mapbox/outdoors-v12');
+    }
+
+    // Re-add the replay-progress source/layer after style change
+    map.once('style.load', () => {
+      if (stoppedRef.current) return;
+      // Re-add terrain
+      try {
+        if (!map.getSource('mapbox-dem')) {
+          map.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512 });
+          map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.4 });
+        }
+      } catch {}
+      // Re-add progress line
+      try {
+        if (!map.getSource('replay-progress')) {
+          map.addSource('replay-progress', {
+            type: 'geojson',
+            data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } },
+          });
+          map.addLayer({
+            id: 'replay-progress', type: 'line', source: 'replay-progress',
+            layout: { 'line-join': 'round', 'line-cap': 'round' },
+            paint: { 'line-color': DARK_GREEN, 'line-width': 8, 'line-opacity': 0.9 },
+          });
+        }
+      } catch {}
+    });
+  }, [map, mapStyle]);
+
   const startReplay = useCallback(async () => {
     if (!map || routePoints.length < 2) return;
     cleanup();
     stoppedRef.current = false;
+    cameraFollowRef.current = true;
+    userInteractedRef.current = false;
+    elevGainRef.current = 0;
+    lastElevRef.current = null;
     setPhase('intro');
     setStats({ distance: 0, elevation: 0, altitude: 0 });
 
@@ -213,19 +298,7 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
     const reportedElev = totalElevation ?? 0;
     const replayDuration = getReplayDuration(reportedDist);
 
-    // Build pace-based time mapping: cumulative time per point proportional to segment distance
-    // This makes the replay go fast where the user was fast, slow where they were slow
-    // With GPS data we only have distance, so we assume constant pace per segment
-    // but the distance-proportional mapping already achieves the effect since
-    // short segments = user was there briefly, long segments = user spent more time
-    const segmentCount = routePoints.length - 1;
-    const cumTime = [0]; // normalized 0-1 time for each point
-    for (let i = 1; i < routePoints.length; i++) {
-      // Time spent is proportional to distance (constant speed assumption from GPS sampling rate)
-      cumTime.push(cumDist[i] / totalDist);
-    }
-
-    // Compute smoothed route lazily (only when replay starts)
+    // Compute smoothed route lazily
     if (smoothedRef.current.length === 0) {
       const smoothed = smoothRoute(routePoints);
       smoothedRef.current = smoothed;
@@ -240,7 +313,7 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
       }
     } catch {}
 
-    // Fly camera to start point with a nice zoom
+    // Fly camera to start point
     const startBearing = bearing(
       routePoints[0][0], routePoints[0][1],
       routePoints[Math.min(15, routePoints.length - 1)][0],
@@ -261,22 +334,24 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
 
     setPhase('playing');
 
-    // Add progress line (dark green, drawn as marker moves)
+    // Add user interaction listeners for manual camera override
+    map.on('mousedown', handleUserInteraction);
+    map.on('touchstart', handleUserInteraction);
+
+    // Add progress line
     if (!map.getSource('replay-progress')) {
       map.addSource('replay-progress', {
         type: 'geojson',
         data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } },
       });
       map.addLayer({
-        id: 'replay-progress',
-        type: 'line',
-        source: 'replay-progress',
+        id: 'replay-progress', type: 'line', source: 'replay-progress',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: { 'line-color': DARK_GREEN, 'line-width': 8, 'line-opacity': 0.9 },
       });
     }
 
-    // Glow marker (outer pulse)
+    // Glow marker
     const glowEl = document.createElement('div');
     glowEl.style.cssText = `
       width: 28px; height: 28px; border-radius: 50%;
@@ -323,20 +398,16 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
       if (stoppedRef.current) return;
       const elapsed = now - startTimeRef.current;
       const rawProgress = Math.min(elapsed / replayDuration, 1);
-
-      // Linear progress — the GPS point density already encodes pace
-      // Points sampled at regular time intervals by the watch mean:
-      // dense points = slow pace, sparse points = fast pace
-      // Using distance-proportional progress preserves this naturally
       const progress = rawProgress;
 
-      // Use original points for marker position (accurate GPS)
+      // Use original points for marker position
       const currentDist = progress * totalDist;
       const pos = sampleAtDistance(routePoints, cumDist, currentDist);
 
       const lngLat: [number, number] = [pos.lng, pos.lat];
       markerRef.current?.setLngLat(lngLat);
       glowMarkerRef.current?.setLngLat(lngLat);
+      lastPosRef.current = { lat: pos.lat, lng: pos.lng };
 
       // Use smoothed points for the drawn line
       const smoothedTargetDist = progress * smoothedTotalDist;
@@ -357,16 +428,35 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
         }
       } catch {}
 
-      // Stats
+      // Stats — use proportional elevation instead of terrain query
       const distKm = progress * reportedDist;
+      const elevGain = Math.round(progress * reportedElev);
+
+      // Get real altitude from terrain (divided by exaggeration factor)
       let altitude = 0;
       try {
         const terrainElev = map.queryTerrainElevation([pos.lng, pos.lat]);
-        if (terrainElev != null) altitude = Math.round(terrainElev);
+        if (terrainElev != null) altitude = Math.round(terrainElev / 1.4); // Divide by terrain exaggeration
       } catch {}
-      setStats({ distance: Math.round(distKm * 10) / 10, elevation: 0, altitude });
+      setStats({ distance: Math.round(distKm * 10) / 10, elevation: elevGain, altitude });
 
-      // NO camera auto-follow — user controls the map freely
+      // Cinematic camera follow (only if not overridden by user)
+      if (cameraFollowRef.current) {
+        // Calculate bearing to next point for camera direction
+        const lookAheadDist = Math.min(currentDist + totalDist * 0.03, totalDist);
+        const lookAhead = sampleAtDistance(routePoints, cumDist, lookAheadDist);
+        const camBearing = bearing(pos.lat, pos.lng, lookAhead.lat, lookAhead.lng);
+
+        map.easeTo({
+          center: lngLat,
+          bearing: camBearing,
+          pitch: 65,
+          zoom: 15,
+          duration: 300,
+          easing: (t: number) => t, // linear for smooth follow
+          essential: false,
+        });
+      }
 
       if (rawProgress < 1) {
         rafRef.current = requestAnimationFrame(animate);
@@ -375,7 +465,6 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
         setPhase('outro');
         setStats({ distance: reportedDist, elevation: reportedElev, altitude: 0 });
 
-        // Zoom out to show full route after a moment
         const lats = routePoints.map(p => p[0]);
         const lngs = routePoints.map(p => p[1]);
         const sw: [number, number] = [Math.min(...lngs) - 0.008, Math.min(...lats) - 0.004];
@@ -390,7 +479,6 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
           });
         }, 600);
 
-        // Auto-close after showing stats
         setTimeout(() => {
           if (!stoppedRef.current) stopReplay();
         }, 7000);
@@ -398,7 +486,7 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
     };
 
     rafRef.current = requestAnimationFrame(animate);
-  }, [map, routePoints, lineColor, totalDistance, totalElevation, cleanup, stopReplay, resetCamera]);
+  }, [map, routePoints, lineColor, totalDistance, totalElevation, cleanup, stopReplay, resetCamera, handleUserInteraction]);
 
   useEffect(() => {
     return () => {
@@ -430,10 +518,27 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
       {/* Close button */}
       <button
         onClick={stopReplay}
-        className="absolute top-4 right-4 z-[10001] p-2.5 rounded-full bg-background/90 backdrop-blur-sm shadow-lg border border-border hover:bg-background transition-colors"
+        className="absolute right-4 z-[10001] p-2.5 rounded-full bg-background/90 backdrop-blur-sm shadow-lg border border-border hover:bg-background transition-colors"
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
       >
         <X className="w-5 h-5 text-foreground" />
       </button>
+
+      {/* Map style toggle */}
+      {(phase === 'playing' || phase === 'intro') && (
+        <button
+          onClick={toggleStyle}
+          className="absolute right-4 z-[10001] p-2.5 rounded-full bg-background/90 backdrop-blur-sm shadow-lg border border-border hover:bg-background transition-colors"
+          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 4.5rem)' }}
+          title={mapStyle === 'terrain' ? 'Satellitt' : 'Terreng'}
+        >
+          {mapStyle === 'terrain' ? (
+            <Satellite className="w-5 h-5 text-foreground" />
+          ) : (
+            <Mountain className="w-5 h-5 text-foreground" />
+          )}
+        </button>
+      )}
 
       {/* Live stats during playing */}
       {phase === 'playing' && (
@@ -444,6 +549,14 @@ const RouteReplay = ({ map, routePoints, lineColor, totalDistance, totalElevatio
             </p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Distanse</p>
           </div>
+          {stats.elevation > 0 && (
+            <div className="text-center">
+              <p className="text-lg font-bold text-foreground leading-tight">
+                {stats.elevation} <span className="text-xs font-normal text-muted-foreground">m</span>
+              </p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Stigning</p>
+            </div>
+          )}
           {stats.altitude > 0 && (
             <div className="text-center">
               <p className="text-lg font-bold text-foreground leading-tight">

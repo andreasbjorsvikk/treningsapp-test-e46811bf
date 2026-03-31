@@ -100,7 +100,13 @@ function FullscreenMap({
       });
 
       // All interactions enabled by default — no portal, no vaul interference
-      map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
+      const navCtrl = new mapboxgl.NavigationControl({ visualizePitch: true });
+      map.addControl(navCtrl, 'top-right');
+      // Push navigation control below safe area
+      setTimeout(() => {
+        const navEl = mapContainerRef.current?.querySelector('.mapboxgl-ctrl-top-right') as HTMLElement;
+        if (navEl) navEl.style.top = 'calc(env(safe-area-inset-top, 0px) + 3.5rem)';
+      }, 100);
 
       mapInstanceRef.current = map;
 
@@ -178,7 +184,8 @@ function FullscreenMap({
     <div className="fixed inset-0 z-[9999] bg-background flex flex-col">
       <button
         onClick={onClose}
-        className="absolute top-4 left-4 z-[10000] flex items-center gap-2 bg-background/90 backdrop-blur-sm rounded-full py-2 px-3 shadow-lg hover:bg-background transition-colors"
+        className="absolute left-4 z-[10000] flex items-center gap-2 bg-background/90 backdrop-blur-sm rounded-full py-2 px-3 shadow-lg hover:bg-background transition-colors"
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
       >
         <ArrowLeft className="w-5 h-5 text-foreground" />
         <span className="text-sm font-medium text-foreground">Tilbake</span>
@@ -346,43 +353,90 @@ const WorkoutDetailDrawer = ({ session, open, onClose, onEdit, onDelete, extraFo
             {/* Stream charts */}
             {streamsLoaded && streams && (
               <div className="px-4 space-y-4 pb-2">
-                {streams.altitudeData && streams.altitudeData.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">{t('workoutDetail.elevationProfile')}</p>
-                    <div className="h-32 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={streams.altitudeData}>
-                          <defs>
-                            <linearGradient id="elevGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="hsl(var(--success))" stopOpacity={0.3} />
-                              <stop offset="95%" stopColor="hsl(var(--success))" stopOpacity={0} />
-                            </linearGradient>
-                          </defs>
-                          <XAxis dataKey="distance" tickFormatter={(v) => `${Math.round(v / 1000)}`} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} type="number" domain={['dataMin', 'dataMax']} ticks={(() => { const maxDist = streams.altitudeData![streams.altitudeData!.length - 1]?.distance || 0; const maxKm = Math.floor(maxDist / 1000); return Array.from({ length: maxKm + 1 }, (_, i) => i * 1000); })()} unit=" km" />
-                          <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} domain={['dataMin - 20', 'dataMax + 20']} width={35} unit=" m" />
-                          <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '8px', padding: '4px 8px', fontSize: '11px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }} labelStyle={{ display: 'none' }} formatter={(v: number) => [`${Math.round(v)} m`]} labelFormatter={() => ''} />
-                          <Area type="monotone" dataKey="value" stroke="hsl(var(--success))" fill="url(#elevGrad)" strokeWidth={1.5} dot={false} />
-                        </AreaChart>
-                      </ResponsiveContainer>
+                {streams.altitudeData && streams.altitudeData.length > 0 && (() => {
+                  const altData = streams.altitudeData!;
+                  const minElev = Math.min(...altData.map(d => d.value));
+                  const maxElev = Math.max(...altData.map(d => d.value));
+                  const yMin = Math.floor(minElev / 100) * 100;
+                  const yMax = Math.ceil(maxElev / 100) * 100;
+                  const step = yMax - yMin <= 400 ? 100 : 200;
+                  const elevTicks: number[] = [];
+                  for (let v = yMin; v <= yMax; v += step) elevTicks.push(v);
+                  return (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">{t('workoutDetail.elevationProfile')}</p>
+                      <div className="h-32 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={altData}>
+                            <defs>
+                              <linearGradient id="elevGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="hsl(var(--success))" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="hsl(var(--success))" stopOpacity={0} />
+                              </linearGradient>
+                            </defs>
+                            <XAxis dataKey="distance" tickFormatter={(v) => `${Math.round(v / 1000)}`} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} type="number" domain={['dataMin', 'dataMax']} ticks={(() => { const maxDist = altData[altData.length - 1]?.distance || 0; const maxKm = Math.floor(maxDist / 1000); return Array.from({ length: maxKm + 1 }, (_, i) => i * 1000); })()} unit=" km" />
+                            <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} domain={[yMin, yMax]} ticks={elevTicks} width={35} tickFormatter={(v) => `${v}`} unit=" m" />
+                            <Tooltip position={{ y: 10 }} content={({ active, payload }) => {
+                              if (!active || !payload?.length) return null;
+                              return (
+                                <div className="bg-popover/95 backdrop-blur-sm border border-border rounded-lg p-2 shadow-md text-xs pointer-events-none">
+                                  <p className="font-semibold text-foreground">{Math.round(payload[0].payload.value)} moh</p>
+                                  <p className="text-muted-foreground">{(payload[0].payload.distance / 1000).toFixed(1)} km</p>
+                                </div>
+                              );
+                            }} />
+                            <Area type="monotone" dataKey="value" stroke="hsl(var(--success))" fill="url(#elevGrad)" strokeWidth={1.5} dot={false} />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
-                {streams.heartrateData && streams.heartrateData.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">{t('workoutDetail.heartrate')}</p>
-                    <div className="h-32 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={streams.heartrateData}>
-                          <XAxis dataKey="time" tickFormatter={(v) => { const totalMinutes = v / 60; const maxTime = streams.heartrateData![streams.heartrateData!.length - 1]?.time || 0; if (maxTime > 7200) return `${Math.floor(totalMinutes / 60)}t`; return `${Math.round(totalMinutes)}'`; }} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-                          <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} domain={['dataMin - 10', 'dataMax + 10']} width={35} />
-                          <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', borderRadius: '8px', padding: '4px 8px', fontSize: '11px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }} labelStyle={{ display: 'none' }} formatter={(v: number) => [`${v} bpm`]} labelFormatter={() => ''} />
-                          <Line type="monotone" dataKey="value" stroke="hsl(var(--destructive))" strokeWidth={1.5} dot={false} />
-                        </LineChart>
-                      </ResponsiveContainer>
+                {streams.heartrateData && streams.heartrateData.length > 0 && (() => {
+                  const hrData = streams.heartrateData!;
+                  const maxTime = hrData[hrData.length - 1]?.time || 0;
+                  const useHours = maxTime > 7200;
+                  const hrTicks: number[] = [];
+                  if (useHours) {
+                    const maxHours = Math.ceil(maxTime / 3600);
+                    for (let i = 0; i <= maxHours; i++) hrTicks.push(i * 3600);
+                  }
+                  return (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">{t('workoutDetail.heartrate')}</p>
+                      <div className="h-32 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={hrData}>
+                            <XAxis
+                              dataKey="time"
+                              tickFormatter={(v) => useHours ? `${Math.floor(v / 3600)}t` : `${Math.round(v / 60)}'`}
+                              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                              axisLine={false}
+                              tickLine={false}
+                              {...(useHours ? { ticks: hrTicks, type: 'number' as const, domain: [0, hrTicks[hrTicks.length - 1]] } : {})}
+                            />
+                            <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} domain={['dataMin - 10', 'dataMax + 10']} width={35} />
+                            <Tooltip position={{ y: 10 }} content={({ active, payload }) => {
+                              if (!active || !payload?.length) return null;
+                              const timeS = payload[0].payload.time;
+                              const timeStr = useHours
+                                ? `${Math.floor(timeS / 3600)}t ${Math.floor((timeS % 3600) / 60)}m`
+                                : `${Math.round(timeS / 60)} min`;
+                              return (
+                                <div className="bg-popover/95 backdrop-blur-sm border border-border rounded-lg p-2 shadow-md text-xs pointer-events-none">
+                                  <p className="font-semibold text-foreground">{payload[0].payload.value} bpm</p>
+                                  <p className="text-muted-foreground">{timeStr}</p>
+                                </div>
+                              );
+                            }} />
+                            <Line type="monotone" dataKey="value" stroke="hsl(var(--destructive))" strokeWidth={1.5} dot={false} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             )}
 

@@ -3,6 +3,7 @@ import CommunitySubTabs from '@/components/community/CommunitySubTabs';
 import ChallengeCard from '@/components/community/ChallengeCard';
 import ChallengeDetail from '@/components/community/ChallengeDetail';
 import ChallengeForm from '@/components/community/ChallengeForm';
+import ChallengeCompletionOverlay from '@/components/community/ChallengeCompletionOverlay';
 import LeaderboardSection from '@/components/community/LeaderboardSection';
 import FriendsSection from '@/components/community/FriendsSection';
 import UserProfileDrawer from '@/components/community/UserProfileDrawer';
@@ -50,6 +51,7 @@ const CommunityPage = () => {
   const [challenges, setChallenges] = useState<ChallengeWithParticipants[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [previewCompletionChallenge, setPreviewCompletionChallenge] = useState<ChallengeWithParticipants | null>(null);
 
   const loadChallenges = useCallback(async () => {
     setLoading(true);
@@ -175,14 +177,15 @@ const CommunityPage = () => {
                   <p className="text-sm">{t('community.noChallenges')}</p>
                 </div>
               ) : (
-                filteredChallenges.map(c => (
-                  <ChallengeCard
-                    key={c.challenge.id}
-                    challenge={c}
-                    onClick={() => handleSelectChallenge(c)}
-                    onEdit={(ch) => { setEditChallenge(ch); setShowForm(true); }}
-                  />
-                ))
+                 filteredChallenges.map(c => (
+                   <ChallengeCard
+                     key={c.challenge.id}
+                     challenge={c}
+                     onClick={() => handleSelectChallenge(c)}
+                     onEdit={(ch) => { setEditChallenge(ch); setShowForm(true); }}
+                     onPreviewComplete={(ch) => setPreviewCompletionChallenge(ch)}
+                   />
+                 ))
               )}
             </div>
           )}
@@ -235,6 +238,12 @@ const CommunityPage = () => {
         onInviteToChallenge={handleInviteToChallenge}
       />
       <CommunityTutorial />
+      <ChallengeCompletionOverlay
+        challenge={previewCompletionChallenge}
+        open={!!previewCompletionChallenge}
+        onDismiss={() => setPreviewCompletionChallenge(null)}
+        isPreview
+      />
     </div>
   );
 };
