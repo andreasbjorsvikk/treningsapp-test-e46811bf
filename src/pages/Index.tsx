@@ -1343,6 +1343,21 @@ const IndexContent = () => {
           }
         }}
       />
+
+      {/* Challenge completion overlay */}
+      <ChallengeCompletionOverlay
+        challenge={completedChallenge}
+        open={!!completedChallenge}
+        onDismiss={() => setCompletedChallenge(null)}
+      />
+      {adminPreviewChallenge && (
+        <ChallengeCompletionOverlay
+          challenge={adminPreviewChallenge}
+          open={true}
+          onDismiss={() => setAdminPreviewChallenge(null)}
+          isPreview
+        />
+      )}
     </div>
   );
 };
