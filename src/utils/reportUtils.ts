@@ -91,8 +91,17 @@ export function computeMonthlyReport(
   monthCurrent: number
 ): ReportData {
   const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  
+  // If we're on day 1-2 of a new month, report on PREVIOUS month
+  let reportYear = now.getFullYear();
+  let reportMonth = now.getMonth(); // 0-indexed
+  if (now.getDate() <= 2) {
+    reportMonth = reportMonth - 1;
+    if (reportMonth < 0) { reportMonth = 11; reportYear--; }
+  }
+  
+  const monthStart = new Date(reportYear, reportMonth, 1);
+  const monthEnd = new Date(reportYear, reportMonth + 1, 0, 23, 59, 59, 999);
 
   const monthSessions = allSessions.filter(s => {
     const d = new Date(s.date);
@@ -114,7 +123,7 @@ export function computeMonthlyReport(
 
   return {
     period: 'month',
-    periodLabel: monthNames[now.getMonth()] + ' ' + now.getFullYear(),
+    periodLabel: monthNames[reportMonth] + ' ' + reportYear,
     sessions: monthSessions,
     ...stats,
     funFacts,
