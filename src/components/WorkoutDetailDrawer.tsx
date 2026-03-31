@@ -100,7 +100,13 @@ function FullscreenMap({
       });
 
       // All interactions enabled by default — no portal, no vaul interference
-      map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
+      const navCtrl = new mapboxgl.NavigationControl({ visualizePitch: true });
+      map.addControl(navCtrl, 'top-right');
+      // Push navigation control below safe area
+      setTimeout(() => {
+        const navEl = mapContainerRef.current?.querySelector('.mapboxgl-ctrl-top-right') as HTMLElement;
+        if (navEl) navEl.style.top = 'calc(env(safe-area-inset-top, 0px) + 3.5rem)';
+      }, 100);
 
       mapInstanceRef.current = map;
 
