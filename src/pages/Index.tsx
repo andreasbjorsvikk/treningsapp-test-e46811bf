@@ -495,6 +495,9 @@ const IndexContent = () => {
       const newBadges = await computeUserBadges(user.id);
       const unlocked = findNewlyUnlocked(prev, newBadges);
       badgeSnapshotRef.current = newBadges;
+      // Persist snapshot
+      const unlockedIds = newBadges.filter(b => b.unlocked).map(b => b.badge.id);
+      localStorage.setItem(`treningslogg_badge_snapshot_${user.id}`, JSON.stringify(unlockedIds));
       if (unlocked.length > 0) setTimeout(() => setBadgeUnlocks(unlocked), 1500);
     }
   };
