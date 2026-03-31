@@ -141,6 +141,15 @@ const ChallengeCard = ({ challenge, onClick, onEdit, onPreviewComplete }: Challe
           <span className="text-sm text-muted-foreground">· {visibleParticipants.length} {t('challengeCard.participants')}</span>
         </div>
         <div className="flex items-center gap-1">
+          {adminMode && onPreviewComplete && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onPreviewComplete(challenge); }}
+              className="p-1.5 rounded-md text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+              title="Preview utfordring fullført"
+            >
+              <Play className="w-3.5 h-3.5" />
+            </button>
+          )}
           {onEdit && c.created_by === user?.id && (
             <button
               onClick={(e) => { e.stopPropagation(); onEdit(challenge); }}
