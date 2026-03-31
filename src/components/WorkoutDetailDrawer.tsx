@@ -178,7 +178,8 @@ function FullscreenMap({
     <div className="fixed inset-0 z-[9999] bg-background flex flex-col">
       <button
         onClick={onClose}
-        className="absolute top-4 left-4 z-[10000] flex items-center gap-2 bg-background/90 backdrop-blur-sm rounded-full py-2 px-3 shadow-lg hover:bg-background transition-colors"
+        className="absolute left-4 z-[10000] flex items-center gap-2 bg-background/90 backdrop-blur-sm rounded-full py-2 px-3 shadow-lg hover:bg-background transition-colors"
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
       >
         <ArrowLeft className="w-5 h-5 text-foreground" />
         <span className="text-sm font-medium text-foreground">Tilbake</span>
