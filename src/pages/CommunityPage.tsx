@@ -177,14 +177,15 @@ const CommunityPage = () => {
                   <p className="text-sm">{t('community.noChallenges')}</p>
                 </div>
               ) : (
-                filteredChallenges.map(c => (
-                  <ChallengeCard
-                    key={c.challenge.id}
-                    challenge={c}
-                    onClick={() => handleSelectChallenge(c)}
-                    onEdit={(ch) => { setEditChallenge(ch); setShowForm(true); }}
-                  />
-                ))
+                 filteredChallenges.map(c => (
+                   <ChallengeCard
+                     key={c.challenge.id}
+                     challenge={c}
+                     onClick={() => handleSelectChallenge(c)}
+                     onEdit={(ch) => { setEditChallenge(ch); setShowForm(true); }}
+                     onPreviewComplete={(ch) => setPreviewCompletionChallenge(ch)}
+                   />
+                 ))
               )}
             </div>
           )}
