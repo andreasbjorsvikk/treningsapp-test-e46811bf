@@ -238,6 +238,12 @@ const CommunityPage = () => {
         onInviteToChallenge={handleInviteToChallenge}
       />
       <CommunityTutorial />
+      <ChallengeCompletionOverlay
+        challenge={previewCompletionChallenge}
+        open={!!previewCompletionChallenge}
+        onDismiss={() => setPreviewCompletionChallenge(null)}
+        isPreview
+      />
     </div>
   );
 };
