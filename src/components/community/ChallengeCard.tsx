@@ -25,10 +25,11 @@ interface ChallengeCardProps {
   onPreviewComplete?: (challenge: ChallengeWithParticipants) => void;
 }
 
-const ChallengeCard = ({ challenge, onClick, onEdit }: ChallengeCardProps) => {
+const ChallengeCard = ({ challenge, onClick, onEdit, onPreviewComplete }: ChallengeCardProps) => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const { settings, updateSettings } = useSettings();
+  const { adminMode } = useAdmin();
   const isDark = settings.darkMode;
   const c = challenge.challenge;
   const unit = metricUnits[c.metric] || '';
