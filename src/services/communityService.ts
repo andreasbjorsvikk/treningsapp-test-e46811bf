@@ -418,7 +418,7 @@ export async function getChallengeProgress(challenge: ChallengeRow, participantU
     .select('user_id, duration_minutes, distance, elevation_gain, exclude_from_count')
     .in('user_id', participantUserIds)
     .gte('date', challenge.period_start)
-    .lte('date', challenge.period_end);
+    .lte('date', challenge.period_end + 'T23:59:59.999Z');
 
   if (challenge.activity_type !== 'all') {
     if (challenge.activity_type.includes(',')) {

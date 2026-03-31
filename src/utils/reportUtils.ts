@@ -91,8 +91,17 @@ export function computeMonthlyReport(
   monthCurrent: number
 ): ReportData {
   const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  
+  // If we're on day 1-2 of a new month, report on PREVIOUS month
+  let reportYear = now.getFullYear();
+  let reportMonth = now.getMonth(); // 0-indexed
+  if (now.getDate() <= 2) {
+    reportMonth = reportMonth - 1;
+    if (reportMonth < 0) { reportMonth = 11; reportYear--; }
+  }
+  
+  const monthStart = new Date(reportYear, reportMonth, 1);
+  const monthEnd = new Date(reportYear, reportMonth + 1, 0, 23, 59, 59, 999);
 
   const monthSessions = allSessions.filter(s => {
     const d = new Date(s.date);
@@ -114,7 +123,7 @@ export function computeMonthlyReport(
 
   return {
     period: 'month',
-    periodLabel: monthNames[now.getMonth()] + ' ' + now.getFullYear(),
+    periodLabel: monthNames[reportMonth] + ' ' + reportYear,
     sessions: monthSessions,
     ...stats,
     funFacts,
@@ -249,10 +258,11 @@ export function shouldShowMonthlyReport(): boolean {
   const now = new Date();
   const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const dayOfMonth = now.getDate();
+  const hour = now.getHours();
   
-  // Last day of month or first day of next month
-  if (dayOfMonth === lastDay) return true;
-  if (dayOfMonth === 1) return true;
+  // Last day of month after 21:00, or 1st-2nd of next month (any time)
+  if (dayOfMonth === lastDay && hour >= 21) return true;
+  if (dayOfMonth <= 2) return true;
   return false;
 }
 
@@ -270,7 +280,14 @@ export function getReportDismissKey(type: 'week' | 'month'): string {
     }
     return `treningslogg_report_week_${targetSunday.getFullYear()}_W${getWeekNumber(targetSunday)}`;
   }
-  return `treningslogg_report_month_${now.getFullYear()}_${now.getMonth()}`;
+  // For month: if on day 1-2, key is for previous month
+  let reportYear = now.getFullYear();
+  let reportMonth = now.getMonth();
+  if (now.getDate() <= 2) {
+    reportMonth = reportMonth - 1;
+    if (reportMonth < 0) { reportMonth = 11; reportYear--; }
+  }
+  return `treningslogg_report_month_${reportYear}_${reportMonth}`;
 }
 
 export function getReportLaterKey(type: 'week' | 'month'): string {

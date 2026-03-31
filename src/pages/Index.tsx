@@ -148,11 +148,28 @@ const IndexContent = () => {
     }
   }, [user, profile]);
 
-  // Initialize badge snapshot on load
+  // Initialize badge snapshot on load and check for new unlocks
   useEffect(() => {
-    if (!user) return;
-    computeUserBadges(user.id).then(b => { badgeSnapshotRef.current = b; });
-  }, [user]);
+    if (!user || appData.loading) return;
+    const prevKey = `treningslogg_badge_snapshot_${user.id}`;
+    computeUserBadges(user.id).then(newBadges => {
+      // Check against stored snapshot from last session
+      const storedJson = localStorage.getItem(prevKey);
+      if (storedJson) {
+        try {
+          const storedUnlockedIds: string[] = JSON.parse(storedJson);
+          const newlyUnlocked = newBadges.filter(b => b.unlocked && !storedUnlockedIds.includes(b.badge.id));
+          if (newlyUnlocked.length > 0) {
+            setTimeout(() => setBadgeUnlocks(newlyUnlocked), 2000);
+          }
+        } catch { /* ignore */ }
+      }
+      // Save current unlocked badge IDs
+      const unlockedIds = newBadges.filter(b => b.unlocked).map(b => b.badge.id);
+      localStorage.setItem(prevKey, JSON.stringify(unlockedIds));
+      badgeSnapshotRef.current = newBadges;
+    });
+  }, [user, appData.loading]);
   // Check admin pending suggestions for red dot
   useEffect(() => {
     if (!user || !isAdmin) { setAdminSuggestionsDot(false); return; }
@@ -478,6 +495,9 @@ const IndexContent = () => {
       const newBadges = await computeUserBadges(user.id);
       const unlocked = findNewlyUnlocked(prev, newBadges);
       badgeSnapshotRef.current = newBadges;
+      // Persist snapshot
+      const unlockedIds = newBadges.filter(b => b.unlocked).map(b => b.badge.id);
+      localStorage.setItem(`treningslogg_badge_snapshot_${user.id}`, JSON.stringify(unlockedIds));
       if (unlocked.length > 0) setTimeout(() => setBadgeUnlocks(unlocked), 1500);
     }
   };
