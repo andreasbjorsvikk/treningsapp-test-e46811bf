@@ -103,7 +103,12 @@ export const RouteElevationChart = ({ geojson, onElevationGain }: RouteElevation
 
   const minElev = Math.min(...data.map(d => d.elevation));
   const maxElev = Math.max(...data.map(d => d.elevation));
-  const yDomain = [Math.max(0, Math.floor(minElev / 100) * 100), Math.ceil(maxElev / 100) * 100];
+  const yMin = Math.floor(minElev / 100) * 100;
+  const yMax = Math.ceil(maxElev / 100) * 100;
+  const yDomain = [Math.max(0, yMin), yMax];
+  const step = yMax - yMin <= 400 ? 100 : 200;
+  const yTicks: number[] = [];
+  for (let v = yDomain[0]; v <= yDomain[1]; v += step) yTicks.push(v);
 
   return (
     <div className="h-32 w-full mt-3">
