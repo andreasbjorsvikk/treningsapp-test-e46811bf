@@ -249,10 +249,11 @@ export function shouldShowMonthlyReport(): boolean {
   const now = new Date();
   const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const dayOfMonth = now.getDate();
+  const hour = now.getHours();
   
-  // Last day of month or first day of next month
-  if (dayOfMonth === lastDay) return true;
-  if (dayOfMonth === 1) return true;
+  // Last day of month after 21:00, or 1st-2nd of next month (any time)
+  if (dayOfMonth === lastDay && hour >= 21) return true;
+  if (dayOfMonth <= 2) return true;
   return false;
 }
 
