@@ -139,10 +139,11 @@ export const RouteElevationChart = ({ geojson, onElevationGain }: RouteElevation
             tickFormatter={(val) => `${val}m`}
           />
           <Tooltip 
+            position={{ y: 10 }}
             content={({ active, payload }) => {
               if (active && payload && payload.length) {
                 return (
-                  <div className="bg-background/95 backdrop-blur-sm border border-border p-2 rounded-lg shadow-sm text-xs">
+                  <div className="bg-popover/95 backdrop-blur-sm border border-border p-2 rounded-lg shadow-md text-xs pointer-events-none">
                     <p className="font-semibold text-foreground">{payload[0].payload.elevation} moh</p>
                     <p className="text-muted-foreground">{payload[0].payload.distance.toFixed(2)} km</p>
                   </div>
