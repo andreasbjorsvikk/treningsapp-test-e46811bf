@@ -3,6 +3,7 @@ import CommunitySubTabs from '@/components/community/CommunitySubTabs';
 import ChallengeCard from '@/components/community/ChallengeCard';
 import ChallengeDetail from '@/components/community/ChallengeDetail';
 import ChallengeForm from '@/components/community/ChallengeForm';
+import ChallengeCompletionOverlay from '@/components/community/ChallengeCompletionOverlay';
 import LeaderboardSection from '@/components/community/LeaderboardSection';
 import FriendsSection from '@/components/community/FriendsSection';
 import UserProfileDrawer from '@/components/community/UserProfileDrawer';
