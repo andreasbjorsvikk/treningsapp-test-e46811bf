@@ -35,6 +35,7 @@ import ChallengeDetail from '@/components/community/ChallengeDetail';
 import GoalCompletionOverlay from '@/components/GoalCompletionOverlay';
 import MonthGoalCompletionOverlay from '@/components/MonthGoalCompletionOverlay';
 import BadgeUnlockOverlay from '@/components/badges/BadgeUnlockOverlay';
+import ChallengeCompletionOverlay from '@/components/community/ChallengeCompletionOverlay';
 import { computeUserBadges, findNewlyUnlocked, UserBadge } from '@/services/badgeService';
 import { Plus, Sun, Moon, Dumbbell, Ambulance, LogIn, Loader2, GripVertical, Check, User, BarChart3, TrendingUp, Play, FileText, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
