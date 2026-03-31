@@ -116,6 +116,8 @@ const IndexContent = () => {
   const [adminPreviewMonth, setAdminPreviewMonth] = useState(false);
   const [adminPreviewYear, setAdminPreviewYear] = useState(false);
   const [showFullTutorial, setShowFullTutorial] = useState(false);
+  const [completedChallenge, setCompletedChallenge] = useState<ChallengeWithParticipants | null>(null);
+  const [adminPreviewChallenge, setAdminPreviewChallenge] = useState<ChallengeWithParticipants | null>(null);
 
   // Report state
   const [reportPromptType, setReportPromptType] = useState<'week' | 'month' | null>(null);
