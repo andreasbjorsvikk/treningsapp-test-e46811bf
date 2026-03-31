@@ -22,6 +22,7 @@ interface ChallengeCardProps {
   challenge: ChallengeWithParticipants;
   onClick: () => void;
   onEdit?: (challenge: ChallengeWithParticipants) => void;
+  onPreviewComplete?: (challenge: ChallengeWithParticipants) => void;
 }
 
 const ChallengeCard = ({ challenge, onClick, onEdit }: ChallengeCardProps) => {
