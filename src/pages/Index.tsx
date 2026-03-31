@@ -173,6 +173,61 @@ const IndexContent = () => {
       badgeSnapshotRef.current = newBadges;
     });
   }, [user, appData.loading]);
+
+  // Check for completed challenges on login
+  useEffect(() => {
+    if (!user || appData.loading) return;
+    const checkCompleted = async () => {
+      const allChallenges = await getChallenges();
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+      
+      for (const c of allChallenges) {
+        // Challenge is ended if period_end < today
+        if (c.period_end >= todayStr) continue;
+        
+        const seenKey = `treningslogg_challenge_completed_${c.id}`;
+        if (localStorage.getItem(seenKey)) continue;
+        
+        // Check if within 2 days of ending
+        const endDate = new Date(c.period_end + 'T23:59:59');
+        const daysSinceEnd = (now.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24);
+        if (daysSinceEnd > 3) {
+          localStorage.setItem(seenKey, 'true');
+          continue;
+        }
+        
+        // Get participants and progress
+        const parts = await getChallengeParticipants(c.id);
+        const userPart = parts.find(p => p.user_id === user.id);
+        if (!userPart || userPart.status !== 'accepted') continue;
+        
+        const acceptedParts = parts.filter(p => p.status === 'accepted');
+        const userIds = acceptedParts.map(p => p.user_id);
+        const { data: profiles } = await supabase.from('profiles').select('id, username, avatar_url').in('id', userIds);
+        const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+        const progress = userIds.length > 0 ? await getChallengeProgress(c, userIds) : {};
+        
+        const participantData = acceptedParts.map(p => {
+          const profile = profileMap.get(p.user_id);
+          return {
+            userId: p.user_id,
+            username: profile?.username || 'Ukjent',
+            avatarUrl: profile?.avatar_url || null,
+            progress: progress[p.user_id] || 0,
+            rank: 0,
+            status: p.status,
+          };
+        }).sort((a, b) => b.progress - a.progress);
+        participantData.forEach((p, i) => { p.rank = i + 1; });
+        
+        localStorage.setItem(seenKey, 'true');
+        setTimeout(() => setCompletedChallenge({ challenge: c, participants: participantData }), 3000);
+        break; // Show one at a time
+      }
+    };
+    checkCompleted();
+  }, [user, appData.loading]);
   // Check admin pending suggestions for red dot
   useEffect(() => {
     if (!user || !isAdmin) { setAdminSuggestionsDot(false); return; }
