@@ -132,6 +132,7 @@ export const RouteElevationChart = ({ geojson, onElevationGain }: RouteElevation
           />
           <YAxis 
             domain={yDomain}
+            ticks={yTicks}
             tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
             axisLine={false}
             tickLine={false}
