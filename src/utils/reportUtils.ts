@@ -280,7 +280,14 @@ export function getReportDismissKey(type: 'week' | 'month'): string {
     }
     return `treningslogg_report_week_${targetSunday.getFullYear()}_W${getWeekNumber(targetSunday)}`;
   }
-  return `treningslogg_report_month_${now.getFullYear()}_${now.getMonth()}`;
+  // For month: if on day 1-2, key is for previous month
+  let reportYear = now.getFullYear();
+  let reportMonth = now.getMonth();
+  if (now.getDate() <= 2) {
+    reportMonth = reportMonth - 1;
+    if (reportMonth < 0) { reportMonth = 11; reportYear--; }
+  }
+  return `treningslogg_report_month_${reportYear}_${reportMonth}`;
 }
 
 export function getReportLaterKey(type: 'week' | 'month'): string {
