@@ -51,6 +51,7 @@ const CommunityPage = () => {
   const [challenges, setChallenges] = useState<ChallengeWithParticipants[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [previewCompletionChallenge, setPreviewCompletionChallenge] = useState<ChallengeWithParticipants | null>(null);
 
   const loadChallenges = useCallback(async () => {
     setLoading(true);
