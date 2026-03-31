@@ -814,7 +814,7 @@ const IndexContent = () => {
         return (
           <div className="space-y-2">
             {pinnedChallenges.map(c => (
-              <ChallengeCard key={c.challenge.id} challenge={c} onClick={() => setChallengeDetail(c)} />
+              <ChallengeCard key={c.challenge.id} challenge={c} onClick={() => setChallengeDetail(c)} onPreviewComplete={(ch) => setAdminPreviewChallenge(ch)} />
             ))}
           </div>
         );
