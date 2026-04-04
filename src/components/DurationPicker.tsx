@@ -70,7 +70,7 @@ const ScrollColumn = ({
       isUserScrolling.current = true;
       el.scrollTo({ top: idx * ITEM_HEIGHT, behavior: 'smooth' });
       onChange(val);
-      hapticsService.selectionChanged();
+      hapticsService.impact('medium');
       setTimeout(() => { isUserScrolling.current = false; }, 200);
     }
   };

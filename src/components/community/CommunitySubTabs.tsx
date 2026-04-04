@@ -11,7 +11,7 @@ const CommunitySubTabs = ({ tabs, active, onChange }: CommunitySubTabsProps) => 
     {tabs.map(tab => (
       <button
         key={tab.id}
-        onClick={() => { hapticsService.selectionChanged(); onChange(tab.id); }}
+        onClick={() => { hapticsService.impact('medium'); onChange(tab.id); }}
         className={`flex-1 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
           active === tab.id
             ? 'bg-background text-foreground shadow-sm'
