@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { hapticsService } from '@/services/hapticsService';
 import { GoalPeriod, PrimaryGoalPeriod } from '@/types/workout';
 import { convertGoalValue } from '@/services/primaryGoalService';
 import { Button } from '@/components/ui/button';
