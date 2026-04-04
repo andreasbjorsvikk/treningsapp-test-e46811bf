@@ -3,6 +3,7 @@ import { ChallengeWithParticipants } from '@/pages/CommunityPage';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Trophy, X, PartyPopper } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { hapticsService } from '@/services/hapticsService';
 
 interface ChallengeCompletionOverlayProps {
   challenge: ChallengeWithParticipants | null;
@@ -94,6 +95,7 @@ const ChallengeCompletionOverlay = ({ challenge, open, onDismiss, isPreview }: C
   useEffect(() => {
     if (open) {
       setRevealed(false);
+      hapticsService.notification('success');
       // Reveal after short delay for dramatic effect
       const t = setTimeout(() => setRevealed(true), 600);
       return () => clearTimeout(t);

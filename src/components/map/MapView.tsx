@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { decodePolyline } from '@/utils/polyline';
 import { addEnhancedTerrain } from '@/utils/mapTerrain';
 import { getPeakIcon, getCheckedPeakIcon } from '@/utils/peakIcons';
+import { hapticsService } from '@/services/hapticsService';
 
 type HeatmapPeriod = 'year' | 'total';
 
@@ -338,6 +339,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       longPressCoords.current = { lat: point.lat, lng: point.lng };
       longPressTimer.current = setTimeout(() => {
         if (longPressCoords.current && onLongPress) {
+          hapticsService.impact('medium');
           onLongPress(longPressCoords.current.lat, longPressCoords.current.lng);
         }
       }, 600);
@@ -352,7 +354,10 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     // Also support right-click on desktop
     const onContextMenu = (e: mapboxgl.MapMouseEvent) => {
       e.originalEvent.preventDefault();
-      if (onLongPress) onLongPress(e.lngLat.lat, e.lngLat.lng);
+      if (onLongPress) {
+        hapticsService.impact('medium');
+        onLongPress(e.lngLat.lat, e.lngLat.lng);
+      }
     };
 
     el.addEventListener('touchstart', onDown, { passive: true });
