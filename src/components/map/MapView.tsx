@@ -339,7 +339,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       longPressCoords.current = { lat: point.lat, lng: point.lng };
       longPressTimer.current = setTimeout(() => {
         if (longPressCoords.current && onLongPress) {
-          hapticsService.impact('medium');
+          hapticsService.impact('heavy');
           onLongPress(longPressCoords.current.lat, longPressCoords.current.lng);
         }
       }, 600);
@@ -355,7 +355,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     const onContextMenu = (e: mapboxgl.MapMouseEvent) => {
       e.originalEvent.preventDefault();
       if (onLongPress) {
-        hapticsService.impact('medium');
+        hapticsService.impact('heavy');
         onLongPress(e.lngLat.lat, e.lngLat.lng);
       }
     };

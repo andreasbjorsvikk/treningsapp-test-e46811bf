@@ -23,7 +23,7 @@ const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, on
   ];
 
   const handlePrev = () => {
-    hapticsService.impact('medium');
+    hapticsService.impact('heavy');
     if (period === 'month') {
       if (month === 0) { onMonthChange(11); onYearChange(year - 1); }
       else onMonthChange(month - 1);
@@ -33,7 +33,7 @@ const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, on
   };
 
   const handleNext = () => {
-    hapticsService.impact('medium');
+    hapticsService.impact('heavy');
     if (period === 'month') {
       if (month === 11) { onMonthChange(0); onYearChange(year + 1); }
       else onMonthChange(month + 1);
@@ -48,7 +48,7 @@ const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, on
         {periods.map((p) => (
           <button
             key={p.id}
-            onClick={() => { hapticsService.impact('light'); onPeriodChange(p.id); }}
+            onClick={() => { hapticsService.impact('heavy'); onPeriodChange(p.id); }}
             className={`py-1.5 px-5 rounded-full text-sm font-medium transition-colors ${
               period === p.id
                 ? 'bg-primary text-primary-foreground'

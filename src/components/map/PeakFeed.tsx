@@ -539,7 +539,7 @@ const PeakFeed = () => {
             {(['alle', 'friends', 'mine'] as FeedFilter[]).map(opt => (
               <button
                 key={opt}
-                onClick={() => { hapticsService.impact('light'); setFilter(opt); }}
+                onClick={() => { hapticsService.impact('heavy'); setFilter(opt); }}
                 className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   filter === opt
                     ? 'bg-background text-foreground shadow-sm'
@@ -552,7 +552,7 @@ const PeakFeed = () => {
           </div>
           <div className="flex gap-1 p-0.5 rounded-lg bg-secondary/50">
             <button
-              onClick={() => { hapticsService.impact('light'); setFilter('global'); }}
+              onClick={() => { hapticsService.impact('heavy'); setFilter('global'); }}
               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                 filter === 'global'
                   ? 'bg-background text-foreground shadow-sm'

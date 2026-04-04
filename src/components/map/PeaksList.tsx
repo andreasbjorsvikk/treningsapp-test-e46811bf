@@ -263,7 +263,7 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
         {filters.map(f => (
           <button
             key={f.id}
-            onClick={() => { hapticsService.impact('light'); setFilter(f.id); }}
+            onClick={() => { hapticsService.impact('heavy'); setFilter(f.id); }}
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               filter === f.id
                 ? 'bg-primary text-primary-foreground'

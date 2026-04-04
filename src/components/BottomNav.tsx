@@ -41,7 +41,7 @@ const BottomNav = ({ active, onNavigate, notificationCount = 0, settingsDot, pro
           return (
             <button
               key={tab.id}
-              onClick={() => { if (active !== tab.id) hapticsService.impact('medium'); onNavigate(tab.id); }}
+              onClick={() => { if (active !== tab.id) hapticsService.impact('heavy'); onNavigate(tab.id); }}
               className={`relative flex flex-col items-center gap-0.5 py-2 px-3 flex-1 transition-colors lg:flex-row lg:flex-initial lg:gap-2 lg:py-3 lg:px-4 lg:rounded-md ${
                 isActive ? 'text-primary lg:bg-primary/10' : 'text-muted-foreground hover:text-foreground'
               }`}
@@ -56,7 +56,7 @@ const BottomNav = ({ active, onNavigate, notificationCount = 0, settingsDot, pro
         })}
         <div className="hidden lg:flex lg:flex-1" />
         <button
-          onClick={() => { if (active !== 'settings') hapticsService.impact('medium'); onNavigate('settings'); }}
+          onClick={() => { if (active !== 'settings') hapticsService.impact('heavy'); onNavigate('settings'); }}
           className={`relative flex flex-col items-center gap-0.5 py-2 px-3 transition-colors lg:flex-row lg:gap-2 lg:py-3 lg:px-4 lg:rounded-md ${
             active === 'settings' ? 'text-primary lg:bg-primary/10' : 'text-muted-foreground hover:text-foreground'
           }`}
