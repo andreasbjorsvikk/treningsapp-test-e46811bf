@@ -24,7 +24,7 @@ const MetricSelector = ({ selected, onSelect }: MetricSelectorProps) => {
       {metrics.map((m) => (
         <button
           key={m.id}
-          onClick={() => { hapticsService.impact('heavy'); onSelect(m.id); }}
+          onClick={() => { console.warn('[DEBUG-HAPTIC] MetricSelector chip', m.id); hapticsService.impact('heavy'); onSelect(m.id); }}
           className={`py-1.5 px-3 rounded-md text-xs font-medium transition-colors border ${
             selected === m.id
               ? 'bg-primary/15 text-primary border-primary/40 shadow-sm'

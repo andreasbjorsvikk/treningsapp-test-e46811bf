@@ -23,6 +23,7 @@ const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, on
   ];
 
   const handlePrev = () => {
+    console.warn('[DEBUG-HAPTIC] PeriodSelector prev clicked');
     hapticsService.impact('heavy');
     if (period === 'month') {
       if (month === 0) { onMonthChange(11); onYearChange(year - 1); }
@@ -33,6 +34,7 @@ const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, on
   };
 
   const handleNext = () => {
+    console.warn('[DEBUG-HAPTIC] PeriodSelector next clicked');
     hapticsService.impact('heavy');
     if (period === 'month') {
       if (month === 11) { onMonthChange(0); onYearChange(year + 1); }
@@ -48,7 +50,7 @@ const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, on
         {periods.map((p) => (
           <button
             key={p.id}
-            onClick={() => { hapticsService.impact('heavy'); onPeriodChange(p.id); }}
+            onClick={() => { console.warn('[DEBUG-HAPTIC] PeriodSelector chip', p.id); hapticsService.impact('heavy'); onPeriodChange(p.id); }}
             className={`py-1.5 px-5 rounded-full text-sm font-medium transition-colors ${
               period === p.id
                 ? 'bg-primary text-primary-foreground'
