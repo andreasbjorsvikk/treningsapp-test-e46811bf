@@ -21,6 +21,7 @@ const ActivityTypeFilter = ({ selected, onToggle, chartType = 'bar' }: ActivityT
   const allSelected = filteredTypes.length > 0 && filteredTypes.every(t => selected.includes(t));
 
   const handleToggleAll = () => {
+    hapticsService.impact('light');
     if (allSelected) {
       // Deselect all
       filteredTypes.forEach((t) => {
