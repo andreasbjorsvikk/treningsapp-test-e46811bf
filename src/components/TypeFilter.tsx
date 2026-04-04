@@ -1,4 +1,5 @@
 import { SessionType } from '@/types/workout';
+import { hapticsService } from '@/services/hapticsService';
 import { sessionTypeConfig, allSessionTypes } from '@/utils/workoutUtils';
 import { useSettings } from '@/contexts/SettingsContext';
 import { getActivityColors } from '@/utils/activityColors';
