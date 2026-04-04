@@ -56,7 +56,7 @@ const BottomNav = ({ active, onNavigate, notificationCount = 0, settingsDot, pro
         })}
         <div className="hidden lg:flex lg:flex-1" />
         <button
-          onClick={() => { if (active !== 'settings') hapticsService.impact('light'); onNavigate('settings'); }}
+          onClick={() => { if (active !== 'settings') hapticsService.impact('medium'); onNavigate('settings'); }}
           className={`relative flex flex-col items-center gap-0.5 py-2 px-3 transition-colors lg:flex-row lg:gap-2 lg:py-3 lg:px-4 lg:rounded-md ${
             active === 'settings' ? 'text-primary lg:bg-primary/10' : 'text-muted-foreground hover:text-foreground'
           }`}
