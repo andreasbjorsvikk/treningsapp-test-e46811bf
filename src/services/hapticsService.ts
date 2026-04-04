@@ -1,45 +1,49 @@
 /**
  * Haptics service — provides tactile feedback on native platforms.
- * Web fallback: no-op.
+ * Web fallback: no-op (isNativePlatform() returns false).
  *
  * Usage patterns:
  *   impact('light')  — tab switch, toggle
  *   impact('medium') — save, confirm
  *   notification('success') — milestone, goal complete
  *   notification('error') — validation error
- *
- * TODO: Replace with @capacitor/haptics when building native
  */
 import { isNativePlatform } from '@/utils/capacitor';
 
 export type ImpactStyle = 'light' | 'medium' | 'heavy';
 export type NotificationType = 'success' | 'warning' | 'error';
 
+const styleMap: Record<ImpactStyle, string> = { light: 'Light', medium: 'Medium', heavy: 'Heavy' };
+const notifMap: Record<NotificationType, string> = { success: 'SUCCESS', warning: 'WARNING', error: 'ERROR' };
+
 export const hapticsService = {
-  /** Trigger an impact haptic. */
   async impact(style: ImpactStyle = 'medium'): Promise<void> {
     if (!isNativePlatform()) return;
-    // TODO: Capacitor implementation
-    // const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
-    // await Haptics.impact({ style: ImpactStyle[style] });
-    console.debug('[haptics] impact:', style);
+    try {
+      const { Haptics, ImpactStyle: IS } = await import('@capacitor/haptics');
+      await Haptics.impact({ style: (IS as any)[styleMap[style]] });
+    } catch (e) {
+      console.warn('[haptics] impact error', e);
+    }
   },
 
-  /** Trigger a notification haptic. */
   async notification(type: NotificationType = 'success'): Promise<void> {
     if (!isNativePlatform()) return;
-    // TODO: Capacitor implementation
-    // const { Haptics, NotificationType } = await import('@capacitor/haptics');
-    // await Haptics.notification({ type: NotificationType[type] });
-    console.debug('[haptics] notification:', type);
+    try {
+      const { Haptics, NotificationType: NT } = await import('@capacitor/haptics');
+      await Haptics.notification({ type: (NT as any)[notifMap[type]] });
+    } catch (e) {
+      console.warn('[haptics] notification error', e);
+    }
   },
 
-  /** Selection changed haptic (very light). */
   async selectionChanged(): Promise<void> {
     if (!isNativePlatform()) return;
-    // TODO: Capacitor implementation
-    // const { Haptics } = await import('@capacitor/haptics');
-    // await Haptics.selectionChanged();
-    console.debug('[haptics] selectionChanged');
+    try {
+      const { Haptics } = await import('@capacitor/haptics');
+      await Haptics.selectionChanged();
+    } catch (e) {
+      console.warn('[haptics] selectionChanged error', e);
+    }
   },
 };
