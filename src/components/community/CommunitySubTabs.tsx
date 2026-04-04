@@ -1,3 +1,5 @@
+import { hapticsService } from '@/services/hapticsService';
+
 interface CommunitySubTabsProps {
   tabs: { id: string; label: string }[];
   active: string;
