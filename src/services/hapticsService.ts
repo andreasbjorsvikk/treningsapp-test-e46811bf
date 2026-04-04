@@ -142,6 +142,7 @@ export const hapticsService = {
   async selectionChanged(): Promise<void> {
     const method = 'selectionChanged';
     logCall(method);
+    debugToast(`HAPTIC: ${method}`);
     if (!isNativeCapacitorRuntime()) return;
 
     try {
