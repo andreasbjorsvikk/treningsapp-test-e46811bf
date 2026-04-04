@@ -15,6 +15,7 @@ import { getChallenges, getChallengeParticipants, getChallengeProgress, getNotif
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
+import { hapticsService } from '@/services/hapticsService';
 import { Plus, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -143,7 +144,7 @@ const CommunityPage = () => {
       </div>
 
       {/* Main tabs */}
-      <CommunitySubTabs tabs={mainTabs} active={mainTab} onChange={setMainTab} />
+      <CommunitySubTabs tabs={mainTabs} active={mainTab} onChange={(tab) => { console.warn('[DEBUG-HAPTIC] CommunityPage onChange fired', tab); hapticsService.impact('heavy'); setMainTab(tab); }} />
 
       {mainTab === 'challenges' && (
         <>
@@ -151,7 +152,7 @@ const CommunityPage = () => {
             {challengeFilterTabs.map(tab => (
               <button
                 key={tab.id}
-                onClick={() => setChallengeFilter(tab.id)}
+                onClick={() => { console.warn('[DEBUG-HAPTIC] CommunityPage challengeFilter fired', tab.id); hapticsService.impact('heavy'); setChallengeFilter(tab.id); }}
                 className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
                   challengeFilter === tab.id ? 'bg-accent text-accent-foreground' : 'bg-secondary text-muted-foreground'
                 }`}
