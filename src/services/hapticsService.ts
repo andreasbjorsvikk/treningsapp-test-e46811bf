@@ -47,10 +47,26 @@ function isNativeCapacitorRuntime(): boolean {
   }
 }
 
+function debugToast(msg: string) {
+  try {
+    const el = document.createElement('div');
+    el.textContent = msg;
+    Object.assign(el.style, {
+      position: 'fixed', top: '60px', left: '50%', transform: 'translateX(-50%)',
+      background: 'rgba(0,0,0,0.85)', color: '#0f0', padding: '6px 16px',
+      borderRadius: '8px', fontSize: '13px', fontFamily: 'monospace',
+      zIndex: '99999', pointerEvents: 'none', whiteSpace: 'nowrap',
+    });
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1200);
+  } catch {}
+}
+
 export const hapticsService = {
   async impact(style: ImpactStyle = 'medium'): Promise<void> {
     const method = `impact(${style})`;
     logCall(method);
+    debugToast(`HAPTIC: ${method}`);
     if (!isNativeCapacitorRuntime()) return;
 
     try {
@@ -88,6 +104,7 @@ export const hapticsService = {
   async notification(type: NotificationType = 'success'): Promise<void> {
     const method = `notification(${type})`;
     logCall(method);
+    debugToast(`HAPTIC: ${method}`);
     if (!isNativeCapacitorRuntime()) return;
 
     try {
@@ -125,6 +142,7 @@ export const hapticsService = {
   async selectionChanged(): Promise<void> {
     const method = 'selectionChanged';
     logCall(method);
+    debugToast(`HAPTIC: ${method}`);
     if (!isNativeCapacitorRuntime()) return;
 
     try {
