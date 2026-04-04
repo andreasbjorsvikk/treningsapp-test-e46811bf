@@ -1,4 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
+import { hapticsService } from '@/services/hapticsService';
 
 export type ChartMetric = 'sessions' | 'distance' | 'elevation' | 'minutes' | 'steps';
 
@@ -23,7 +24,7 @@ const MetricSelector = ({ selected, onSelect }: MetricSelectorProps) => {
       {metrics.map((m) => (
         <button
           key={m.id}
-          onClick={() => onSelect(m.id)}
+          onClick={() => { hapticsService.impact('light'); onSelect(m.id); }}
           className={`py-1.5 px-3 rounded-md text-xs font-medium transition-colors border ${
             selected === m.id
               ? 'bg-primary/15 text-primary border-primary/40 shadow-sm'

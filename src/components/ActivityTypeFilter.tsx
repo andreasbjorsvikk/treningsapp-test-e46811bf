@@ -1,4 +1,5 @@
 import { SessionType } from '@/types/workout';
+import { hapticsService } from '@/services/hapticsService';
 import { sessionTypeConfig, allSessionTypes } from '@/utils/workoutUtils';
 import { useSettings } from '@/contexts/SettingsContext';
 import { getActivityColors } from '@/utils/activityColors';
@@ -20,6 +21,7 @@ const ActivityTypeFilter = ({ selected, onToggle, chartType = 'bar' }: ActivityT
   const allSelected = filteredTypes.length > 0 && filteredTypes.every(t => selected.includes(t));
 
   const handleToggleAll = () => {
+    hapticsService.impact('light');
     if (allSelected) {
       // Deselect all
       filteredTypes.forEach((t) => {
@@ -34,6 +36,7 @@ const ActivityTypeFilter = ({ selected, onToggle, chartType = 'bar' }: ActivityT
   };
 
   const handleToggleType = (type: SessionType) => {
+    hapticsService.impact('light');
     if (chartType === 'line' && allSelected) {
       // When "Alle" is active in line mode, clicking a type selects only that type
       filteredTypes.forEach((t) => {

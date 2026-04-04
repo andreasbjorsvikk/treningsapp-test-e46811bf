@@ -1,5 +1,6 @@
 import { Peak } from '@/data/peaks';
 import { PeakCheckin, getDistanceMeters } from '@/services/peakCheckinService';
+import { hapticsService } from '@/services/hapticsService';
 import { Pencil, Trash2, Search, SlidersHorizontal, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -262,7 +263,7 @@ const PeaksList = ({ peaks, checkins, onSelectPeak, adminMode, onEditPeak, onDel
         {filters.map(f => (
           <button
             key={f.id}
-            onClick={() => setFilter(f.id)}
+            onClick={() => { hapticsService.impact('light'); setFilter(f.id); }}
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               filter === f.id
                 ? 'bg-primary text-primary-foreground'

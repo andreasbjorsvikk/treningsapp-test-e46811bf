@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { hapticsService } from '@/services/hapticsService';
 import { useAuth } from '@/hooks/useAuth';
 import { updateCheckinImage, deleteCheckin, checkinPeak } from '@/services/peakCheckinService';
 import { getChildProfiles, getSharedChildProfiles, ChildProfile } from '@/services/childProfileService';
@@ -538,7 +539,7 @@ const PeakFeed = () => {
             {(['alle', 'friends', 'mine'] as FeedFilter[]).map(opt => (
               <button
                 key={opt}
-                onClick={() => setFilter(opt)}
+                onClick={() => { hapticsService.impact('light'); setFilter(opt); }}
                 className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   filter === opt
                     ? 'bg-background text-foreground shadow-sm'
@@ -551,7 +552,7 @@ const PeakFeed = () => {
           </div>
           <div className="flex gap-1 p-0.5 rounded-lg bg-secondary/50">
             <button
-              onClick={() => setFilter('global')}
+              onClick={() => { hapticsService.impact('light'); setFilter('global'); }}
               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                 filter === 'global'
                   ? 'bg-background text-foreground shadow-sm'

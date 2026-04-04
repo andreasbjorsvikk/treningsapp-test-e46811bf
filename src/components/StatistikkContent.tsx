@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { BarChart3, TrendingUp } from 'lucide-react';
+import { hapticsService } from '@/services/hapticsService';
 import { SessionType, WorkoutSession } from '@/types/workout';
 import { Period } from '@/components/PeriodSelector';
 import { ChartMetric } from '@/components/MetricSelector';
@@ -120,7 +121,7 @@ const StatistikkContent = ({
           {/* Chart type toggle */}
           <div className="flex items-center justify-center gap-2">
             <button
-              onClick={() => setChartType('bar')}
+              onClick={() => { hapticsService.impact('light'); setChartType('bar'); }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 chartType === 'bar'
                   ? 'bg-primary text-primary-foreground'
@@ -131,7 +132,7 @@ const StatistikkContent = ({
               Stolpe
             </button>
             <button
-              onClick={() => setChartType('line')}
+              onClick={() => { hapticsService.impact('light'); setChartType('line'); }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 chartType === 'line'
                   ? 'bg-primary text-primary-foreground'

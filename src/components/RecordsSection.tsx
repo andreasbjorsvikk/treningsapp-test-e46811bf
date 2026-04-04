@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { WorkoutSession } from '@/types/workout';
+import { hapticsService } from '@/services/hapticsService';
 import { useAppDataContext } from '@/contexts/AppDataContext';
 import { formatDuration } from '@/utils/workoutUtils';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -1041,7 +1042,7 @@ const RecordsSection = () => {
                   <div className="px-4 pb-3">
                     <div className="flex rounded-lg bg-muted p-0.5">
                       <button
-                        onClick={() => setViewMode('mine')}
+                        onClick={() => { hapticsService.impact('light'); setViewMode('mine'); }}
                         className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
                           viewMode === 'mine' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
                         }`}
@@ -1049,7 +1050,7 @@ const RecordsSection = () => {
                         {t('records.mine')}
                       </button>
                       <button
-                        onClick={() => setViewMode('all')}
+                        onClick={() => { hapticsService.impact('light'); setViewMode('all'); }}
                         className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
                           viewMode === 'all' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
                         }`}

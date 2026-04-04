@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { hapticsService } from '@/services/hapticsService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -50,7 +51,9 @@ const ScrollColumn = ({
     const idx = Math.round(el.scrollTop / ITEM_HEIGHT);
     const clampedIdx = Math.max(0, Math.min(values.length - 1, idx));
     el.scrollTo({ top: clampedIdx * ITEM_HEIGHT, behavior: 'smooth' });
-    onChange(values[clampedIdx]);
+    const newVal = values[clampedIdx];
+    onChange(newVal);
+    hapticsService.selectionChanged();
     setTimeout(() => { isUserScrolling.current = false; }, 150);
   }, [values, onChange]);
 
@@ -67,6 +70,7 @@ const ScrollColumn = ({
       isUserScrolling.current = true;
       el.scrollTo({ top: idx * ITEM_HEIGHT, behavior: 'smooth' });
       onChange(val);
+      hapticsService.selectionChanged();
       setTimeout(() => { isUserScrolling.current = false; }, 200);
     }
   };

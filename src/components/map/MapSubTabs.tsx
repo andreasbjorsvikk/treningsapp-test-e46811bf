@@ -1,4 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
+import { hapticsService } from '@/services/hapticsService';
 
 export type MapSubTab = 'kart' | 'topper' | 'feed' | 'lederliste' | 'ar';
 
@@ -22,7 +23,7 @@ const MapSubTabs = ({ active, onChange }: MapSubTabsProps) => {
       {baseTabs.map(tab => (
         <button
           key={tab.id}
-          onClick={() => onChange(tab.id)}
+          onClick={() => { hapticsService.selectionChanged(); onChange(tab.id); }}
           className={`flex-1 py-1.5 px-2 rounded-md text-sm font-medium transition-colors ${
             active === tab.id
               ? 'bg-background text-foreground shadow-sm'
