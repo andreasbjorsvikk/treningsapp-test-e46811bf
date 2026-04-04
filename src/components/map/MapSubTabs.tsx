@@ -1,4 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
+import { hapticsService } from '@/services/hapticsService';
 
 export type MapSubTab = 'kart' | 'topper' | 'feed' | 'lederliste' | 'ar';
 
