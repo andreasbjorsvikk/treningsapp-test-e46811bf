@@ -3,6 +3,7 @@ import { ChallengeWithParticipants } from '@/pages/CommunityPage';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Trophy, X, PartyPopper } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { hapticsService } from '@/services/hapticsService';
 
 interface ChallengeCompletionOverlayProps {
   challenge: ChallengeWithParticipants | null;
