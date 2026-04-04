@@ -33,6 +33,7 @@ const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, on
   };
 
   const handleNext = () => {
+    hapticsService.selectionChanged();
     if (period === 'month') {
       if (month === 11) { onMonthChange(0); onYearChange(year + 1); }
       else onMonthChange(month + 1);
