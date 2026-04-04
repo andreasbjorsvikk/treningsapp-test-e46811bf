@@ -15,6 +15,7 @@ import { getChallenges, getChallengeParticipants, getChallengeProgress, getNotif
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
+import { hapticsService } from '@/services/hapticsService';
 import { Plus, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
