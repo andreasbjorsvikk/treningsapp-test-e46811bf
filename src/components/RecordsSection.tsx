@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { WorkoutSession } from '@/types/workout';
+import { hapticsService } from '@/services/hapticsService';
 import { useAppDataContext } from '@/contexts/AppDataContext';
 import { formatDuration } from '@/utils/workoutUtils';
 import { useTranslation } from '@/i18n/useTranslation';
