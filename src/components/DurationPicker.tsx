@@ -53,7 +53,7 @@ const ScrollColumn = ({
     el.scrollTo({ top: clampedIdx * ITEM_HEIGHT, behavior: 'smooth' });
     const newVal = values[clampedIdx];
     onChange(newVal);
-    hapticsService.selectionChanged();
+    hapticsService.impact('medium');
     setTimeout(() => { isUserScrolling.current = false; }, 150);
   }, [values, onChange]);
 
