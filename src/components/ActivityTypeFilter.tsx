@@ -37,6 +37,7 @@ const ActivityTypeFilter = ({ selected, onToggle, chartType = 'bar' }: ActivityT
   };
 
   const handleToggleType = (type: SessionType) => {
+    console.warn('[DEBUG-HAPTIC] ActivityTypeFilter toggleType', type);
     hapticsService.impact('heavy');
     if (chartType === 'line' && allSelected) {
       // When "Alle" is active in line mode, clicking a type selects only that type

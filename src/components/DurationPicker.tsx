@@ -71,6 +71,7 @@ const ScrollColumn = ({
       isUserScrolling.current = true;
       el.scrollTo({ top: idx * ITEM_HEIGHT, behavior: 'smooth' });
       onChange(val);
+      console.warn('[DEBUG-HAPTIC] DurationPicker itemClick fired', val);
       hapticsService.impact('heavy');
       setTimeout(() => { isUserScrolling.current = false; }, 200);
     }
