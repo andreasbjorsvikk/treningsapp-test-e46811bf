@@ -23,7 +23,7 @@ const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, on
   ];
 
   const handlePrev = () => {
-    hapticsService.selectionChanged();
+    hapticsService.impact('medium');
     if (period === 'month') {
       if (month === 0) { onMonthChange(11); onYearChange(year - 1); }
       else onMonthChange(month - 1);
