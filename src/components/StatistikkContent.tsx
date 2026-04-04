@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { BarChart3, TrendingUp } from 'lucide-react';
+import { hapticsService } from '@/services/hapticsService';
 import { SessionType, WorkoutSession } from '@/types/workout';
 import { Period } from '@/components/PeriodSelector';
 import { ChartMetric } from '@/components/MetricSelector';
