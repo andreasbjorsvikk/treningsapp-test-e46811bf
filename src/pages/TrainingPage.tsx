@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { hapticsService } from '@/services/hapticsService';
 import GoalTutorialDialog from '@/components/GoalTutorialDialog';
 import { SessionType, WorkoutSession, HealthEvent } from '@/types/workout';
 import GoalsSection from '@/components/GoalsSection';
