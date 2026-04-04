@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { hapticsService } from '@/services/hapticsService';
 import { useAuth } from '@/hooks/useAuth';
 import { updateCheckinImage, deleteCheckin, checkinPeak } from '@/services/peakCheckinService';
 import { getChildProfiles, getSharedChildProfiles, ChildProfile } from '@/services/childProfileService';
