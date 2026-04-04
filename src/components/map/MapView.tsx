@@ -339,6 +339,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
       longPressCoords.current = { lat: point.lat, lng: point.lng };
       longPressTimer.current = setTimeout(() => {
         if (longPressCoords.current && onLongPress) {
+          hapticsService.impact('medium');
           onLongPress(longPressCoords.current.lat, longPressCoords.current.lng);
         }
       }, 600);
