@@ -1042,7 +1042,7 @@ const RecordsSection = () => {
                   <div className="px-4 pb-3">
                     <div className="flex rounded-lg bg-muted p-0.5">
                       <button
-                        onClick={() => { hapticsService.impact('light'); setViewMode('mine'); }}
+                        onClick={() => { hapticsService.impact('heavy'); setViewMode('mine'); }}
                         className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
                           viewMode === 'mine' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
                         }`}
@@ -1050,7 +1050,7 @@ const RecordsSection = () => {
                         {t('records.mine')}
                       </button>
                       <button
-                        onClick={() => { hapticsService.impact('light'); setViewMode('all'); }}
+                        onClick={() => { hapticsService.impact('heavy'); setViewMode('all'); }}
                         className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
                           viewMode === 'all' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
                         }`}

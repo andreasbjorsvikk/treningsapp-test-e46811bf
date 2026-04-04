@@ -112,7 +112,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
       finalElevation = (type === 'trappemaskin' && elevationMode === 'floors') ? Math.round(val * 3) : Math.round(val);
     }
 
-    hapticsService.impact('medium');
+    hapticsService.impact('heavy');
     const isStravaEdit = session?.stravaActivityId != null;
     onSave({
       type,

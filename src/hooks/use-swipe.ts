@@ -22,7 +22,7 @@ export function useSwipe({ onSwipeLeft, onSwipeRight, threshold = 50 }: UseSwipe
     const dy = e.changedTouches[0].clientY - startY.current;
     // Only trigger if horizontal swipe is dominant
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > threshold) {
-      hapticsService.impact('light');
+      hapticsService.impact('heavy');
       if (dx < 0) onSwipeLeft?.();
       else onSwipeRight?.();
     }
