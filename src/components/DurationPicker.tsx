@@ -97,6 +97,7 @@ const ScrollColumn = ({
         <div
           ref={containerRef}
           onScroll={handleScroll}
+          onTouchEnd={handleTouchEnd}
           className="h-full overflow-y-auto scrollbar-hide touch-pan-y"
           style={{
             WebkitOverflowScrolling: 'touch',
