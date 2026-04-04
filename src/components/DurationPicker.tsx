@@ -64,6 +64,13 @@ const ScrollColumn = ({
     snapTimeoutRef.current = setTimeout(snapToNearest, 200);
   }, [snapToNearest]);
 
+  const handleTouchEnd = useCallback(() => {
+    console.warn('[DEBUG-HAPTIC] DurationPicker touchEnd fired');
+    // Ensure snap fires after touch ends
+    if (snapTimeoutRef.current) clearTimeout(snapTimeoutRef.current);
+    snapTimeoutRef.current = setTimeout(snapToNearest, 120);
+  }, [snapToNearest]);
+
   const handleItemClick = (val: number) => {
     const idx = values.indexOf(val);
     const el = containerRef.current;
