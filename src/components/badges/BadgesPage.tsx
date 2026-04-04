@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { UserBadge, BadgeCategory, computeUserBadges, SUBCATEGORY_NAMES } from '@/services/badgeService';
+import { hapticsService } from '@/services/hapticsService';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useTranslation } from '@/i18n/useTranslation';
