@@ -539,7 +539,7 @@ const PeakFeed = () => {
             {(['alle', 'friends', 'mine'] as FeedFilter[]).map(opt => (
               <button
                 key={opt}
-                onClick={() => setFilter(opt)}
+                onClick={() => { hapticsService.impact('light'); setFilter(opt); }}
                 className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   filter === opt
                     ? 'bg-background text-foreground shadow-sm'
