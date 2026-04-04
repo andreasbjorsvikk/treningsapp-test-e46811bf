@@ -1050,7 +1050,7 @@ const RecordsSection = () => {
                         {t('records.mine')}
                       </button>
                       <button
-                        onClick={() => setViewMode('all')}
+                        onClick={() => { hapticsService.impact('light'); setViewMode('all'); }}
                         className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
                           viewMode === 'all' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
                         }`}

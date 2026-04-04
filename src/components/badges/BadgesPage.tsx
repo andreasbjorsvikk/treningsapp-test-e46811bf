@@ -73,7 +73,7 @@ const BadgesPage = () => {
         {tabs.map(tab => (
           <button
             key={tab.key}
-            onClick={() => setFilter(tab.key)}
+            onClick={() => { hapticsService.impact('light'); setFilter(tab.key); }}
             className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors ${
               filter === tab.key
                 ? 'bg-background text-foreground shadow-sm'
