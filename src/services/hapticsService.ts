@@ -104,6 +104,7 @@ export const hapticsService = {
   async notification(type: NotificationType = 'success'): Promise<void> {
     const method = `notification(${type})`;
     logCall(method);
+    debugToast(`HAPTIC: ${method}`);
     if (!isNativeCapacitorRuntime()) return;
 
     try {
