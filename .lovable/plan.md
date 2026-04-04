@@ -1,62 +1,58 @@
 
 
-## Plan: Wire up real Capacitor Haptics in hapticsService
+## Plan: Verifisere og fikse haptics som ikke kjennes
 
-### Will this affect the web version?
+### Analyse
 
-**Nei, dette er trygt.** The entire approach uses dynamic `import('@capacitor/haptics')` which only resolves when running inside a Capacitor native shell. The `isNativePlatform()` guard already returns `false` on web, so web users will never hit the Capacitor code paths. Even if the import were reached on web, it would fail gracefully in a try/catch. Zero impact on the web app.
+Koden ser riktig ut — alle 18 filer har `hapticsService.impact('heavy')` kall. Servicen (`hapticsService.ts`) har ekte Capacitor-kall. Siden bottom tabs og training sub-tabs fungerer, er selve Capacitor-broen OK.
 
-### What's wrong today
+### Sannsynlig årsak
 
-The haptics service has the actual Capacitor calls **commented out** (lines 23-24, 32-33, 42). On native iOS it detects the platform correctly but then just logs to console — no real vibration.
+Problemet er trolig at **appen bruker hot-reload mot Lovable preview-URL**, og noen komponenter ble oppdatert i Lovable MEN den native appen cacher eldre JavaScript-bundles. Alternativt kan det være at du rett og slett ikke har testet alle interaksjonene systematisk ennå.
 
-Also, `@capacitor/haptics` is **not installed** as a dependency (not in package.json).
+### Foreslått tilnærming
 
-### Changes
+**Steg 1: Legg til et synlig debug-overlay (midlertidig)**
 
-**1. Install `@capacitor/haptics`** — add to package.json dependencies.
+Legg til en liten toast/visuell indikator som vises kort hver gang `hapticsService.impact()` kalles, f.eks. et lite badge øverst på skjermen med teksten "HAPTIC: heavy". Dette bekrefter visuelt om kallet faktisk skjer, uavhengig av om du kjenner vibrasjonen.
 
-**2. Update `src/services/hapticsService.ts`** — uncomment and activate the real Capacitor Haptics calls:
+**Steg 2: Sjekk Xcode-logger**
 
+Hvert haptics-kall logger allerede `HAPTICS before native call` og `HAPTICS success`. Når du trykker på f.eks. PeriodSelector-pilene eller MetricSelector-chips — ser du disse loggene i Xcode? Hvis ikke, er det JavaScript-koden som ikke kjører (caching-problem).
+
+**Steg 3: Force cache-bust**
+
+I `capacitor.config.ts`, legg til en query-parameter på server-URLen for å tvinge fresh load:
 ```
-import { isNativePlatform } from '@/utils/capacitor';
-
-const styleMap = { light: 'Light', medium: 'Medium', heavy: 'Heavy' };
-const notifMap = { success: 'SUCCESS', warning: 'WARNING', error: 'ERROR' };
-
-export const hapticsService = {
-  async impact(style = 'medium') {
-    if (!isNativePlatform()) return;
-    try {
-      const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
-      await Haptics.impact({ style: ImpactStyle[styleMap[style]] });
-    } catch (e) { console.warn('[haptics] impact error', e); }
-  },
-  async notification(type = 'success') {
-    if (!isNativePlatform()) return;
-    try {
-      const { Haptics, NotificationType } = await import('@capacitor/haptics');
-      await Haptics.notification({ type: NotificationType[notifMap[type]] });
-    } catch (e) { console.warn('[haptics] notification error', e); }
-  },
-  async selectionChanged() {
-    if (!isNativePlatform()) return;
-    try {
-      const { Haptics } = await import('@capacitor/haptics');
-      await Haptics.selectionChanged();
-    } catch (e) { console.warn('[haptics] selectionChanged error', e); }
-  },
-};
+url: "https://...lovableproject.com?forceHideBadge=true&v=2"
 ```
+Deretter `npx cap sync` + rebuild i Xcode.
 
-Key points:
-- Dynamic `import()` so the module is only loaded at runtime on native
-- `try/catch` around every call for safety
-- Temporary `console.warn` on errors for debugging (user requested debug logs)
-- Web remains a complete no-op via `isNativePlatform()` guard
-- No UI changes, no layout changes
+**Steg 4: Justere til produksjonsnivåer**
 
-**3. No other files change.** All existing haptic trigger points (`BottomNav`, `DurationPicker`, `PeriodSelector`, etc.) already call `hapticsService` — they just need the service to actually do something on native.
+Når vi har bekreftet at alle kall faktisk treffer, justere intensitet:
 
-**After deploying:** user must `git pull`, `npm install`, `npx cap sync`, rebuild in Xcode.
+| Interaksjon | Nåværende | Mål |
+|---|---|---|
+| Bottom tabs | heavy | medium |
+| Training/Map/Community sub-tabs | heavy | medium |
+| Period chips, prev/next | heavy | medium |
+| Metric chips | heavy | medium |
+| Activity type filter | heavy | medium |
+| Chart type toggle | heavy | medium |
+| DurationPicker wheel snap/click | heavy | medium |
+| Swipe complete | heavy | medium |
+| Workout save | heavy | heavy (beholde) |
+| Map long press | heavy | heavy (beholde) |
+| Badge/goal/challenge | notification(success) | beholde |
+
+### Endringer i kode
+
+- 1 fil: `hapticsService.ts` — legg til visuell debug (midlertidig)
+- 1 fil: `capacitor.config.ts` — cache-bust parameter
+- ~15 filer: nedgradere heavy → medium etter bekreftelse
+
+### Ingen risiko for web
+
+Alt er bak `isNativeCapacitorRuntime()` guard. Web forblir no-op.
 
