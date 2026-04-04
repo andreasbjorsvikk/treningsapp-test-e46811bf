@@ -270,7 +270,7 @@ const MapPage = () => {
     <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)]">
       {/* Sub-tab bar */}
       <div className="px-4 pt-3 pb-2">
-        <MapSubTabs active={subTab} onChange={setSubTab} />
+        <MapSubTabs active={subTab} onChange={(tab) => { console.warn('[DEBUG-HAPTIC] MapPage onChange fired', tab); hapticsService.impact('heavy'); setSubTab(tab); }} />
       </div>
 
       {/* Admin toolbar */}
