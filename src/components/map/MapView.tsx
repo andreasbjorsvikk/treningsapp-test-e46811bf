@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { decodePolyline } from '@/utils/polyline';
 import { addEnhancedTerrain } from '@/utils/mapTerrain';
 import { getPeakIcon, getCheckedPeakIcon } from '@/utils/peakIcons';
+import { hapticsService } from '@/services/hapticsService';
 
 type HeatmapPeriod = 'year' | 'total';
 
