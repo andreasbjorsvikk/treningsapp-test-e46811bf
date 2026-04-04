@@ -61,7 +61,7 @@ const PrimaryGoalForm = ({ existing, onSave, onCancel }: PrimaryGoalFormProps) =
           <button
             key={p.id}
             type="button"
-            onClick={() => setPeriod(p.id)}
+            onClick={() => { hapticsService.impact('light'); setPeriod(p.id); }}
             className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
               period === p.id
                 ? 'bg-background text-foreground shadow-sm'

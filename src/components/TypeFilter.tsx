@@ -41,7 +41,7 @@ const TypeFilter = ({ selected, onToggle, onSelectAll }: TypeFilterProps) => {
           return (
             <button
               key={type}
-              onClick={() => onToggle(type)}
+              onClick={() => { hapticsService.impact('light'); onToggle(type); }}
               className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 !isActive ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80' : ''
               }`}
