@@ -354,7 +354,10 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
     // Also support right-click on desktop
     const onContextMenu = (e: mapboxgl.MapMouseEvent) => {
       e.originalEvent.preventDefault();
-      if (onLongPress) onLongPress(e.lngLat.lat, e.lngLat.lng);
+      if (onLongPress) {
+        hapticsService.impact('medium');
+        onLongPress(e.lngLat.lat, e.lngLat.lng);
+      }
     };
 
     el.addEventListener('touchstart', onDown, { passive: true });
