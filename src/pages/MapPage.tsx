@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { hapticsService } from '@/services/hapticsService';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { Peak } from '@/data/peaks';
