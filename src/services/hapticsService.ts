@@ -2,72 +2,153 @@
  * Haptics service — provides tactile feedback on native platforms.
  * Web fallback: no-op (isNativePlatform() returns false).
  */
-import { isNativePlatform } from '@/utils/capacitor';
+import { Capacitor } from '@capacitor/core';
 
 export type ImpactStyle = 'light' | 'medium' | 'heavy';
 export type NotificationType = 'success' | 'warning' | 'error';
 
-const styleMap: Record<ImpactStyle, string> = { light: 'Light', medium: 'Medium', heavy: 'Heavy' };
-const notifMap: Record<NotificationType, string> = { success: 'SUCCESS', warning: 'WARNING', error: 'ERROR' };
+function getCapacitorDebugInfo() {
+  try {
+    return {
+      platform: Capacitor.getPlatform(),
+      isNativePlatform: Capacitor.isNativePlatform(),
+    };
+  } catch {
+    return {
+      platform: 'unknown',
+      isNativePlatform: false,
+    };
+  }
+}
 
 // Init log
 try {
-  const cap = (window as any).Capacitor;
-  console.log('HAPTICS service loaded', {
-    platform: cap?.getPlatform?.() ?? 'unknown',
-    isNativePlatform: cap?.isNativePlatform?.() ?? false,
-  });
+  console.log('HAPTICS service loaded', getCapacitorDebugInfo());
 } catch (e) {
   console.log('HAPTICS service loaded', { platform: 'unknown', isNativePlatform: false });
 }
 
 function logCall(method: string) {
   try {
-    const cap = (window as any).Capacitor;
     console.log('HAPTICS called', {
       method,
-      platform: cap?.getPlatform?.() ?? 'unknown',
-      isNativePlatform: cap?.isNativePlatform?.() ?? false,
+      ...getCapacitorDebugInfo(),
     });
   } catch {
     console.log('HAPTICS called', { method, platform: 'unknown', isNativePlatform: false });
   }
 }
 
+function isNativeCapacitorRuntime(): boolean {
+  try {
+    return Capacitor.isNativePlatform();
+  } catch {
+    return false;
+  }
+}
+
 export const hapticsService = {
   async impact(style: ImpactStyle = 'medium'): Promise<void> {
-    logCall(`impact(${style})`);
-    if (!isNativePlatform()) return;
+    const method = `impact(${style})`;
+    logCall(method);
+    if (!isNativeCapacitorRuntime()) return;
+
     try {
-      const { Haptics, ImpactStyle: IS } = await import('@capacitor/haptics');
-      await Haptics.impact({ style: (IS as any)[styleMap[style]] });
-      console.log('HAPTICS success', `impact(${style})`);
+      const plugin = await import('@capacitor/haptics');
+      const nativeStyle = {
+        light: plugin.ImpactStyle.Light,
+        medium: plugin.ImpactStyle.Medium,
+        heavy: plugin.ImpactStyle.Heavy,
+      }[style];
+
+      console.log('HAPTICS before native call', {
+        method,
+        nativeCall: 'Haptics.impact',
+        nativeStyle,
+        ...getCapacitorDebugInfo(),
+      });
+
+      await plugin.Haptics.impact({ style: nativeStyle });
+
+      console.log('HAPTICS success', {
+        method,
+        nativeCall: 'Haptics.impact',
+        nativeStyle,
+        ...getCapacitorDebugInfo(),
+      });
     } catch (e) {
-      console.error('HAPTICS error', `impact(${style})`, e);
+      console.error('HAPTICS error', {
+        method,
+        nativeCall: 'Haptics.impact',
+        ...getCapacitorDebugInfo(),
+      }, e);
     }
   },
 
   async notification(type: NotificationType = 'success'): Promise<void> {
-    logCall(`notification(${type})`);
-    if (!isNativePlatform()) return;
+    const method = `notification(${type})`;
+    logCall(method);
+    if (!isNativeCapacitorRuntime()) return;
+
     try {
-      const { Haptics, NotificationType: NT } = await import('@capacitor/haptics');
-      await Haptics.notification({ type: (NT as any)[notifMap[type]] });
-      console.log('HAPTICS success', `notification(${type})`);
+      const plugin = await import('@capacitor/haptics');
+      const nativeType = {
+        success: plugin.NotificationType.Success,
+        warning: plugin.NotificationType.Warning,
+        error: plugin.NotificationType.Error,
+      }[type];
+
+      console.log('HAPTICS before native call', {
+        method,
+        nativeCall: 'Haptics.notification',
+        nativeType,
+        ...getCapacitorDebugInfo(),
+      });
+
+      await plugin.Haptics.notification({ type: nativeType });
+
+      console.log('HAPTICS success', {
+        method,
+        nativeCall: 'Haptics.notification',
+        nativeType,
+        ...getCapacitorDebugInfo(),
+      });
     } catch (e) {
-      console.error('HAPTICS error', `notification(${type})`, e);
+      console.error('HAPTICS error', {
+        method,
+        nativeCall: 'Haptics.notification',
+        ...getCapacitorDebugInfo(),
+      }, e);
     }
   },
 
   async selectionChanged(): Promise<void> {
-    logCall('selectionChanged');
-    if (!isNativePlatform()) return;
+    const method = 'selectionChanged';
+    logCall(method);
+    if (!isNativeCapacitorRuntime()) return;
+
     try {
-      const { Haptics } = await import('@capacitor/haptics');
-      await Haptics.selectionChanged();
-      console.log('HAPTICS success', 'selectionChanged');
+      const plugin = await import('@capacitor/haptics');
+
+      console.log('HAPTICS before native call', {
+        method,
+        nativeCall: 'Haptics.selectionChanged',
+        ...getCapacitorDebugInfo(),
+      });
+
+      await plugin.Haptics.selectionChanged();
+
+      console.log('HAPTICS success', {
+        method,
+        nativeCall: 'Haptics.selectionChanged',
+        ...getCapacitorDebugInfo(),
+      });
     } catch (e) {
-      console.error('HAPTICS error', 'selectionChanged', e);
+      console.error('HAPTICS error', {
+        method,
+        nativeCall: 'Haptics.selectionChanged',
+        ...getCapacitorDebugInfo(),
+      }, e);
     }
   },
 };
