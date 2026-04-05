@@ -33,8 +33,7 @@ const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, on
   };
 
   const handleNext = () => {
-    console.warn('[DEBUG-HAPTIC] PeriodSelector next clicked');
-    hapticsService.impact('heavy');
+    hapticsService.impact('medium');
     if (period === 'month') {
       if (month === 11) { onMonthChange(0); onYearChange(year + 1); }
       else onMonthChange(month + 1);
