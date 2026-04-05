@@ -86,7 +86,6 @@ const ScrollColumn = ({
     >
       <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{label}</span>
       <div className="relative w-full" style={{ height: ITEM_HEIGHT * VISIBLE_ITEMS }}
-        onTouchStart={() => console.warn('[DEBUG] ScrollColumn relative-div touchStart')}
       >
         <div
           className="absolute left-1 right-1 rounded-xl bg-primary/10 border border-primary/20 pointer-events-none z-10"
