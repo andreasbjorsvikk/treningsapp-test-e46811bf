@@ -79,30 +79,10 @@ const ScrollColumn = ({
     }
   };
 
-  // Ultra-basic native touch listeners for iOS debug
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const onTS = () => console.warn('[DEBUG] ScrollColumn touchstart on container');
-    const onTM = () => console.warn('[DEBUG] ScrollColumn touchmove on container');
-    const onTE = () => console.warn('[DEBUG] ScrollColumn native-touchend on container');
-    const onSc = () => console.warn('[DEBUG] ScrollColumn native-scroll on container');
-    el.addEventListener('touchstart', onTS, { passive: true });
-    el.addEventListener('touchmove', onTM, { passive: true });
-    el.addEventListener('touchend', onTE, { passive: true });
-    el.addEventListener('scroll', onSc, { passive: true });
-    return () => {
-      el.removeEventListener('touchstart', onTS);
-      el.removeEventListener('touchmove', onTM);
-      el.removeEventListener('touchend', onTE);
-      el.removeEventListener('scroll', onSc);
-    };
-  }, []);
 
   return (
     <div
       className="flex flex-col items-center flex-1 min-w-0"
-      onTouchStart={() => console.warn('[DEBUG] ScrollColumn wrapper touchStart')}
     >
       <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{label}</span>
       <div className="relative w-full" style={{ height: ITEM_HEIGHT * VISIBLE_ITEMS }}
