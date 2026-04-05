@@ -144,7 +144,7 @@ const CommunityPage = () => {
       </div>
 
       {/* Main tabs */}
-      <CommunitySubTabs tabs={mainTabs} active={mainTab} onChange={(tab) => { console.warn('[DEBUG-HAPTIC] CommunityPage onChange fired', tab); hapticsService.impact('heavy'); setMainTab(tab); }} />
+      <CommunitySubTabs tabs={mainTabs} active={mainTab} onChange={setMainTab} />
 
       {mainTab === 'challenges' && (
         <>
