@@ -96,7 +96,7 @@ const ScrollColumn = ({
         <div
           ref={containerRef}
           onScroll={handleScroll}
-          onTouchStart={() => console.warn('[DEBUG] ScrollColumn React-touchStart on scroll-div')}
+          onTouchStart={() => { isUserScrolling.current = true; }}
           onTouchEnd={handleTouchEnd}
           className="h-full overflow-y-auto scrollbar-hide touch-pan-y"
           style={{
