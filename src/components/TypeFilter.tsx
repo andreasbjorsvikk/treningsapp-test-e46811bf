@@ -24,7 +24,7 @@ const TypeFilter = ({ selected, onToggle, onSelectAll }: TypeFilterProps) => {
     <div className="flex items-center gap-0">
       {/* Sticky "Alle" button */}
       <button
-        onClick={() => { hapticsService.impact('heavy'); onSelectAll(); }}
+        onClick={() => { hapticsService.impact('medium'); onSelectAll(); }}
         className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors z-10 relative mr-2 ${
           allSelected
             ? 'bg-foreground text-background'
