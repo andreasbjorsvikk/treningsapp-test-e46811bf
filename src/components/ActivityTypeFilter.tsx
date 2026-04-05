@@ -21,8 +21,7 @@ const ActivityTypeFilter = ({ selected, onToggle, chartType = 'bar' }: ActivityT
   const allSelected = filteredTypes.length > 0 && filteredTypes.every(t => selected.includes(t));
 
   const handleToggleAll = () => {
-    console.warn('[DEBUG-HAPTIC] ActivityTypeFilter toggleAll');
-    hapticsService.impact('heavy');
+    hapticsService.impact('medium');
     if (allSelected) {
       // Deselect all
       filteredTypes.forEach((t) => {
@@ -37,8 +36,7 @@ const ActivityTypeFilter = ({ selected, onToggle, chartType = 'bar' }: ActivityT
   };
 
   const handleToggleType = (type: SessionType) => {
-    console.warn('[DEBUG-HAPTIC] ActivityTypeFilter toggleType', type);
-    hapticsService.impact('heavy');
+    hapticsService.impact('medium');
     if (chartType === 'line' && allSelected) {
       // When "Alle" is active in line mode, clicking a type selects only that type
       filteredTypes.forEach((t) => {
