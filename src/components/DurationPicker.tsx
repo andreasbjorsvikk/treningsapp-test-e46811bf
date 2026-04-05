@@ -152,11 +152,8 @@ const DurationPicker = ({ open, onClose, hours, minutes, seconds = 0, showSecond
     }
   }, [open, hours, minutes, seconds]);
 
-  // Fire haptics on actual value change (not initial mount/sync)
-  useEffect(() => {
-    if (!open || isInitialSync.current) return;
-  }, [h, m, s]);
-  }, [h, m, s]);
+  // No-op: DurationPicker haptics not supported on iOS scroll
+  useEffect(() => {}, [h, m, s]);
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
