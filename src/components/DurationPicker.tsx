@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-// hapticsService import removed temporarily for debug
+import { hapticsService } from '@/services/hapticsService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/i18n/useTranslation';
