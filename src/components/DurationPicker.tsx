@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { hapticsService } from '@/services/hapticsService';
+// hapticsService import removed temporarily for debug
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -52,9 +52,8 @@ const ScrollColumn = ({
     const clampedIdx = Math.max(0, Math.min(values.length - 1, idx));
     el.scrollTo({ top: clampedIdx * ITEM_HEIGHT, behavior: 'smooth' });
     const newVal = values[clampedIdx];
+    console.log('[DEBUG] DurationPicker snapToNearest fired, value:', newVal);
     onChange(newVal);
-    console.warn('[DEBUG-HAPTIC] DurationPicker snapToNearest fired', newVal);
-    hapticsService.impact('heavy');
     setTimeout(() => { isUserScrolling.current = false; }, 150);
   }, [values, onChange]);
 
@@ -65,8 +64,7 @@ const ScrollColumn = ({
   }, [snapToNearest]);
 
   const handleTouchEnd = useCallback(() => {
-    console.warn('[DEBUG-HAPTIC] DurationPicker touchEnd fired');
-    // Ensure snap fires after touch ends
+    console.log('[DEBUG] DurationPicker touchEnd fired');
     if (snapTimeoutRef.current) clearTimeout(snapTimeoutRef.current);
     snapTimeoutRef.current = setTimeout(snapToNearest, 120);
   }, [snapToNearest]);
@@ -75,11 +73,10 @@ const ScrollColumn = ({
     const idx = values.indexOf(val);
     const el = containerRef.current;
     if (el && idx >= 0) {
+      console.log('[DEBUG] DurationPicker itemClick fired, value:', val);
       isUserScrolling.current = true;
       el.scrollTo({ top: idx * ITEM_HEIGHT, behavior: 'smooth' });
       onChange(val);
-      console.warn('[DEBUG-HAPTIC] DurationPicker itemClick fired', val);
-      hapticsService.impact('heavy');
       setTimeout(() => { isUserScrolling.current = false; }, 200);
     }
   };
