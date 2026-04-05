@@ -156,8 +156,7 @@ const DurationPicker = ({ open, onClose, hours, minutes, seconds = 0, showSecond
   // Fire haptics on actual value change (not initial mount/sync)
   useEffect(() => {
     if (!open || isInitialSync.current) return;
-    console.log('[DEBUG] DurationPicker value changed', { h, m, s });
-    hapticsService.impact('heavy');
+  }, [h, m, s]);
   }, [h, m, s]);
 
   return (
