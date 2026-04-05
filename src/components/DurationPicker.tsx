@@ -113,7 +113,6 @@ const ScrollColumn = ({
               <div
                 key={val}
                 onClick={() => handleItemClick(val)}
-                onClick={() => handleItemClick(val)}
                 className={`
                   flex items-center justify-center cursor-pointer select-none transition-colors duration-100
                   ${isSelected ? 'text-foreground font-bold text-3xl' : 'text-muted-foreground/50 text-xl'}
