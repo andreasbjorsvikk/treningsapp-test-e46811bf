@@ -52,8 +52,7 @@ const ScrollColumn = ({
     const clampedIdx = Math.max(0, Math.min(values.length - 1, idx));
     el.scrollTo({ top: clampedIdx * ITEM_HEIGHT, behavior: 'smooth' });
     const newVal = values[clampedIdx];
-    console.log('[DEBUG] DurationPicker value changed via snap:', newVal);
-    hapticsService.impact('heavy');
+    onChange(newVal);
     onChange(newVal);
     setTimeout(() => { isUserScrolling.current = false; }, 150);
   }, [values, onChange]);
