@@ -74,7 +74,8 @@ const ScrollColumn = ({
     const idx = values.indexOf(val);
     const el = containerRef.current;
     if (el && idx >= 0) {
-      console.log('[DEBUG] DurationPicker itemClick fired, value:', val);
+      console.log('[DEBUG] DurationPicker value changed via click:', val);
+      hapticsService.impact('heavy');
       isUserScrolling.current = true;
       el.scrollTo({ top: idx * ITEM_HEIGHT, behavior: 'smooth' });
       onChange(val);
