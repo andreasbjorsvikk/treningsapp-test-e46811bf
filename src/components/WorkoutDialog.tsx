@@ -221,7 +221,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
                 <Button
                   variant="outline"
                   className="w-full justify-start text-left font-normal h-10"
-                  onClick={() => setDurationPickerOpen(true)}
+                  onClick={() => { console.log('[DEBUG] open duration picker click'); setDurationPickerOpen(true); }}
                 >
                   <Clock className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
                   {formatDurationDisplay()}

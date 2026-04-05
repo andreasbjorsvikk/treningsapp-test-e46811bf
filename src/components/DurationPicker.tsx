@@ -154,6 +154,7 @@ const ScrollColumn = ({
 };
 
 const DurationPicker = ({ open, onClose, hours, minutes, seconds = 0, showSeconds = false, onConfirm }: DurationPickerProps) => {
+  console.log('[DEBUG] DurationPicker rendered, open:', open);
   const { t } = useTranslation();
   const [h, setH] = useState(hours);
   const [m, setM] = useState(minutes);
