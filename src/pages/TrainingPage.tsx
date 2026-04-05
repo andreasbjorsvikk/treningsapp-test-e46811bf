@@ -1,5 +1,4 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { hapticsService } from '@/services/hapticsService';
 import GoalTutorialDialog from '@/components/GoalTutorialDialog';
 import { SessionType, WorkoutSession, HealthEvent } from '@/types/workout';
 import GoalsSection from '@/components/GoalsSection';
@@ -284,12 +283,12 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
 
       {subTab === 'statistikk' && (
         <StatistikkContent
-          period={period} setPeriod={(p) => { console.warn('[DEBUG-HAPTIC] TrainingPage setPeriod', p); hapticsService.impact('heavy'); setPeriod(p); }}
-          statMonth={statMonth} setStatMonth={(m) => { console.warn('[DEBUG-HAPTIC] TrainingPage setStatMonth', m); hapticsService.impact('heavy'); setStatMonth(m); }}
-          statYear={statYear} setStatYear={(y) => { console.warn('[DEBUG-HAPTIC] TrainingPage setStatYear', y); hapticsService.impact('heavy'); setStatYear(y); }}
+          period={period} setPeriod={setPeriod}
+          statMonth={statMonth} setStatMonth={setStatMonth}
+          statYear={statYear} setStatYear={setStatYear}
           statSessions={statSessions}
-          selectedTypes={selectedTypes} handleToggleType={(type) => { console.warn('[DEBUG-HAPTIC] TrainingPage toggleType', type); hapticsService.impact('heavy'); handleToggleType(type); }}
-          chartMetric={chartMetric} setChartMetric={(m) => { console.warn('[DEBUG-HAPTIC] TrainingPage setChartMetric', m); hapticsService.impact('heavy'); setChartMetric(m); }}
+          selectedTypes={selectedTypes} handleToggleType={handleToggleType}
+          chartMetric={chartMetric} setChartMetric={setChartMetric}
           monthData={monthData} yearData={yearData}
           monthNames={monthNames} primaryGoal={currentPrimaryGoal}
           onGoToGoals={() => setSubTab('mål')}

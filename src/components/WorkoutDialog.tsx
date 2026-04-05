@@ -217,11 +217,11 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
 
             <div className="space-y-1">
               <Label>{t('workout.duration')}</Label>
-              {(console.log('[DEBUG] WorkoutDialog isMobile =', isMobile, 'window.innerWidth =', window.innerWidth), isMobile) ? (
+              {isMobile ? (
                 <Button
                   variant="outline"
                   className="w-full justify-start text-left font-normal h-10"
-                  onClick={() => { console.log('[DEBUG] open duration picker click'); setDurationPickerOpen(true); }}
+                  onClick={() => setDurationPickerOpen(true)}
                 >
                   <Clock className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
                   {formatDurationDisplay()}

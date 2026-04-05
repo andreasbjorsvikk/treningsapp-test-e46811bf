@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { hapticsService } from '@/services/hapticsService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -52,8 +51,7 @@ const ScrollColumn = ({
     const clampedIdx = Math.max(0, Math.min(values.length - 1, idx));
     el.scrollTo({ top: clampedIdx * ITEM_HEIGHT, behavior: 'smooth' });
     const newVal = values[clampedIdx];
-    console.log('[DEBUG] DurationPicker value changed via snap:', newVal);
-    hapticsService.impact('heavy');
+    onChange(newVal);
     onChange(newVal);
     setTimeout(() => { isUserScrolling.current = false; }, 150);
   }, [values, onChange]);
@@ -65,7 +63,6 @@ const ScrollColumn = ({
   }, [snapToNearest]);
 
   const handleTouchEnd = useCallback(() => {
-    console.log('[DEBUG] DurationPicker touchEnd fired');
     if (snapTimeoutRef.current) clearTimeout(snapTimeoutRef.current);
     snapTimeoutRef.current = setTimeout(snapToNearest, 120);
   }, [snapToNearest]);
@@ -74,8 +71,6 @@ const ScrollColumn = ({
     const idx = values.indexOf(val);
     const el = containerRef.current;
     if (el && idx >= 0) {
-      console.log('[DEBUG] DurationPicker value changed via click:', val);
-      hapticsService.impact('heavy');
       isUserScrolling.current = true;
       el.scrollTo({ top: idx * ITEM_HEIGHT, behavior: 'smooth' });
       onChange(val);
@@ -83,34 +78,13 @@ const ScrollColumn = ({
     }
   };
 
-  // Ultra-basic native touch listeners for iOS debug
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const onTS = () => console.warn('[DEBUG] ScrollColumn touchstart on container');
-    const onTM = () => console.warn('[DEBUG] ScrollColumn touchmove on container');
-    const onTE = () => console.warn('[DEBUG] ScrollColumn native-touchend on container');
-    const onSc = () => console.warn('[DEBUG] ScrollColumn native-scroll on container');
-    el.addEventListener('touchstart', onTS, { passive: true });
-    el.addEventListener('touchmove', onTM, { passive: true });
-    el.addEventListener('touchend', onTE, { passive: true });
-    el.addEventListener('scroll', onSc, { passive: true });
-    return () => {
-      el.removeEventListener('touchstart', onTS);
-      el.removeEventListener('touchmove', onTM);
-      el.removeEventListener('touchend', onTE);
-      el.removeEventListener('scroll', onSc);
-    };
-  }, []);
 
   return (
     <div
       className="flex flex-col items-center flex-1 min-w-0"
-      onTouchStart={() => console.warn('[DEBUG] ScrollColumn wrapper touchStart')}
     >
       <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{label}</span>
       <div className="relative w-full" style={{ height: ITEM_HEIGHT * VISIBLE_ITEMS }}
-        onTouchStart={() => console.warn('[DEBUG] ScrollColumn relative-div touchStart')}
       >
         <div
           className="absolute left-1 right-1 rounded-xl bg-primary/10 border border-primary/20 pointer-events-none z-10"
@@ -121,7 +95,7 @@ const ScrollColumn = ({
         <div
           ref={containerRef}
           onScroll={handleScroll}
-          onTouchStart={() => console.warn('[DEBUG] ScrollColumn React-touchStart on scroll-div')}
+          onTouchStart={() => { isUserScrolling.current = true; }}
           onTouchEnd={handleTouchEnd}
           className="h-full overflow-y-auto scrollbar-hide touch-pan-y"
           style={{
@@ -138,7 +112,6 @@ const ScrollColumn = ({
               <div
                 key={val}
                 onClick={() => handleItemClick(val)}
-                onTouchStart={() => console.warn('[DEBUG] ScrollColumn item touchStart val=', val)}
                 className={`
                   flex items-center justify-center cursor-pointer select-none transition-colors duration-100
                   ${isSelected ? 'text-foreground font-bold text-3xl' : 'text-muted-foreground/50 text-xl'}
@@ -178,12 +151,8 @@ const DurationPicker = ({ open, onClose, hours, minutes, seconds = 0, showSecond
     }
   }, [open, hours, minutes, seconds]);
 
-  // Fire haptics on actual value change (not initial mount/sync)
-  useEffect(() => {
-    if (!open || isInitialSync.current) return;
-    console.log('[DEBUG] DurationPicker value changed', { h, m, s });
-    hapticsService.impact('heavy');
-  }, [h, m, s]);
+  // No-op: DurationPicker haptics not supported on iOS scroll
+  useEffect(() => {}, [h, m, s]);
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>

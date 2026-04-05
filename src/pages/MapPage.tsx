@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { hapticsService } from '@/services/hapticsService';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { Peak } from '@/data/peaks';
@@ -270,7 +269,7 @@ const MapPage = () => {
     <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)]">
       {/* Sub-tab bar */}
       <div className="px-4 pt-3 pb-2">
-        <MapSubTabs active={subTab} onChange={(tab) => { console.log('[DEBUG] actual map tab handler fired'); setSubTab(tab); }} />
+        <MapSubTabs active={subTab} onChange={setSubTab} />
       </div>
 
       {/* Admin toolbar */}
