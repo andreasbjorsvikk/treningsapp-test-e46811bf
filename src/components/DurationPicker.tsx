@@ -156,24 +156,34 @@ const ScrollColumn = ({
 };
 
 const DurationPicker = ({ open, onClose, hours, minutes, seconds = 0, showSeconds = false, onConfirm }: DurationPickerProps) => {
-  console.log('[DEBUG] DurationPicker rendered, open:', open);
   const { t } = useTranslation();
   const [h, setH] = useState(hours);
   const [m, setM] = useState(minutes);
   const [s, setS] = useState(seconds);
+  const isInitialSync = useRef(true);
 
   const hourValues = Array.from({ length: 25 }, (_, i) => i);
   const minuteValues = Array.from({ length: 60 }, (_, i) => i);
   const secondValues = Array.from({ length: 60 }, (_, i) => i);
 
+  // Sync props when dialog opens, mark as initial sync
   useEffect(() => {
     if (open) {
-      console.warn('[DEBUG] DurationPicker dialog OPENED');
+      isInitialSync.current = true;
       setH(hours);
       setM(minutes);
       setS(seconds);
+      // Allow a short delay before enabling haptics
+      setTimeout(() => { isInitialSync.current = false; }, 400);
     }
   }, [open, hours, minutes, seconds]);
+
+  // Fire haptics on actual value change (not initial mount/sync)
+  useEffect(() => {
+    if (!open || isInitialSync.current) return;
+    console.log('[DEBUG] DurationPicker value changed', { h, m, s });
+    hapticsService.impact('heavy');
+  }, [h, m, s]);
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
