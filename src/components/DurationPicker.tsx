@@ -52,9 +52,8 @@ const ScrollColumn = ({
     const clampedIdx = Math.max(0, Math.min(values.length - 1, idx));
     el.scrollTo({ top: clampedIdx * ITEM_HEIGHT, behavior: 'smooth' });
     const newVal = values[clampedIdx];
+    console.log('[DEBUG] DurationPicker snapToNearest fired, value:', newVal);
     onChange(newVal);
-    console.warn('[DEBUG-HAPTIC] DurationPicker snapToNearest fired', newVal);
-    hapticsService.impact('heavy');
     setTimeout(() => { isUserScrolling.current = false; }, 150);
   }, [values, onChange]);
 
