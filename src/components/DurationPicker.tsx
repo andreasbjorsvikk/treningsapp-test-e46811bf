@@ -165,6 +165,7 @@ const DurationPicker = ({ open, onClose, hours, minutes, seconds = 0, showSecond
 
   useEffect(() => {
     if (open) {
+      console.warn('[DEBUG] DurationPicker dialog OPENED');
       setH(hours);
       setM(minutes);
       setS(seconds);
