@@ -64,7 +64,6 @@ const ScrollColumn = ({
   }, [snapToNearest]);
 
   const handleTouchEnd = useCallback(() => {
-    console.log('[DEBUG] DurationPicker touchEnd fired');
     if (snapTimeoutRef.current) clearTimeout(snapTimeoutRef.current);
     snapTimeoutRef.current = setTimeout(snapToNearest, 120);
   }, [snapToNearest]);
