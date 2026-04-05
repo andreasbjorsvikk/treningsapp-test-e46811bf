@@ -217,7 +217,7 @@ const WorkoutDialog = ({ open, onClose, onSave, session, defaultDate }: WorkoutD
 
             <div className="space-y-1">
               <Label>{t('workout.duration')}</Label>
-              {isMobile ? (
+              {(console.log('[DEBUG] WorkoutDialog isMobile =', isMobile, 'window.innerWidth =', window.innerWidth), isMobile) ? (
                 <Button
                   variant="outline"
                   className="w-full justify-start text-left font-normal h-10"
