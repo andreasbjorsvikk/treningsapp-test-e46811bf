@@ -7,6 +7,8 @@
  */
 import { useState } from 'react';
 import { isNativePlatform } from '@/utils/capacitor';
+import { locationService } from '@/services/locationService';
+import { cameraService } from '@/services/cameraService';
 import { MapPin, Bell, Camera, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -47,19 +49,7 @@ const PermissionsOnboarding = ({ open, onClose }: PermissionsOnboardingProps) =>
       description:
         'Vi trenger tilgang til posisjonen din for å registrere toppbestigninger og vise deg på kartet.',
       onRequest: async () => {
-        // TODO: Capacitor Geolocation.requestPermissions()
-        console.debug('[permissions] Location requested (scaffold)');
-      },
-    },
-    {
-      id: 'notifications',
-      icon: <Bell className="w-10 h-10 text-primary" />,
-      title: 'Varsler',
-      description:
-        'Få beskjed når venner fullfører utfordringer, sender venneforespørsler, eller når du når mål.',
-      onRequest: async () => {
-        // TODO: pushService.requestPermission()
-        console.debug('[permissions] Push requested (scaffold)');
+        await locationService.requestPermission();
       },
     },
     {
@@ -69,8 +59,18 @@ const PermissionsOnboarding = ({ open, onClose }: PermissionsOnboardingProps) =>
       description:
         'Ta bilder på toppen for å dokumentere toppbestigningene dine.',
       onRequest: async () => {
-        // TODO: cameraService.checkPermission()
-        console.debug('[permissions] Camera requested (scaffold)');
+        await cameraService.requestPermission();
+      },
+    },
+    {
+      id: 'notifications',
+      icon: <Bell className="w-10 h-10 text-primary" />,
+      title: 'Varsler',
+      description:
+        'Få beskjed når venner fullfører utfordringer, sender venneforespørsler, eller når du når mål.',
+      onRequest: async () => {
+        // TODO: pushService.requestPermission() – avhenger av @capacitor/push-notifications
+        console.debug('[permissions] Push requested (scaffold)');
       },
     },
     {
@@ -80,7 +80,7 @@ const PermissionsOnboarding = ({ open, onClose }: PermissionsOnboardingProps) =>
       description:
         'Koble til Apple Health for å synkronisere treningsøkter, skritt og kalorier automatisk.',
       onRequest: async () => {
-        // TODO: HealthKit permission
+        // TODO: HealthKit permission – avhenger av capacitor-health-connect
         console.debug('[permissions] Health requested (scaffold)');
       },
     },
@@ -88,7 +88,6 @@ const PermissionsOnboarding = ({ open, onClose }: PermissionsOnboardingProps) =>
 
   const currentStep = steps[stepIndex];
   if (!currentStep) {
-    // All steps done
     localStorage.setItem(ONBOARDING_KEY, 'true');
     onClose();
     return null;
