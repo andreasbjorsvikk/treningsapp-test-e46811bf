@@ -185,7 +185,8 @@ const RecordsSection = () => {
   const [showEditDurationPicker, setShowEditDurationPicker] = useState(false);
   const [showDeleteEntryConfirm, setShowDeleteEntryConfirm] = useState(false);
 
-  // Load hiking records from DB (or localStorage fallback)
+  // Load hiking records from DB, with offline cache fallback
+  const hikingCacheKey = `treningslogg_hiking_cache_${user?.id ?? 'anon'}`;
   const loadHikingRecords = useCallback(async () => {
     if (user) {
       try {
@@ -195,6 +196,8 @@ const RecordsSection = () => {
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: true });
+
+        if (ownError) throw ownError;
         
         // Load shared records (accepted shares)
         const { data: sharedAccess } = await supabase
@@ -214,7 +217,6 @@ const RecordsSection = () => {
         }
         
         const allData = [...(ownData || []), ...sharedRecords];
-        // Deduplicate by ID
         const seen = new Set<string>();
         const deduped = allData.filter(r => {
           if (seen.has(r.id)) return false;
@@ -233,8 +235,19 @@ const RecordsSection = () => {
           entries: (r.entries as HikingEntry[]) || [],
         }));
         setHikingRecords(records);
+        // Cache for offline
+        set(hikingCacheKey, records).catch(() => {});
         return;
-      } catch {}
+      } catch {
+        // Offline — load from cache
+        try {
+          const cached = await get<HikingRecord[]>(hikingCacheKey);
+          if (cached && cached.length > 0) {
+            setHikingRecords(cached);
+            return;
+          }
+        } catch {}
+      }
     }
     try {
       const stored = localStorage.getItem('treningslogg_hiking_records');
