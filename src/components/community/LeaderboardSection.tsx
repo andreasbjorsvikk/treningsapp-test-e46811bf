@@ -81,7 +81,7 @@ const LeaderboardSection = () => {
 
       <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
         <button
-          onClick={() => setSelectedType('all')}
+          onClick={() => { hapticsService.selectionChanged(); setSelectedType('all'); }}
           className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
             selectedType === 'all' ? 'bg-accent text-accent-foreground' : 'bg-secondary text-muted-foreground'
           }`}
