@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useSwipe } from '@/hooks/use-swipe';
+import { hapticsService } from '@/services/hapticsService';
 import { Plus, ChevronLeft, ChevronRight, ChevronDown, Home, Pencil, Trash2, Archive, RotateCcw, FolderOpen, Check, X } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import TargetIcon from '@/components/TargetIcon';
