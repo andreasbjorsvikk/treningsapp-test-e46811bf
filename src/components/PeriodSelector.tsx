@@ -48,7 +48,7 @@ const PeriodSelector = ({ period, onPeriodChange, month, year, onMonthChange, on
         {periods.map((p) => (
           <button
             key={p.id}
-            onClick={() => { hapticsService.impact('medium'); onPeriodChange(p.id); }}
+            onClick={() => { hapticsService.impact('light'); onPeriodChange(p.id); }}
             className={`py-1.5 px-5 rounded-full text-sm font-medium transition-colors ${
               period === p.id
                 ? 'bg-primary text-primary-foreground'

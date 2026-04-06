@@ -23,7 +23,7 @@ const MapSubTabs = ({ active, onChange }: MapSubTabsProps) => {
       {baseTabs.map(tab => (
         <button
           key={tab.id}
-          onClick={() => { hapticsService.impact('medium'); onChange(tab.id); }}
+          onClick={() => { hapticsService.impact('light'); onChange(tab.id); }}
           className={`flex-1 py-1.5 px-2 rounded-md text-sm font-medium transition-colors ${
             active === tab.id
               ? 'bg-background text-foreground shadow-sm'
