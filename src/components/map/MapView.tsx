@@ -1320,6 +1320,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   return (
     <div className={`relative w-full h-full ${is3D ? 'map-is-3d' : ''}`}>
       <div ref={mapContainer} className="w-full h-full" />
+      {/* Top-left controls: 2D/3D toggle + style menu */}
       <div className="absolute top-2 left-2 z-10 flex items-center gap-2">
         <button
           onClick={() => setIs3D(prev => !prev)}
@@ -1369,6 +1370,27 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           )}
         </div>
       </div>
+      {/* Bottom-left controls: Download + Settings — same stacking context as 2D/3D */}
+      {(onDownloadClick || onSettingsClick) && (
+        <div className="absolute bottom-20 left-2 z-10 flex flex-col gap-2">
+          {onDownloadClick && (
+            <button
+              onClick={onDownloadClick}
+              className="p-2.5 rounded-lg shadow-md border border-border bg-background text-foreground hover:bg-muted transition-colors"
+            >
+              <Download className="w-5 h-5" />
+            </button>
+          )}
+          {onSettingsClick && (
+            <button
+              onClick={onSettingsClick}
+              className="p-2.5 rounded-lg shadow-md border border-border bg-background text-foreground hover:bg-muted transition-colors"
+            >
+              <Settings2 className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };
