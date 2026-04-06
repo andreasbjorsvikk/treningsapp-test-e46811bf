@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback, Component, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { WorkoutSession, ExtraGoal } from '@/types/workout';
 import { AppDataProvider, useAppDataContext } from '@/contexts/AppDataContext';
