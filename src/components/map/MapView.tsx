@@ -13,6 +13,7 @@ import { decodePolyline } from '@/utils/polyline';
 import { addEnhancedTerrain } from '@/utils/mapTerrain';
 import { getPeakIcon, getCheckedPeakIcon } from '@/utils/peakIcons';
 import { hapticsService } from '@/services/hapticsService';
+import { Download, Settings2 } from 'lucide-react';
 
 type HeatmapPeriod = 'year' | 'total';
 
@@ -43,11 +44,13 @@ interface MapViewProps {
   onlyReachedThisYear?: boolean;
   suggestedPeaks?: PeakSuggestion[];
   areaStatsMode?: AreaStatsMode;
+  onSettingsClick?: () => void;
+  onDownloadClick?: () => void;
 }
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiYW5kcmVhc2Jqb3JzdmlrIiwiYSI6ImNtbWFoZ296NjBic3AycXM5cXc5ZXo2YXkifQ.51vqIJR0s9PWV8ChBZunKw';
 
-const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, routeFocus, suppressInitialGeolocate, onClearRoute, onMapReady, previewWaypoints, onWaypointClick, onWaypointDrag, showHeatmap, heatmapPeriod, showAreaStats, onlyReachedThisYear, suggestedPeaks, areaStatsMode = 'off' }: MapViewProps) => {
+const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick, onMarkerDrag, onEditPeak, onDeletePeak, onLongPress, routeGeojson, routeFocus, suppressInitialGeolocate, onClearRoute, onMapReady, previewWaypoints, onWaypointClick, onWaypointDrag, showHeatmap, heatmapPeriod, showAreaStats, onlyReachedThisYear, suggestedPeaks, areaStatsMode = 'off', onSettingsClick, onDownloadClick }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -1317,6 +1320,7 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
   return (
     <div className={`relative w-full h-full ${is3D ? 'map-is-3d' : ''}`}>
       <div ref={mapContainer} className="w-full h-full" />
+      {/* Top-left controls: 2D/3D toggle + style menu */}
       <div className="absolute top-2 left-2 z-10 flex items-center gap-2">
         <button
           onClick={() => setIs3D(prev => !prev)}
@@ -1366,6 +1370,27 @@ const MapView = ({ peaks, checkins, onSelectPeak, adminMode, addMode, onMapClick
           )}
         </div>
       </div>
+      {/* Bottom-left controls: Download + Settings — same stacking context as 2D/3D */}
+      {(onDownloadClick || onSettingsClick) && (
+        <div className="absolute bottom-20 left-2 z-10 flex flex-col gap-2">
+          {onDownloadClick && (
+            <button
+              onClick={onDownloadClick}
+              className="p-2.5 rounded-lg shadow-md border border-border bg-background text-foreground hover:bg-muted transition-colors"
+            >
+              <Download className="w-5 h-5" />
+            </button>
+          )}
+          {onSettingsClick && (
+            <button
+              onClick={onSettingsClick}
+              className="p-2.5 rounded-lg shadow-md border border-border bg-background text-foreground hover:bg-muted transition-colors"
+            >
+              <Settings2 className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

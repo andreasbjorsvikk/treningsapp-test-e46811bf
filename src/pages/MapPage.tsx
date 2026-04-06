@@ -17,7 +17,7 @@ import PeakFeed from '@/components/map/PeakFeed';
 import GlobalLeaderboard from '@/components/map/GlobalLeaderboard';
 import MapTutorial from '@/components/map/MapTutorial';
 import ARView from '@/components/map/ARView';
-import { Settings2, Download } from 'lucide-react';
+import { Settings2 } from 'lucide-react';
 import OfflineMapSheet from '@/components/map/OfflineMapSheet';
 import { toast } from 'sonner';
 
@@ -330,6 +330,8 @@ const MapPage = () => {
               areaStatsMode={areaStatsMode}
               onlyReachedThisYear={onlyReachedThisYear}
               suggestedPeaks={suggestedPeaks}
+              onSettingsClick={() => setShowSettings(true)}
+              onDownloadClick={() => setShowOfflineMaps(true)}
             />
             {activeRouteGeojson && !selectedPeak && activeRoutePeakId && (
               <button
@@ -365,21 +367,6 @@ const MapPage = () => {
                 Tilbake
               </button>
             )}
-            {/* Map action buttons — fixed to viewport to avoid Mapbox stacking context */}
-            <div className="fixed bottom-28 left-4 z-[9999] flex flex-col gap-2" style={{ pointerEvents: 'auto' }}>
-              <button
-                onClick={() => setShowOfflineMaps(true)}
-                className="p-3 rounded-full shadow-lg border border-border bg-background/95 backdrop-blur-sm text-foreground hover:bg-muted transition-colors"
-              >
-                <Download className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setShowSettings(true)}
-                className="p-3 rounded-full shadow-lg border border-border bg-background/95 backdrop-blur-sm text-foreground hover:bg-muted transition-colors"
-              >
-                <Settings2 className="w-5 h-5" />
-              </button>
-            </div>
             <MapTutorial />
           </div>
         )}
