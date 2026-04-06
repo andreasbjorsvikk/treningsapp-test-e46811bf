@@ -257,6 +257,17 @@ const RecordsSection = () => {
 
   useEffect(() => { loadHikingRecords(); }, [loadHikingRecords]);
 
+  // Reload hiking records when sync queue flushes (offline→online)
+  useEffect(() => {
+    const handler = () => { loadHikingRecords(); };
+    window.addEventListener('sync-queue-flushed', handler);
+    window.addEventListener('online', handler);
+    return () => {
+      window.removeEventListener('sync-queue-flushed', handler);
+      window.removeEventListener('online', handler);
+    };
+  }, [loadHikingRecords]);
+
   // Load pending hike share invitations received by user
   const loadPendingInvitations = useCallback(async () => {
     if (!user) return;
@@ -548,12 +559,23 @@ const RecordsSection = () => {
       };
       const newEntries = [...selectedHike.entries, entry];
       if (user) {
-        await supabase.from('hiking_records').update({ entries: newEntries } as any).eq('id', selectedHike.id);
-        await loadHikingRecords();
-        setSelectedHike(prev => {
-          const found = hikingRecords.find(h => h.id === selectedHike.id);
-          return found ? { ...found, entries: newEntries } : prev;
-        });
+        const { error } = await supabase.from('hiking_records').update({ entries: newEntries } as any).eq('id', selectedHike.id);
+        if (error) {
+          // Offline — update local state and cache optimistically
+          const updated = hikingRecords.map(h =>
+            h.id === selectedHike.id ? { ...h, entries: newEntries } : h
+          );
+          setHikingRecords(updated);
+          set(hikingCacheKey, updated).catch(() => {});
+          setSelectedHike({ ...selectedHike, entries: newEntries });
+          toast.info('Rekordtid lagret offline');
+        } else {
+          await loadHikingRecords();
+          setSelectedHike(prev => {
+            const found = hikingRecords.find(h => h.id === selectedHike.id);
+            return found ? { ...found, entries: newEntries } : prev;
+          });
+        }
       } else {
         const updated = hikingRecords.map(h =>
           h.id === selectedHike.id ? { ...h, entries: newEntries } : h
@@ -826,7 +848,7 @@ const RecordsSection = () => {
         {tabs.map(t => (
           <button
             key={t.id}
-            onClick={() => setTab(t.id)}
+            onClick={() => { hapticsService.impact('light'); setTab(t.id); }}
             className={`flex-1 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
               tab === t.id
                 ? 'bg-background text-foreground shadow-sm'

@@ -39,6 +39,12 @@ const OfflineMapSheet = ({ open, onOpenChange }: OfflineMapSheetProps) => {
           </div>
         )}
 
+        {isNative && (
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2 mb-3 text-xs text-amber-700 dark:text-amber-400">
+            ⚠️ Offline kartflis-nedlasting krever Mapbox OfflineManager-plugin og er under utvikling. Regionvalg lagres som preferanse.
+          </div>
+        )}
+
         <div className="overflow-y-auto max-h-[60vh] -mx-1 px-1 space-y-1.5">
           {loading ? (
             <div className="flex items-center justify-center py-8">

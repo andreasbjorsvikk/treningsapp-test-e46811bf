@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useSwipe } from '@/hooks/use-swipe';
+import { hapticsService } from '@/services/hapticsService';
 import { Plus, ChevronLeft, ChevronRight, ChevronDown, Home, Pencil, Trash2, Archive, RotateCcw, FolderOpen, Check, X } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import TargetIcon from '@/components/TargetIcon';
@@ -79,15 +80,17 @@ const GoalsSection = () => {
   );
 
   const handlePrevMonth = () => {
+    hapticsService.impact('light');
     if (wheelMonth === 0) { setWheelMonth(11); setWheelYear(y => y - 1); }
     else setWheelMonth(m => m - 1);
   };
   const handleNextMonth = () => {
+    hapticsService.impact('light');
     if (wheelMonth === 11) { setWheelMonth(0); setWheelYear(y => y + 1); }
     else setWheelMonth(m => m + 1);
   };
-  const handlePrevYear = () => setWheelYear(y => y - 1);
-  const handleNextYear = () => setWheelYear(y => y + 1);
+  const handlePrevYear = () => { hapticsService.impact('light'); setWheelYear(y => y - 1); };
+  const handleNextYear = () => { hapticsService.impact('light'); setWheelYear(y => y + 1); };
   const handleGoToday = () => {
     setWheelMonth(now.getMonth());
     setWheelYear(now.getFullYear());

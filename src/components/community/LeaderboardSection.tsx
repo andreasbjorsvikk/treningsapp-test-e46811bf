@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { hapticsService } from '@/services/hapticsService';
 import { getLeaderboard, Friend, LeaderboardMetric } from '@/services/communityService';
 import { allSessionTypes } from '@/utils/workoutUtils';
 import { getActivityColors } from '@/utils/activityColors';
@@ -54,7 +55,7 @@ const LeaderboardSection = () => {
         {periodTabs.map(tab => (
           <button
             key={tab.id}
-            onClick={() => setPeriod(tab.id)}
+            onClick={() => { hapticsService.selectionChanged(); setPeriod(tab.id); }}
             className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
               period === tab.id ? 'bg-accent text-accent-foreground' : 'bg-secondary text-muted-foreground'
             }`}
@@ -68,7 +69,7 @@ const LeaderboardSection = () => {
         {metricTabs.map(tab => (
           <button
             key={tab.id}
-            onClick={() => setMetric(tab.id)}
+            onClick={() => { hapticsService.selectionChanged(); setMetric(tab.id); }}
             className={`flex-1 py-1 text-[10px] font-medium rounded-md transition-colors ${
               metric === tab.id ? 'bg-primary text-primary-foreground' : 'bg-secondary/60 text-muted-foreground'
             }`}
@@ -80,7 +81,7 @@ const LeaderboardSection = () => {
 
       <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
         <button
-          onClick={() => setSelectedType('all')}
+          onClick={() => { hapticsService.selectionChanged(); setSelectedType('all'); }}
           className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
             selectedType === 'all' ? 'bg-accent text-accent-foreground' : 'bg-secondary text-muted-foreground'
           }`}
@@ -93,7 +94,7 @@ const LeaderboardSection = () => {
           return (
             <button
               key={type}
-              onClick={() => setSelectedType(type)}
+              onClick={() => { hapticsService.selectionChanged(); setSelectedType(type); }}
               className={`shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 !isSelected ? 'bg-secondary text-muted-foreground' : ''
               }`}

@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { useTranslation } from '@/i18n/useTranslation';
+import { hapticsService } from '@/services/hapticsService';
 
 interface TrainingPageProps {
   initialStatPeriod?: 'month' | 'year';
@@ -301,7 +302,7 @@ const TrainingPage = ({ initialStatPeriod }: TrainingPageProps) => {
           {/* Mobile: year + menu on their own row */}
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center justify-end gap-1 md:order-2">
-              <Select value={historyYear} onValueChange={setHistoryYear}>
+              <Select value={historyYear} onValueChange={(v) => { hapticsService.impact('light'); setHistoryYear(v); }}>
                 <SelectTrigger className="w-24 h-8 text-sm">
                   <SelectValue />
                 </SelectTrigger>
