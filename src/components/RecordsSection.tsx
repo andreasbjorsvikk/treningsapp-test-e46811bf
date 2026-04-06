@@ -826,7 +826,7 @@ const RecordsSection = () => {
         {tabs.map(t => (
           <button
             key={t.id}
-            onClick={() => setTab(t.id)}
+            onClick={() => { hapticsService.impact('light'); setTab(t.id); }}
             className={`flex-1 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
               tab === t.id
                 ? 'bg-background text-foreground shadow-sm'
