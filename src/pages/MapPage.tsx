@@ -120,8 +120,6 @@ const MapPage = () => {
     return () => window.removeEventListener('open-admin-peak-suggestions', handleOpenAdminSuggestions);
   }, [adminMode]);
 
-      {/* Offline map sheet */}
-      <OfflineMapSheet open={showOfflineMaps} onOpenChange={setShowOfflineMaps} />
 
   const handleSelectPeak = (peak: Peak) => {
     setSelectedPeak(peak);
