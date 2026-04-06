@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback, Component, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { WorkoutSession, ExtraGoal } from '@/types/workout';
 import { AppDataProvider, useAppDataContext } from '@/contexts/AppDataContext';
@@ -58,11 +58,23 @@ import { fetchPendingSuggestions } from '@/services/peakSuggestionService';
 import badgeShortcutImage from '@/assets/badges/badge_shortcut.png';
 import SyncStatusIndicator from '@/components/SyncStatusIndicator';
 
+class IndexErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch() { setTimeout(() => this.setState({ hasError: false }), 100); }
+  render() {
+    if (this.state.hasError) return <div className="min-h-screen bg-background flex items-center justify-center"><span className="animate-pulse text-muted-foreground">Laster…</span></div>;
+    return this.props.children;
+  }
+}
+
 const Index = () => {
   return (
-    <AppDataProvider>
-      <IndexContent />
-    </AppDataProvider>
+    <IndexErrorBoundary>
+      <AppDataProvider>
+        <IndexContent />
+      </AppDataProvider>
+    </IndexErrorBoundary>
   );
 };
 

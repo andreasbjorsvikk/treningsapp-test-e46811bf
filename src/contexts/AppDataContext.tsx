@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { useAppData } from '@/hooks/useAppData';
 
 type AppDataContextType = ReturnType<typeof useAppData>;
