@@ -484,7 +484,7 @@ const RecordsSection = () => {
       if (error) {
         // Offline — queue and add optimistically
         const offlineId = `offline_${Date.now()}`;
-        await enqueue({ table: 'hiking_records', action: 'insert', payload: { ...payload, id: offlineId } });
+        await enqueue('hiking_records', 'insert', { ...payload, id: offlineId });
         const optimistic: HikingRecord = {
           id: offlineId, userId: user.id, name: payload.name,
           elevation: payload.elevation ?? undefined, distance: payload.distance ?? undefined,
