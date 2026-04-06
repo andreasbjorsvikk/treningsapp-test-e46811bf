@@ -17,7 +17,8 @@ import PeakFeed from '@/components/map/PeakFeed';
 import GlobalLeaderboard from '@/components/map/GlobalLeaderboard';
 import MapTutorial from '@/components/map/MapTutorial';
 import ARView from '@/components/map/ARView';
-import { Settings2 } from 'lucide-react';
+import { Settings2, Download } from 'lucide-react';
+import OfflineMapSheet from '@/components/map/OfflineMapSheet';
 import { toast } from 'sonner';
 
 type PeakFilter = 'all' | 'taken' | 'not_taken';
@@ -65,6 +66,7 @@ const MapPage = () => {
     return (localStorage.getItem('treningslogg_default_map_style') as any) || 'outdoors';
   });
   const [areaStatsMode, setAreaStatsMode] = useState<'off' | 'kommune' | 'fylke'>('off');
+  const [showOfflineMaps, setShowOfflineMaps] = useState(false);
 
   // Suggested peaks (pending, visible to all)
   const [suggestedPeaks, setSuggestedPeaks] = useState<PeakSuggestion[]>([]);
@@ -363,13 +365,21 @@ const MapPage = () => {
                 Tilbake
               </button>
             )}
-            {/* Settings button bottom-left */}
-            <button
-              onClick={() => setShowSettings(true)}
-              className="absolute bottom-4 left-4 z-20 p-3 rounded-full shadow-lg border border-border bg-background/95 backdrop-blur-sm text-foreground hover:bg-muted transition-colors"
-            >
-              <Settings2 className="w-5 h-5" />
-            </button>
+            {/* Map action buttons bottom-left — raised above BottomNav */}
+            <div className="absolute bottom-20 left-4 z-20 flex flex-col gap-2">
+              <button
+                onClick={() => setShowOfflineMaps(true)}
+                className="p-3 rounded-full shadow-lg border border-border bg-background/95 backdrop-blur-sm text-foreground hover:bg-muted transition-colors"
+              >
+                <Download className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setShowSettings(true)}
+                className="p-3 rounded-full shadow-lg border border-border bg-background/95 backdrop-blur-sm text-foreground hover:bg-muted transition-colors"
+              >
+                <Settings2 className="w-5 h-5" />
+              </button>
+            </div>
             <MapTutorial />
           </div>
         )}
@@ -432,6 +442,9 @@ const MapPage = () => {
         areaStatsMode={areaStatsMode}
         onAreaStatsModeChange={setAreaStatsMode}
       />
+
+      {/* Offline map sheet */}
+      <OfflineMapSheet open={showOfflineMaps} onOpenChange={setShowOfflineMaps} />
 
       {/* Peak detail drawer */}
       <PeakDetailDrawer
