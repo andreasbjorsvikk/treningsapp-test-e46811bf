@@ -6,6 +6,8 @@ import { formatDuration } from '@/utils/workoutUtils';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { get, set } from 'idb-keyval';
+import { enqueue } from '@/services/syncQueue';
 import { Trophy, ChevronRight, Plus, Trash2, Mountain, Pencil, UserPlus, X, ArrowLeft, Heart, Route, ArrowUpRight, Clock, Calendar, FileText, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -183,7 +185,8 @@ const RecordsSection = () => {
   const [showEditDurationPicker, setShowEditDurationPicker] = useState(false);
   const [showDeleteEntryConfirm, setShowDeleteEntryConfirm] = useState(false);
 
-  // Load hiking records from DB (or localStorage fallback)
+  // Load hiking records from DB, with offline cache fallback
+  const hikingCacheKey = `treningslogg_hiking_cache_${user?.id ?? 'anon'}`;
   const loadHikingRecords = useCallback(async () => {
     if (user) {
       try {
@@ -193,6 +196,8 @@ const RecordsSection = () => {
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: true });
+
+        if (ownError) throw ownError;
         
         // Load shared records (accepted shares)
         const { data: sharedAccess } = await supabase
@@ -212,7 +217,6 @@ const RecordsSection = () => {
         }
         
         const allData = [...(ownData || []), ...sharedRecords];
-        // Deduplicate by ID
         const seen = new Set<string>();
         const deduped = allData.filter(r => {
           if (seen.has(r.id)) return false;
@@ -231,8 +235,19 @@ const RecordsSection = () => {
           entries: (r.entries as HikingEntry[]) || [],
         }));
         setHikingRecords(records);
+        // Cache for offline
+        set(hikingCacheKey, records).catch(() => {});
         return;
-      } catch {}
+      } catch {
+        // Offline — load from cache
+        try {
+          const cached = await get<HikingRecord[]>(hikingCacheKey);
+          if (cached && cached.length > 0) {
+            setHikingRecords(cached);
+            return;
+          }
+        } catch {}
+      }
     }
     try {
       const stored = localStorage.getItem('treningslogg_hiking_records');
@@ -456,7 +471,7 @@ const RecordsSection = () => {
   const handleAddHike = async () => {
     if (!newHikeName.trim()) return;
     if (user) {
-      await supabase.from('hiking_records').insert({
+      const payload = {
         user_id: user.id,
         name: newHikeName.trim(),
         elevation: newHikeElevation ? Number(newHikeElevation) : null,
@@ -464,8 +479,25 @@ const RecordsSection = () => {
         elevation_gain: newHikeElevationGain ? Number(newHikeElevationGain) : null,
         route_description: newHikeRouteDesc.trim() || null,
         entries: [],
-      } as any);
-      loadHikingRecords();
+      };
+      const { error } = await supabase.from('hiking_records').insert(payload as any);
+      if (error) {
+        // Offline — queue and add optimistically
+        const offlineId = `offline_${Date.now()}`;
+        await enqueue('hiking_records', 'insert', { ...payload, id: offlineId });
+        const optimistic: HikingRecord = {
+          id: offlineId, userId: user.id, name: payload.name,
+          elevation: payload.elevation ?? undefined, distance: payload.distance ?? undefined,
+          elevationGain: payload.elevation_gain ?? undefined, routeDescription: payload.route_description ?? undefined,
+          entries: [],
+        };
+        const updated = [...hikingRecords, optimistic];
+        setHikingRecords(updated);
+        set(hikingCacheKey, updated).catch(() => {});
+        toast.info('Fjelltur lagret offline');
+      } else {
+        loadHikingRecords();
+      }
     } else {
       const record: HikingRecord = {
         id: `h${Date.now()}`,
