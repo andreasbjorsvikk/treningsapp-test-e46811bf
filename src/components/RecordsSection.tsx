@@ -471,7 +471,7 @@ const RecordsSection = () => {
   const handleAddHike = async () => {
     if (!newHikeName.trim()) return;
     if (user) {
-      await supabase.from('hiking_records').insert({
+      const payload = {
         user_id: user.id,
         name: newHikeName.trim(),
         elevation: newHikeElevation ? Number(newHikeElevation) : null,
@@ -479,8 +479,25 @@ const RecordsSection = () => {
         elevation_gain: newHikeElevationGain ? Number(newHikeElevationGain) : null,
         route_description: newHikeRouteDesc.trim() || null,
         entries: [],
-      } as any);
-      loadHikingRecords();
+      };
+      const { error } = await supabase.from('hiking_records').insert(payload as any);
+      if (error) {
+        // Offline — queue and add optimistically
+        const offlineId = `offline_${Date.now()}`;
+        await enqueue({ table: 'hiking_records', action: 'insert', payload: { ...payload, id: offlineId } });
+        const optimistic: HikingRecord = {
+          id: offlineId, userId: user.id, name: payload.name,
+          elevation: payload.elevation ?? undefined, distance: payload.distance ?? undefined,
+          elevationGain: payload.elevation_gain ?? undefined, routeDescription: payload.route_description ?? undefined,
+          entries: [],
+        };
+        const updated = [...hikingRecords, optimistic];
+        setHikingRecords(updated);
+        set(hikingCacheKey, updated).catch(() => {});
+        toast.info('Fjelltur lagret offline');
+      } else {
+        loadHikingRecords();
+      }
     } else {
       const record: HikingRecord = {
         id: `h${Date.now()}`,
