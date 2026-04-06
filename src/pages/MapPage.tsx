@@ -66,6 +66,7 @@ const MapPage = () => {
     return (localStorage.getItem('treningslogg_default_map_style') as any) || 'outdoors';
   });
   const [areaStatsMode, setAreaStatsMode] = useState<'off' | 'kommune' | 'fylke'>('off');
+  const [showOfflineMaps, setShowOfflineMaps] = useState(false);
 
   // Suggested peaks (pending, visible to all)
   const [suggestedPeaks, setSuggestedPeaks] = useState<PeakSuggestion[]>([]);
