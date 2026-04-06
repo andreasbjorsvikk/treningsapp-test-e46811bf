@@ -69,7 +69,7 @@ const LeaderboardSection = () => {
         {metricTabs.map(tab => (
           <button
             key={tab.id}
-            onClick={() => setMetric(tab.id)}
+            onClick={() => { hapticsService.selectionChanged(); setMetric(tab.id); }}
             className={`flex-1 py-1 text-[10px] font-medium rounded-md transition-colors ${
               metric === tab.id ? 'bg-primary text-primary-foreground' : 'bg-secondary/60 text-muted-foreground'
             }`}
