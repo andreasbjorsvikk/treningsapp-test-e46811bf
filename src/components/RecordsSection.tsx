@@ -548,12 +548,23 @@ const RecordsSection = () => {
       };
       const newEntries = [...selectedHike.entries, entry];
       if (user) {
-        await supabase.from('hiking_records').update({ entries: newEntries } as any).eq('id', selectedHike.id);
-        await loadHikingRecords();
-        setSelectedHike(prev => {
-          const found = hikingRecords.find(h => h.id === selectedHike.id);
-          return found ? { ...found, entries: newEntries } : prev;
-        });
+        const { error } = await supabase.from('hiking_records').update({ entries: newEntries } as any).eq('id', selectedHike.id);
+        if (error) {
+          // Offline — update local state and cache optimistically
+          const updated = hikingRecords.map(h =>
+            h.id === selectedHike.id ? { ...h, entries: newEntries } : h
+          );
+          setHikingRecords(updated);
+          set(hikingCacheKey, updated).catch(() => {});
+          setSelectedHike({ ...selectedHike, entries: newEntries });
+          toast.info('Rekordtid lagret offline');
+        } else {
+          await loadHikingRecords();
+          setSelectedHike(prev => {
+            const found = hikingRecords.find(h => h.id === selectedHike.id);
+            return found ? { ...found, entries: newEntries } : prev;
+          });
+        }
       } else {
         const updated = hikingRecords.map(h =>
           h.id === selectedHike.id ? { ...h, entries: newEntries } : h
