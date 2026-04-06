@@ -257,6 +257,17 @@ const RecordsSection = () => {
 
   useEffect(() => { loadHikingRecords(); }, [loadHikingRecords]);
 
+  // Reload hiking records when sync queue flushes (offline→online)
+  useEffect(() => {
+    const handler = () => { loadHikingRecords(); };
+    window.addEventListener('sync-queue-flushed', handler);
+    window.addEventListener('online', handler);
+    return () => {
+      window.removeEventListener('sync-queue-flushed', handler);
+      window.removeEventListener('online', handler);
+    };
+  }, [loadHikingRecords]);
+
   // Load pending hike share invitations received by user
   const loadPendingInvitations = useCallback(async () => {
     if (!user) return;
