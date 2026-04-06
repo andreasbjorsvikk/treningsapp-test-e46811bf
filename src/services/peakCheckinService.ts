@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { enqueue } from '@/services/syncQueue';
 
 export interface PeakCheckin {
   id: string;
