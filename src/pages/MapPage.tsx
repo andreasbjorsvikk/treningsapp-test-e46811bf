@@ -365,17 +365,27 @@ const MapPage = () => {
                 Tilbake
               </button>
             )}
-            {/* Map action buttons — fixed to viewport to avoid Mapbox stacking context */}
-            <div className="fixed bottom-28 left-4 z-[9999] flex flex-col gap-2" style={{ pointerEvents: 'auto' }}>
+            {/* Map action buttons — GPU-promoted to render above WebGL canvas on iOS */}
+            <div
+              className="fixed bottom-28 left-4 z-[9999] flex flex-col gap-2"
+              style={{
+                pointerEvents: 'auto',
+                transform: 'translate3d(0,0,0)',
+                WebkitTransform: 'translate3d(0,0,0)',
+                willChange: 'transform',
+              }}
+            >
               <button
                 onClick={() => setShowOfflineMaps(true)}
                 className="p-3 rounded-full shadow-lg border border-border bg-background/95 backdrop-blur-sm text-foreground hover:bg-muted transition-colors"
+                style={{ transform: 'translate3d(0,0,0)', WebkitTransform: 'translate3d(0,0,0)' }}
               >
                 <Download className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setShowSettings(true)}
                 className="p-3 rounded-full shadow-lg border border-border bg-background/95 backdrop-blur-sm text-foreground hover:bg-muted transition-colors"
+                style={{ transform: 'translate3d(0,0,0)', WebkitTransform: 'translate3d(0,0,0)' }}
               >
                 <Settings2 className="w-5 h-5" />
               </button>
