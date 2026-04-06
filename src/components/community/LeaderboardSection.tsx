@@ -94,7 +94,7 @@ const LeaderboardSection = () => {
           return (
             <button
               key={type}
-              onClick={() => setSelectedType(type)}
+              onClick={() => { hapticsService.selectionChanged(); setSelectedType(type); }}
               className={`shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 !isSelected ? 'bg-secondary text-muted-foreground' : ''
               }`}
