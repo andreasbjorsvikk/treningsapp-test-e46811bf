@@ -7,7 +7,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { get, set } from 'idb-keyval';
-import { enqueue } from '@/services/syncQueue';
+import { enqueue, peekQueue, replaceQueuedInsertPayload } from '@/services/syncQueue';
 import { Trophy, ChevronRight, Plus, Trash2, Mountain, Pencil, UserPlus, X, ArrowLeft, Heart, Route, ArrowUpRight, Clock, Calendar, FileText, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -128,6 +128,44 @@ interface ShareInfo {
 
 type RecordTab = 'running' | 'cycling' | 'hiking';
 
+const isOfflineHikeId = (id: string) => id.startsWith('offline_');
+
+const toHikingInsertPayload = (record: HikingRecord, userId: string) => ({
+  user_id: userId,
+  name: record.name,
+  elevation: record.elevation ?? null,
+  distance: record.distance ?? null,
+  elevation_gain: record.elevationGain ?? null,
+  route_description: record.routeDescription ?? null,
+  entries: record.entries ?? [],
+});
+
+const applyQueuedHikingUpdate = (record: HikingRecord, payload: Record<string, unknown>): HikingRecord => ({
+  ...record,
+  name: typeof payload.name === 'string' ? payload.name : record.name,
+  elevation: payload.elevation === null
+    ? undefined
+    : typeof payload.elevation === 'number'
+      ? payload.elevation
+      : record.elevation,
+  distance: payload.distance === null
+    ? undefined
+    : typeof payload.distance === 'number'
+      ? payload.distance
+      : record.distance,
+  elevationGain: payload.elevation_gain === null
+    ? undefined
+    : typeof payload.elevation_gain === 'number'
+      ? payload.elevation_gain
+      : record.elevationGain,
+  routeDescription: payload.route_description === null
+    ? undefined
+    : typeof payload.route_description === 'string'
+      ? payload.route_description
+      : record.routeDescription,
+  entries: Array.isArray(payload.entries) ? payload.entries as HikingEntry[] : record.entries,
+});
+
 const RecordsSection = () => {
   const appData = useAppDataContext();
   const { user } = useAuth();
@@ -188,6 +226,9 @@ const RecordsSection = () => {
   // Load hiking records from DB, with offline cache fallback
   const hikingCacheKey = `treningslogg_hiking_cache_${user?.id ?? 'anon'}`;
   const loadHikingRecords = useCallback(async () => {
+    const cachedRecords = await get<HikingRecord[]>(hikingCacheKey).catch(() => undefined);
+    const queuedOps = await peekQueue().catch(() => []);
+
     if (user) {
       try {
         // Load own records
@@ -234,14 +275,39 @@ const RecordsSection = () => {
           routeDescription: r.route_description || undefined,
           entries: (r.entries as HikingEntry[]) || [],
         }));
-        setHikingRecords(records);
+
+        const pendingUpdatePayloads = new Map<string, Record<string, unknown>>();
+        const pendingInsertIds = new Set<string>();
+
+        queuedOps.forEach((op) => {
+          if (op.table !== 'hiking_records') return;
+          const payload = op.payload as Record<string, unknown>;
+
+          if (op.action === 'update' && typeof payload.id === 'string') {
+            pendingUpdatePayloads.set(payload.id, payload);
+          }
+
+          if (op.action === 'insert' && typeof payload._offline_temp_id === 'string') {
+            pendingInsertIds.add(payload._offline_temp_id);
+          }
+        });
+
+        const mergedRecords = records.map((record) => {
+          const pendingUpdate = pendingUpdatePayloads.get(record.id);
+          return pendingUpdate ? applyQueuedHikingUpdate(record, pendingUpdate) : record;
+        });
+
+        const pendingLocalRecords = (cachedRecords || []).filter((record) => pendingInsertIds.has(record.id));
+        const finalRecords = [...mergedRecords, ...pendingLocalRecords];
+
+        setHikingRecords(finalRecords);
         // Cache for offline
-        set(hikingCacheKey, records).catch(() => {});
+        set(hikingCacheKey, finalRecords).catch(() => {});
         return;
       } catch {
         // Offline — load from cache
         try {
-          const cached = await get<HikingRecord[]>(hikingCacheKey);
+          const cached = cachedRecords ?? await get<HikingRecord[]>(hikingCacheKey);
           if (cached && cached.length > 0) {
             setHikingRecords(cached);
             return;
@@ -253,7 +319,7 @@ const RecordsSection = () => {
       const stored = localStorage.getItem('treningslogg_hiking_records');
       setHikingRecords(stored ? JSON.parse(stored) : []);
     } catch { setHikingRecords([]); }
-  }, [user]);
+  }, [hikingCacheKey, user]);
 
   useEffect(() => { loadHikingRecords(); }, [loadHikingRecords]);
 
@@ -495,7 +561,7 @@ const RecordsSection = () => {
       if (error) {
         // Offline — queue and add optimistically
         const offlineId = `offline_${Date.now()}`;
-        await enqueue('hiking_records', 'insert', { ...payload, id: offlineId });
+        await enqueue('hiking_records', 'insert', { ...payload, _offline_temp_id: offlineId });
         const optimistic: HikingRecord = {
           id: offlineId, userId: user.id, name: payload.name,
           elevation: payload.elevation ?? undefined, distance: payload.distance ?? undefined,
@@ -568,6 +634,22 @@ const RecordsSection = () => {
           setHikingRecords(updated);
           set(hikingCacheKey, updated).catch(() => {});
           setSelectedHike({ ...selectedHike, entries: newEntries });
+
+          if (isOfflineHikeId(selectedHike.id)) {
+            const offlineRecord = updated.find((h) => h.id === selectedHike.id);
+            if (offlineRecord) {
+              await replaceQueuedInsertPayload('hiking_records', selectedHike.id, {
+                ...toHikingInsertPayload(offlineRecord, user.id),
+                _offline_temp_id: selectedHike.id,
+              });
+            }
+          } else {
+            await enqueue('hiking_records', 'update', {
+              id: selectedHike.id,
+              entries: newEntries,
+            });
+          }
+
           toast.info('Rekordtid lagret offline');
         } else {
           await loadHikingRecords();
@@ -653,9 +735,33 @@ const RecordsSection = () => {
     } else {
       const newEntries = selectedHike.entries.filter(e => e.id !== entryId);
       if (user) {
-        await supabase.from('hiking_records').update({ entries: newEntries } as any).eq('id', selectedHike.id);
-        await loadHikingRecords();
-        setSelectedHike(prev => prev ? { ...prev, entries: newEntries } : null);
+        const { error } = await supabase.from('hiking_records').update({ entries: newEntries } as any).eq('id', selectedHike.id);
+        if (error) {
+          const updated = hikingRecords.map(h =>
+            h.id === selectedHike.id ? { ...h, entries: newEntries } : h
+          );
+          setHikingRecords(updated);
+          set(hikingCacheKey, updated).catch(() => {});
+          setSelectedHike(prev => prev ? { ...prev, entries: newEntries } : null);
+
+          if (isOfflineHikeId(selectedHike.id)) {
+            const offlineRecord = updated.find((h) => h.id === selectedHike.id);
+            if (offlineRecord) {
+              await replaceQueuedInsertPayload('hiking_records', selectedHike.id, {
+                ...toHikingInsertPayload(offlineRecord, user.id),
+                _offline_temp_id: selectedHike.id,
+              });
+            }
+          } else {
+            await enqueue('hiking_records', 'update', {
+              id: selectedHike.id,
+              entries: newEntries,
+            });
+          }
+        } else {
+          await loadHikingRecords();
+          setSelectedHike(prev => prev ? { ...prev, entries: newEntries } : null);
+        }
       } else {
         const updated = hikingRecords.map(h =>
           h.id === selectedHike.id ? { ...h, entries: newEntries } : h
@@ -688,9 +794,33 @@ const RecordsSection = () => {
           : e
       );
       if (user) {
-        await supabase.from('hiking_records').update({ entries: newEntries } as any).eq('id', selectedHike.id);
-        await loadHikingRecords();
-        setSelectedHike(prev => prev ? { ...prev, entries: newEntries } : null);
+        const { error } = await supabase.from('hiking_records').update({ entries: newEntries } as any).eq('id', selectedHike.id);
+        if (error) {
+          const updated = hikingRecords.map(h =>
+            h.id === selectedHike.id ? { ...h, entries: newEntries } : h
+          );
+          setHikingRecords(updated);
+          set(hikingCacheKey, updated).catch(() => {});
+          setSelectedHike(prev => prev ? { ...prev, entries: newEntries } : null);
+
+          if (isOfflineHikeId(selectedHike.id)) {
+            const offlineRecord = updated.find((h) => h.id === selectedHike.id);
+            if (offlineRecord) {
+              await replaceQueuedInsertPayload('hiking_records', selectedHike.id, {
+                ...toHikingInsertPayload(offlineRecord, user.id),
+                _offline_temp_id: selectedHike.id,
+              });
+            }
+          } else {
+            await enqueue('hiking_records', 'update', {
+              id: selectedHike.id,
+              entries: newEntries,
+            });
+          }
+        } else {
+          await loadHikingRecords();
+          setSelectedHike(prev => prev ? { ...prev, entries: newEntries } : null);
+        }
       } else {
         const updated = hikingRecords.map(h =>
           h.id === selectedHike.id ? { ...h, entries: newEntries } : h

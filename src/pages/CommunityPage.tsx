@@ -152,7 +152,7 @@ const CommunityPage = () => {
             {challengeFilterTabs.map(tab => (
               <button
                 key={tab.id}
-                onClick={() => { hapticsService.impact('medium'); setChallengeFilter(tab.id); }}
+                onClick={() => { hapticsService.selectionChanged(); setChallengeFilter(tab.id); }}
                 className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
                   challengeFilter === tab.id ? 'bg-accent text-accent-foreground' : 'bg-secondary text-muted-foreground'
                 }`}
