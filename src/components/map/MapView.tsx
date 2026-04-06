@@ -13,6 +13,7 @@ import { decodePolyline } from '@/utils/polyline';
 import { addEnhancedTerrain } from '@/utils/mapTerrain';
 import { getPeakIcon, getCheckedPeakIcon } from '@/utils/peakIcons';
 import { hapticsService } from '@/services/hapticsService';
+import { Download, Settings2 } from 'lucide-react';
 
 type HeatmapPeriod = 'year' | 'total';
 
