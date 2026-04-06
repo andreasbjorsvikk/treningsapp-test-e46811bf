@@ -6,6 +6,8 @@ import { formatDuration } from '@/utils/workoutUtils';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { get, set } from 'idb-keyval';
+import { enqueue } from '@/services/syncQueue';
 import { Trophy, ChevronRight, Plus, Trash2, Mountain, Pencil, UserPlus, X, ArrowLeft, Heart, Route, ArrowUpRight, Clock, Calendar, FileText, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
