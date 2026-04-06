@@ -20,6 +20,7 @@ import ARView from '@/components/map/ARView';
 import { Settings2 } from 'lucide-react';
 import OfflineMapSheet from '@/components/map/OfflineMapSheet';
 import { toast } from 'sonner';
+import { get, set } from 'idb-keyval';
 
 type PeakFilter = 'all' | 'taken' | 'not_taken';
 type HeatmapPeriod = 'year' | 'total';
@@ -72,6 +73,7 @@ const MapPage = () => {
   const [suggestedPeaks, setSuggestedPeaks] = useState<PeakSuggestion[]>([]);
 
   const checkedPeakIds = useMemo(() => new Set(checkins.map(c => c.peak_id)), [checkins]);
+  const peaksCacheKey = `treningslogg_peaks_cache_${adminMode ? 'admin' : 'user'}`;
 
   // Filter peaks for map display
   const filteredPeaks = useMemo(() => {
@@ -85,10 +87,15 @@ const MapPage = () => {
       const data = await fetchPeaks();
       setDbPeaks(data);
       setPeaks(data.map(dbPeakToLegacy));
+      set(peaksCacheKey, data).catch(() => {});
     } catch {
-      // silent
+      const cached = await get<DbPeak[]>(peaksCacheKey).catch(() => undefined);
+      if (cached && cached.length > 0) {
+        setDbPeaks(cached);
+        setPeaks(cached.map(dbPeakToLegacy));
+      }
     }
-  }, []);
+  }, [peaksCacheKey]);
 
   const fetchCheckins = useCallback(async () => {
     if (!user) return;

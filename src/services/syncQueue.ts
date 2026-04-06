@@ -115,6 +115,39 @@ export async function peekQueue(): Promise<SyncOperation[]> {
   return [...(await loadQueue())];
 }
 
+export async function replaceQueuedInsertPayload(
+  table: SyncTable,
+  offlineTempId: string,
+  nextPayload: Record<string, unknown>,
+): Promise<boolean> {
+  const queue = await loadQueue();
+  let changed = false;
+
+  for (let index = queue.length - 1; index >= 0; index -= 1) {
+    const op = queue[index];
+    const payload = op.payload as Record<string, unknown>;
+
+    if (
+      op.table === table &&
+      op.action === 'insert' &&
+      payload._offline_temp_id === offlineTempId
+    ) {
+      queue[index] = {
+        ...op,
+        payload: nextPayload,
+      };
+      changed = true;
+      break;
+    }
+  }
+
+  if (changed) {
+    await saveQueue(queue);
+  }
+
+  return changed;
+}
+
 /** Clear the entire queue (use with care). */
 export async function clearQueue(): Promise<void> {
   await saveQueue([]);
