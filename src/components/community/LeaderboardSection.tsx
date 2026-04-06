@@ -55,7 +55,7 @@ const LeaderboardSection = () => {
         {periodTabs.map(tab => (
           <button
             key={tab.id}
-            onClick={() => setPeriod(tab.id)}
+            onClick={() => { hapticsService.selectionChanged(); setPeriod(tab.id); }}
             className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${
               period === tab.id ? 'bg-accent text-accent-foreground' : 'bg-secondary text-muted-foreground'
             }`}
