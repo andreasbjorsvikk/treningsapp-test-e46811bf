@@ -80,7 +80,7 @@ function RegionRow({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           {region.isDownloaded && (
-            <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
           )}
           <span className="font-medium text-sm truncate">{region.name}</span>
         </div>
