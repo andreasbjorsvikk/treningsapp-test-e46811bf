@@ -443,6 +443,9 @@ const MapPage = () => {
         onAreaStatsModeChange={setAreaStatsMode}
       />
 
+      {/* Offline map sheet */}
+      <OfflineMapSheet open={showOfflineMaps} onOpenChange={setShowOfflineMaps} />
+
       {/* Peak detail drawer */}
       <PeakDetailDrawer
         peak={selectedPeak}
