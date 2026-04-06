@@ -330,6 +330,8 @@ const MapPage = () => {
               areaStatsMode={areaStatsMode}
               onlyReachedThisYear={onlyReachedThisYear}
               suggestedPeaks={suggestedPeaks}
+              onSettingsClick={() => setShowSettings(true)}
+              onDownloadClick={() => setShowOfflineMaps(true)}
             />
             {activeRouteGeojson && !selectedPeak && activeRoutePeakId && (
               <button
