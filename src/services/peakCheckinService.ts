@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { enqueue } from '@/services/syncQueue';
 
 export interface PeakCheckin {
   id: string;
@@ -18,14 +19,32 @@ export async function getUserCheckins(userId: string): Promise<PeakCheckin[]> {
   return (data || []) as unknown as PeakCheckin[];
 }
 
-export async function checkinPeak(userId: string, peakId: string, checkedInAt?: string, imageFile?: File | null, checkedInBy?: string): Promise<PeakCheckin> {
+export async function checkinPeak(userId: string, peakId: string, checkedInAt?: string, imageFile?: File | null, checkedInBy?: string, isOffline?: boolean): Promise<PeakCheckin> {
   const payload: any = { user_id: userId, peak_id: peakId };
   if (checkedInAt) {
     payload.checked_in_at = checkedInAt;
   }
-  // Track who performed the checkin (for child checkins)
   if (checkedInBy) {
     payload.checked_in_by = checkedInBy;
+  }
+
+  // If offline, queue the checkin and return optimistic data
+  if (isOffline) {
+    const tempId = `offline_${crypto.randomUUID()}`;
+    const optimistic: PeakCheckin = {
+      id: tempId,
+      user_id: userId,
+      peak_id: peakId,
+      checked_in_at: checkedInAt || new Date().toISOString(),
+      verified: true,
+      activity_id: null,
+    };
+    // Queue for sync (skip image — will need re-upload when online)
+    await enqueue('peak_checkins', 'insert', {
+      ...payload,
+      _offline_temp_id: tempId,
+    });
+    return optimistic;
   }
 
   // Upload image if provided

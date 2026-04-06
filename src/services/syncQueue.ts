@@ -23,7 +23,11 @@ export type SyncTable =
   | 'goals'
   | 'primary_goal_periods'
   | 'health_events'
-  | 'peak_checkins';
+  | 'peak_checkins'
+  | 'challenges'
+  | 'challenge_participants'
+  | 'hiking_records'
+  | 'shared_hiking_entries';
 
 export interface SyncOperation {
   id: string; // unique per operation (crypto.randomUUID)
