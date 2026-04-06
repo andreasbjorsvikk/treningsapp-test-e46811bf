@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { hapticsService } from '@/services/hapticsService';
 import { getLeaderboard, Friend, LeaderboardMetric } from '@/services/communityService';
 import { allSessionTypes } from '@/utils/workoutUtils';
 import { getActivityColors } from '@/utils/activityColors';
