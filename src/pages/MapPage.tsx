@@ -17,7 +17,8 @@ import PeakFeed from '@/components/map/PeakFeed';
 import GlobalLeaderboard from '@/components/map/GlobalLeaderboard';
 import MapTutorial from '@/components/map/MapTutorial';
 import ARView from '@/components/map/ARView';
-import { Settings2 } from 'lucide-react';
+import { Settings2, Download } from 'lucide-react';
+import OfflineMapSheet from '@/components/map/OfflineMapSheet';
 import { toast } from 'sonner';
 
 type PeakFilter = 'all' | 'taken' | 'not_taken';
