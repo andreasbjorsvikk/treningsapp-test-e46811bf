@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { useTranslation } from '@/i18n/useTranslation';
+import { hapticsService } from '@/services/hapticsService';
 
 interface TrainingPageProps {
   initialStatPeriod?: 'month' | 'year';
