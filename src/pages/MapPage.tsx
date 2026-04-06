@@ -365,13 +365,21 @@ const MapPage = () => {
                 Tilbake
               </button>
             )}
-            {/* Settings button bottom-left */}
-            <button
-              onClick={() => setShowSettings(true)}
-              className="absolute bottom-4 left-4 z-20 p-3 rounded-full shadow-lg border border-border bg-background/95 backdrop-blur-sm text-foreground hover:bg-muted transition-colors"
-            >
-              <Settings2 className="w-5 h-5" />
-            </button>
+            {/* Map action buttons bottom-left — raised above BottomNav */}
+            <div className="absolute bottom-20 left-4 z-20 flex flex-col gap-2">
+              <button
+                onClick={() => setShowOfflineMaps(true)}
+                className="p-3 rounded-full shadow-lg border border-border bg-background/95 backdrop-blur-sm text-foreground hover:bg-muted transition-colors"
+              >
+                <Download className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setShowSettings(true)}
+                className="p-3 rounded-full shadow-lg border border-border bg-background/95 backdrop-blur-sm text-foreground hover:bg-muted transition-colors"
+              >
+                <Settings2 className="w-5 h-5" />
+              </button>
+            </div>
             <MapTutorial />
           </div>
         )}
