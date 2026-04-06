@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { useAppData } from '@/hooks/useAppData';
 
 type AppDataContextType = ReturnType<typeof useAppData>;
@@ -16,6 +16,15 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
 export function useAppDataContext() {
   const ctx = useContext(AppDataContext);
-  if (!ctx) throw new Error('useAppDataContext must be used within AppDataProvider');
+  if (!ctx) {
+    // During HMR, the context may temporarily be null — force a re-render
+    // instead of crashing with a blank screen.
+    const [, forceUpdate] = useState(0);
+    useEffect(() => {
+      const t = setTimeout(() => forceUpdate((n) => n + 1), 50);
+      return () => clearTimeout(t);
+    }, []);
+    throw new Error('useAppDataContext must be used within AppDataProvider');
+  }
   return ctx;
 }
